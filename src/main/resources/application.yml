@@ -1,0 +1,43 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: Work-Flow-Management
+  datasource:
+    url: jdbc:mysql://${DB_URL}:${DB_PORT}/${DB_NAME}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: none
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+    baseline-version: 0
+    clean-disabled: true
+    out-of-order: false
+    validate-migration-naming: true
+
+springdoc:
+  swagger-ui.path: /swagger-ui.html
+  api-docs.path: /api-docs
+
+
+
+#      jakarta:
+#        persistence:
+#          schema-generation:
+#            database:
+#              action: none
+#            scripts:
+#              action: create
+#              create-target: src/main/resources/auto-generated/create.sql
+#              drop-target: src/main/resources/auto-generated/drop.sql
+#            create-source: metadata
+#            drop-source: metadata

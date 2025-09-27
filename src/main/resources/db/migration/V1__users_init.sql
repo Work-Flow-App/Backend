@@ -1,0 +1,15 @@
+CREATE TABLE users (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    uuid VARCHAR(255) NOT NULL,
+    username VARCHAR(50) NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    email VARCHAR(255),
+    role ENUM('ADMIN','COMPANY','WORKER') NOT NULL,
+    enabled BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+    updated_at DATETIME(6) DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP(6),
+    PRIMARY KEY (id),
+    UNIQUE KEY UK_users_username (username),
+    UNIQUE KEY UK_users_email (email),
+    UNIQUE KEY UK_users_uuid (uuid)
+) ENGINE=InnoDB AUTO_INCREMENT=1001;

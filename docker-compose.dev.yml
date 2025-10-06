@@ -1,0 +1,33 @@
+services:
+  backend:
+    image: ${ECR_IMAGE_URI}
+    container_name: backend
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env.dev
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://${DB_URL}:${DB_PORT}/${DB_NAME}
+      - SPRING_DATASOURCE_USERNAME=${DB_USERNAME}
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
+      - JWT_SECRET=${JWT_SECRET}
+    networks:
+      - backend-network
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  backend-network:
+    driver: bridge

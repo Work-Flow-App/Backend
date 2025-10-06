@@ -1,13 +1,36 @@
 services:
 
-  mysql:
-    image: mysql:8.3.0
-    container_name: mysql-db
-    environment:
-      MYSQL_ROOT_PASSWORD: mysql
-    ports:
-      - "3306:3306"
-    volumes:
-      - ./.data/mysql:/var/lib/mysql
-      - ./docker/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
+    mysql:
+      image: mysql:8.3.0
+      container_name: mysql-db
+      environment:
+        MYSQL_ROOT_PASSWORD: mysql
+        MYSQL_DATABASE: ${DB_NAME}
+        MYSQL_USER: ${DB_USERNAME}
+        MYSQL_PASSWORD: ${DB_PASSWORD}
+      env_file:
+        - .env.local
+      ports:
+        - "3306:3306"
+      volumes:
+        - ./.data/mysql:/var/lib/mysql
+        - ./docker/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
+      networks:
+        - backend-network
 
+#    backend:
+#      build: .
+#      container_name: backend
+#      depends_on:
+#        mysql:
+#          condition: service_healthy
+#      env_file:
+#        - .env.local
+#      ports:
+#        - "8080:8080"
+#      networks:
+#        - backend-network
+
+
+networks:
+    backend-network:

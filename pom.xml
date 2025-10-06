@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>com.workflow</groupId>
 	<artifactId>Backend</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>0.0.1</version>
 	<name>Work Flow Management</name>
 	<description>Spring Boot application for managing job postings, applications, and users</description>
 	<url/>

@@ -1,0 +1,90 @@
+name: CD - Deploy to EC2
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: development
+
+    steps:
+       - uses: actions/checkout@v4
+
+       - name: Configure AWS credentials
+         uses: aws-actions/configure-aws-credentials@v4
+         with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+       - name: Deploy on EC2 via SSH
+         uses: appleboy/ssh-action@v1.2.0
+         with:
+           host: ${{ secrets.EC2_HOST }}
+           username: ubuntu
+           key: ${{ secrets.EC2_SSH_KEY }}
+
+           script: |
+             set -e
+
+             # Check and install Docker if not present
+             if ! command -v docker &> /dev/null; then
+               echo "🔧 Docker not found. Installing Docker..."
+               sudo apt-get update
+               sudo apt-get install -y docker.io unzip curl
+               sudo systemctl start docker
+               sudo systemctl enable docker
+               sudo usermod -aG docker ubuntu
+
+               # Install Docker Compose
+               sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+               sudo chmod +x /usr/local/bin/docker-compose
+
+               # Install AWS CLI v2
+               curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+               unzip -q awscliv2.zip
+               sudo ./aws/install
+               rm -rf aws awscliv2.zip
+
+               echo "✅ Docker and AWS CLI installed successfully!"
+             fi
+
+             echo "➡️ Creating deployment directory..."
+             mkdir -p /home/ubuntu/app
+             cd /home/ubuntu/app
+
+             echo "➡️ Creating .env.dev file..."
+             cat > .env.dev <<EOL
+             ECR_IMAGE_URI=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/work-flow-dev:latest
+             DB_URL=${{ secrets.DB_URL }}
+             DB_PORT=${{ secrets.DB_PORT }}
+             DB_NAME=${{ secrets.DB_NAME }}
+             DB_USERNAME=${{ secrets.DB_USERNAME }}
+             DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+             JWT_SECRET=${{ secrets.JWT_SECRET }}
+             SPRING_PROFILES_ACTIVE=dev
+             HIBERNATE_DDL_AUTO=create-drop
+             FLYWAY_ENABLED=false
+             EOL
+             echo "✅ .env.dev file created successfully!"
+
+             echo "➡️ Downloading docker-compose.dev.yml..."
+             curl -o docker-compose.dev.yml https://raw.githubusercontent.com/${{ github.repository }}/${{ github.ref_name }}/docker-compose.dev.yml
+
+             echo "🔐 Authenticating with ECR..."
+             export AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
+             export AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
+             export AWS_DEFAULT_REGION=${{ secrets.AWS_REGION }}
+             aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | sudo docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
+
+             echo "📥 Pulling latest Docker image from ECR..."
+             sudo docker pull ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/work-flow-dev:latest
+
+             echo "🚀 Deploying with docker-compose (zero-downtime)..."
+             sudo docker-compose -f docker-compose.dev.yml --env-file .env.dev up -d --wait
+
+             echo "🧹 Cleaning up old images..."
+             sudo docker image prune -af --filter "until=24h"
+
+             echo "✅ Deployment complete!"

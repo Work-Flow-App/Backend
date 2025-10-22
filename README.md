@@ -130,14 +130,102 @@ This starts both MySQL and the backend application.
 
 ## Development
 
-### Run tests
+### Testing
+
+The project includes comprehensive test coverage with both unit tests and integration tests.
+
+#### Run Tests
 
 ```bash
-# Run all tests
+# Run all tests (unit + integration)
 ./mvnw test
 
+# Run only unit tests
+./mvnw test -Dtest="*ServiceTest"
+
+# Run only integration tests
+./mvnw test -Dtest="*IntegrationTest"
+
 # Run a specific test class
-./mvnw test -Dtest=WorkFlowManagementApplicationTests
+./mvnw test -Dtest=JwtServiceTest
+
+# Run with coverage report
+./mvnw clean test jacoco:report
+```
+
+#### Test Structure
+
+**Unit Tests** (`src/test/java/com/workflow/service/`)
+- **JwtServiceTest** (13 tests) - JWT token generation, validation, expiration, signature verification
+- **AuthenticationServiceTest** (12 tests) - User authentication, token generation, error handling
+- **UserServiceTest** (17 tests) - User creation, validation, password encoding, role assignment
+
+**Integration Tests** (`src/test/java/com/workflow/controller/`)
+- **AuthControllerIntegrationTest** (20 tests) - Full API endpoint testing with Spring context
+  - Signup endpoint validation
+  - Login endpoint validation
+  - Request/response validation
+  - Security testing
+  - Edge cases and error handling
+
+**Test Coverage:**
+- **42 Unit Tests** covering service layer business logic
+- **20 Integration Tests** covering API endpoints with full Spring Boot context
+- **Total: 62 Tests** ✅
+
+#### Test Configuration
+
+Tests use H2 in-memory database configured in `src/test/resources/application-test.yml`:
+- No need for running MySQL during tests
+- Tests are isolated and repeatable
+- Fast execution with in-memory database
+
+#### Writing New Tests
+
+**Unit Test Example:**
+```java
+@ExtendWith(MockitoExtension.class)
+class MyServiceTest {
+    @Mock
+    private MyRepository repository;
+
+    @InjectMocks
+    private MyService service;
+
+    @Test
+    void shouldDoSomething() {
+        // Given
+        when(repository.findById(1L)).thenReturn(Optional.of(entity));
+
+        // When
+        Result result = service.doSomething(1L);
+
+        // Then
+        assertNotNull(result);
+        verify(repository).findById(1L);
+    }
+}
+```
+
+**Integration Test Example:**
+```java
+@SpringBootTest
+@AutoConfigureMockMvc
+@ActiveProfiles("test")
+@Transactional
+class MyControllerIntegrationTest {
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Test
+    void shouldReturnSuccess() throws Exception {
+        mockMvc.perform(post("/api/v1/endpoint")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"key\":\"value\"}"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.result").exists());
+    }
+}
 ```
 
 ### Database Migrations

@@ -39,6 +39,8 @@ build/
 .env.prod
 !.env.example
 
+CLAUDE.md
+
 .DS_Store
 **/.DS_Store
 

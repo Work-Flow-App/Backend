@@ -6,6 +6,7 @@ import com.workflow.dto.auth.SignupRequest;
 import com.workflow.entity.User;
 import com.workflow.service.auth.AuthenticationService;
 import com.workflow.service.user.IUserService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,14 +21,14 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<AuthenticationResponse> login (
-            @RequestBody LoginRequest request
+            @Valid @RequestBody LoginRequest request
     ) {
         return ResponseEntity.ok(this.authService.authenticate(request));
     }
 
     @PostMapping("/signup")
     public ResponseEntity<AuthenticationResponse> signup(
-            @RequestBody SignupRequest request
+            @Valid @RequestBody SignupRequest request
     ) {
         User user = this.userService.createUser(request);
         return ResponseEntity.ok(this.authService.generateJwtToken(user));

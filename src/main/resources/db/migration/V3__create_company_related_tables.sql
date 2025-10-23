@@ -6,7 +6,7 @@
 CREATE TABLE companies (
     id BIGINT NOT NULL AUTO_INCREMENT,
     name VARCHAR(150) NOT NULL,
-    created_by BIGINT NOT NULL,
+    user_id BIGINT NOT NULL,
     address_line_1 VARCHAR(255),
     address_line_2 VARCHAR(255),
     address_line_3 VARCHAR(255),
@@ -17,14 +17,14 @@ CREATE TABLE companies (
     mobile VARCHAR(20),
     fax VARCHAR(20),
     email VARCHAR(100),
-    accounts_email VARCHAR(100),
-    accounts_number VARCHAR(50),
+    contact_email VARCHAR(100),
+    contact_number VARCHAR(50),
     archived BOOLEAN NOT NULL DEFAULT FALSE,
     created_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
     updated_at DATETIME(6) DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP(6),
     PRIMARY KEY (id),
     UNIQUE KEY UK_companies_name (name),
-    CONSTRAINT FK_companies_created_by FOREIGN KEY (created_by) REFERENCES users(id)
+    CONSTRAINT FK_companies_user FOREIGN KEY (user_id) REFERENCES users(id)
 ) ENGINE=InnoDB;
 
 -- ----------------------------

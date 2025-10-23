@@ -1,5 +1,6 @@
 package com.workflow.common.exception;
 
+import com.workflow.common.exception.customException.*;
 import com.workflow.common.exception.customException.BusinessException;
 import com.workflow.common.exception.customException.ResourceNotFoundException;
 import com.workflow.common.exception.customException.UserAlreadyExistsException;
@@ -135,6 +136,68 @@ public class GlobalExceptionHandler {
         );
 
         return new ResponseEntity<>(response, HttpStatus.UNAUTHORIZED);
+    }
+
+    // Company Service related exceptions
+    @ExceptionHandler(CompanyNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleCompanyNotFound(
+            CompanyNotFoundException ex,
+            HttpServletRequest request) {
+
+        ErrorResponse response = new ErrorResponse(
+                HttpStatus.NOT_FOUND.value(),
+                HttpStatus.NOT_FOUND.getReasonPhrase(),
+                ex.getMessage(),
+                request.getRequestURI()
+        );
+
+        return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(CompanyAlreadyExistsException.class)
+    public ResponseEntity<ErrorResponse> handleCompanyAlreadyExists(
+            CompanyAlreadyExistsException ex,
+            HttpServletRequest request) {
+
+        ErrorResponse response = new ErrorResponse(
+                HttpStatus.CONFLICT.value(),
+                HttpStatus.CONFLICT.getReasonPhrase(),
+                ex.getMessage(),
+                request.getRequestURI()
+        );
+
+        return new ResponseEntity<>(response, HttpStatus.CONFLICT);
+    }
+
+    // Worker Service related exceptions
+    @ExceptionHandler(WorkerNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleWorkerNotFound(
+            WorkerNotFoundException ex,
+            HttpServletRequest request) {
+
+        ErrorResponse response = new ErrorResponse(
+                HttpStatus.NOT_FOUND.value(),
+                HttpStatus.NOT_FOUND.getReasonPhrase(),
+                ex.getMessage(),
+                request.getRequestURI()
+        );
+
+        return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(WorkerAlreadyExistsException.class)
+    public ResponseEntity<ErrorResponse> handleWorkerAlreadyExists(
+            WorkerAlreadyExistsException ex,
+            HttpServletRequest request) {
+
+        ErrorResponse response = new ErrorResponse(
+                HttpStatus.CONFLICT.value(),
+                HttpStatus.CONFLICT.getReasonPhrase(),
+                ex.getMessage(),
+                request.getRequestURI()
+        );
+
+        return new ResponseEntity<>(response, HttpStatus.CONFLICT);
     }
 
     // Authentication related exceptions

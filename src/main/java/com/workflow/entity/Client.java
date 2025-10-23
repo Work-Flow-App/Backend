@@ -40,6 +40,7 @@ public class Client {
     private String address;
 
     @Column(nullable = false, columnDefinition = "BOOLEAN DEFAULT FALSE")
+    @Builder.Default
     private boolean archived = false;
 
     @CreationTimestamp

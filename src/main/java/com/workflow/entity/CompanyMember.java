@@ -36,6 +36,7 @@ public class CompanyMember {
     private CompanyRole companyRole;
 
     @Column(nullable = false, columnDefinition = "BOOLEAN DEFAULT TRUE")
+    @Builder.Default
     private boolean active = true;
 
     @CreationTimestamp

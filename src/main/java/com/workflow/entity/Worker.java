@@ -44,9 +44,11 @@ public class Worker {
     private String email;
 
     @Column(name = "login_locked", columnDefinition = "BOOLEAN DEFAULT FALSE")
+    @Builder.Default
     private boolean loginLocked = false;
 
     @Column(name = "archived", columnDefinition = "BOOLEAN DEFAULT FALSE")
+    @Builder.Default
     private boolean archived = false;
 
     @CreationTimestamp

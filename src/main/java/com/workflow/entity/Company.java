@@ -6,6 +6,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Getter
@@ -54,28 +55,32 @@ public class Company {
     @Column(length = 100)
     private String email;
 
-    @Column(name = "accounts_email", length = 100)
-    private String accountsEmail;
+    @Column(name = "contact_email", length = 100)
+    private String contactEmail;
 
-    @Column(name = "accounts_number", length = 50)
-    private String accountsNumber;
+    @Column(name = "contact_number", length = 50)
+    private String contactNumber;
 
     @Column(nullable = false, columnDefinition = "BOOLEAN DEFAULT FALSE")
+    @Builder.Default
     private boolean archived = false;
 
     // --- Relationships ---
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "created_by", nullable = false)
-    private User createdBy;
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
     @OneToMany(mappedBy = "company", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Worker> workers;
+    @Builder.Default
+    private List<Worker> workers = new ArrayList<>();
 
     @OneToMany(mappedBy = "company", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Client> clients;
+    @Builder.Default
+    private List<Client> clients = new ArrayList<>();
 
     @OneToMany(mappedBy = "company", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<CompanyMember> companyMembers;
+    @Builder.Default
+    private List<CompanyMember> companyMembers = new ArrayList<>();
 
     @CreationTimestamp
     private LocalDateTime createdAt;

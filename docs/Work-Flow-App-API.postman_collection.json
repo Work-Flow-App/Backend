@@ -1,0 +1,895 @@
+{
+	"info": {
+		"_postman_id": "workflow-app-api-collection",
+		"name": "Work-Flow-App API",
+		"description": "Complete API collection for Work-Flow-App Backend\n\n**Base URL:** http://localhost:8080\n\n**Authentication:** JWT Bearer Token (obtained from /auth/login or /auth/signup)\n\n**Available Roles:**\n- COMPANY: Company owner/manager\n- WORKER: Worker/employee\n- ADMIN: System administrator",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Signup",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    pm.environment.set(\"jwt_token\", response.token);",
+									"    pm.environment.set(\"user_uuid\", response.uuid);",
+									"    console.log(\"Token saved to environment:\", response.token);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"companyowner1\",\n    \"email\": \"company1@example.com\",\n    \"password\": \"password123\",\n    \"role\": \"COMPANY\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/auth/signup",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"auth",
+								"signup"
+							]
+						},
+						"description": "Register a new user account.\n\n**Request Body:**\n- username (string, required): 3-20 characters\n- email (string, required): Valid email format\n- password (string, required): Minimum 8 characters\n- role (enum, required): COMPANY, WORKER, or ADMIN\n\n**Response:**\n- token (string): JWT token for authentication\n- uuid (string): User unique identifier\n\n**Note:** COMPANY role automatically creates a Company entity for the user."
+					},
+					"response": [
+						{
+							"name": "Signup - Company",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"username\": \"companyowner1\",\n    \"email\": \"company1@example.com\",\n    \"password\": \"password123\",\n    \"role\": \"COMPANY\"\n}"
+								},
+								"url": {
+									"raw": "http://localhost:8080/api/v1/auth/signup",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"api",
+										"v1",
+										"auth",
+										"signup"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n    \"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n    \"uuid\": \"550e8400-e29b-41d4-a716-446655440000\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    pm.environment.set(\"jwt_token\", response.token);",
+									"    pm.environment.set(\"user_uuid\", response.uuid);",
+									"    console.log(\"Token saved to environment:\", response.token);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"userName\": \"companyowner1\",\n    \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/auth/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"auth",
+								"login"
+							]
+						},
+						"description": "Authenticate user and receive JWT token.\n\n**Request Body:**\n- userName (string, required): Username\n- password (string, required): Password\n\n**Response:**\n- token (string): JWT token for authentication\n- uuid (string): User unique identifier\n\n**Token expires in:** 1 hour"
+					},
+					"response": [
+						{
+							"name": "Login - Success",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"userName\": \"companyowner1\",\n    \"password\": \"password123\"\n}"
+								},
+								"url": {
+									"raw": "http://localhost:8080/api/v1/auth/login",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"api",
+										"v1",
+										"auth",
+										"login"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n    \"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n    \"uuid\": \"550e8400-e29b-41d4-a716-446655440000\"\n}"
+						}
+					]
+				}
+			],
+			"description": "Authentication endpoints for user registration and login."
+		},
+		{
+			"name": "Company",
+			"item": [
+				{
+					"name": "Get Company Profile",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/companies/profile",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"companies",
+								"profile"
+							]
+						},
+						"description": "Retrieve the authenticated company's profile.\n\n**Authentication:** Required (COMPANY role)\n\n**Response:**\n- id (long): Company ID\n- name (string): Company name\n- email (string): Company email\n- telephone (string): Phone number\n- mobile (string): Mobile number\n- fax (string): Fax number\n- addressLine1, addressLine2, addressLine3 (string): Address details\n- town (string): Town/city\n- country (string): Country\n- postcode (string): Postal code\n- contactEmail (string): Contact email\n- contactNumber (string): Contact number\n- archived (boolean): Archive status\n- createdAt (datetime): Creation timestamp\n- updatedAt (datetime): Last update timestamp"
+					},
+					"response": [
+						{
+							"name": "Get Company Profile - Success",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{jwt_token}}"
+									}
+								],
+								"url": {
+									"raw": "http://localhost:8080/api/v1/companies/profile",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"api",
+										"v1",
+										"companies",
+										"profile"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n    \"id\": 1,\n    \"name\": \"Tech Solutions Inc\",\n    \"email\": \"company1@example.com\",\n    \"telephone\": \"1234567890\",\n    \"mobile\": \"0987654321\",\n    \"fax\": \"1111111111\",\n    \"addressLine1\": \"123 Main St\",\n    \"addressLine2\": \"Suite 200\",\n    \"addressLine3\": null,\n    \"town\": \"New York\",\n    \"country\": \"USA\",\n    \"postcode\": \"10001\",\n    \"contactEmail\": \"contact@techsolutions.com\",\n    \"contactNumber\": \"ACC123\",\n    \"archived\": false,\n    \"createdAt\": \"2025-10-23T10:00:00\",\n    \"updatedAt\": \"2025-10-23T10:00:00\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Update Company Profile",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Tech Solutions Inc\",\n    \"addressLine1\": \"123 Main Street\",\n    \"addressLine2\": \"Suite 200\",\n    \"addressLine3\": null,\n    \"town\": \"New York\",\n    \"country\": \"USA\",\n    \"postcode\": \"10001\",\n    \"telephone\": \"1234567890\",\n    \"mobile\": \"0987654321\",\n    \"fax\": \"1111111111\",\n    \"email\": \"info@techsolutions.com\",\n    \"contactEmail\": \"contact@techsolutions.com\",\n    \"contactNumber\": \"ACC123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/companies/profile",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"companies",
+								"profile"
+							]
+						},
+						"description": "Update the authenticated company's profile.\n\n**Authentication:** Required (COMPANY role)\n\n**Request Body:**\n- name (string, required): 2-150 characters\n- addressLine1 (string, optional): Max 255 characters\n- addressLine2 (string, optional): Max 255 characters\n- addressLine3 (string, optional): Max 255 characters\n- town (string, optional): Max 100 characters\n- country (string, optional): Max 100 characters\n- postcode (string, optional): Max 20 characters\n- telephone (string, optional): Max 20 characters\n- mobile (string, optional): Max 20 characters\n- fax (string, optional): Max 20 characters\n- email (string, optional): Valid email format, max 100 characters\n- contactEmail (string, optional): Valid email format, max 100 characters\n- contactNumber (string, optional): Max 50 characters\n\n**Business Rules:**\n- Company name must be unique (case-insensitive)\n- Updating to the same name (different case) is allowed\n\n**Response:** Updated company profile (same format as GET)"
+					},
+					"response": [
+						{
+							"name": "Update Company Profile - Success",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{jwt_token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\": \"Tech Solutions Inc\",\n    \"addressLine1\": \"123 Main Street\",\n    \"addressLine2\": \"Suite 200\",\n    \"addressLine3\": null,\n    \"town\": \"New York\",\n    \"country\": \"USA\",\n    \"postcode\": \"10001\",\n    \"telephone\": \"1234567890\",\n    \"mobile\": \"0987654321\",\n    \"fax\": \"1111111111\",\n    \"email\": \"info@techsolutions.com\",\n    \"contactEmail\": \"contact@techsolutions.com\",\n    \"contactNumber\": \"ACC123\"\n}"
+								},
+								"url": {
+									"raw": "http://localhost:8080/api/v1/companies/profile",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"api",
+										"v1",
+										"companies",
+										"profile"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n    \"id\": 1,\n    \"name\": \"Tech Solutions Inc\",\n    \"email\": \"info@techsolutions.com\",\n    \"telephone\": \"1234567890\",\n    \"mobile\": \"0987654321\",\n    \"fax\": \"1111111111\",\n    \"addressLine1\": \"123 Main Street\",\n    \"addressLine2\": \"Suite 200\",\n    \"addressLine3\": null,\n    \"town\": \"New York\",\n    \"country\": \"USA\",\n    \"postcode\": \"10001\",\n    \"contactEmail\": \"contact@techsolutions.com\",\n    \"contactNumber\": \"ACC123\",\n    \"archived\": false,\n    \"createdAt\": \"2025-10-23T10:00:00\",\n    \"updatedAt\": \"2025-10-23T11:30:00\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Company Dashboard",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/companies/dashboard",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"companies",
+								"dashboard"
+							]
+						},
+						"description": "Retrieve company dashboard with statistics.\n\n**Authentication:** Required (COMPANY role)\n\n**Response:**\n- companyId (long): Company ID\n- companyName (string): Company name\n- totalWorkers (long): Total number of workers (active + archived)\n- totalClients (long): Total number of clients\n- activeWorkers (long): Number of active (non-archived) workers\n- archivedWorkers (long): Number of archived workers"
+					},
+					"response": [
+						{
+							"name": "Get Company Dashboard - Success",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{jwt_token}}"
+									}
+								],
+								"url": {
+									"raw": "http://localhost:8080/api/v1/companies/dashboard",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"api",
+										"v1",
+										"companies",
+										"dashboard"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n    \"companyId\": 1,\n    \"companyName\": \"Tech Solutions Inc\",\n    \"totalWorkers\": 15,\n    \"totalClients\": 8,\n    \"activeWorkers\": 12,\n    \"archivedWorkers\": 3\n}"
+						}
+					]
+				}
+			],
+			"description": "Company profile and dashboard management endpoints."
+		},
+		{
+			"name": "Workers",
+			"item": [
+				{
+					"name": "Create Worker",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"John Doe\",\n    \"initials\": \"JD\",\n    \"telephone\": \"1234567890\",\n    \"mobile\": \"0987654321\",\n    \"email\": \"john.doe@example.com\",\n    \"username\": \"johndoe\",\n    \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/workers",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workers"
+							]
+						},
+						"description": "Create a new worker with user account.\n\n**Authentication:** Required (COMPANY role)\n\n**Request Body:**\n- name (string, required): 2-100 characters\n- initials (string, optional): Max 10 characters\n- telephone (string, optional): Max 20 characters\n- mobile (string, optional): Max 20 characters\n- email (string, optional): Valid email format, max 100 characters\n- username (string, required): 3-20 characters (for worker login)\n- password (string, required): Minimum 8 characters\n\n**Business Logic:**\n- Creates both Worker entity and User account with ROLE_WORKER\n- Worker is associated with the company of the authenticated user\n- Username must be unique across all users\n- Email must be unique if provided\n\n**Response:**\n- id (long): Worker ID\n- name (string): Worker name\n- initials (string): Initials\n- telephone (string): Telephone number\n- mobile (string): Mobile number\n- email (string): Email address\n- username (string): Login username\n- loginLocked (boolean): Account lock status\n- archived (boolean): Archive status\n- createdAt (datetime): Creation timestamp\n- updatedAt (datetime): Last update timestamp"
+					},
+					"response": [
+						{
+							"name": "Create Worker - Success",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{jwt_token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\": \"John Doe\",\n    \"initials\": \"JD\",\n    \"telephone\": \"1234567890\",\n    \"mobile\": \"0987654321\",\n    \"email\": \"john.doe@example.com\",\n    \"username\": \"johndoe\",\n    \"password\": \"password123\"\n}"
+								},
+								"url": {
+									"raw": "http://localhost:8080/api/v1/workers",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"api",
+										"v1",
+										"workers"
+									]
+								}
+							},
+							"status": "Created",
+							"code": 201,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n    \"id\": 1,\n    \"name\": \"John Doe\",\n    \"initials\": \"JD\",\n    \"telephone\": \"1234567890\",\n    \"mobile\": \"0987654321\",\n    \"email\": \"john.doe@example.com\",\n    \"username\": \"johndoe\",\n    \"loginLocked\": false,\n    \"archived\": false,\n    \"createdAt\": \"2025-10-23T12:00:00\",\n    \"updatedAt\": \"2025-10-23T12:00:00\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Get All Workers",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/workers",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workers"
+							]
+						},
+						"description": "Retrieve all workers for the authenticated company.\n\n**Authentication:** Required (COMPANY role)\n\n**Response:** Array of worker objects (same format as Create Worker response)\n\n**Note:** Returns all workers (including archived) belonging to the company."
+					},
+					"response": [
+						{
+							"name": "Get All Workers - Success",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{jwt_token}}"
+									}
+								],
+								"url": {
+									"raw": "http://localhost:8080/api/v1/workers",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"api",
+										"v1",
+										"workers"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "[\n    {\n        \"id\": 1,\n        \"name\": \"John Doe\",\n        \"initials\": \"JD\",\n        \"telephone\": \"1234567890\",\n        \"mobile\": \"0987654321\",\n        \"email\": \"john.doe@example.com\",\n        \"username\": \"johndoe\",\n        \"loginLocked\": false,\n        \"archived\": false,\n        \"createdAt\": \"2025-10-23T12:00:00\",\n        \"updatedAt\": \"2025-10-23T12:00:00\"\n    },\n    {\n        \"id\": 2,\n        \"name\": \"Jane Smith\",\n        \"initials\": \"JS\",\n        \"telephone\": \"1111111111\",\n        \"mobile\": \"2222222222\",\n        \"email\": \"jane.smith@example.com\",\n        \"username\": \"janesmith\",\n        \"loginLocked\": false,\n        \"archived\": false,\n        \"createdAt\": \"2025-10-23T13:00:00\",\n        \"updatedAt\": \"2025-10-23T13:00:00\"\n    }\n]"
+						}
+					]
+				},
+				{
+					"name": "Get Worker by ID",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/workers/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workers",
+								"1"
+							]
+						},
+						"description": "Retrieve a specific worker by ID.\n\n**Authentication:** Required (COMPANY role)\n\n**Path Parameter:**\n- id (long): Worker ID\n\n**Response:** Worker object (same format as Create Worker response)\n\n**Authorization:** Only workers belonging to the authenticated company can be accessed."
+					},
+					"response": [
+						{
+							"name": "Get Worker by ID - Success",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{jwt_token}}"
+									}
+								],
+								"url": {
+									"raw": "http://localhost:8080/api/v1/workers/1",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"api",
+										"v1",
+										"workers",
+										"1"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n    \"id\": 1,\n    \"name\": \"John Doe\",\n    \"initials\": \"JD\",\n    \"telephone\": \"1234567890\",\n    \"mobile\": \"0987654321\",\n    \"email\": \"john.doe@example.com\",\n    \"username\": \"johndoe\",\n    \"loginLocked\": false,\n    \"archived\": false,\n    \"createdAt\": \"2025-10-23T12:00:00\",\n    \"updatedAt\": \"2025-10-23T12:00:00\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Update Worker",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"John Doe Updated\",\n    \"initials\": \"JDU\",\n    \"telephone\": \"9999999999\",\n    \"mobile\": \"8888888888\",\n    \"email\": \"john.updated@example.com\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/workers/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workers",
+								"1"
+							]
+						},
+						"description": "Update an existing worker's details.\n\n**Authentication:** Required (COMPANY role)\n\n**Path Parameter:**\n- id (long): Worker ID\n\n**Request Body:**\n- name (string, required): 2-100 characters\n- initials (string, optional): Max 10 characters\n- telephone (string, optional): Max 20 characters\n- mobile (string, optional): Max 20 characters\n- email (string, optional): Valid email format, max 100 characters\n\n**Note:** Username and password cannot be updated through this endpoint.\n\n**Response:** Updated worker object (same format as Create Worker response)\n\n**Authorization:** Only workers belonging to the authenticated company can be updated."
+					},
+					"response": [
+						{
+							"name": "Update Worker - Success",
+							"originalRequest": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{jwt_token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\": \"John Doe Updated\",\n    \"initials\": \"JDU\",\n    \"telephone\": \"9999999999\",\n    \"mobile\": \"8888888888\",\n    \"email\": \"john.updated@example.com\"\n}"
+								},
+								"url": {
+									"raw": "http://localhost:8080/api/v1/workers/1",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"api",
+										"v1",
+										"workers",
+										"1"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n    \"id\": 1,\n    \"name\": \"John Doe Updated\",\n    \"initials\": \"JDU\",\n    \"telephone\": \"9999999999\",\n    \"mobile\": \"8888888888\",\n    \"email\": \"john.updated@example.com\",\n    \"username\": \"johndoe\",\n    \"loginLocked\": false,\n    \"archived\": false,\n    \"createdAt\": \"2025-10-23T12:00:00\",\n    \"updatedAt\": \"2025-10-23T14:30:00\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Delete Worker (Soft Delete)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/workers/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workers",
+								"1"
+							]
+						},
+						"description": "Soft delete a worker (archive).\n\n**Authentication:** Required (COMPANY role)\n\n**Path Parameter:**\n- id (long): Worker ID\n\n**Response:** 204 No Content\n\n**Business Logic:**\n- Sets worker.archived = true\n- Worker remains in database but is marked as archived\n- Archived workers still appear in getAllWorkers() but are counted separately in dashboard\n\n**Authorization:** Only workers belonging to the authenticated company can be deleted."
+					},
+					"response": [
+						{
+							"name": "Delete Worker - Success",
+							"originalRequest": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{jwt_token}}"
+									}
+								],
+								"url": {
+									"raw": "http://localhost:8080/api/v1/workers/1",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"api",
+										"v1",
+										"workers",
+										"1"
+									]
+								}
+							},
+							"status": "No Content",
+							"code": 204,
+							"_postman_previewlanguage": null,
+							"header": [],
+							"body": null
+						}
+					]
+				},
+				{
+					"name": "Send Worker Invitation",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/workers/1/invite",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workers",
+								"1",
+								"invite"
+							]
+						},
+						"description": "Send invitation to a worker.\n\n**Authentication:** Required (COMPANY role)\n\n**Path Parameter:**\n- id (long): Worker ID\n\n**Response:**\n- message (string): Invitation status message\n- workerName (string): Name of the invited worker\n- workerEmail (string): Email of the invited worker\n- sentAt (datetime): Timestamp of invitation\n\n**Business Logic:**\n- Currently returns a mock response\n- Intended for future email invitation functionality\n\n**Authorization:** Only workers belonging to the authenticated company can receive invitations."
+					},
+					"response": [
+						{
+							"name": "Send Worker Invitation - Success",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{jwt_token}}"
+									}
+								],
+								"url": {
+									"raw": "http://localhost:8080/api/v1/workers/1/invite",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"api",
+										"v1",
+										"workers",
+										"1",
+										"invite"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n    \"message\": \"Invitation sent successfully\",\n    \"workerName\": \"John Doe\",\n    \"workerEmail\": \"john.doe@example.com\",\n    \"sentAt\": \"2025-10-23T15:00:00\"\n}"
+						}
+					]
+				}
+			],
+			"description": "Worker management endpoints for creating, reading, updating, and deleting workers."
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8080",
+			"type": "string"
+		},
+		{
+			"key": "jwt_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "user_uuid",
+			"value": "",
+			"type": "string"
+		}
+	]
+}

@@ -19,7 +19,13 @@ public class JwtService {
     private String SECRET_KEY;
 
     public String generateToken(UserDetails user){
-      return createToken(new HashMap<>(), user);
+        HashMap<String, Object> claims = new HashMap<>();
+        // Add role to JWT claims
+        claims.put("role", user.getAuthorities().stream()
+                .findFirst()
+                .map(auth -> auth.getAuthority())
+                .orElse(""));
+        return createToken(claims, user);
     }
 
     private String createToken(HashMap<String, Object> claims, UserDetails user) {
@@ -27,7 +33,7 @@ public class JwtService {
                 .claims(claims)
                 .subject(user.getUsername())
                 .issuedAt(new Date(System.currentTimeMillis()))
-                .expiration(new Date(System.currentTimeMillis() + 30 * 1000))
+                .expiration(new Date(System.currentTimeMillis() + 60 * 60 * 1000)) // 1 hour
                 .signWith(getSignInKey())
                 .compact();
     }
@@ -52,6 +58,10 @@ public class JwtService {
 
     public String extractUserName(String token) {
         return extractClaim(token, Claims::getSubject);
+    }
+
+    public String extractRole(String token) {
+        return extractClaim(token, claims -> claims.get("role", String.class));
     }
 
     public <T> T extractClaim(String token, Function<Claims, T> claimsResolver){

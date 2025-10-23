@@ -3,7 +3,9 @@ package com.workflow.service.user;
 import com.workflow.common.constant.Role;
 import com.workflow.common.exception.customException.UserAlreadyExistsException;
 import com.workflow.dto.auth.SignupRequest;
+import com.workflow.entity.Company;
 import com.workflow.entity.User;
+import com.workflow.repository.CompanyRepository;
 import com.workflow.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -28,6 +30,9 @@ class UserServiceTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private CompanyRepository companyRepository;
 
     @Mock
     private PasswordEncoder passwordEncoder;
@@ -102,7 +107,7 @@ class UserServiceTest {
         assertNotNull(result.getAuthorities());
         assertEquals(1, result.getAuthorities().size());
         assertTrue(result.getAuthorities().stream()
-                .anyMatch(auth -> auth.getAuthority().equals("WORKER")));
+                .anyMatch(auth -> auth.getAuthority().equals("ROLE_WORKER")));
     }
 
     // ============= Create User Tests =============
@@ -206,6 +211,7 @@ class UserServiceTest {
         when(userRepository.findByUsername(anyString())).thenReturn(Optional.empty());
         when(passwordEncoder.encode(anyString())).thenReturn("encoded");
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(companyRepository.save(any(Company.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         // When
         User adminUser = userService.createUser(adminRequest);
@@ -247,6 +253,7 @@ class UserServiceTest {
         when(userRepository.findByUsername(anyString())).thenReturn(Optional.empty());
         when(passwordEncoder.encode(anyString())).thenReturn("encoded");
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(companyRepository.save(any(Company.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         // When
         User user1 = userService.createUser(request1);

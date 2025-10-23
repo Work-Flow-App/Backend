@@ -1,14 +1,18 @@
 package com.workflow.service.user;
 
+import com.workflow.common.constant.Role;
 import com.workflow.common.exception.customException.UserAlreadyExistsException;
 import com.workflow.dto.auth.SignupRequest;
+import com.workflow.entity.Company;
 import com.workflow.entity.User;
+import com.workflow.repository.CompanyRepository;
 import com.workflow.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
@@ -17,6 +21,7 @@ import java.util.UUID;
 public class UserService implements IUserService{
 
     private final UserRepository userRepository;
+    private final CompanyRepository companyRepository;
     private final PasswordEncoder passwordEncoder;
 
 
@@ -27,6 +32,7 @@ public class UserService implements IUserService{
     }
 
     @Override
+    @Transactional
     public User createUser(SignupRequest request) {
         if (userRepository.findByUsername(request.username()).isPresent()) {
             throw new UserAlreadyExistsException("User already exists with username: " + request.username());
@@ -41,7 +47,26 @@ public class UserService implements IUserService{
                 .enabled(true)
                 .build();
 
-        return userRepository.save(user);
+        User savedUser = userRepository.save(user);
+
+        // If user is signing up as COMPANY, create a Company record automatically
+        if (request.role() == Role.COMPANY) {
+            createDefaultCompany(savedUser);
+        }
+
+        return savedUser;
+    }
+
+    private void createDefaultCompany(User user) {
+        // Create company with minimal required information
+        Company company = Company.builder()
+                .name(user.getUsername() + "'s Company")  // Default company name
+                .user(user)
+                .email(user.getEmail())  // Use user's email
+                .archived(false)
+                .build();
+
+        companyRepository.save(company);
     }
 
 //    @Override

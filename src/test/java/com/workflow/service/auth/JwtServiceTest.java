@@ -73,8 +73,8 @@ class JwtServiceTest {
         assertNotNull(expiration);
         assertNotNull(issuedAt);
 
-        // Token should expire 30 seconds after issue (as per JwtService implementation)
-        long expectedExpiration = issuedAt.getTime() + 30 * 1000;
+        // Token should expire 1 hour after issue (as per JwtService implementation)
+        long expectedExpiration = issuedAt.getTime() + 60 * 60 * 1000;
         assertEquals(expectedExpiration, expiration.getTime());
     }
 

@@ -18,12 +18,14 @@ public class OpenApiConfig {
                         .title("Work Flow API")
                         .description("This is the REST API for Work Flow")
                         .version("V0.0.1"))
-                .addSecurityItem(new SecurityRequirement().addList("basicAuth"))
+                .addSecurityItem(new SecurityRequirement().addList("bearerAuth"))
                 .components(new io.swagger.v3.oas.models.Components()
-                        .addSecuritySchemes("basicAuth",
+                        .addSecuritySchemes("bearerAuth",
                                 new SecurityScheme()
                                         .type(SecurityScheme.Type.HTTP)
-                                        .scheme("basic")
+                                        .scheme("bearer")
+                                        .bearerFormat("JWT")
+                                        .description("Enter JWT token")
                         )
                 );
     }

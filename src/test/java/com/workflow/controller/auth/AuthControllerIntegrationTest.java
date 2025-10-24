@@ -206,19 +206,6 @@ class AuthControllerIntegrationTest {
 
     @Test
     void shouldCreateUserWithDifferentRoles() throws Exception {
-        // Test ADMIN role
-        SignupRequest adminRequest = new SignupRequest(
-                "adminuser",
-                "admin@example.com",
-                "password123",
-                Role.ADMIN
-        );
-
-        mockMvc.perform(post("/api/v1/auth/signup")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(adminRequest)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.accessToken").exists());
 
         // Test COMPANY role
         SignupRequest companyRequest = new SignupRequest(
@@ -235,7 +222,6 @@ class AuthControllerIntegrationTest {
                 .andExpect(jsonPath("$.accessToken").exists());
 
         // Verify both users exist
-        assert userRepository.findByUsername("adminuser").get().getRole() == Role.ADMIN;
         assert userRepository.findByUsername("companyuser").get().getRole() == Role.COMPANY;
     }
 

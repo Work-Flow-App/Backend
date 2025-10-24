@@ -2,8 +2,10 @@ package com.workflow.service.auth;
 
 import com.workflow.dto.auth.AuthenticationResponse;
 import com.workflow.dto.auth.LoginRequest;
+import com.workflow.entity.RefreshToken;
 import com.workflow.entity.User;
 import com.workflow.repository.UserRepository;
+import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -16,10 +18,12 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -34,11 +38,18 @@ class AuthenticationServiceTest {
     @Mock
     private JwtService jwtService;
 
+    @Mock
+    private RefreshTokenService refreshTokenService;
+
+    @Mock
+    private HttpServletRequest httpRequest;
+
     @InjectMocks
     private AuthenticationService authenticationService;
 
     private User testUser;
     private LoginRequest loginRequest;
+    private RefreshToken mockRefreshToken;
 
     @BeforeEach
     void setUp() {
@@ -53,6 +64,14 @@ class AuthenticationServiceTest {
                 .build();
 
         loginRequest = new LoginRequest("testuser", "password123");
+
+        mockRefreshToken = RefreshToken.builder()
+                .id(1L)
+                .token("mock-refresh-token-uuid")
+                .user(testUser)
+                .expiresAt(LocalDateTime.now().plusDays(30))
+                .revoked(false)
+                .build();
     }
 
     // ============= Authentication Tests =============
@@ -64,16 +83,19 @@ class AuthenticationServiceTest {
                 .thenReturn(null); // AuthenticationManager returns null on success
         when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
         when(jwtService.generateToken(testUser)).thenReturn("mock-jwt-token");
+        when(refreshTokenService.createRefreshToken(eq(testUser), eq(httpRequest))).thenReturn(mockRefreshToken);
 
         // When
-        AuthenticationResponse response = authenticationService.authenticate(loginRequest);
+        AuthenticationResponse response = authenticationService.authenticate(loginRequest, httpRequest);
 
         // Then
         assertNotNull(response);
-        assertEquals("mock-jwt-token", response.getToken());
+        assertEquals("mock-jwt-token", response.getAccessToken());
+        assertEquals("mock-refresh-token-uuid", response.getRefreshToken());
         verify(authenticationManager).authenticate(any(UsernamePasswordAuthenticationToken.class));
         verify(userRepository).findByUsername("testuser");
         verify(jwtService).generateToken(testUser);
+        verify(refreshTokenService).createRefreshToken(eq(testUser), eq(httpRequest));
     }
 
     @Test
@@ -83,14 +105,15 @@ class AuthenticationServiceTest {
                 .thenReturn(null);
         when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
         when(jwtService.generateToken(testUser)).thenReturn("generated-token-abc123");
+        when(refreshTokenService.createRefreshToken(eq(testUser), eq(httpRequest))).thenReturn(mockRefreshToken);
 
         // When
-        AuthenticationResponse response = authenticationService.authenticate(loginRequest);
+        AuthenticationResponse response = authenticationService.authenticate(loginRequest, httpRequest);
 
         // Then
         assertNotNull(response);
-        assertEquals("generated-token-abc123", response.getToken());
-        assertTrue(response.getToken().length() > 0);
+        assertEquals("generated-token-abc123", response.getAccessToken());
+        assertTrue(response.getAccessToken().length() > 0);
     }
 
     @Test
@@ -102,7 +125,7 @@ class AuthenticationServiceTest {
 
         // When/Then
         UsernameNotFoundException exception = assertThrows(UsernameNotFoundException.class, () -> {
-            authenticationService.authenticate(loginRequest);
+            authenticationService.authenticate(loginRequest, httpRequest);
         });
 
         assertEquals("User not found: testuser", exception.getMessage());
@@ -119,7 +142,7 @@ class AuthenticationServiceTest {
 
         // When/Then
         BadCredentialsException exception = assertThrows(BadCredentialsException.class, () -> {
-            authenticationService.authenticate(loginRequest);
+            authenticationService.authenticate(loginRequest, httpRequest);
         });
 
         assertEquals("Invalid password", exception.getMessage());
@@ -135,9 +158,10 @@ class AuthenticationServiceTest {
                 .thenReturn(null);
         when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
         when(jwtService.generateToken(testUser)).thenReturn("token");
+        when(refreshTokenService.createRefreshToken(eq(testUser), eq(httpRequest))).thenReturn(mockRefreshToken);
 
         // When
-        authenticationService.authenticate(loginRequest);
+        authenticationService.authenticate(loginRequest, httpRequest);
 
         // Then
         verify(authenticationManager).authenticate(argThat(token ->
@@ -167,7 +191,7 @@ class AuthenticationServiceTest {
 
         // When/Then
         assertThrows(org.springframework.security.authentication.DisabledException.class, () -> {
-            authenticationService.authenticate(disabledLoginRequest);
+            authenticationService.authenticate(disabledLoginRequest, httpRequest);
         });
 
         verify(authenticationManager).authenticate(any(UsernamePasswordAuthenticationToken.class));
@@ -180,28 +204,33 @@ class AuthenticationServiceTest {
     void shouldGenerateJwtTokenForUserDetails() {
         // Given
         when(jwtService.generateToken(testUser)).thenReturn("new-jwt-token");
+        when(refreshTokenService.createRefreshToken(eq(testUser), eq(httpRequest))).thenReturn(mockRefreshToken);
 
         // When
-        AuthenticationResponse response = authenticationService.generateJwtToken(testUser);
+        AuthenticationResponse response = authenticationService.generateJwtToken(testUser, httpRequest);
 
         // Then
         assertNotNull(response);
-        assertEquals("new-jwt-token", response.getToken());
+        assertEquals("new-jwt-token", response.getAccessToken());
+        assertEquals("mock-refresh-token-uuid", response.getRefreshToken());
         verify(jwtService).generateToken(testUser);
+        verify(refreshTokenService).createRefreshToken(eq(testUser), eq(httpRequest));
     }
 
     @Test
     void shouldReturnAuthenticationResponseWithToken() {
         // Given
         when(jwtService.generateToken(any(UserDetails.class))).thenReturn("sample-token");
+        when(refreshTokenService.createRefreshToken(eq(testUser), eq(httpRequest))).thenReturn(mockRefreshToken);
 
         // When
-        AuthenticationResponse response = authenticationService.generateJwtToken(testUser);
+        AuthenticationResponse response = authenticationService.generateJwtToken(testUser, httpRequest);
 
         // Then
         assertNotNull(response);
-        assertNotNull(response.getToken());
-        assertEquals("sample-token", response.getToken());
+        assertNotNull(response.getAccessToken());
+        assertEquals("sample-token", response.getAccessToken());
+        assertNotNull(response.getRefreshToken());
     }
 
     @Test
@@ -221,17 +250,31 @@ class AuthenticationServiceTest {
                 .enabled(true)
                 .build();
 
+        RefreshToken refreshToken1 = RefreshToken.builder()
+                .token("refresh-token-1")
+                .user(user1)
+                .expiresAt(LocalDateTime.now().plusDays(30))
+                .build();
+
+        RefreshToken refreshToken2 = RefreshToken.builder()
+                .token("refresh-token-2")
+                .user(user2)
+                .expiresAt(LocalDateTime.now().plusDays(30))
+                .build();
+
         when(jwtService.generateToken(user1)).thenReturn("token-for-user1");
         when(jwtService.generateToken(user2)).thenReturn("token-for-user2");
+        when(refreshTokenService.createRefreshToken(eq(user1), eq(httpRequest))).thenReturn(refreshToken1);
+        when(refreshTokenService.createRefreshToken(eq(user2), eq(httpRequest))).thenReturn(refreshToken2);
 
         // When
-        AuthenticationResponse response1 = authenticationService.generateJwtToken(user1);
-        AuthenticationResponse response2 = authenticationService.generateJwtToken(user2);
+        AuthenticationResponse response1 = authenticationService.generateJwtToken(user1, httpRequest);
+        AuthenticationResponse response2 = authenticationService.generateJwtToken(user2, httpRequest);
 
         // Then
-        assertEquals("token-for-user1", response1.getToken());
-        assertEquals("token-for-user2", response2.getToken());
-        assertNotEquals(response1.getToken(), response2.getToken());
+        assertEquals("token-for-user1", response1.getAccessToken());
+        assertEquals("token-for-user2", response2.getAccessToken());
+        assertNotEquals(response1.getAccessToken(), response2.getAccessToken());
     }
 
     // ============= Edge Cases =============
@@ -245,7 +288,7 @@ class AuthenticationServiceTest {
 
         // When/Then
         assertThrows(BadCredentialsException.class, () -> {
-            authenticationService.authenticate(nullUsernameRequest);
+            authenticationService.authenticate(nullUsernameRequest, httpRequest);
         });
     }
 
@@ -258,7 +301,7 @@ class AuthenticationServiceTest {
 
         // When/Then
         assertThrows(BadCredentialsException.class, () -> {
-            authenticationService.authenticate(nullPasswordRequest);
+            authenticationService.authenticate(nullPasswordRequest, httpRequest);
         });
     }
 
@@ -269,9 +312,10 @@ class AuthenticationServiceTest {
                 .thenReturn(null);
         when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
         when(jwtService.generateToken(testUser)).thenReturn("token");
+        when(refreshTokenService.createRefreshToken(eq(testUser), eq(httpRequest))).thenReturn(mockRefreshToken);
 
         // When
-        authenticationService.authenticate(loginRequest);
+        authenticationService.authenticate(loginRequest, httpRequest);
 
         // Then
         verify(jwtService, times(1)).generateToken(testUser);

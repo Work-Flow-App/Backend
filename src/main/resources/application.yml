@@ -32,6 +32,13 @@ springdoc:
     path: /api-docs
     enabled: true
 
+jwt:
+  access-token:
+    expiration-minutes: 15
+  refresh-token:
+    expiration-days: 30
+    max-active-tokens: 5
+
 
 
 #      jakarta:

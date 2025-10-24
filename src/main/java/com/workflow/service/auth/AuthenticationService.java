@@ -2,13 +2,18 @@ package com.workflow.service.auth;
 
 import com.workflow.dto.auth.AuthenticationResponse;
 import com.workflow.dto.auth.LoginRequest;
+import com.workflow.dto.auth.RefreshTokenRequest;
+import com.workflow.entity.RefreshToken;
+import com.workflow.entity.User;
 import com.workflow.repository.UserRepository;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @RequiredArgsConstructor
 @Service
@@ -17,9 +22,10 @@ public class AuthenticationService {
     private final AuthenticationManager authenticationManager;
     private final UserRepository userRepository;
     private final JwtService jwtService;
+    private final RefreshTokenService refreshTokenService;
 
-
-    public AuthenticationResponse authenticate(LoginRequest request) {
+    @Transactional
+    public AuthenticationResponse authenticate(LoginRequest request, HttpServletRequest httpRequest) {
         // Spring Security will throw if invalid
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
@@ -28,20 +34,45 @@ public class AuthenticationService {
                 )
         );
 
-        var user = userRepository.findByUsername(request.userName())
+        User user = userRepository.findByUsername(request.userName())
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + request.userName()));
 
-        var jwtToken = jwtService.generateToken(user);
+        String accessToken = jwtService.generateToken(user);
+        RefreshToken refreshToken = refreshTokenService.createRefreshToken(user, httpRequest);
 
-        return AuthenticationResponse.success(jwtToken);
+        return AuthenticationResponse.success(accessToken, refreshToken.getToken());
     }
 
-    public AuthenticationResponse generateJwtToken(UserDetails user) {
-        var jwtToken = jwtService.generateToken(user);
+    @Transactional
+    public AuthenticationResponse generateJwtToken(UserDetails user, HttpServletRequest httpRequest) {
+        String accessToken = jwtService.generateToken(user);
+        RefreshToken refreshToken = refreshTokenService.createRefreshToken((User) user, httpRequest);
 
-        return AuthenticationResponse.success(jwtToken);
+        return AuthenticationResponse.success(accessToken, refreshToken.getToken());
     }
 
+    @Transactional
+    public AuthenticationResponse refreshAccessToken(RefreshTokenRequest request, HttpServletRequest httpRequest) {
+        // Validate refresh token
+        RefreshToken refreshToken = refreshTokenService.validateRefreshToken(request.refreshToken());
 
+        // Generate new access token
+        String newAccessToken = jwtService.generateToken(refreshToken.getUser());
+
+        // Rotate refresh token (security best practice)
+        RefreshToken newRefreshToken = refreshTokenService.rotateRefreshToken(refreshToken, httpRequest);
+
+        return AuthenticationResponse.success(newAccessToken, newRefreshToken.getToken());
+    }
+
+    @Transactional
+    public void logout(String refreshToken) {
+        refreshTokenService.revokeRefreshToken(refreshToken);
+    }
+
+    @Transactional
+    public void logoutFromAllDevices(User user) {
+        refreshTokenService.revokeAllUserTokens(user);
+    }
 }
 

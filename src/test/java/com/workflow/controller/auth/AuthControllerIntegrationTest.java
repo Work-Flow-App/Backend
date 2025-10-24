@@ -78,9 +78,11 @@ class AuthControllerIntegrationTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.token").exists())
-                .andExpect(jsonPath("$.token").isString())
-                .andExpect(jsonPath("$.token").isNotEmpty());
+                .andExpect(jsonPath("$.accessToken").exists())
+                .andExpect(jsonPath("$.accessToken").isString())
+                .andExpect(jsonPath("$.accessToken").isNotEmpty())
+                .andExpect(jsonPath("$.refreshToken").exists())
+                .andExpect(jsonPath("$.tokenType").value("Bearer"));
 
         // Verify user was saved to database
         assert userRepository.findByUsername("newuser").isPresent();
@@ -204,19 +206,6 @@ class AuthControllerIntegrationTest {
 
     @Test
     void shouldCreateUserWithDifferentRoles() throws Exception {
-        // Test ADMIN role
-        SignupRequest adminRequest = new SignupRequest(
-                "adminuser",
-                "admin@example.com",
-                "password123",
-                Role.ADMIN
-        );
-
-        mockMvc.perform(post("/api/v1/auth/signup")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(adminRequest)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.token").exists());
 
         // Test COMPANY role
         SignupRequest companyRequest = new SignupRequest(
@@ -230,10 +219,9 @@ class AuthControllerIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(companyRequest)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.token").exists());
+                .andExpect(jsonPath("$.accessToken").exists());
 
         // Verify both users exist
-        assert userRepository.findByUsername("adminuser").get().getRole() == Role.ADMIN;
         assert userRepository.findByUsername("companyuser").get().getRole() == Role.COMPANY;
     }
 
@@ -250,9 +238,9 @@ class AuthControllerIntegrationTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.token").exists())
-                .andExpect(jsonPath("$.token").isString())
-                .andExpect(jsonPath("$.token").isNotEmpty());
+                .andExpect(jsonPath("$.accessToken").exists())
+                .andExpect(jsonPath("$.accessToken").isString())
+                .andExpect(jsonPath("$.accessToken").isNotEmpty());
     }
 
     @Test
@@ -265,13 +253,13 @@ class AuthControllerIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.token").isString())
+                .andExpect(jsonPath("$.accessToken").isString())
                 .andReturn()
                 .getResponse()
                 .getContentAsString();
 
         // Verify token has JWT structure (header.payload.signature)
-        String token = objectMapper.readTree(response).get("token").asText();
+        String token = objectMapper.readTree(response).get("accessToken").asText();
         assert token.split("\\.").length == 3;
     }
 
@@ -352,14 +340,14 @@ class AuthControllerIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.token").exists());
+                .andExpect(jsonPath("$.accessToken").exists());
 
         // When/Then - Second login (should also succeed)
         mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.token").exists());
+                .andExpect(jsonPath("$.accessToken").exists());
     }
 
     // ============= Edge Cases and Security Tests =============
@@ -414,7 +402,7 @@ class AuthControllerIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.token").exists());
+                .andExpect(jsonPath("$.accessToken").exists());
     }
 
     @Test

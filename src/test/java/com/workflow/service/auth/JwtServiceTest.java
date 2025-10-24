@@ -1,5 +1,6 @@
 package com.workflow.service.auth;
 
+import com.workflow.config.JwtConfigProperties;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
@@ -27,7 +28,10 @@ class JwtServiceTest {
 
     @BeforeEach
     void setUp() {
-        jwtService = new JwtService();
+        JwtConfigProperties jwtConfigProperties = new JwtConfigProperties();
+        jwtConfigProperties.getAccessToken().setExpirationMinutes(15);
+
+        jwtService = new JwtService(jwtConfigProperties);
         // Inject the secret key using reflection since it's @Value annotated
         ReflectionTestUtils.setField(jwtService, "SECRET_KEY", TEST_SECRET);
 
@@ -73,8 +77,8 @@ class JwtServiceTest {
         assertNotNull(expiration);
         assertNotNull(issuedAt);
 
-        // Token should expire 1 hour after issue (as per JwtService implementation)
-        long expectedExpiration = issuedAt.getTime() + 60 * 60 * 1000;
+        // Token should expire 15 minutes after issue (as configured in application.yml)
+        long expectedExpiration = issuedAt.getTime() + 15 * 60 * 1000;
         assertEquals(expectedExpiration, expiration.getTime());
     }
 
@@ -127,7 +131,10 @@ class JwtServiceTest {
     @Test
     void shouldRejectTokenWithInvalidSignature() {
         // Given - create token with different secret
-        JwtService differentJwtService = new JwtService();
+        JwtConfigProperties differentConfig = new JwtConfigProperties();
+        differentConfig.getAccessToken().setExpirationMinutes(15);
+
+        JwtService differentJwtService = new JwtService(differentConfig);
         ReflectionTestUtils.setField(differentJwtService, "SECRET_KEY",
             "5367566B59703373367639792F423F4528482B4D6251655468576D5A71347437"); // Different key
         String tokenWithDifferentSignature = differentJwtService.generateToken(testUser);

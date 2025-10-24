@@ -30,6 +30,8 @@ class JwtServiceTest {
         jwtService = new JwtService();
         // Inject the secret key using reflection since it's @Value annotated
         ReflectionTestUtils.setField(jwtService, "SECRET_KEY", TEST_SECRET);
+        // Inject access token expiration time (15 minutes as configured in application.yml)
+        ReflectionTestUtils.setField(jwtService, "accessTokenExpirationMinutes", 15);
 
         // Create test user
         testUser = User.builder()
@@ -73,8 +75,8 @@ class JwtServiceTest {
         assertNotNull(expiration);
         assertNotNull(issuedAt);
 
-        // Token should expire 1 hour after issue (as per JwtService implementation)
-        long expectedExpiration = issuedAt.getTime() + 60 * 60 * 1000;
+        // Token should expire 15 minutes after issue (as configured in application.yml)
+        long expectedExpiration = issuedAt.getTime() + 15 * 60 * 1000;
         assertEquals(expectedExpiration, expiration.getTime());
     }
 
@@ -130,6 +132,7 @@ class JwtServiceTest {
         JwtService differentJwtService = new JwtService();
         ReflectionTestUtils.setField(differentJwtService, "SECRET_KEY",
             "5367566B59703373367639792F423F4528482B4D6251655468576D5A71347437"); // Different key
+        ReflectionTestUtils.setField(differentJwtService, "accessTokenExpirationMinutes", 15);
         String tokenWithDifferentSignature = differentJwtService.generateToken(testUser);
 
         // When/Then

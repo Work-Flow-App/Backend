@@ -5,6 +5,7 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
@@ -18,12 +19,15 @@ public class JwtService {
     @Value("${JWT_SECRET}")
     private String SECRET_KEY;
 
+    @Value("${jwt.access-token.expiration-minutes:15}")
+    private int accessTokenExpirationMinutes;
+
     public String generateToken(UserDetails user){
         HashMap<String, Object> claims = new HashMap<>();
         // Add role to JWT claims
         claims.put("role", user.getAuthorities().stream()
                 .findFirst()
-                .map(auth -> auth.getAuthority())
+                .map(GrantedAuthority::getAuthority)
                 .orElse(""));
         return createToken(claims, user);
     }
@@ -33,7 +37,7 @@ public class JwtService {
                 .claims(claims)
                 .subject(user.getUsername())
                 .issuedAt(new Date(System.currentTimeMillis()))
-                .expiration(new Date(System.currentTimeMillis() + 60 * 60 * 1000)) // 1 hour
+                .expiration(new Date(System.currentTimeMillis() +  accessTokenExpirationMinutes * 60 * 1000))
                 .signWith(getSignInKey())
                 .compact();
     }

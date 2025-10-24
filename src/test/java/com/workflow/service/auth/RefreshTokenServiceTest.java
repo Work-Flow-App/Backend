@@ -2,6 +2,7 @@ package com.workflow.service.auth;
 
 import com.workflow.common.constant.Role;
 import com.workflow.common.exception.customException.InvalidRefreshTokenException;
+import com.workflow.config.JwtConfigProperties;
 import com.workflow.entity.RefreshToken;
 import com.workflow.entity.User;
 import com.workflow.repository.RefreshTokenRepository;
@@ -9,10 +10,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -33,7 +32,6 @@ class RefreshTokenServiceTest {
     @Mock
     private HttpServletRequest httpRequest;
 
-    @InjectMocks
     private RefreshTokenService refreshTokenService;
 
     private User testUser;
@@ -49,9 +47,12 @@ class RefreshTokenServiceTest {
                 .enabled(true)
                 .build();
 
-        // Set configuration values
-        ReflectionTestUtils.setField(refreshTokenService, "refreshTokenExpirationDays", 30);
-        ReflectionTestUtils.setField(refreshTokenService, "maxActiveTokensPerUser", 5);
+        // Create JwtConfigProperties with test values
+        JwtConfigProperties jwtConfigProperties = new JwtConfigProperties();
+        jwtConfigProperties.getRefreshToken().setExpirationDays(30);
+        jwtConfigProperties.getRefreshToken().setMaxActiveTokens(5);
+
+        refreshTokenService = new RefreshTokenService(refreshTokenRepository, jwtConfigProperties);
     }
 
     // ============= createRefreshToken Tests =============

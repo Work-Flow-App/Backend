@@ -1,13 +1,13 @@
 package com.workflow.service.auth;
 
 import com.workflow.common.exception.customException.InvalidRefreshTokenException;
+import com.workflow.config.JwtConfigProperties;
 import com.workflow.entity.RefreshToken;
 import com.workflow.entity.User;
 import com.workflow.repository.RefreshTokenRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,12 +21,7 @@ import java.util.UUID;
 public class RefreshTokenService {
 
     private final RefreshTokenRepository refreshTokenRepository;
-
-    @Value("${jwt.refresh-token.expiration-days:30}")
-    private int refreshTokenExpirationDays;
-
-    @Value("${jwt.refresh-token.max-active-tokens:5}")
-    private int maxActiveTokensPerUser;
+    private final JwtConfigProperties jwtConfigProperties;
 
     /**
      * Create a new refresh token for a user
@@ -35,7 +30,7 @@ public class RefreshTokenService {
     public RefreshToken createRefreshToken(User user, HttpServletRequest request) {
         // Check if user has too many active tokens
         long activeTokenCount = refreshTokenRepository.countActiveTokensByUser(user, LocalDateTime.now());
-        if (activeTokenCount >= maxActiveTokensPerUser) {
+        if (activeTokenCount >= jwtConfigProperties.getRefreshToken().getMaxActiveTokens()) {
             // Revoke oldest token
             List<RefreshToken> userTokens = refreshTokenRepository.findByUserAndRevokedFalse(user);
             userTokens.stream()
@@ -50,7 +45,7 @@ public class RefreshTokenService {
         RefreshToken refreshToken = RefreshToken.builder()
                 .token(UUID.randomUUID().toString())
                 .user(user)
-                .expiresAt(LocalDateTime.now().plusDays(refreshTokenExpirationDays))
+                .expiresAt(LocalDateTime.now().plusDays(jwtConfigProperties.getRefreshToken().getExpirationDays()))
                 .deviceInfo(extractDeviceInfo(request))
                 .ipAddress(extractIpAddress(request))
                 .build();

@@ -9,7 +9,7 @@ public class RoleValidator implements ConstraintValidator<ValidRole, Role> {
     @Override
     public boolean isValid(Role role, ConstraintValidatorContext context) {
         if (role == null) return false;
-        return role == Role.ADMIN || role == Role.COMPANY || role == Role.WORKER;
+        return role == Role.COMPANY || role == Role.WORKER;
     }
 }
 

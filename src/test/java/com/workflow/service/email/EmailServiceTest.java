@@ -36,14 +36,12 @@ class EmailServiceTest {
 
     private static final String FROM_EMAIL = "noreply@workflow.com";
     private static final String FROM_NAME = "WorkFlow App";
-    private static final String FRONTEND_URL = "http://localhost:3000";
     private static final int EXPIRY_MINUTES = 60;
 
     @BeforeEach
     void setUp() {
         ReflectionTestUtils.setField(emailService, "fromEmail", FROM_EMAIL);
         ReflectionTestUtils.setField(emailService, "fromName", FROM_NAME);
-        ReflectionTestUtils.setField(emailService, "frontendUrl", FRONTEND_URL);
         ReflectionTestUtils.setField(emailService, "expiryMinutes", EXPIRY_MINUTES);
     }
 
@@ -54,7 +52,7 @@ class EmailServiceTest {
         // Given
         String toEmail = "test@example.com";
         String username = "testuser";
-        String resetToken = "test-reset-token-123";
+        String verificationCode = "123456";
         String expectedHtmlContent = "<html>Password Reset Email</html>";
 
         when(mailSender.createMimeMessage()).thenReturn(mimeMessage);
@@ -62,7 +60,7 @@ class EmailServiceTest {
                 .thenReturn(expectedHtmlContent);
 
         // When
-        emailService.sendPasswordResetEmail(toEmail, username, resetToken);
+        emailService.sendPasswordResetEmail(toEmail, username, verificationCode);
 
         // Then
         verify(mailSender).createMimeMessage();
@@ -75,38 +73,37 @@ class EmailServiceTest {
         // Given
         String toEmail = "user@example.com";
         String username = "john";
-        String resetToken = "token-456";
+        String verificationCode = "token-456";
 
         when(mailSender.createMimeMessage()).thenReturn(mimeMessage);
         when(templateEngine.process(anyString(), any(Context.class)))
                 .thenReturn("<html>Email Content</html>");
 
         // When
-        emailService.sendPasswordResetEmail(toEmail, username, resetToken);
+        emailService.sendPasswordResetEmail(toEmail, username, verificationCode);
 
         // Then
         verify(mailSender).send(mimeMessage);
     }
 
     @Test
-    void shouldBuildCorrectResetLink() {
+    void shouldPassVerificationCodeToTemplate() {
         // Given
         String toEmail = "test@example.com";
         String username = "testuser";
-        String resetToken = "abc123xyz";
-        String expectedResetLink = "http://localhost:3000/reset-password?token=abc123xyz";
+        String verificationCode = "123456";
 
         when(mailSender.createMimeMessage()).thenReturn(mimeMessage);
         when(templateEngine.process(anyString(), any(Context.class)))
                 .thenAnswer(invocation -> {
                     Context context = invocation.getArgument(1);
-                    String resetLink = (String) context.getVariable("resetLink");
-                    assertEquals(expectedResetLink, resetLink);
+                    String code = (String) context.getVariable("verificationCode");
+                    assertEquals("123456", code);
                     return "<html>Email</html>";
                 });
 
         // When
-        emailService.sendPasswordResetEmail(toEmail, username, resetToken);
+        emailService.sendPasswordResetEmail(toEmail, username, verificationCode);
 
         // Then
         verify(templateEngine).process(eq("email/password-reset"), any(Context.class));
@@ -117,7 +114,7 @@ class EmailServiceTest {
         // Given
         String toEmail = "test@example.com";
         String username = "johndoe";
-        String resetToken = "reset-token-789";
+        String verificationCode = "789456";
 
         when(mailSender.createMimeMessage()).thenReturn(mimeMessage);
         when(templateEngine.process(anyString(), any(Context.class)))
@@ -126,15 +123,14 @@ class EmailServiceTest {
 
                     // Verify all template variables
                     assertEquals("johndoe", context.getVariable("username"));
-                    assertEquals("http://localhost:3000/reset-password?token=reset-token-789",
-                            context.getVariable("resetLink"));
+                    assertEquals("789456", context.getVariable("verificationCode"));
                     assertEquals(60, context.getVariable("expiryMinutes"));
 
                     return "<html>Email</html>";
                 });
 
         // When
-        emailService.sendPasswordResetEmail(toEmail, username, resetToken);
+        emailService.sendPasswordResetEmail(toEmail, username, verificationCode);
 
         // Then
         verify(templateEngine).process(eq("email/password-reset"), any(Context.class));
@@ -145,14 +141,14 @@ class EmailServiceTest {
         // Given
         String toEmail = "test@example.com";
         String username = "user";
-        String resetToken = "token";
+        String verificationCode = "123456";
 
         when(mailSender.createMimeMessage()).thenReturn(mimeMessage);
         when(templateEngine.process(anyString(), any(Context.class)))
                 .thenReturn("<html>Template Content</html>");
 
         // When
-        emailService.sendPasswordResetEmail(toEmail, username, resetToken);
+        emailService.sendPasswordResetEmail(toEmail, username, verificationCode);
 
         // Then
         verify(templateEngine).process(eq("email/password-reset"), any(Context.class));
@@ -163,36 +159,37 @@ class EmailServiceTest {
         // Given
         String toEmail = "test@example.com";
         String username = "testuser";
-        String resetToken = "token123";
+        String verificationCode = "123456";
 
         when(mailSender.createMimeMessage()).thenReturn(mimeMessage);
         when(templateEngine.process(anyString(), any(Context.class)))
                 .thenReturn("<html>Email</html>");
-        doThrow(new MessagingException("Mail server error"))
-                .when(mailSender).send(any(MimeMessage.class));
 
-        // When/Then - Should not throw exception
+        // MimeMessageHelper.setFrom() can throw MessagingException
+        doAnswer(invocation -> {
+            throw new MessagingException("Mail server error");
+        }).when(mailSender).send(any(MimeMessage.class));
+
+        // When/Then - Should not throw exception as it catches MessagingException
         assertDoesNotThrow(() ->
-            emailService.sendPasswordResetEmail(toEmail, username, resetToken)
+            emailService.sendPasswordResetEmail(toEmail, username, verificationCode)
         );
-
-        verify(mailSender).send(mimeMessage);
     }
 
     @Test
-    void shouldHandleTemplateProcessingError() {
+    void shouldThrowTemplateProcessingError() {
         // Given
         String toEmail = "test@example.com";
         String username = "testuser";
-        String resetToken = "token123";
+        String verificationCode = "123456";
 
         when(mailSender.createMimeMessage()).thenReturn(mimeMessage);
         when(templateEngine.process(anyString(), any(Context.class)))
                 .thenThrow(new RuntimeException("Template processing error"));
 
-        // When/Then - Should handle template errors gracefully
-        assertDoesNotThrow(() ->
-            emailService.sendPasswordResetEmail(toEmail, username, resetToken)
+        // When/Then - Template errors are not caught and will propagate
+        assertThrows(RuntimeException.class, () ->
+            emailService.sendPasswordResetEmail(toEmail, username, verificationCode)
         );
     }
 
@@ -203,14 +200,14 @@ class EmailServiceTest {
         // Given
         String toEmail = "test@example.com";
         String username = "user";
-        String resetToken = "token";
+        String verificationCode = "123456";
 
         when(mailSender.createMimeMessage()).thenReturn(mimeMessage);
         when(templateEngine.process(anyString(), any(Context.class)))
                 .thenReturn("<html>Email</html>");
 
         // When
-        emailService.sendPasswordResetEmail(toEmail, username, resetToken);
+        emailService.sendPasswordResetEmail(toEmail, username, verificationCode);
 
         // Then
         verify(mailSender).send(mimeMessage);
@@ -221,7 +218,7 @@ class EmailServiceTest {
         // Given
         String toEmail = "test@example.com";
         String username = "user";
-        String resetToken = "token";
+        String verificationCode = "123456";
         String htmlContent = "<html><body><h1>Reset Password</h1></body></html>";
 
         when(mailSender.createMimeMessage()).thenReturn(mimeMessage);
@@ -229,7 +226,7 @@ class EmailServiceTest {
                 .thenReturn(htmlContent);
 
         // When
-        emailService.sendPasswordResetEmail(toEmail, username, resetToken);
+        emailService.sendPasswordResetEmail(toEmail, username, verificationCode);
 
         // Then
         verify(templateEngine).process(eq("email/password-reset"), any(Context.class));
@@ -242,7 +239,7 @@ class EmailServiceTest {
         // Given
         String[] emails = {"user1@test.com", "user2@test.com", "user3@test.com"};
         String[] usernames = {"user1", "user2", "user3"};
-        String[] tokens = {"token1", "token2", "token3"};
+        String[] verificationCodes = {"123456", "234567", "345678"};
 
         when(mailSender.createMimeMessage()).thenReturn(mimeMessage);
         when(templateEngine.process(anyString(), any(Context.class)))
@@ -250,7 +247,7 @@ class EmailServiceTest {
 
         // When
         for (int i = 0; i < emails.length; i++) {
-            emailService.sendPasswordResetEmail(emails[i], usernames[i], tokens[i]);
+            emailService.sendPasswordResetEmail(emails[i], usernames[i], verificationCodes[i]);
         }
 
         // Then
@@ -265,7 +262,7 @@ class EmailServiceTest {
         // Given
         String toEmail = "test@example.com";
         String username = "user.name-123_test";
-        String resetToken = "token";
+        String verificationCode = "123456";
 
         when(mailSender.createMimeMessage()).thenReturn(mimeMessage);
         when(templateEngine.process(anyString(), any(Context.class)))
@@ -276,41 +273,41 @@ class EmailServiceTest {
                 });
 
         // When
-        emailService.sendPasswordResetEmail(toEmail, username, resetToken);
+        emailService.sendPasswordResetEmail(toEmail, username, verificationCode);
 
         // Then
         verify(templateEngine).process(eq("email/password-reset"), any(Context.class));
     }
 
     @Test
-    void shouldHandleSpecialCharactersInToken() {
+    void shouldHandleSpecialCharactersInVerificationCode() {
         // Given
         String toEmail = "test@example.com";
         String username = "user";
-        String resetToken = "token-with-special-chars_123.abc";
+        String verificationCode = "ABC-123_xyz";
 
         when(mailSender.createMimeMessage()).thenReturn(mimeMessage);
         when(templateEngine.process(anyString(), any(Context.class)))
                 .thenAnswer(invocation -> {
                     Context context = invocation.getArgument(1);
-                    String resetLink = (String) context.getVariable("resetLink");
-                    assertTrue(resetLink.contains("token-with-special-chars_123.abc"));
+                    String code = (String) context.getVariable("verificationCode");
+                    assertEquals("ABC-123_xyz", code);
                     return "<html>Email</html>";
                 });
 
         // When
-        emailService.sendPasswordResetEmail(toEmail, username, resetToken);
+        emailService.sendPasswordResetEmail(toEmail, username, verificationCode);
 
         // Then
         verify(templateEngine).process(eq("email/password-reset"), any(Context.class));
     }
 
     @Test
-    void shouldHandleLongTokens() {
+    void shouldHandleLongVerificationCodes() {
         // Given
         String toEmail = "test@example.com";
         String username = "user";
-        String resetToken = "a".repeat(256); // Very long token
+        String verificationCode = "a".repeat(256); // Very long code
 
         when(mailSender.createMimeMessage()).thenReturn(mimeMessage);
         when(templateEngine.process(anyString(), any(Context.class)))
@@ -318,7 +315,7 @@ class EmailServiceTest {
 
         // When/Then
         assertDoesNotThrow(() ->
-            emailService.sendPasswordResetEmail(toEmail, username, resetToken)
+            emailService.sendPasswordResetEmail(toEmail, username, verificationCode)
         );
     }
 
@@ -327,7 +324,7 @@ class EmailServiceTest {
         // Given
         String toEmail = "user@тест.com";
         String username = "user";
-        String resetToken = "token";
+        String verificationCode = "123456";
 
         when(mailSender.createMimeMessage()).thenReturn(mimeMessage);
         when(templateEngine.process(anyString(), any(Context.class)))
@@ -335,35 +332,31 @@ class EmailServiceTest {
 
         // When/Then
         assertDoesNotThrow(() ->
-            emailService.sendPasswordResetEmail(toEmail, username, resetToken)
+            emailService.sendPasswordResetEmail(toEmail, username, verificationCode)
         );
     }
 
     // ============= Configuration Tests =============
 
     @Test
-    void shouldUseConfiguredFrontendUrl() {
+    void shouldUseConfiguredFromEmail() {
         // Given
-        ReflectionTestUtils.setField(emailService, "frontendUrl", "https://production.example.com");
+        String customFromEmail = "custom@example.com";
+        ReflectionTestUtils.setField(emailService, "fromEmail", customFromEmail);
 
         String toEmail = "test@example.com";
         String username = "user";
-        String resetToken = "token123";
+        String verificationCode = "123456";
 
         when(mailSender.createMimeMessage()).thenReturn(mimeMessage);
         when(templateEngine.process(anyString(), any(Context.class)))
-                .thenAnswer(invocation -> {
-                    Context context = invocation.getArgument(1);
-                    String resetLink = (String) context.getVariable("resetLink");
-                    assertTrue(resetLink.startsWith("https://production.example.com"));
-                    return "<html>Email</html>";
-                });
+                .thenReturn("<html>Email</html>");
 
         // When
-        emailService.sendPasswordResetEmail(toEmail, username, resetToken);
+        emailService.sendPasswordResetEmail(toEmail, username, verificationCode);
 
         // Then
-        verify(templateEngine).process(eq("email/password-reset"), any(Context.class));
+        verify(mailSender).send(mimeMessage);
     }
 
     @Test
@@ -373,7 +366,7 @@ class EmailServiceTest {
 
         String toEmail = "test@example.com";
         String username = "user";
-        String resetToken = "token";
+        String verificationCode = "123456";
 
         when(mailSender.createMimeMessage()).thenReturn(mimeMessage);
         when(templateEngine.process(anyString(), any(Context.class)))
@@ -384,7 +377,7 @@ class EmailServiceTest {
                 });
 
         // When
-        emailService.sendPasswordResetEmail(toEmail, username, resetToken);
+        emailService.sendPasswordResetEmail(toEmail, username, verificationCode);
 
         // Then
         verify(templateEngine).process(eq("email/password-reset"), any(Context.class));

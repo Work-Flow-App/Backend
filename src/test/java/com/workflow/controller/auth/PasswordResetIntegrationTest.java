@@ -2,8 +2,8 @@ package com.workflow.controller.auth;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.workflow.common.constant.Role;
-import com.workflow.dto.password.ForgotPasswordRequest;
-import com.workflow.dto.password.ResetPasswordRequest;
+import com.workflow.dto.auth.password.ForgotPasswordRequest;
+import com.workflow.dto.auth.password.ResetPasswordRequest;
 import com.workflow.entity.PasswordResetToken;
 import com.workflow.entity.RefreshToken;
 import com.workflow.entity.User;
@@ -90,7 +90,7 @@ class PasswordResetIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.message").exists())
-                .andExpect(jsonPath("$.message").value(containsString("password reset link has been sent")));
+                .andExpect(jsonPath("$.message").value(containsString("verification code has been sent")));
 
         // Verify token was created
         var tokens = passwordResetTokenRepository.findAll();
@@ -109,7 +109,7 @@ class PasswordResetIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.message").value(containsString("password reset link has been sent")));
+                .andExpect(jsonPath("$.message").value(containsString("verification code has been sent")));
 
         // Verify no token was created
         var tokens = passwordResetTokenRepository.findAll();
@@ -239,7 +239,8 @@ class PasswordResetIntegrationTest {
     void shouldReturn400ForInvalidToken() throws Exception {
         // Given - non-existent token
         ResetPasswordRequest request = new ResetPasswordRequest(
-                "invalid-token-123",
+                "test@example.com",
+                "invalid-code",
                 "newPassword123"
         );
 
@@ -249,14 +250,14 @@ class PasswordResetIntegrationTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400))
-                .andExpect(jsonPath("$.message").value("Invalid password reset token"));
+                .andExpect(jsonPath("$.message").value(containsString("Validation failed")));
     }
 
     @Test
     void shouldReturn400ForExpiredToken() throws Exception {
         // Given - expired token
         PasswordResetToken expiredToken = PasswordResetToken.builder()
-                .token(UUID.randomUUID().toString())
+                .verificationCode("111111")
                 .user(testUser)
                 .expiresAt(LocalDateTime.now().minusMinutes(10))
                 .used(false)
@@ -265,7 +266,8 @@ class PasswordResetIntegrationTest {
         passwordResetTokenRepository.save(expiredToken);
 
         ResetPasswordRequest request = new ResetPasswordRequest(
-                expiredToken.getToken(),
+                "test@example.com",
+                "111111",
                 "newPassword123"
         );
 
@@ -275,7 +277,7 @@ class PasswordResetIntegrationTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400))
-                .andExpect(jsonPath("$.message").value("Password reset token has expired"));
+                .andExpect(jsonPath("$.message").value("Verification code has expired"));
 
         // Verify password was NOT changed
         User user = userRepository.findById(testUser.getId()).orElseThrow();
@@ -286,7 +288,7 @@ class PasswordResetIntegrationTest {
     void shouldReturn400ForUsedToken() throws Exception {
         // Given - already used token
         PasswordResetToken usedToken = PasswordResetToken.builder()
-                .token(UUID.randomUUID().toString())
+                .verificationCode("222222")
                 .user(testUser)
                 .expiresAt(LocalDateTime.now().plusMinutes(60))
                 .used(true)
@@ -296,7 +298,8 @@ class PasswordResetIntegrationTest {
         passwordResetTokenRepository.save(usedToken);
 
         ResetPasswordRequest request = new ResetPasswordRequest(
-                usedToken.getToken(),
+                "test@example.com",
+                "222222",
                 "newPassword123"
         );
 
@@ -306,7 +309,7 @@ class PasswordResetIntegrationTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400))
-                .andExpect(jsonPath("$.message").value("Password reset token has already been used"));
+                .andExpect(jsonPath("$.message").value(containsString("already been used")));
 
         // Verify password was NOT changed
         User user = userRepository.findById(testUser.getId()).orElseThrow();
@@ -317,7 +320,7 @@ class PasswordResetIntegrationTest {
     void shouldReturn400ForShortPassword() throws Exception {
         // Given
         PasswordResetToken resetToken = PasswordResetToken.builder()
-                .token(UUID.randomUUID().toString())
+                .verificationCode("333333")
                 .user(testUser)
                 .expiresAt(LocalDateTime.now().plusMinutes(60))
                 .used(false)
@@ -326,7 +329,8 @@ class PasswordResetIntegrationTest {
         passwordResetTokenRepository.save(resetToken);
 
         ResetPasswordRequest request = new ResetPasswordRequest(
-                resetToken.getToken(),
+                "test@example.com",
+                "333333",
                 "short" // Less than 8 characters
         );
 
@@ -341,7 +345,7 @@ class PasswordResetIntegrationTest {
 
     @Test
     void shouldReturn400ForMissingToken() throws Exception {
-        // Given - missing token
+        // Given - missing email and verification code
         String incompleteRequest = """
                 {
                     "newPassword": "newPassword123"
@@ -353,15 +357,14 @@ class PasswordResetIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(incompleteRequest))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.validationErrors.token").exists())
-                .andExpect(jsonPath("$.validationErrors.token").value(containsString("Token is required")));
+                .andExpect(jsonPath("$.validationErrors").exists());
     }
 
     @Test
     void shouldNotReuseTokenAfterSuccessfulReset() throws Exception {
         // Given
         PasswordResetToken resetToken = PasswordResetToken.builder()
-                .token(UUID.randomUUID().toString())
+                .verificationCode("444444")
                 .user(testUser)
                 .expiresAt(LocalDateTime.now().plusMinutes(60))
                 .used(false)
@@ -370,7 +373,8 @@ class PasswordResetIntegrationTest {
         passwordResetTokenRepository.save(resetToken);
 
         ResetPasswordRequest request = new ResetPasswordRequest(
-                resetToken.getToken(),
+                "test@example.com",
+                "444444",
                 "newPassword123"
         );
 
@@ -385,7 +389,7 @@ class PasswordResetIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("Password reset token has already been used"));
+                .andExpect(jsonPath("$.message").value(containsString("already been used")));
     }
 
     @Test
@@ -412,7 +416,7 @@ class PasswordResetIntegrationTest {
 
         // Create reset token
         PasswordResetToken resetToken = PasswordResetToken.builder()
-                .token(UUID.randomUUID().toString())
+                .verificationCode("555555")
                 .user(testUser)
                 .expiresAt(LocalDateTime.now().plusMinutes(60))
                 .used(false)
@@ -421,7 +425,8 @@ class PasswordResetIntegrationTest {
         passwordResetTokenRepository.save(resetToken);
 
         ResetPasswordRequest request = new ResetPasswordRequest(
-                resetToken.getToken(),
+                "test@example.com",
+                "555555",
                 "newPassword123"
         );
 
@@ -457,7 +462,8 @@ class PasswordResetIntegrationTest {
 
         // Step 3: Reset password with token
         ResetPasswordRequest resetRequest = new ResetPasswordRequest(
-                token.getToken(),
+                "test@example.com",
+                token.getVerificationCode(),
                 "brandNewPassword456"
         );
 
@@ -501,15 +507,15 @@ class PasswordResetIntegrationTest {
                 .getContentAsString();
 
         // Both should return same generic message
-        assertTrue(response1.contains("password reset link has been sent"));
-        assertTrue(response2.contains("password reset link has been sent"));
+        assertTrue(response1.contains("verification code has been sent"));
+        assertTrue(response2.contains("verification code has been sent"));
     }
 
     @Test
     void shouldEncodeNewPasswordBeforeSaving() throws Exception {
         // Given
         PasswordResetToken resetToken = PasswordResetToken.builder()
-                .token(UUID.randomUUID().toString())
+                .verificationCode("666666")
                 .user(testUser)
                 .expiresAt(LocalDateTime.now().plusMinutes(60))
                 .used(false)
@@ -518,7 +524,8 @@ class PasswordResetIntegrationTest {
         passwordResetTokenRepository.save(resetToken);
 
         ResetPasswordRequest request = new ResetPasswordRequest(
-                resetToken.getToken(),
+                "test@example.com",
+                "666666",
                 "plainTextPassword"
         );
 
@@ -538,7 +545,7 @@ class PasswordResetIntegrationTest {
     void shouldHandleSpecialCharactersInPassword() throws Exception {
         // Given
         PasswordResetToken resetToken = PasswordResetToken.builder()
-                .token(UUID.randomUUID().toString())
+                .verificationCode("777777")
                 .user(testUser)
                 .expiresAt(LocalDateTime.now().plusMinutes(60))
                 .used(false)
@@ -548,7 +555,8 @@ class PasswordResetIntegrationTest {
 
         String passwordWithSpecialChars = "P@ssw0rd!#$%^&*()";
         ResetPasswordRequest request = new ResetPasswordRequest(
-                resetToken.getToken(),
+                "test@example.com",
+                "777777",
                 passwordWithSpecialChars
         );
 

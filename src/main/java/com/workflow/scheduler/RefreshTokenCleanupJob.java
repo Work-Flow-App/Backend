@@ -1,4 +1,4 @@
-package com.workflow.scheduling;
+package com.workflow.scheduler;
 
 import com.workflow.service.auth.RefreshTokenService;
 import lombok.RequiredArgsConstructor;

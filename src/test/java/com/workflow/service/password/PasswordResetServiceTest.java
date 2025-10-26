@@ -7,6 +7,7 @@ import com.workflow.entity.User;
 import com.workflow.repository.PasswordResetTokenRepository;
 import com.workflow.repository.RefreshTokenRepository;
 import com.workflow.repository.UserRepository;
+import com.workflow.service.auth.PasswordResetService;
 import com.workflow.service.email.EmailService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -20,7 +21,6 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -74,7 +74,7 @@ class PasswordResetServiceTest {
 
         validToken = PasswordResetToken.builder()
                 .id(1L)
-                .token("valid-token-123")
+                .verificationCode("valid-token-123")
                 .user(testUser)
                 .expiresAt(LocalDateTime.now().plusMinutes(30))
                 .used(false)
@@ -83,7 +83,7 @@ class PasswordResetServiceTest {
 
         expiredToken = PasswordResetToken.builder()
                 .id(2L)
-                .token("expired-token-456")
+                .verificationCode("expired-token-456")
                 .user(testUser)
                 .expiresAt(LocalDateTime.now().minusMinutes(10))
                 .used(false)
@@ -92,7 +92,7 @@ class PasswordResetServiceTest {
 
         usedToken = PasswordResetToken.builder()
                 .id(3L)
-                .token("used-token-789")
+                .verificationCode("used-token-789")
                 .user(testUser)
                 .expiresAt(LocalDateTime.now().plusMinutes(30))
                 .used(true)
@@ -122,7 +122,7 @@ class PasswordResetServiceTest {
         verify(emailService).sendPasswordResetEmail(eq(email), eq("testuser"), anyString());
 
         PasswordResetToken savedToken = tokenCaptor.getValue();
-        assertNotNull(savedToken.getToken());
+        assertNotNull(savedToken.getVerificationCode());
         assertEquals(testUser, savedToken.getUser());
         assertFalse(savedToken.isUsed());
         assertNotNull(savedToken.getExpiresAt());
@@ -162,7 +162,7 @@ class PasswordResetServiceTest {
         verify(passwordResetTokenRepository, times(2)).save(tokenCaptor.capture());
 
         List<PasswordResetToken> savedTokens = tokenCaptor.getAllValues();
-        assertNotEquals(savedTokens.get(0).getToken(), savedTokens.get(1).getToken());
+        assertNotEquals(savedTokens.get(0).getVerificationCode(), savedTokens.get(1).getVerificationCode());
     }
 
     @Test
@@ -229,7 +229,7 @@ class PasswordResetServiceTest {
         String email = "test@example.com";
         PasswordResetToken oldestToken = PasswordResetToken.builder()
                 .id(10L)
-                .token("oldest-token")
+                .verificationCode("oldest-token")
                 .user(testUser)
                 .expiresAt(LocalDateTime.now().plusMinutes(30))
                 .createdAt(LocalDateTime.now().minusMinutes(50))
@@ -238,7 +238,7 @@ class PasswordResetServiceTest {
 
         PasswordResetToken newerToken1 = PasswordResetToken.builder()
                 .id(11L)
-                .token("newer-token-1")
+                .verificationCode("newer-token-1")
                 .user(testUser)
                 .expiresAt(LocalDateTime.now().plusMinutes(30))
                 .createdAt(LocalDateTime.now().minusMinutes(30))
@@ -247,7 +247,7 @@ class PasswordResetServiceTest {
 
         PasswordResetToken newerToken2 = PasswordResetToken.builder()
                 .id(12L)
-                .token("newer-token-2")
+                .verificationCode("newer-token-2")
                 .user(testUser)
                 .expiresAt(LocalDateTime.now().plusMinutes(30))
                 .createdAt(LocalDateTime.now().minusMinutes(10))
@@ -270,79 +270,17 @@ class PasswordResetServiceTest {
         verify(passwordResetTokenRepository).save(any(PasswordResetToken.class)); // New token saved
     }
 
-    // ============= Validate Reset Token Tests =============
-
-    @Test
-    void shouldValidateTokenSuccessfully() {
-        // Given
-        when(passwordResetTokenRepository.findByToken("valid-token-123"))
-                .thenReturn(Optional.of(validToken));
-
-        // When
-        PasswordResetToken result = passwordResetService.validateResetToken("valid-token-123");
-
-        // Then
-        assertNotNull(result);
-        assertEquals("valid-token-123", result.getToken());
-        assertEquals(testUser, result.getUser());
-        verify(passwordResetTokenRepository).findByToken("valid-token-123");
-    }
-
-    @Test
-    void shouldThrowExceptionForNonExistentToken() {
-        // Given
-        when(passwordResetTokenRepository.findByToken("nonexistent-token"))
-                .thenReturn(Optional.empty());
-
-        // When/Then
-        InvalidPasswordResetTokenException exception = assertThrows(
-                InvalidPasswordResetTokenException.class,
-                () -> passwordResetService.validateResetToken("nonexistent-token")
-        );
-
-        assertEquals("Invalid password reset token", exception.getMessage());
-    }
-
-    @Test
-    void shouldThrowExceptionForExpiredToken() {
-        // Given
-        when(passwordResetTokenRepository.findByToken("expired-token-456"))
-                .thenReturn(Optional.of(expiredToken));
-
-        // When/Then
-        InvalidPasswordResetTokenException exception = assertThrows(
-                InvalidPasswordResetTokenException.class,
-                () -> passwordResetService.validateResetToken("expired-token-456")
-        );
-
-        assertEquals("Password reset token has expired", exception.getMessage());
-    }
-
-    @Test
-    void shouldThrowExceptionForUsedToken() {
-        // Given
-        when(passwordResetTokenRepository.findByToken("used-token-789"))
-                .thenReturn(Optional.of(usedToken));
-
-        // When/Then
-        InvalidPasswordResetTokenException exception = assertThrows(
-                InvalidPasswordResetTokenException.class,
-                () -> passwordResetService.validateResetToken("used-token-789")
-        );
-
-        assertEquals("Password reset token has already been used", exception.getMessage());
-    }
-
     // ============= Reset Password Tests =============
 
     @Test
     void shouldResetPasswordSuccessfully() {
         // Given
-        String token = "valid-token-123";
+        String email = "test@example.com";
+        String code = "valid-token-123";
         String newPassword = "newPassword123";
         String encodedPassword = "$2a$10$encodedNewPassword";
 
-        when(passwordResetTokenRepository.findByToken(token))
+        when(passwordResetTokenRepository.findByVerificationCode(code))
                 .thenReturn(Optional.of(validToken));
         when(passwordEncoder.encode(newPassword)).thenReturn(encodedPassword);
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -350,7 +288,7 @@ class PasswordResetServiceTest {
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
         // When
-        passwordResetService.resetPassword(token, newPassword);
+        passwordResetService.resetPassword(email, code, newPassword);
 
         // Then
         verify(passwordEncoder).encode(newPassword);
@@ -366,10 +304,11 @@ class PasswordResetServiceTest {
     @Test
     void shouldMarkTokenAsUsedAfterPasswordReset() {
         // Given
-        String token = "valid-token-123";
+        String email = "test@example.com";
+        String code = "valid-token-123";
         String newPassword = "newPassword123";
 
-        when(passwordResetTokenRepository.findByToken(token))
+        when(passwordResetTokenRepository.findByVerificationCode(code))
                 .thenReturn(Optional.of(validToken));
         when(passwordEncoder.encode(newPassword)).thenReturn("encoded");
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -379,7 +318,7 @@ class PasswordResetServiceTest {
         assertFalse(validToken.isUsed());
 
         // When
-        passwordResetService.resetPassword(token, newPassword);
+        passwordResetService.resetPassword(email, code, newPassword);
 
         // Then
         assertTrue(validToken.isUsed());
@@ -389,10 +328,11 @@ class PasswordResetServiceTest {
     @Test
     void shouldRevokeAllRefreshTokensAfterPasswordReset() {
         // Given
-        String token = "valid-token-123";
+        String email = "test@example.com";
+        String code = "valid-token-123";
         String newPassword = "newPassword123";
 
-        when(passwordResetTokenRepository.findByToken(token))
+        when(passwordResetTokenRepository.findByVerificationCode(code))
                 .thenReturn(Optional.of(validToken));
         when(passwordEncoder.encode(newPassword)).thenReturn("encoded");
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -400,7 +340,7 @@ class PasswordResetServiceTest {
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
         // When
-        passwordResetService.resetPassword(token, newPassword);
+        passwordResetService.resetPassword(email, code, newPassword);
 
         // Then
         verify(refreshTokenRepository).revokeAllUserTokens(eq(testUser), any(LocalDateTime.class));
@@ -409,11 +349,12 @@ class PasswordResetServiceTest {
     @Test
     void shouldEncodePasswordBeforeSaving() {
         // Given
-        String token = "valid-token-123";
+        String email = "test@example.com";
+        String code = "valid-token-123";
         String newPassword = "myNewPassword";
         String encodedPassword = "$2a$10$encodedMyNewPassword";
 
-        when(passwordResetTokenRepository.findByToken(token))
+        when(passwordResetTokenRepository.findByVerificationCode(code))
                 .thenReturn(Optional.of(validToken));
         when(passwordEncoder.encode(newPassword)).thenReturn(encodedPassword);
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -421,7 +362,7 @@ class PasswordResetServiceTest {
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
         // When
-        passwordResetService.resetPassword(token, newPassword);
+        passwordResetService.resetPassword(email, code, newPassword);
 
         // Then
         ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
@@ -435,16 +376,17 @@ class PasswordResetServiceTest {
     @Test
     void shouldThrowExceptionWhenResettingWithExpiredToken() {
         // Given
-        String token = "expired-token-456";
+        String email = "test@example.com";
+        String code = "expired-token-456";
         String newPassword = "newPassword123";
 
-        when(passwordResetTokenRepository.findByToken(token))
+        when(passwordResetTokenRepository.findByVerificationCode(code))
                 .thenReturn(Optional.of(expiredToken));
 
         // When/Then
         assertThrows(
                 InvalidPasswordResetTokenException.class,
-                () -> passwordResetService.resetPassword(token, newPassword)
+                () -> passwordResetService.resetPassword(email, code, newPassword)
         );
 
         verify(passwordEncoder, never()).encode(anyString());
@@ -455,16 +397,17 @@ class PasswordResetServiceTest {
     @Test
     void shouldThrowExceptionWhenResettingWithUsedToken() {
         // Given
-        String token = "used-token-789";
+        String email = "test@example.com";
+        String code = "used-token-789";
         String newPassword = "newPassword123";
 
-        when(passwordResetTokenRepository.findByToken(token))
+        when(passwordResetTokenRepository.findByVerificationCode(code))
                 .thenReturn(Optional.of(usedToken));
 
         // When/Then
         assertThrows(
                 InvalidPasswordResetTokenException.class,
-                () -> passwordResetService.resetPassword(token, newPassword)
+                () -> passwordResetService.resetPassword(email, code, newPassword)
         );
 
         verify(passwordEncoder, never()).encode(anyString());
@@ -545,10 +488,11 @@ class PasswordResetServiceTest {
     @Test
     void shouldHandleLongPasswords() {
         // Given
-        String token = "valid-token-123";
+        String email = "test@example.com";
+        String code = "valid-token-123";
         String longPassword = "a".repeat(128);
 
-        when(passwordResetTokenRepository.findByToken(token))
+        when(passwordResetTokenRepository.findByVerificationCode(code))
                 .thenReturn(Optional.of(validToken));
         when(passwordEncoder.encode(longPassword)).thenReturn("encoded-long-password");
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -557,7 +501,7 @@ class PasswordResetServiceTest {
 
         // When/Then
         assertDoesNotThrow(() ->
-            passwordResetService.resetPassword(token, longPassword)
+            passwordResetService.resetPassword(email, code, longPassword)
         );
     }
 

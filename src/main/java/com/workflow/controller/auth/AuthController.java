@@ -1,12 +1,12 @@
 package com.workflow.controller.auth;
 
 import com.workflow.dto.auth.*;
-import com.workflow.dto.password.ForgotPasswordRequest;
-import com.workflow.dto.password.PasswordResetResponse;
-import com.workflow.dto.password.ResetPasswordRequest;
+import com.workflow.dto.auth.password.ForgotPasswordRequest;
+import com.workflow.dto.auth.password.PasswordResetResponse;
+import com.workflow.dto.auth.password.ResetPasswordRequest;
 import com.workflow.entity.User;
 import com.workflow.service.auth.AuthenticationService;
-import com.workflow.service.password.PasswordResetService;
+import com.workflow.service.auth.PasswordResetService;
 import com.workflow.service.user.IUserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;

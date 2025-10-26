@@ -1,4 +1,4 @@
-package com.workflow.service.password;
+package com.workflow.service.auth;
 
 import com.workflow.common.exception.customException.InvalidPasswordResetTokenException;
 import com.workflow.entity.PasswordResetToken;

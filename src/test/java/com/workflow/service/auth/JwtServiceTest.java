@@ -1,6 +1,6 @@
 package com.workflow.service.auth;
 
-import com.workflow.config.JwtConfigProperties;
+import com.workflow.config.properties.JwtConfigProperties;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;

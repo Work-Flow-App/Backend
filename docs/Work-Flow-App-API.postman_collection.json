@@ -401,6 +401,244 @@
 							"body": null
 						}
 					]
+				},
+				{
+					"name": "Forgot Password",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"test@example.com\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/auth/forgot-password",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"auth",
+								"forgot-password"
+							]
+						},
+						"description": "Request a password reset verification code to be sent to the provided email.\n\n**Request Body:**\n- email (string, required): Valid email format\n\n**Response:**\n- message (string): Generic success message (returned even if email doesn't exist for security)\n\n**Security Features:**\n- Does not reveal if email exists in the system\n- Verification code expires after 60 minutes\n- Maximum 3 active reset codes per user\n- Oldest code auto-deleted when limit exceeded\n- Codes are single-use only\n- 6-digit numeric code (100000-999999)\n\n**Email Content:**\n- 6-digit verification code displayed prominently\n- Professional email template with gradient styling\n- Email includes expiry warning (60 minutes)\n- Security notice about unauthorized requests\n\n**Use Case:** User forgot their password and needs to reset it"
+					},
+					"response": [
+						{
+							"name": "Forgot Password - Success",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"email\": \"test@example.com\"\n}"
+								},
+								"url": {
+									"raw": "http://localhost:8080/api/v1/auth/forgot-password",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"api",
+										"v1",
+										"auth",
+										"forgot-password"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n    \"message\": \"If the email exists, a verification code has been sent to it.\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Reset Password",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Clear tokens after password reset",
+									"if (pm.response.code === 200) {",
+									"    pm.environment.set(\"jwt_token\", \"\");",
+									"    pm.environment.set(\"refresh_token\", \"\");",
+									"    console.log(\"Password reset successful. Tokens cleared.\");",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"test@example.com\",\n    \"code\": \"583921\",\n    \"newPassword\": \"newPassword123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/auth/reset-password",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"auth",
+								"reset-password"
+							]
+						},
+						"description": "Reset password using the verification code received via email.\n\n**Request Body:**\n- email (string, required): Valid email format - the email that requested the reset\n- code (string, required): 6-digit verification code from email (e.g., \"583921\")\n- newPassword (string, required): Minimum 8 characters\n\n**Response:**\n- message (string): Success message\n\n**Security Features:**\n- Validates email + code combination (code must belong to the email)\n- Validates code exists, not expired, and not used\n- Marks code as used after successful reset\n- Password is BCrypt encoded before storage\n- Automatically revokes ALL refresh tokens (forces re-login on all devices)\n- Code can only be used once\n- Code expires after 60 minutes\n\n**Validation:**\n- Code format: Must be exactly 6 digits (pattern: ^\\\\d{6}$)\n- Email format: Must be valid email\n\n**Error Cases:**\n- 400 Bad Request: Invalid, expired, or already used code\n- 400 Bad Request: Code does not match email\n- 400 Bad Request: Password too short (< 8 characters)\n- 400 Bad Request: Invalid email or code format\n\n**Post-Reset Actions:**\n- User must login again with new password\n- All active sessions are invalidated\n\n**Use Case:** User enters the 6-digit code from email along with their email and new password"
+					},
+					"response": [
+						{
+							"name": "Reset Password - Success",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"token\": \"550e8400-e29b-41d4-a716-446655440000\",\n    \"newPassword\": \"newPassword123\"\n}"
+								},
+								"url": {
+									"raw": "http://localhost:8080/api/v1/auth/reset-password",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"api",
+										"v1",
+										"auth",
+										"reset-password"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n    \"message\": \"Password has been reset successfully. Please login with your new password.\"\n}"
+						},
+						{
+							"name": "Reset Password - Invalid Token",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"token\": \"invalid-token\",\n    \"newPassword\": \"newPassword123\"\n}"
+								},
+								"url": {
+									"raw": "http://localhost:8080/api/v1/auth/reset-password",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"api",
+										"v1",
+										"auth",
+										"reset-password"
+									]
+								}
+							},
+							"status": "Bad Request",
+							"code": 400,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n    \"status\": 400,\n    \"error\": \"Bad Request\",\n    \"message\": \"Invalid password reset token\",\n    \"path\": \"/api/v1/auth/reset-password\"\n}"
+						},
+						{
+							"name": "Reset Password - Expired Token",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"token\": \"expired-token\",\n    \"newPassword\": \"newPassword123\"\n}"
+								},
+								"url": {
+									"raw": "http://localhost:8080/api/v1/auth/reset-password",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"api",
+										"v1",
+										"auth",
+										"reset-password"
+									]
+								}
+							},
+							"status": "Bad Request",
+							"code": 400,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n    \"status\": 400,\n    \"error\": \"Bad Request\",\n    \"message\": \"Password reset token has expired\",\n    \"path\": \"/api/v1/auth/reset-password\"\n}"
+						}
+					]
 				}
 			],
 			"description": "Authentication endpoints for user registration, login, token refresh, and logout.\n\n**Token Management:**\n- Access tokens expire after 15 minutes\n- Refresh tokens expire after 30 days\n- Token rotation implemented for security (refresh tokens are single-use)\n- Max 5 active sessions per user\n- Device tracking (User-Agent + IP address)\n\n**Security Features:**\n- Automatic revocation of oldest session when limit exceeded\n- Single-device logout via /logout\n- All-device logout via /logout-all\n- Daily cleanup of expired tokens"

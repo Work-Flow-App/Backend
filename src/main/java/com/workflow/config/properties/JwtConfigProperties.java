@@ -1,4 +1,4 @@
-package com.workflow.config;
+package com.workflow.config.properties;
 
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;

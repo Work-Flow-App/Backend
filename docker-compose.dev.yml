@@ -57,6 +57,9 @@ services:
       - SPRING_DATASOURCE_USERNAME=${DB_USERNAME}
       - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
       - JWT_SECRET=${JWT_SECRET}
+      - SERVER_TOMCAT_REMOTEIP_REMOTE_IP_HEADER=x-forwarded-for
+      - SERVER_TOMCAT_REMOTEIP_PROTOCOL_HEADER=x-forwarded-proto
+      - SERVER_TOMCAT_REMOTEIP_PROTOCOL_HEADER_VALUE=https
     networks:
       - backend-network
     restart: unless-stopped

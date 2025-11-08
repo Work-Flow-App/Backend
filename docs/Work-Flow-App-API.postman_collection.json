@@ -1310,6 +1310,377 @@
 				}
 			],
 			"description": "Worker management endpoints for creating, reading, updating, and deleting workers."
+		},
+		{
+			"name": "Clients",
+			"description": "Client management endpoints for creating, reading, updating, and deleting clients.",
+			"item": [
+				{
+					"name": "Create Client",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Acme Corporation\",\n    \"email\": \"contact@acme.com\",\n    \"telephone\": \"123456789\",\n    \"mobile\": \"987654321\",\n    \"fax\": \"111111111\",\n    \"addressLine1\": \"123 Main Street\",\n    \"addressLine2\": \"Suite 400\",\n    \"addressLine3\": null,\n    \"town\": \"New York\",\n    \"country\": \"USA\",\n    \"postcode\": \"10001\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/clients",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"clients"
+							]
+						},
+						"description": "Create a new client for the authenticated company.\n\n**Authentication:** Required (COMPANY role)\n\n**Request Body:**\n- name (string, required): 2-150 characters\n- email (string, optional): Valid email format\n- telephone (string, optional): Max 20 characters\n- mobile (string, optional): Max 20 characters\n- fax (string, optional): Max 20 characters\n- addressLine1, addressLine2, addressLine3 (string, optional): Address details\n- town (string, optional): Town/city\n- country (string, optional): Country\n- postcode (string, optional): Postal code\n\n**Business Logic:**\n- Client is associated with the company of the authenticated user\n- Name should be unique per company (enforced at service/repository level)\n\n**Response:** Created client object with metadata (id, timestamps, archived flag)."
+					},
+					"response": [
+						{
+							"name": "Create Client - Success",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{jwt_token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\": \"Acme Corporation\",\n    \"email\": \"contact@acme.com\",\n    \"telephone\": \"123456789\",\n    \"mobile\": \"987654321\",\n    \"fax\": \"111111111\",\n    \"addressLine1\": \"123 Main Street\",\n    \"addressLine2\": \"Suite 400\",\n    \"addressLine3\": null,\n    \"town\": \"New York\",\n    \"country\": \"USA\",\n    \"postcode\": \"10001\"\n}"
+								},
+								"url": {
+									"raw": "http://localhost:8080/api/v1/clients",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"api",
+										"v1",
+										"clients"
+									]
+								}
+							},
+							"status": "Created",
+							"code": 201,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n    \"id\": 1,\n    \"name\": \"Acme Corporation\",\n    \"email\": \"contact@acme.com\",\n    \"telephone\": \"123456789\",\n    \"mobile\": \"987654321\",\n    \"fax\": \"111111111\",\n    \"addressLine1\": \"123 Main Street\",\n    \"addressLine2\": \"Suite 400\",\n    \"addressLine3\": null,\n    \"town\": \"New York\",\n    \"country\": \"USA\",\n    \"postcode\": \"10001\",\n    \"archived\": false,\n    \"createdAt\": \"2025-11-08T10:00:00\",\n    \"updatedAt\": \"2025-11-08T10:00:00\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Get All Clients",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/clients",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"clients"
+							]
+						},
+						"description": "Retrieve all clients for the authenticated company.\n\n**Authentication:** Required (COMPANY role)\n\n**Response:** Array of client objects (same format as Create Client response)\n\n**Note:** Returns all clients (including archived) belonging to the company."
+					},
+					"response": [
+						{
+							"name": "Get All Clients - Success",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{jwt_token}}"
+									}
+								],
+								"url": {
+									"raw": "http://localhost:8080/api/v1/clients",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"api",
+										"v1",
+										"clients"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "[\n    {\n        \"id\": 1,\n        \"name\": \"Acme Corporation\",\n        \"email\": \"contact@acme.com\",\n        \"telephone\": \"123456789\",\n        \"mobile\": \"987654321\",\n        \"fax\": \"111111111\",\n        \"addressLine1\": \"123 Main Street\",\n        \"addressLine2\": \"Suite 400\",\n        \"addressLine3\": null,\n        \"town\": \"New York\",\n        \"country\": \"USA\",\n        \"postcode\": \"10001\",\n        \"archived\": false,\n        \"createdAt\": \"2025-11-08T10:00:00\",\n        \"updatedAt\": \"2025-11-08T10:00:00\"\n    }\n]"
+						}
+					]
+				},
+				{
+					"name": "Get Client by ID",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/clients/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"clients",
+								"1"
+							]
+						},
+						"description": "Retrieve a specific client by ID.\n\n**Authentication:** Required (COMPANY role)\n\n**Path Parameter:**\n- id (long): Client ID\n\n**Response:** Client object (same format as Create Client response)\n\n**Authorization:** Only clients belonging to the authenticated company can be accessed."
+					},
+					"response": [
+						{
+							"name": "Get Client by ID - Success",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{jwt_token}}"
+									}
+								],
+								"url": {
+									"raw": "http://localhost:8080/api/v1/clients/1",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"api",
+										"v1",
+										"clients",
+										"1"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n    \"id\": 1,\n    \"name\": \"Acme Corporation\",\n    \"email\": \"contact@acme.com\",\n    \"telephone\": \"123456789\",\n    \"mobile\": \"987654321\",\n    \"fax\": \"111111111\",\n    \"addressLine1\": \"123 Main Street\",\n    \"addressLine2\": \"Suite 400\",\n    \"addressLine3\": null,\n    \"town\": \"New York\",\n    \"country\": \"USA\",\n    \"postcode\": \"10001\",\n    \"archived\": false,\n    \"createdAt\": \"2025-11-08T10:00:00\",\n    \"updatedAt\": \"2025-11-08T10:00:00\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Update Client",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Acme Corporation Ltd.\",\n    \"email\": \"support@acme.com\",\n    \"telephone\": \"555555555\",\n    \"mobile\": \"999999999\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/clients/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"clients",
+								"1"
+							]
+						},
+						"description": "Update an existing client's details.\n\n**Authentication:** Required (COMPANY role)\n\n**Path Parameter:**\n- id (long): Client ID\n\n**Request Body:**\n- name (string, required): 2-150 characters\n- email (string, optional): Valid email format\n- telephone (string, optional): Max 20 characters\n- mobile (string, optional): Max 20 characters\n- fax (string, optional): Max 20 characters\n\n**Response:** Updated client object (same format as Create Client response)\n\n**Authorization:** Only clients belonging to the authenticated company can be updated."
+					},
+					"response": [
+						{
+							"name": "Update Client - Success",
+							"originalRequest": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{jwt_token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\": \"Acme Corporation Ltd.\",\n    \"email\": \"support@acme.com\",\n    \"telephone\": \"555555555\",\n    \"mobile\": \"999999999\"\n}"
+								},
+								"url": {
+									"raw": "http://localhost:8080/api/v1/clients/1",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"api",
+										"v1",
+										"clients",
+										"1"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n    \"id\": 1,\n    \"name\": \"Acme Corporation Ltd.\",\n    \"email\": \"support@acme.com\",\n    \"telephone\": \"555555555\",\n    \"mobile\": \"999999999\",\n    \"fax\": \"111111111\",\n    \"addressLine1\": \"123 Main Street\",\n    \"addressLine2\": \"Suite 400\",\n    \"addressLine3\": null,\n    \"town\": \"New York\",\n    \"country\": \"USA\",\n    \"postcode\": \"10001\",\n    \"archived\": false,\n    \"createdAt\": \"2025-11-08T10:00:00\",\n    \"updatedAt\": \"2025-11-08T11:00:00\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Delete Client (Soft Delete)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/clients/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"clients",
+								"1"
+							]
+						},
+						"description": "Soft delete (archive) a client by ID.\n\n**Authentication:** Required (COMPANY role)\n\n**Path Parameter:**\n- id (long): Client ID\n\n**Response:** 204 No Content\n\n**Business Logic:**\n- Sets client.archived = true\n- Client remains in database but is marked as archived\n- Archived clients still appear in getAllClients() but are counted separately in dashboard\n\n**Authorization:** Only clients belonging to the authenticated company can be deleted."
+					},
+					"response": [
+						{
+							"name": "Delete Client - Success",
+							"originalRequest": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{jwt_token}}"
+									}
+								],
+								"url": {
+									"raw": "http://localhost:8080/api/v1/clients/1",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"api",
+										"v1",
+										"clients",
+										"1"
+									]
+								}
+							},
+							"status": "No Content",
+							"code": 204,
+							"_postman_previewlanguage": null,
+							"header": [],
+							"body": null
+						}
+					]
+				}
+			]
 		}
 	],
 	"event": [

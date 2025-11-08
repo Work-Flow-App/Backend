@@ -81,14 +81,19 @@ jobs:
              echo "➡️ Creating certbot directories..."
              mkdir -p docker/certbot/conf docker/certbot/www
 
+             echo "🧹 Stopping existing Docker containers to free ports..."
+             sudo docker stop $(sudo docker ps -q) 2>/dev/null || true
+             sudo docker container prune -f 2>/dev/null || true
+             sleep 2
+
              echo "🔒 Checking for existing Let's Encrypt certificate..."
              if [ ! -f "docker/certbot/conf/live/api.dev.workfloow.app/fullchain.pem" ]; then
                echo "📜 Generating Let's Encrypt certificate for api.dev.workfloow.app..."
-               docker run --rm \
+               sudo docker run --rm \
                  -v /home/ubuntu/app/docker/certbot/conf:/etc/letsencrypt \
                  -v /home/ubuntu/app/docker/certbot/www:/var/www/certbot \
                  -p 80:80 \
-                 certbot/certbot certonly --standalone \
+                 certbot/certbot certonly --standalone --non-interactive \
                  --email admin@workfloow.app \
                  --agree-tos \
                  --no-eff-email \

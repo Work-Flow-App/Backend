@@ -94,12 +94,16 @@ public class JobService implements IJobService {
         );
 
         List<JobFieldValue> values = fields.stream()
-                .map(f -> JobFieldValue.builder()
+        .map(f -> {
+                String val = fieldValues.get(f.getId());
+                return val != null ? JobFieldValue.builder()
                         .job(job)
                         .field(f)
-                        .value(fieldValues.get(f.getId()))
-                        .build())
-                .collect(Collectors.toList());
+                        .value(val)
+                        .build() : null;
+        })
+        .filter(Objects::nonNull)
+        .collect(Collectors.toList());
 
         fieldValueRepository.saveAll(values);
     }

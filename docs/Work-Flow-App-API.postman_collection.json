@@ -1681,6 +1681,203 @@
 					]
 				}
 			]
+		},
+		{
+		"name": "Job Templates",
+		"item": [
+			{
+			"name": "Create a Job Template",
+			"request": {
+				"method": "POST",
+				"header": [
+				{ "key": "Content-Type", "value": "application/json" }
+				],
+				"body": {
+				"mode": "raw",
+				"raw": "{\n  \"name\": \"Maintenance Job\",\n  \"description\": \"Standard maintenance workflow\"\n}"
+				},
+				"url": {
+				"raw": "{{base_url}}/api/v1/job-templates",
+				"host": ["{{base_url}}"],
+				"path": ["api", "v1", "job-templates"]
+				}
+			},
+			"response": [
+				{
+				"name": "Success",
+				"status": "Created",
+				"code": 201,
+				"body": "{\n  \"id\": 3,\n  \"companyId\": 1,\n  \"name\": \"Maintenance Job\",\n  \"description\": \"Standard maintenance workflow\",\n  \"createdAt\": \"2025-11-14T10:00:00\",\n  \"updatedAt\": \"2025-11-14T10:00:00\"\n}"
+				}
+			]
+			},
+			{
+			"name": "List All Job Templates",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+				"raw": "{{base_url}}/api/v1/job-templates",
+				"host": ["{{base_url}}"],
+				"path": ["api", "v1", "job-templates"]
+				}
+			},
+			"response": [
+				{
+				"name": "Success",
+				"status": "OK",
+				"code": 200,
+				"body": "[\n  {\n    \"id\": 3,\n    \"companyId\": 1,\n    \"name\": \"Maintenance Job\",\n    \"description\": \"Standard maintenance workflow\",\n    \"createdAt\": \"2025-11-14T10:00:00\",\n    \"updatedAt\": \"2025-11-14T10:00:00\"\n  },\n  {\n    \"id\": 4,\n    \"companyId\": 1,\n    \"name\": \"Installation Job\",\n    \"description\": \"Installation workflow\",\n    \"createdAt\": \"2025-11-14T10:05:00\",\n    \"updatedAt\": \"2025-11-14T10:05:00\"\n  }\n]"
+				}
+			]
+			},
+			{
+			"name": "Create a Job Template Field",
+			"request": {
+				"method": "POST",
+				"header": [
+				{ "key": "Content-Type", "value": "application/json" }
+				],
+				"body": {
+				"mode": "raw",
+				"raw": "{\n  \"templateId\": 3,\n  \"name\": \"customerName\",\n  \"label\": \"Customer Name\",\n  \"jobFieldType\": \"TEXT\",\n  \"required\": true,\n  \"options\": null,\n  \"orderIndex\": 1\n}"
+				},
+				"url": {
+				"raw": "{{base_url}}/api/v1/job-templates/fields",
+				"host": ["{{base_url}}"],
+				"path": ["api", "v1", "job-templates", "fields"]
+				}
+			},
+			"response": [
+				{
+				"name": "TEXT Field Success",
+				"status": "Created",
+				"code": 201,
+				"body": "{\n  \"id\": 101,\n  \"templateId\": 3,\n  \"name\": \"customerName\",\n  \"label\": \"Customer Name\",\n  \"jobFieldType\": \"TEXT\",\n  \"required\": true,\n  \"options\": null,\n  \"orderIndex\": 1\n}"
+				},
+				{
+				"name": "DROPDOWN Field Example",
+				"status": "Created",
+				"code": 201,
+				"body": "{\n  \"id\": 102,\n  \"templateId\": 3,\n  \"name\": \"priority\",\n  \"label\": \"Priority\",\n  \"jobFieldType\": \"DROPDOWN\",\n  \"required\": true,\n  \"options\": \"[\\\"Low\\\",\\\"Medium\\\",\\\"High\\\"]\",\n  \"orderIndex\": 2\n}"
+				}
+			]
+			}
+		]
+		},
+		{
+		"name": "Jobs",
+		"item": [
+			{
+			"name": "Create a Job",
+			"request": {
+				"method": "POST",
+				"header": [
+				{ "key": "Content-Type", "value": "application/json" }
+				],
+				"body": {
+				"mode": "raw",
+				"raw": "{\n  \"templateId\": 3,\n  \"clientId\": 12,\n  \"assignedWorkerId\": 7,\n  \"status\": \"NEW\",\n  \"fieldValues\": {\n    \"101\": \"John Doe\",\n    \"102\": \"Medium\"\n  }\n}"
+				},
+				"url": {
+				"raw": "{{base_url}}/api/v1/jobs",
+				"host": ["{{base_url}}"],
+				"path": ["api", "v1", "jobs"]
+				}
+			},
+			"response": [
+				{
+				"name": "Create Job Success",
+				"status": "Created",
+				"code": 201,
+				"body": "{\n  \"id\": 55,\n  \"companyId\": 1,\n  \"templateId\": 3,\n  \"clientId\": 12,\n  \"assignedWorkerId\": 7,\n  \"status\": \"NEW\",\n  \"archived\": false,\n  \"createdAt\": \"2025-11-14T10:15:00\",\n  \"updatedAt\": \"2025-11-14T10:15:00\",\n  \"fieldValues\": {\n    \"101\": \"John Doe\",\n    \"102\": \"Medium\"\n  }\n}"
+				}
+			]
+			},
+			{
+			"name": "Get a Job by ID",
+			"request": {
+				"method": "GET",
+				"url": {
+				"raw": "{{base_url}}/api/v1/jobs/55",
+				"host": ["{{base_url}}"],
+				"path": ["api", "v1", "jobs", "55"]
+				}
+			},
+			"response": [
+				{
+				"name": "Get Job Success",
+				"status": "OK",
+				"code": 200,
+				"body": "{\n  \"id\": 55,\n  \"companyId\": 1,\n  \"templateId\": 3,\n  \"clientId\": 12,\n  \"assignedWorkerId\": 7,\n  \"status\": \"NEW\",\n  \"archived\": false,\n  \"createdAt\": \"2025-11-14T10:15:00\",\n  \"updatedAt\": \"2025-11-14T10:15:00\",\n  \"fieldValues\": {\n    \"101\": \"John Doe\",\n    \"102\": \"Medium\"\n  }\n}"
+				}
+			]
+			},
+			{
+			"name": "Update a Job",
+			"request": {
+				"method": "PUT",
+				"header": [
+				{ "key": "Content-Type", "value": "application/json" }
+				],
+				"body": {
+				"mode": "raw",
+				"raw": "{\n  \"clientId\": 12,\n  \"assignedWorkerId\": 7,\n  \"status\": \"IN_PROGRESS\",\n  \"archived\": false,\n  \"fieldValues\": {\n    \"101\": \"Jane Doe\",\n    \"102\": \"High\"\n  }\n}"
+				},
+				"url": {
+				"raw": "{{base_url}}/api/v1/jobs/55",
+				"host": ["{{base_url}}"],
+				"path": ["api", "v1", "jobs", "55"]
+				}
+			},
+			"response": [
+				{
+				"name": "Update Job Success",
+				"status": "OK",
+				"code": 200,
+				"body": "{\n  \"id\": 55,\n  \"companyId\": 1,\n  \"templateId\": 3,\n  \"clientId\": 12,\n  \"assignedWorkerId\": 7,\n  \"status\": \"IN_PROGRESS\",\n  \"archived\": false,\n  \"createdAt\": \"2025-11-14T10:15:00\",\n  \"updatedAt\": \"2025-11-14T10:20:00\",\n  \"fieldValues\": {\n    \"101\": \"Jane Doe\",\n    \"102\": \"High\"\n  }\n}"
+				}
+			]
+			},
+			{
+			"name": "List All Jobs",
+			"request": {
+				"method": "GET",
+				"url": {
+				"raw": "{{base_url}}/api/v1/jobs",
+				"host": ["{{base_url}}"],
+				"path": ["api", "v1", "jobs"]
+				}
+			},
+			"response": [
+				{
+				"name": "List Jobs Success",
+				"status": "OK",
+				"code": 200,
+				"body": "[\n  {\n    \"id\": 55,\n    \"companyId\": 1,\n    \"templateId\": 3,\n    \"clientId\": 12,\n    \"assignedWorkerId\": 7,\n    \"status\": \"IN_PROGRESS\",\n    \"archived\": false,\n    \"createdAt\": \"2025-11-14T10:15:00\",\n    \"updatedAt\": \"2025-11-14T10:20:00\",\n    \"fieldValues\": {\n      \"101\": \"Jane Doe\",\n      \"102\": \"High\"\n    }\n  }\n]"
+				}
+			]
+			},
+			{
+			"name": "Delete a Job",
+			"request": {
+				"method": "DELETE",
+				"url": {
+				"raw": "{{base_url}}/api/v1/jobs/55",
+				"host": ["{{base_url}}"],
+				"path": ["api", "v1", "jobs", "55"]
+				}
+			},
+			"response": [
+				{
+				"name": "Delete Success",
+				"status": "No Content",
+				"code": 204,
+				"body": ""
+				}
+			]
+			}
+		]
 		}
 	],
 	"event": [

@@ -4,12 +4,17 @@ A Spring Boot backend service for managing job postings, applications, and users
 
 ## Features
 
-- JWT-based authentication (login/signup)
-- Role-based access control (ADMIN, COMPANY, WORKER)
-- MySQL database with Flyway migrations
-- RESTful API with OpenAPI/Swagger documentation
-- Docker containerization with multi-stage builds
-- CI/CD pipeline with GitHub Actions and AWS ECR
+- **JWT-based authentication** - Login/signup with token refresh and multi-device support
+- **Role-based access control** - ADMIN, COMPANY, WORKER roles with authorization
+- **Company management** - Profile management and company dashboard with statistics
+- **Worker management** - Create, update, and manage company workers with user accounts
+- **Client management** - Store and manage client information
+- **Job Templates** - Create dynamic job templates with customizable fields (TEXT, NUMBER, DATE, BOOLEAN, DROPDOWN)
+- **Job Management** - Create job instances from templates, track status, and manage field values
+- **MySQL database** - With Flyway migrations for schema management
+- **RESTful API** - Complete API with OpenAPI/Swagger documentation
+- **Docker containerization** - Multi-stage builds with Docker Compose
+- **CI/CD pipeline** - GitHub Actions with AWS ECR integration
 
 ## Tech Stack
 
@@ -85,31 +90,118 @@ The application will start on `http://localhost:8080`
 
 ## API Documentation
 
+### Swagger UI
 Once the application is running, access the Swagger UI at:
-
 ```
 http://localhost:8080/swagger-ui.html
 ```
 
+### API Docs JSON
 API documentation JSON is available at:
-
 ```
 http://localhost:8080/api-docs
 ```
 
+### Postman Collection
+A comprehensive Postman collection is included in the repository:
+
+**File:** `docs/Work-Flow-App-API.postman_collection.json`
+
+**Features:**
+- Complete API requests with example payloads
+- Pre-configured authentication with token management
+- Environment variables for dev/staging/prod
+- Test scripts that automatically capture tokens
+- Multiple response examples for each endpoint
+- Detailed descriptions of all parameters
+
+**Setup:**
+1. Import the collection in Postman: **File** → **Import** → Select `docs/Work-Flow-App-API.postman_collection.json`
+2. Create a new environment or use the embedded variables
+3. Set `base_url` to your environment (default: `https://api.dev.workfloow.app`)
+4. Login first to capture JWT token
+5. Use the token for subsequent authenticated requests
+
+**Environment Variables:**
+- `{{base_url}}` - API base URL (change per environment)
+- `{{jwt_token}}` - JWT access token (auto-set after login)
+- `{{refresh_token}}` - Refresh token (auto-set after login)
+
 ## API Endpoints
 
-### Authentication
+### Authentication (Public)
 
-- `POST /api/v1/auth/signup` - Create a new user account
+- `POST /api/v1/auth/signup` - Register a new user account
 - `POST /api/v1/auth/login` - Login and receive JWT token
+- `POST /api/v1/auth/refresh` - Refresh access token using refresh token
+- `POST /api/v1/auth/logout` - Logout from current device
+- `POST /api/v1/auth/logout-all` - Logout from all devices
+- `POST /api/v1/auth/forgot-password` - Request password reset code
+- `POST /api/v1/auth/reset-password` - Reset password with verification code
 
-### Protected Endpoints
+### Company Management (Requires Authentication)
 
-Include the JWT token in the Authorization header:
+- `GET /api/v1/companies/profile` - Get company profile
+- `POST /api/v1/companies/profile` - Update company profile
+- `GET /api/v1/companies/dashboard` - Get company dashboard with statistics
+
+### Worker Management (Requires COMPANY Role)
+
+- `POST /api/v1/workers` - Create a new worker
+- `GET /api/v1/workers` - Get all workers
+- `GET /api/v1/workers/{id}` - Get worker by ID
+- `PUT /api/v1/workers/{id}` - Update worker
+- `DELETE /api/v1/workers/{id}` - Soft delete worker
+- `POST /api/v1/workers/{id}/invite` - Send invitation to worker
+
+### Client Management (Requires COMPANY Role)
+
+- `POST /api/v1/clients` - Create a new client
+- `GET /api/v1/clients` - Get all clients
+- `GET /api/v1/clients/{id}` - Get client by ID
+- `PUT /api/v1/clients/{id}` - Update client
+- `DELETE /api/v1/clients/{id}` - Soft delete client
+
+### Job Templates (Requires COMPANY Role)
+
+- `POST /api/v1/job-templates` - Create a new job template
+- `GET /api/v1/job-templates` - Get all job templates
+- `POST /api/v1/job-templates/fields` - Add field to job template
+
+**Field Types Supported:**
+- `TEXT` - Free text input
+- `NUMBER` - Numeric input
+- `DATE` - Date picker
+- `BOOLEAN` - Checkbox/toggle
+- `DROPDOWN` - Select from predefined options (requires `options` JSON array)
+
+### Jobs (Requires COMPANY Role)
+
+- `POST /api/v1/jobs` - Create a new job instance
+- `GET /api/v1/jobs` - Get all jobs
+- `GET /api/v1/jobs/{id}` - Get job by ID
+- `PUT /api/v1/jobs/{id}` - Update job
+- `DELETE /api/v1/jobs/{id}` - Soft delete job
+
+**Job Status Values:**
+- `NEW` - Newly created job
+- `IN_PROGRESS` - Job in progress
+- `COMPLETED` - Job completed
+- `ON_HOLD` - Job on hold
+- `CANCELLED` - Job cancelled
+
+### Authentication Header
+
+All protected endpoints require JWT token in Authorization header:
 
 ```
 Authorization: Bearer <your-jwt-token>
+```
+
+**Example:**
+```bash
+curl -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
+  http://localhost:8080/api/v1/workers
 ```
 
 ## Running with Docker

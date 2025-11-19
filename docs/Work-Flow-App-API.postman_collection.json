@@ -1337,7 +1337,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"name\": \"Acme Corporation\",\n    \"email\": \"contact@acme.com\",\n    \"telephone\": \"123456789\",\n    \"mobile\": \"987654321\",\n    \"fax\": \"111111111\",\n    \"addressLine1\": \"123 Main Street\",\n    \"addressLine2\": \"Suite 400\",\n    \"addressLine3\": null,\n    \"town\": \"New York\",\n    \"country\": \"USA\",\n    \"postcode\": \"10001\"\n}"
+							"raw": "{\n    \"name\": \"Acme Corporation\",\n    \"email\": \"contact@acme.com\",\n    \"telephone\": \"123456789\",\n    \"mobile\": \"987654321\",\n    \"address\": \"123 Main Street, Suite 400, New York, USA 10001\"\n}"
 						},
 						"url": {
 							"raw": "{{base_url}}/api/v1/clients",
@@ -1350,7 +1350,7 @@
 								"clients"
 							]
 						},
-						"description": "Create a new client for the authenticated company.\n\n**Authentication:** Required (COMPANY role)\n\n**Request Body:**\n- name (string, required): 2-150 characters\n- email (string, optional): Valid email format\n- telephone (string, optional): Max 20 characters\n- mobile (string, optional): Max 20 characters\n- fax (string, optional): Max 20 characters\n- addressLine1, addressLine2, addressLine3 (string, optional): Address details\n- town (string, optional): Town/city\n- country (string, optional): Country\n- postcode (string, optional): Postal code\n\n**Business Logic:**\n- Client is associated with the company of the authenticated user\n- Name should be unique per company (enforced at service/repository level)\n\n**Response:** Created client object with metadata (id, timestamps, archived flag)."
+						"description": "Create a new client for the authenticated company.\n\n**Authentication:** Required (COMPANY role)\n\n**Request Body:**\n- name (string, required): 2-150 characters\n- email (string, optional): Valid email format\n- telephone (string, optional): Max 20 characters\n- mobile (string, optional): Max 20 characters\n- address (string, optional): Full address details\n\n**Business Logic:**\n- Client is associated with the company of the authenticated user\n- Name should be unique per company (enforced at service/repository level)\n\n**Response:** Created client object with metadata (id, timestamps, archived flag)."
 					},
 					"response": [
 						{
@@ -1394,7 +1394,7 @@
 									"value": "application/json"
 								}
 							],
-							"body": "{\n    \"id\": 1,\n    \"name\": \"Acme Corporation\",\n    \"email\": \"contact@acme.com\",\n    \"telephone\": \"123456789\",\n    \"mobile\": \"987654321\",\n    \"fax\": \"111111111\",\n    \"addressLine1\": \"123 Main Street\",\n    \"addressLine2\": \"Suite 400\",\n    \"addressLine3\": null,\n    \"town\": \"New York\",\n    \"country\": \"USA\",\n    \"postcode\": \"10001\",\n    \"archived\": false,\n    \"createdAt\": \"2025-11-08T10:00:00\",\n    \"updatedAt\": \"2025-11-08T10:00:00\"\n}"
+							"body": "{\n    \"id\": 1,\n    \"name\": \"Acme Corporation\",\n    \"email\": \"contact@acme.com\",\n    \"telephone\": \"123456789\",\n    \"mobile\": \"987654321\",\n    \"address\": \"123 Main Street, Suite 400, New York, USA 10001\",\n    \"archived\": false,\n    \"createdAt\": \"2025-11-08T10:00:00\",\n    \"updatedAt\": \"2025-11-08T10:00:00\"\n}"
 						}
 					]
 				},
@@ -1460,7 +1460,7 @@
 									"value": "application/json"
 								}
 							],
-							"body": "[\n    {\n        \"id\": 1,\n        \"name\": \"Acme Corporation\",\n        \"email\": \"contact@acme.com\",\n        \"telephone\": \"123456789\",\n        \"mobile\": \"987654321\",\n        \"fax\": \"111111111\",\n        \"addressLine1\": \"123 Main Street\",\n        \"addressLine2\": \"Suite 400\",\n        \"addressLine3\": null,\n        \"town\": \"New York\",\n        \"country\": \"USA\",\n        \"postcode\": \"10001\",\n        \"archived\": false,\n        \"createdAt\": \"2025-11-08T10:00:00\",\n        \"updatedAt\": \"2025-11-08T10:00:00\"\n    }\n]"
+							"body": "[\n    {\n        \"id\": 1,\n        \"name\": \"Acme Corporation\",\n        \"email\": \"contact@acme.com\",\n        \"telephone\": \"123456789\",\n        \"mobile\": \"987654321\",\n        \"address\": \"123 Main Street, Suite 400, New York, USA 10001\",\n        \"archived\": false,\n        \"createdAt\": \"2025-11-08T10:00:00\",\n        \"updatedAt\": \"2025-11-08T10:00:00\"\n    }\n]"
 						}
 					]
 				},
@@ -1528,7 +1528,7 @@
 									"value": "application/json"
 								}
 							],
-							"body": "{\n    \"id\": 1,\n    \"name\": \"Acme Corporation\",\n    \"email\": \"contact@acme.com\",\n    \"telephone\": \"123456789\",\n    \"mobile\": \"987654321\",\n    \"fax\": \"111111111\",\n    \"addressLine1\": \"123 Main Street\",\n    \"addressLine2\": \"Suite 400\",\n    \"addressLine3\": null,\n    \"town\": \"New York\",\n    \"country\": \"USA\",\n    \"postcode\": \"10001\",\n    \"archived\": false,\n    \"createdAt\": \"2025-11-08T10:00:00\",\n    \"updatedAt\": \"2025-11-08T10:00:00\"\n}"
+							"body": "{\n    \"id\": 1,\n    \"name\": \"Acme Corporation\",\n    \"email\": \"contact@acme.com\",\n    \"telephone\": \"123456789\",\n    \"mobile\": \"987654321\",\n    \"address\": \"123 Main Street, Suite 400, New York, USA 10001\",\n    \"archived\": false,\n    \"createdAt\": \"2025-11-08T10:00:00\",\n    \"updatedAt\": \"2025-11-08T10:00:00\"\n}"
 						}
 					]
 				},
@@ -1554,7 +1554,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"name\": \"Acme Corporation Ltd.\",\n    \"email\": \"support@acme.com\",\n    \"telephone\": \"555555555\",\n    \"mobile\": \"999999999\"\n}"
+							"raw": "{\n    \"name\": \"Acme Corporation Ltd.\",\n    \"email\": \"support@acme.com\",\n    \"telephone\": \"555555555\",\n    \"mobile\": \"999999999\",\n    \"address\": \"456 Oak Avenue, New York, USA 10002\",\n    \"archived\": false\n}"
 						},
 						"url": {
 							"raw": "{{base_url}}/api/v1/clients/1",
@@ -1568,7 +1568,7 @@
 								"1"
 							]
 						},
-						"description": "Update an existing client's details.\n\n**Authentication:** Required (COMPANY role)\n\n**Path Parameter:**\n- id (long): Client ID\n\n**Request Body:**\n- name (string, required): 2-150 characters\n- email (string, optional): Valid email format\n- telephone (string, optional): Max 20 characters\n- mobile (string, optional): Max 20 characters\n- fax (string, optional): Max 20 characters\n\n**Response:** Updated client object (same format as Create Client response)\n\n**Authorization:** Only clients belonging to the authenticated company can be updated."
+						"description": "Update an existing client's details.\n\n**Authentication:** Required (COMPANY role)\n\n**Path Parameter:**\n- id (long): Client ID\n\n**Request Body:**\n- name (string, optional): 2-150 characters\n- email (string, optional): Valid email format\n- telephone (string, optional): Max 20 characters\n- mobile (string, optional): Max 20 characters\n- address (string, optional): Full address details\n- archived (boolean, optional): Archive status\n\n**Response:** Updated client object\n\n**Authorization:** Only clients belonging to the authenticated company can be updated."
 					},
 					"response": [
 						{
@@ -1587,7 +1587,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"name\": \"Acme Corporation Ltd.\",\n    \"email\": \"support@acme.com\",\n    \"telephone\": \"555555555\",\n    \"mobile\": \"999999999\"\n}"
+									"raw": "{\n    \"name\": \"Acme Corporation Ltd.\",\n    \"email\": \"support@acme.com\",\n    \"telephone\": \"555555555\",\n    \"mobile\": \"999999999\",\n    \"address\": \"456 Oak Avenue, New York, USA 10002\",\n    \"archived\": false\n}"
 								},
 								"url": {
 									"raw": "http://localhost:8080/api/v1/clients/1",
@@ -1613,7 +1613,7 @@
 									"value": "application/json"
 								}
 							],
-							"body": "{\n    \"id\": 1,\n    \"name\": \"Acme Corporation Ltd.\",\n    \"email\": \"support@acme.com\",\n    \"telephone\": \"555555555\",\n    \"mobile\": \"999999999\",\n    \"fax\": \"111111111\",\n    \"addressLine1\": \"123 Main Street\",\n    \"addressLine2\": \"Suite 400\",\n    \"addressLine3\": null,\n    \"town\": \"New York\",\n    \"country\": \"USA\",\n    \"postcode\": \"10001\",\n    \"archived\": false,\n    \"createdAt\": \"2025-11-08T10:00:00\",\n    \"updatedAt\": \"2025-11-08T11:00:00\"\n}"
+							"body": "{\n    \"id\": 1,\n    \"name\": \"Acme Corporation Ltd.\",\n    \"email\": \"support@acme.com\",\n    \"telephone\": \"555555555\",\n    \"mobile\": \"999999999\",\n    \"address\": \"456 Oak Avenue, New York, USA 10002\",\n    \"archived\": false,\n    \"createdAt\": \"2025-11-08T10:00:00\",\n    \"updatedAt\": \"2025-11-08T11:00:00\"\n}"
 						}
 					]
 				},
@@ -1681,6 +1681,203 @@
 					]
 				}
 			]
+		},
+		{
+		"name": "Job Templates",
+		"item": [
+			{
+			"name": "Create a Job Template",
+			"request": {
+				"method": "POST",
+				"header": [
+				{ "key": "Content-Type", "value": "application/json" }
+				],
+				"body": {
+				"mode": "raw",
+				"raw": "{\n  \"name\": \"Maintenance Job\",\n  \"description\": \"Standard maintenance workflow\"\n}"
+				},
+				"url": {
+				"raw": "{{base_url}}/api/v1/job-templates",
+				"host": ["{{base_url}}"],
+				"path": ["api", "v1", "job-templates"]
+				}
+			},
+			"response": [
+				{
+				"name": "Success",
+				"status": "Created",
+				"code": 201,
+				"body": "{\n  \"id\": 3,\n  \"companyId\": 1,\n  \"name\": \"Maintenance Job\",\n  \"description\": \"Standard maintenance workflow\",\n  \"createdAt\": \"2025-11-14T10:00:00\",\n  \"updatedAt\": \"2025-11-14T10:00:00\"\n}"
+				}
+			]
+			},
+			{
+			"name": "List All Job Templates",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+				"raw": "{{base_url}}/api/v1/job-templates",
+				"host": ["{{base_url}}"],
+				"path": ["api", "v1", "job-templates"]
+				}
+			},
+			"response": [
+				{
+				"name": "Success",
+				"status": "OK",
+				"code": 200,
+				"body": "[\n  {\n    \"id\": 3,\n    \"companyId\": 1,\n    \"name\": \"Maintenance Job\",\n    \"description\": \"Standard maintenance workflow\",\n    \"createdAt\": \"2025-11-14T10:00:00\",\n    \"updatedAt\": \"2025-11-14T10:00:00\"\n  },\n  {\n    \"id\": 4,\n    \"companyId\": 1,\n    \"name\": \"Installation Job\",\n    \"description\": \"Installation workflow\",\n    \"createdAt\": \"2025-11-14T10:05:00\",\n    \"updatedAt\": \"2025-11-14T10:05:00\"\n  }\n]"
+				}
+			]
+			},
+			{
+			"name": "Create a Job Template Field",
+			"request": {
+				"method": "POST",
+				"header": [
+				{ "key": "Content-Type", "value": "application/json" }
+				],
+				"body": {
+				"mode": "raw",
+				"raw": "{\n  \"templateId\": 3,\n  \"name\": \"customerName\",\n  \"label\": \"Customer Name\",\n  \"jobFieldType\": \"TEXT\",\n  \"required\": true,\n  \"options\": null,\n  \"orderIndex\": 1\n}"
+				},
+				"url": {
+				"raw": "{{base_url}}/api/v1/job-templates/fields",
+				"host": ["{{base_url}}"],
+				"path": ["api", "v1", "job-templates", "fields"]
+				}
+			},
+			"response": [
+				{
+				"name": "TEXT Field Success",
+				"status": "Created",
+				"code": 201,
+				"body": "{\n  \"id\": 101,\n  \"templateId\": 3,\n  \"name\": \"customerName\",\n  \"label\": \"Customer Name\",\n  \"jobFieldType\": \"TEXT\",\n  \"required\": true,\n  \"options\": null,\n  \"orderIndex\": 1\n}"
+				},
+				{
+				"name": "DROPDOWN Field Example",
+				"status": "Created",
+				"code": 201,
+				"body": "{\n  \"id\": 102,\n  \"templateId\": 3,\n  \"name\": \"priority\",\n  \"label\": \"Priority\",\n  \"jobFieldType\": \"DROPDOWN\",\n  \"required\": true,\n  \"options\": \"[\\\"Low\\\",\\\"Medium\\\",\\\"High\\\"]\",\n  \"orderIndex\": 2\n}"
+				}
+			]
+			}
+		]
+		},
+		{
+		"name": "Jobs",
+		"item": [
+			{
+			"name": "Create a Job",
+			"request": {
+				"method": "POST",
+				"header": [
+				{ "key": "Content-Type", "value": "application/json" }
+				],
+				"body": {
+				"mode": "raw",
+				"raw": "{\n  \"templateId\": 3,\n  \"clientId\": 12,\n  \"assignedWorkerId\": 7,\n  \"status\": \"NEW\",\n  \"fieldValues\": {\n    \"101\": \"John Doe\",\n    \"102\": \"Medium\"\n  }\n}"
+				},
+				"url": {
+				"raw": "{{base_url}}/api/v1/jobs",
+				"host": ["{{base_url}}"],
+				"path": ["api", "v1", "jobs"]
+				}
+			},
+			"response": [
+				{
+				"name": "Create Job Success",
+				"status": "Created",
+				"code": 201,
+				"body": "{\n  \"id\": 55,\n  \"companyId\": 1,\n  \"templateId\": 3,\n  \"clientId\": 12,\n  \"assignedWorkerId\": 7,\n  \"status\": \"NEW\",\n  \"archived\": false,\n  \"createdAt\": \"2025-11-14T10:15:00\",\n  \"updatedAt\": \"2025-11-14T10:15:00\",\n  \"fieldValues\": {\n    \"101\": \"John Doe\",\n    \"102\": \"Medium\"\n  }\n}"
+				}
+			]
+			},
+			{
+			"name": "Get a Job by ID",
+			"request": {
+				"method": "GET",
+				"url": {
+				"raw": "{{base_url}}/api/v1/jobs/55",
+				"host": ["{{base_url}}"],
+				"path": ["api", "v1", "jobs", "55"]
+				}
+			},
+			"response": [
+				{
+				"name": "Get Job Success",
+				"status": "OK",
+				"code": 200,
+				"body": "{\n  \"id\": 55,\n  \"companyId\": 1,\n  \"templateId\": 3,\n  \"clientId\": 12,\n  \"assignedWorkerId\": 7,\n  \"status\": \"NEW\",\n  \"archived\": false,\n  \"createdAt\": \"2025-11-14T10:15:00\",\n  \"updatedAt\": \"2025-11-14T10:15:00\",\n  \"fieldValues\": {\n    \"101\": \"John Doe\",\n    \"102\": \"Medium\"\n  }\n}"
+				}
+			]
+			},
+			{
+			"name": "Update a Job",
+			"request": {
+				"method": "PUT",
+				"header": [
+				{ "key": "Content-Type", "value": "application/json" }
+				],
+				"body": {
+				"mode": "raw",
+				"raw": "{\n  \"clientId\": 12,\n  \"assignedWorkerId\": 7,\n  \"status\": \"IN_PROGRESS\",\n  \"archived\": false,\n  \"fieldValues\": {\n    \"101\": \"Jane Doe\",\n    \"102\": \"High\"\n  }\n}"
+				},
+				"url": {
+				"raw": "{{base_url}}/api/v1/jobs/55",
+				"host": ["{{base_url}}"],
+				"path": ["api", "v1", "jobs", "55"]
+				}
+			},
+			"response": [
+				{
+				"name": "Update Job Success",
+				"status": "OK",
+				"code": 200,
+				"body": "{\n  \"id\": 55,\n  \"companyId\": 1,\n  \"templateId\": 3,\n  \"clientId\": 12,\n  \"assignedWorkerId\": 7,\n  \"status\": \"IN_PROGRESS\",\n  \"archived\": false,\n  \"createdAt\": \"2025-11-14T10:15:00\",\n  \"updatedAt\": \"2025-11-14T10:20:00\",\n  \"fieldValues\": {\n    \"101\": \"Jane Doe\",\n    \"102\": \"High\"\n  }\n}"
+				}
+			]
+			},
+			{
+			"name": "List All Jobs",
+			"request": {
+				"method": "GET",
+				"url": {
+				"raw": "{{base_url}}/api/v1/jobs",
+				"host": ["{{base_url}}"],
+				"path": ["api", "v1", "jobs"]
+				}
+			},
+			"response": [
+				{
+				"name": "List Jobs Success",
+				"status": "OK",
+				"code": 200,
+				"body": "[\n  {\n    \"id\": 55,\n    \"companyId\": 1,\n    \"templateId\": 3,\n    \"clientId\": 12,\n    \"assignedWorkerId\": 7,\n    \"status\": \"IN_PROGRESS\",\n    \"archived\": false,\n    \"createdAt\": \"2025-11-14T10:15:00\",\n    \"updatedAt\": \"2025-11-14T10:20:00\",\n    \"fieldValues\": {\n      \"101\": \"Jane Doe\",\n      \"102\": \"High\"\n    }\n  }\n]"
+				}
+			]
+			},
+			{
+			"name": "Delete a Job",
+			"request": {
+				"method": "DELETE",
+				"url": {
+				"raw": "{{base_url}}/api/v1/jobs/55",
+				"host": ["{{base_url}}"],
+				"path": ["api", "v1", "jobs", "55"]
+				}
+			},
+			"response": [
+				{
+				"name": "Delete Success",
+				"status": "No Content",
+				"code": 204,
+				"body": ""
+				}
+			]
+			}
+		]
 		}
 	],
 	"event": [

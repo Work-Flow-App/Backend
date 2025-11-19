@@ -63,6 +63,7 @@ jobs:
              DB_USERNAME=${{ secrets.DB_USERNAME }}
              DB_PASSWORD=${{ secrets.DB_PASSWORD }}
              JWT_SECRET=${{ secrets.JWT_SECRET }}
+             CORS_ALLOWED_ORIGINS=${{ secrets.CORS_ALLOWED_ORIGINS }}
              SPRING_PROFILES_ACTIVE=dev
              HIBERNATE_DDL_AUTO=create-drop
              FLYWAY_ENABLED=false

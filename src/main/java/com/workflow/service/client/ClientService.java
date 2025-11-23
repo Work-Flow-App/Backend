@@ -1,5 +1,6 @@
 package com.workflow.service.client;
 
+import com.workflow.common.exception.customException.*;
 import com.workflow.dto.client.ClientCreateRequest;
 import com.workflow.dto.client.ClientUpdateRequest;
 import com.workflow.dto.client.ClientResponse;
@@ -25,7 +26,7 @@ public class ClientService implements IClientService {
     @Override
     public ClientResponse createClient(ClientCreateRequest request, Long companyId) {
         Company company = companyRepository.findById(companyId)
-                .orElseThrow(() -> new RuntimeException("Company not found"));
+                .orElseThrow(() -> new CompanyNotFoundException("Company not found"));
         Client client = Client.builder()
                 .name(request.getName())
                 .company(company)
@@ -43,7 +44,7 @@ public class ClientService implements IClientService {
     public ClientResponse getClientById(Long clientId, Long companyId) {
         Client client = clientRepository.findById(clientId)
                 .filter(c -> c.getCompany().getId().equals(companyId))
-                .orElseThrow(() -> new RuntimeException("Client not found"));
+                .orElseThrow(() -> new ClientNotFoundException("Client not found"));
         return mapToResponse(client);
     }
 
@@ -59,7 +60,7 @@ public class ClientService implements IClientService {
     public ClientResponse updateClient(Long clientId, ClientUpdateRequest request, Long companyId) {
         Client client = clientRepository.findById(clientId)
                 .filter(c -> c.getCompany().getId().equals(companyId))
-                .orElseThrow(() -> new RuntimeException("Client not found"));
+                .orElseThrow(() -> new ClientNotFoundException("Client not found"));
         client.setName(request.getName());
         client.setEmail(request.getEmail());
         client.setTelephone(request.getTelephone());
@@ -74,7 +75,7 @@ public class ClientService implements IClientService {
     public void deleteClient(Long clientId, Long companyId) {
         Client client = clientRepository.findById(clientId)
                 .filter(c -> c.getCompany().getId().equals(companyId))
-                .orElseThrow(() -> new RuntimeException("Client not found"));
+                .orElseThrow(() -> new ClientNotFoundException("Client not found"));
         clientRepository.delete(client);
     }
 

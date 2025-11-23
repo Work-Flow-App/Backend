@@ -62,12 +62,10 @@ public class CompanyService implements ICompanyService {
     public CompanyDashboardResponse getDashboard(Long userId) {
         Company company = findCompanyByUserId(userId);
 
-        long totalWorkers = company.getWorkers().size();
-        long activeWorkers = company.getWorkers().stream()
-                .filter(w -> !w.isArchived())
-                .count();
+        long totalWorkers = companyRepository.countWorkers(company.getId());
+        long activeWorkers = companyRepository.countActiveWorkers(company.getId());
         long archivedWorkers = totalWorkers - activeWorkers;
-        long totalClients = company.getClients().size();
+        long totalClients = companyRepository.countClients(company.getId());
 
         return new CompanyDashboardResponse(
                 company.getId(),

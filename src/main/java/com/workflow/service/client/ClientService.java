@@ -50,8 +50,7 @@ public class ClientService implements IClientService {
 
     @Override
     public List<ClientResponse> getAllClients(Long companyId) {
-        return clientRepository.findAll().stream()
-                .filter(c -> c.getCompany().getId().equals(companyId))
+        return clientRepository.findByCompanyId(companyId).stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }

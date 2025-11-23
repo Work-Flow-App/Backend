@@ -18,4 +18,13 @@ public interface CompanyRepository extends JpaRepository<Company, Long> {
 
     @Query("SELECT c FROM Company c WHERE c.id = :companyId AND c.archived = false")
     Optional<Company> findByIdAndNotArchived(@Param("companyId") Long companyId);
+
+    @Query("SELECT COUNT(w.id) FROM Worker w WHERE w.company.id = :companyId")
+    long countWorkers(@Param("companyId") Long companyId);
+
+    @Query("SELECT COUNT(w.id) FROM Worker w WHERE w.company.id = :companyId AND w.archived = false")
+    long countActiveWorkers(@Param("companyId") Long companyId);
+
+    @Query("SELECT COUNT(c.id) FROM Client c WHERE c.company.id = :companyId")
+    long countClients(@Param("companyId") Long companyId);
 }

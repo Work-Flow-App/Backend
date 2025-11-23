@@ -4,6 +4,7 @@ import com.workflow.dto.jobtemplate.*;
 import com.workflow.entity.Company;
 import com.workflow.entity.User;
 import com.workflow.repository.CompanyRepository;
+import com.workflow.service.company.ICompanyService;
 import com.workflow.service.jobtemplate.IJobTemplateService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.*;
@@ -17,12 +18,11 @@ import java.util.List;
 public class JobTemplateController {
 
     private final IJobTemplateService templateService;
-    private final CompanyRepository companyRepository;
+    private final ICompanyService companyService;
 
     private Long getCompanyId(Authentication auth) {
         User user = (User) auth.getPrincipal();
-        Company company = companyRepository.findByUserIdAndNotArchived(user.getId())
-                .orElseThrow(() -> new RuntimeException("Company not found"));
+        Company company = companyService.findCompanyByUserId(user.getId());
         return company.getId();
     }
 

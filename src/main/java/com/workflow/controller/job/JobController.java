@@ -3,7 +3,7 @@ package com.workflow.controller.job;
 import com.workflow.dto.job.*;
 import com.workflow.entity.Company;
 import com.workflow.entity.User;
-import com.workflow.repository.CompanyRepository;
+import com.workflow.service.company.ICompanyService;
 import com.workflow.service.job.IJobService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.*;
@@ -17,12 +17,11 @@ import java.util.List;
 public class JobController {
 
     private final IJobService jobService;
-    private final CompanyRepository companyRepository;
+    private final ICompanyService companyService;
 
     private Long getCompanyId(Authentication auth) {
         User user = (User) auth.getPrincipal();
-        Company company = companyRepository.findByUserIdAndNotArchived(user.getId())
-                .orElseThrow(() -> new RuntimeException("Company not found"));
+        Company company = companyService.findCompanyByUserId(user.getId());
         return company.getId();
     }
 

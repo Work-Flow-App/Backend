@@ -6,7 +6,7 @@ import com.workflow.dto.client.ClientResponse;
 import com.workflow.entity.Company;
 import com.workflow.entity.User;
 import com.workflow.service.client.IClientService;
-import com.workflow.repository.CompanyRepository;
+import com.workflow.service.company.ICompanyService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -22,44 +22,35 @@ import java.util.List;
 public class ClientController {
 
     private final IClientService clientService;
-    private final CompanyRepository companyRepository;
+    private final ICompanyService companyService;
 
+    private Long getCompanyId(Authentication auth) {
+        User user = (User) auth.getPrincipal();
+        Company company = companyService.findCompanyByUserId(user.getId());
+        return company.getId();
+    }
 
     @PostMapping
     public ResponseEntity<ClientResponse> createClient(
             @Valid @RequestBody ClientCreateRequest request,
-            Authentication authentication
+            Authentication auth
     ) {
-        User user = (User) authentication.getPrincipal();
-        Company company = companyRepository.findByUserIdAndNotArchived(user.getId())
-                .orElseThrow(() -> new RuntimeException("Company not found"));
-        Long companyId = company.getId();
-
-        ClientResponse response = clientService.createClient(request, companyId);
+        ClientResponse response = clientService.createClient(request, getCompanyId(auth));
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @GetMapping
-    public ResponseEntity<List<ClientResponse>> getAllClients(Authentication authentication) {
-        User user = (User) authentication.getPrincipal();
-        Company company = companyRepository.findByUserIdAndNotArchived(user.getId())
-                .orElseThrow(() -> new RuntimeException("Company not found"));
-        Long companyId = company.getId();
-        
-        List<ClientResponse> clients = clientService.getAllClients(companyId);
+    public ResponseEntity<List<ClientResponse>> getAllClients(Authentication auth) {
+        List<ClientResponse> clients = clientService.getAllClients(getCompanyId(auth));
         return ResponseEntity.ok(clients);
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<ClientResponse> getClientById(
             @PathVariable Long id,
-            Authentication authentication
+            Authentication auth
     ) {
-        User user = (User) authentication.getPrincipal();
-        Company company = companyRepository.findByUserIdAndNotArchived(user.getId())
-                .orElseThrow(() -> new RuntimeException("Company not found"));
-        Long companyId = company.getId();
-        ClientResponse response = clientService.getClientById(id, companyId);
+        ClientResponse response = clientService.getClientById(id, getCompanyId(auth));
         return ResponseEntity.ok(response);
     }
 
@@ -67,27 +58,18 @@ public class ClientController {
     public ResponseEntity<ClientResponse> updateClient(
             @PathVariable Long id,
             @Valid @RequestBody ClientUpdateRequest request,
-            Authentication authentication
+            Authentication auth
     ) {
-                User user = (User) authentication.getPrincipal();
-        Company company = companyRepository.findByUserIdAndNotArchived(user.getId())
-                .orElseThrow(() -> new RuntimeException("Company not found"));
-        Long companyId = company.getId();
-
-        ClientResponse response = clientService.updateClient(id, request, companyId);
+        ClientResponse response = clientService.updateClient(id, request, getCompanyId(auth));
         return ResponseEntity.ok(response);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteClient(
             @PathVariable Long id,
-            Authentication authentication
+            Authentication auth
     ) {
-                User user = (User) authentication.getPrincipal();
-        Company company = companyRepository.findByUserIdAndNotArchived(user.getId())
-                .orElseThrow(() -> new RuntimeException("Company not found"));
-        Long companyId = company.getId();
-        clientService.deleteClient(id, companyId);
+        clientService.deleteClient(id, getCompanyId(auth));
         return ResponseEntity.noContent().build();
     }
 }

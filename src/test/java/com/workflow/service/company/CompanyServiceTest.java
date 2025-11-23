@@ -222,6 +222,9 @@ class CompanyServiceTest {
         // Arrange
         company.setWorkers(new ArrayList<>());
         when(companyRepository.findByUserIdAndNotArchived(1L)).thenReturn(Optional.of(company));
+        when(companyRepository.countWorkers(1L)).thenReturn(0L);
+        when(companyRepository.countActiveWorkers(1L)).thenReturn(0L);
+        when(companyRepository.countClients(1L)).thenReturn(0L);
 
         // Act
         CompanyDashboardResponse response = companyService.getDashboard(1L);
@@ -269,6 +272,9 @@ class CompanyServiceTest {
 
         company.setWorkers(workers);
         when(companyRepository.findByUserIdAndNotArchived(1L)).thenReturn(Optional.of(company));
+        when(companyRepository.countWorkers(1L)).thenReturn(3L);
+        when(companyRepository.countActiveWorkers(1L)).thenReturn(2L);
+        when(companyRepository.countClients(1L)).thenReturn(0L);
 
         // Act
         CompanyDashboardResponse response = companyService.getDashboard(1L);

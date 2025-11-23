@@ -12,20 +12,6 @@ import jakarta.servlet.http.HttpServletRequest;
 @Component
 public class BusinessExceptionHandler {
 
-    @ExceptionHandler(ResourceNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleResourceNotFound(
-            ResourceNotFoundException ex,
-            HttpServletRequest request) {
-        return ResponseBuilder.buildNotFoundResponse(ex.getMessage(), request);
-    }
-
-    @ExceptionHandler(BusinessException.class)
-    public ResponseEntity<ErrorResponse> handleBusinessException(
-            BusinessException ex,
-            HttpServletRequest request) {
-        return ResponseBuilder.buildBadRequestResponse(ex.getMessage(), request);
-    }
-
     @ExceptionHandler(CompanyNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleCompanyNotFound(
             CompanyNotFoundException ex,

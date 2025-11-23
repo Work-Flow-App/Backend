@@ -24,12 +24,6 @@ public class ClientController {
     private final IClientService clientService;
     private final ICompanyService companyService;
 
-    private Long getCompanyId(Authentication auth) {
-        User user = (User) auth.getPrincipal();
-        Company company = companyService.findCompanyByUserId(user.getId());
-        return company.getId();
-    }
-
     @PostMapping
     public ResponseEntity<ClientResponse> createClient(
             @Valid @RequestBody ClientCreateRequest request,
@@ -72,4 +66,11 @@ public class ClientController {
         clientService.deleteClient(id, getCompanyId(auth));
         return ResponseEntity.noContent().build();
     }
+
+    private Long getCompanyId(Authentication auth) {
+        User user = (User) auth.getPrincipal();
+        Company company = companyService.findCompanyByUserId(user.getId());
+        return company.getId();
+    }
+
 }

@@ -20,12 +20,6 @@ public class JobTemplateController {
     private final IJobTemplateService templateService;
     private final ICompanyService companyService;
 
-    private Long getCompanyId(Authentication auth) {
-        User user = (User) auth.getPrincipal();
-        Company company = companyService.findCompanyByUserId(user.getId());
-        return company.getId();
-    }
-
     @PostMapping
     public ResponseEntity<JobTemplateResponse> create(
             @RequestBody JobTemplateCreateRequest request,
@@ -48,4 +42,11 @@ public class JobTemplateController {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(templateService.createTemplateField(request, getCompanyId(auth)));
     }
+
+    private Long getCompanyId(Authentication auth) {
+        User user = (User) auth.getPrincipal();
+        Company company = companyService.findCompanyByUserId(user.getId());
+        return company.getId();
+    }
+
 }

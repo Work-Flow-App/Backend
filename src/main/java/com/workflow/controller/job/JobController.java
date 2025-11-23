@@ -19,12 +19,6 @@ public class JobController {
     private final IJobService jobService;
     private final ICompanyService companyService;
 
-    private Long getCompanyId(Authentication auth) {
-        User user = (User) auth.getPrincipal();
-        Company company = companyService.findCompanyByUserId(user.getId());
-        return company.getId();
-    }
-
     @PostMapping
     public ResponseEntity<JobResponse> create(
             @RequestBody JobCreateRequest request,
@@ -70,4 +64,12 @@ public class JobController {
         jobService.deleteJob(id, getCompanyId(auth));
         return ResponseEntity.noContent().build();
     }
+
+    private Long getCompanyId(Authentication auth) {
+        User user = (User) auth.getPrincipal();
+        Company company = companyService.findCompanyByUserId(user.getId());
+        return company.getId();
+    }
 }
+
+

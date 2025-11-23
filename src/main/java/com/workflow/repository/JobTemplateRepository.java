@@ -6,4 +6,5 @@ import java.util.List;
 
 public interface JobTemplateRepository extends JpaRepository<JobTemplate, Long> {
     List<JobTemplate> findByCompanyId(Long companyId);
+    boolean existsByCompanyIdAndName(Long companyId, String name);
 }

@@ -1,5 +1,6 @@
 package com.workflow.service.jobtemplate;
 
+import com.workflow.common.exception.customException.*;
 import com.workflow.dto.jobtemplate.*;
 import com.workflow.entity.*;
 import com.workflow.repository.*;
@@ -21,7 +22,7 @@ public class JobTemplateService implements IJobTemplateService {
     @Override
     public JobTemplateResponse createTemplate(JobTemplateCreateRequest request, Long companyId) {
         Company company = companyRepository.findById(companyId)
-                .orElseThrow(() -> new RuntimeException("Company not found"));
+                .orElseThrow(() -> new CompanyNotFoundException("Company not found"));
 
         JobTemplate template = JobTemplate.builder()
                 .company(company)
@@ -45,7 +46,7 @@ public class JobTemplateService implements IJobTemplateService {
     public JobTemplateFieldResponse createTemplateField(JobTemplateFieldCreateRequest request, Long companyId) {
         JobTemplate template = templateRepository.findById(request.getTemplateId())
                 .filter(t -> t.getCompany().getId().equals(companyId))
-                .orElseThrow(() -> new RuntimeException("Template not found"));
+                .orElseThrow(() -> new TemplateNotFoundException("Template not found"));
 
         JobTemplateField field = JobTemplateField.builder()
                 .template(template)

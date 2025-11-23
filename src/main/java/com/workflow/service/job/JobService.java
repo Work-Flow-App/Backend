@@ -1,5 +1,6 @@
 package com.workflow.service.job;
 
+import com.workflow.common.exception.customException.*;
 import com.workflow.dto.job.*;
 import com.workflow.entity.*;
 import com.workflow.repository.*;
@@ -25,21 +26,21 @@ public class JobService implements IJobService {
     @Override
     public JobResponse createJob(JobCreateRequest request, Long companyId) {
         Company company = companyRepository.findById(companyId)
-                .orElseThrow(() -> new RuntimeException("Company not found"));
+                .orElseThrow(() -> new CompanyNotFoundException("Company not found"));
 
         JobTemplate template = templateRepository.findById(request.getTemplateId())
                 .filter(t -> t.getCompany().getId().equals(companyId))
-                .orElseThrow(() -> new RuntimeException("Template not found"));
+                .orElseThrow(() -> new TemplateNotFoundException("Template not found"));
 
         Client client = request.getClientId() == null ? null :
                 clientRepository.findById(request.getClientId())
                         .filter(c -> c.getCompany().getId().equals(companyId))
-                        .orElseThrow(() -> new RuntimeException("Client not found"));
+                        .orElseThrow(() -> new ClientNotFoundException("Client not found"));
 
         Worker worker = request.getAssignedWorkerId() == null ? null :
                 workerRepository.findById(request.getAssignedWorkerId())
                         .filter(w -> w.getCompany().getId().equals(companyId))
-                        .orElseThrow(() -> new RuntimeException("Worker not found"));
+                        .orElseThrow(() -> new WorkerNotFoundException("Worker not found"));
 
         Job job = Job.builder()
                 .company(company)
@@ -60,19 +61,19 @@ public class JobService implements IJobService {
     public JobResponse updateJob(Long jobId, JobUpdateRequest request, Long companyId) {
         Job job = jobRepository.findById(jobId)
                 .filter(j -> j.getCompany().getId().equals(companyId))
-                .orElseThrow(() -> new RuntimeException("Job not found"));
+                .orElseThrow(() -> new JobNotFoundException("Job not found"));
 
         if (request.getClientId() != null) {
             Client client = clientRepository.findById(request.getClientId())
                     .filter(c -> c.getCompany().getId().equals(companyId))
-                    .orElseThrow(() -> new RuntimeException("Client not found"));
+                    .orElseThrow(() -> new ClientNotFoundException("Client not found"));
             job.setClient(client);
         }
 
         if (request.getAssignedWorkerId() != null) {
             Worker worker = workerRepository.findById(request.getAssignedWorkerId())
                     .filter(w -> w.getCompany().getId().equals(companyId))
-                    .orElseThrow(() -> new RuntimeException("Worker not found"));
+                    .orElseThrow(() -> new WorkerNotFoundException("Worker not found"));
             job.setAssignedWorker(worker);
         }
 
@@ -112,7 +113,7 @@ public class JobService implements IJobService {
     public JobResponse getJob(Long jobId, Long companyId) {
         Job job = jobRepository.findById(jobId)
                 .filter(j -> j.getCompany().getId().equals(companyId))
-                .orElseThrow(() -> new RuntimeException("Job not found"));
+                .orElseThrow(() -> new JobNotFoundException("Job not found"));
 
         return mapToResponse(job);
     }
@@ -129,7 +130,7 @@ public class JobService implements IJobService {
     public void deleteJob(Long jobId, Long companyId) {
         Job job = jobRepository.findById(jobId)
                 .filter(j -> j.getCompany().getId().equals(companyId))
-                .orElseThrow(() -> new RuntimeException("Job not found"));
+                .orElseThrow(() -> new JobNotFoundException("Job not found"));
 
         fieldValueRepository.deleteByJobId(jobId);
         jobRepository.delete(job);

@@ -1,12 +1,22 @@
 package com.workflow.service.jobtemplate;
 
-import com.workflow.common.exception.customException.*;
-import com.workflow.dto.jobtemplate.*;
-import com.workflow.entity.*;
-import com.workflow.repository.*;
+import com.workflow.common.exception.customException.CompanyNotFoundException;
+import com.workflow.common.exception.customException.DuplicateNameException;
+import com.workflow.common.exception.customException.TemplateNotFoundException;
+import com.workflow.dto.jobtemplate.JobTemplateCreateRequest;
+import com.workflow.dto.jobtemplate.JobTemplateFieldCreateRequest;
+import com.workflow.dto.jobtemplate.JobTemplateFieldResponse;
+import com.workflow.dto.jobtemplate.JobTemplateResponse;
+import com.workflow.entity.Company;
+import com.workflow.entity.JobTemplate;
+import com.workflow.entity.JobTemplateField;
+import com.workflow.repository.CompanyRepository;
+import com.workflow.repository.JobTemplateFieldRepository;
+import com.workflow.repository.JobTemplateRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -21,18 +31,25 @@ public class JobTemplateService implements IJobTemplateService {
 
     @Override
     public JobTemplateResponse createTemplate(JobTemplateCreateRequest request, Long companyId) {
+
         Company company = companyRepository.findById(companyId)
                 .orElseThrow(() -> new CompanyNotFoundException("Company not found"));
-
+        
+        if (templateRepository.existsByCompanyIdAndName(companyId, request.getName())) {
+                throw new DuplicateNameException("Template name must be unique within the company");
+        }
+                
         JobTemplate template = JobTemplate.builder()
                 .company(company)
                 .name(request.getName())
                 .description(request.getDescription())
                 .build();
+
         templateRepository.save(template);
 
         return mapToResponse(template);
-    }
+        }
+
 
     @Override
     public List<JobTemplateResponse> getAllTemplates(Long companyId) {

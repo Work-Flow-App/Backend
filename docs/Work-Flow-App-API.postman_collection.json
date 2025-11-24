@@ -1683,282 +1683,868 @@
 			]
 		},
 		{
-		"name": "Job Templates",
-		"description": "Job Template management endpoints for creating templates, managing template fields, and organizing dynamic job workflows.",
-		"item": [
-			{
-				"name": "Create Job Template",
-				"request": {
-					"auth": {
-						"type": "bearer",
-						"bearer": [
+			"name": "Job Templates",
+			"description": "Job Template management endpoints for creating templates, managing template fields, and organizing dynamic job workflows. Templates are the blueprint for Job instances.",
+			"item": [
+				{
+					"name": "Create Job Template",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
 							{
-								"key": "token",
-								"value": "{{jwt_token}}",
-								"type": "string"
+								"key": "Content-Type",
+								"value": "application/json"
 							}
-						]
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Maintenance Job\",\n    \"description\": \"Standard maintenance workflow template for equipment servicing\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/job-templates",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"job-templates"
+							]
+						},
+						"description": "Create a new job template for the authenticated company.\n\n**Authentication:** Required (COMPANY role)\n\n**Request Body:**\n- name (string, required): Template name (2-150 characters, unique per company)\n- description (string, optional): Template description\n\n**Business Logic:**\n- Template is associated with the company of the authenticated user.\n\n**Response:** Created template object with metadata (id, timestamps, archived flag)."
 					},
-					"method": "POST",
-					"header": [
+					"response": [
 						{
-							"key": "Content-Type",
-							"value": "application/json"
-						}
-					],
-					"body": {
-						"mode": "raw",
-						"raw": "{\n    \"name\": \"Maintenance Job\",\n    \"description\": \"Standard maintenance workflow template for equipment servicing\"\n}"
-					},
-					"url": {
-						"raw": "{{base_url}}/api/v1/job-templates",
-						"host": ["{{base_url}}"],
-						"path": ["api", "v1", "job-templates"]
-					},
-					"description": "Create a new job template for the authenticated company.\n\n**Authentication:** Required (Bearer token in Authorization header)\n\n**Request Body:**\n- name (string, required): 2-150 characters - Template name\n- description (string, optional): Max 255 characters - Template description\n\n**Business Logic:**\n- Job template is associated with the company of the authenticated user\n- Template name should be unique per company\n\n**Response:** Created template object with id, companyId, name, description, and timestamps (createdAt, updatedAt)\n\n**Status Code:** 201 Created"
-				},
-				"response": [
-					{
-						"name": "Create Job Template - Success",
-						"originalRequest": {
-							"method": "POST",
-							"header": [
-								{
-									"key": "Authorization",
-									"value": "Bearer {{jwt_token}}"
+							"name": "Create Job Template - Success",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{jwt_token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\": \"Maintenance Job\",\n    \"description\": \"Standard maintenance workflow template for equipment servicing\"\n}"
 								},
+								"url": {
+									"raw": "http://localhost:8080/api/v1/job-templates",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"api",
+										"v1",
+										"job-templates"
+									]
+								}
+							},
+							"status": "Created",
+							"code": 201,
+							"_postman_previewlanguage": "json",
+							"header": [
 								{
 									"key": "Content-Type",
 									"value": "application/json"
 								}
 							],
-							"body": {
-								"mode": "raw",
-								"raw": "{\n    \"name\": \"Maintenance Job\",\n    \"description\": \"Standard maintenance workflow template for equipment servicing\"\n}"
-							},
-							"url": {
-								"raw": "http://localhost:8080/api/v1/job-templates",
-								"protocol": "http",
-								"host": ["localhost"],
-								"port": "8080",
-								"path": ["api", "v1", "job-templates"]
-							}
-						},
-						"status": "Created",
-						"code": 201,
-						"_postman_previewlanguage": "json",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": "{\n    \"id\": 3,\n    \"companyId\": 1,\n    \"name\": \"Maintenance Job\",\n    \"description\": \"Standard maintenance workflow template for equipment servicing\",\n    \"createdAt\": \"2025-11-14T10:00:00\",\n    \"updatedAt\": \"2025-11-14T10:00:00\"\n}"
-					}
-				]
-			},
-			{
-				"name": "Get All Job Templates",
-				"request": {
-					"auth": {
-						"type": "bearer",
-						"bearer": [
-							{
-								"key": "token",
-								"value": "{{jwt_token}}",
-								"type": "string"
-							}
-						]
-					},
-					"method": "GET",
-					"header": [],
-					"url": {
-						"raw": "{{base_url}}/api/v1/job-templates",
-						"host": ["{{base_url}}"],
-						"path": ["api", "v1", "job-templates"]
-					},
-					"description": "Retrieve all job templates for the authenticated company.\n\n**Authentication:** Required (Bearer token in Authorization header)\n\n**Response:** Array of template objects\n\n**Status Code:** 200 OK"
+							"body": "{\n    \"id\": 3,\n    \"companyId\": 1,\n    \"name\": \"Maintenance Job\",\n    \"description\": \"Standard maintenance workflow template for equipment servicing\",\n    \"archived\": false,\n    \"createdAt\": \"2025-11-14T10:00:00\",\n    \"updatedAt\": \"2025-11-14T10:00:00\"\n}"
+						}
+					]
 				},
-				"response": [
-					{
-						"name": "Get All Job Templates - Success",
-						"originalRequest": {
-							"method": "GET",
-							"header": [
+				{
+					"name": "Get All Job Templates",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "Authorization",
-									"value": "Bearer {{jwt_token}}"
+									"key": "token",
+									"value": "{{jwt_token}}",
+									"type": "string"
 								}
-							],
-							"url": {
-								"raw": "http://localhost:8080/api/v1/job-templates",
-								"protocol": "http",
-								"host": ["localhost"],
-								"port": "8080",
-								"path": ["api", "v1", "job-templates"]
-							}
+							]
 						},
-						"status": "OK",
-						"code": 200,
-						"_postman_previewlanguage": "json",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": "[\n    {\n        \"id\": 3,\n        \"companyId\": 1,\n        \"name\": \"Maintenance Job\",\n        \"description\": \"Standard maintenance workflow template for equipment servicing\",\n        \"createdAt\": \"2025-11-14T10:00:00\",\n        \"updatedAt\": \"2025-11-14T10:00:00\"\n    },\n    {\n        \"id\": 4,\n        \"companyId\": 1,\n        \"name\": \"Installation Job\",\n        \"description\": \"Equipment installation workflow\",\n        \"createdAt\": \"2025-11-14T10:05:00\",\n        \"updatedAt\": \"2025-11-14T10:05:00\"\n    }\n]"
-					}
-				]
-			},
-			{
-				"name": "Create Job Template Field",
-				"request": {
-					"auth": {
-						"type": "bearer",
-						"bearer": [
-							{
-								"key": "token",
-								"value": "{{jwt_token}}",
-								"type": "string"
-							}
-						]
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/job-templates",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"job-templates"
+							]
+						},
+						"description": "Retrieve all job templates for the authenticated company.\n\n**Authentication:** Required (COMPANY role)\n\n**Response:** Array of job template objects (including archived)\n\n**Status Code:** 200 OK"
 					},
-					"method": "POST",
-					"header": [
+					"response": [
 						{
-							"key": "Content-Type",
-							"value": "application/json"
+							"name": "Get All Job Templates - Success",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{jwt_token}}"
+									}
+								],
+								"url": {
+									"raw": "http://localhost:8080/api/v1/job-templates",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"api",
+										"v1",
+										"job-templates"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "[\n    {\n        \"id\": 3,\n        \"companyId\": 1,\n        \"name\": \"Maintenance Job\",\n        \"description\": \"Standard maintenance workflow template for equipment servicing\",\n        \"archived\": false,\n        \"createdAt\": \"2025-11-14T10:00:00\",\n        \"updatedAt\": \"2025-11-14T10:00:00\"\n    },\n    {\n        \"id\": 4,\n        \"companyId\": 1,\n        \"name\": \"Installation Checklist\",\n        \"description\": \"Checklist for new equipment installation.\",\n        \"archived\": false,\n        \"createdAt\": \"2025-11-14T11:00:00\",\n        \"updatedAt\": \"2025-11-14T11:00:00\"\n    }\n]"
 						}
-					],
-					"body": {
-						"mode": "raw",
-						"raw": "{\n    \"templateId\": 3,\n    \"name\": \"customerName\",\n    \"label\": \"Customer Name\",\n    \"jobFieldType\": \"TEXT\",\n    \"required\": true,\n    \"options\": null,\n    \"orderIndex\": 1\n}"
-					},
-					"url": {
-						"raw": "{{base_url}}/api/v1/job-templates/fields",
-						"host": ["{{base_url}}"],
-						"path": ["api", "v1", "job-templates", "fields"]
-					},
-					"description": "Add a field to a job template.\n\n**Authentication:** Required (Bearer token in Authorization header)\n\n**Request Body:**\n- templateId (long, required): The template ID to add field to\n- name (string, required): Field name (variable name, max 150 chars, no spaces)\n- label (string, required): Display label for the field (max 150 chars)\n- jobFieldType (enum, required): TEXT, NUMBER, DATE, BOOLEAN, or DROPDOWN\n- required (boolean, required): Whether field is mandatory\n- options (string, optional): JSON array string for DROPDOWN type (e.g., \"[\\\"Low\\\",\\\"Medium\\\",\\\"High\\\"]\")\n- orderIndex (integer, optional): Display order in form\n\n**Field Types:**\n- TEXT: Free text input\n- NUMBER: Numeric input\n- DATE: Date picker\n- BOOLEAN: Checkbox/toggle\n- DROPDOWN: Select from predefined options\n\n**Response:** Created field object with id, templateId, name, label, jobFieldType, required, options, orderIndex\n\n**Status Code:** 201 Created"
+					]
 				},
-				"response": [
-					{
-						"name": "Create TEXT Field - Success",
-						"originalRequest": {
-							"method": "POST",
-							"header": [
+				{
+					"name": "Get Job Template By ID",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "Authorization",
-									"value": "Bearer {{jwt_token}}"
-								},
-								{
-									"key": "Content-Type",
-									"value": "application/json"
+									"key": "token",
+									"value": "{{jwt_token}}",
+									"type": "string"
 								}
-							],
-							"body": {
-								"mode": "raw",
-								"raw": "{\n    \"templateId\": 3,\n    \"name\": \"customerName\",\n    \"label\": \"Customer Name\",\n    \"jobFieldType\": \"TEXT\",\n    \"required\": true,\n    \"options\": null,\n    \"orderIndex\": 1\n}"
-							},
-							"url": {
-								"raw": "http://localhost:8080/api/v1/job-templates/fields",
-								"protocol": "http",
-								"host": ["localhost"],
-								"port": "8080",
-								"path": ["api", "v1", "job-templates", "fields"]
-							}
+							]
 						},
-						"status": "Created",
-						"code": 201,
-						"_postman_previewlanguage": "json",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": "{\n    \"id\": 101,\n    \"templateId\": 3,\n    \"name\": \"customerName\",\n    \"label\": \"Customer Name\",\n    \"jobFieldType\": \"TEXT\",\n    \"required\": true,\n    \"options\": null,\n    \"orderIndex\": 1\n}"
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/job-templates/3",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"job-templates",
+								"3"
+							]
+						},
+						"description": "Retrieve a single job template for the authenticated company.\n\n**Authentication:** Required (COMPANY role)\n\n**Path Parameter:**\n- id (long): Template ID\n\n**Authorization:** Only templates belonging to the authenticated company can be accessed.\n\n**Status Code:** 200 OK"
 					},
-					{
-						"name": "Create DROPDOWN Field - Success",
-						"originalRequest": {
-							"method": "POST",
+					"response": [
+						{
+							"name": "Get Job Template By ID - Success",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{jwt_token}}"
+									}
+								],
+								"url": {
+									"raw": "http://localhost:8080/api/v1/job-templates/3",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"api",
+										"v1",
+										"job-templates",
+										"3"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
 							"header": [
-								{
-									"key": "Authorization",
-									"value": "Bearer {{jwt_token}}"
-								},
 								{
 									"key": "Content-Type",
 									"value": "application/json"
 								}
 							],
-							"body": {
-								"mode": "raw",
-								"raw": "{\n    \"templateId\": 3,\n    \"name\": \"priority\",\n    \"label\": \"Priority Level\",\n    \"jobFieldType\": \"DROPDOWN\",\n    \"required\": true,\n    \"options\": \"[\\\"Low\\\",\\\"Medium\\\",\\\"High\\\",\\\"Critical\\\"]\",\n    \"orderIndex\": 2\n}"
-							},
-							"url": {
-								"raw": "http://localhost:8080/api/v1/job-templates/fields",
-								"protocol": "http",
-								"host": ["localhost"],
-								"port": "8080",
-								"path": ["api", "v1", "job-templates", "fields"]
-							}
+							"body": "{\n    \"id\": 3,\n    \"companyId\": 1,\n    \"name\": \"Maintenance Job\",\n    \"description\": \"Standard maintenance workflow template for equipment servicing\",\n    \"archived\": false,\n    \"createdAt\": \"2025-11-14T10:00:00\",\n    \"updatedAt\": \"2025-11-14T10:00:00\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Update Job Template",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_token}}",
+									"type": "string"
+								}
+							]
 						},
-						"status": "Created",
-						"code": 201,
-						"_postman_previewlanguage": "json",
+						"method": "PUT",
 						"header": [
 							{
 								"key": "Content-Type",
 								"value": "application/json"
 							}
 						],
-						"body": "{\n    \"id\": 102,\n    \"templateId\": 3,\n    \"name\": \"priority\",\n    \"label\": \"Priority Level\",\n    \"jobFieldType\": \"DROPDOWN\",\n    \"required\": true,\n    \"options\": \"[\\\"Low\\\",\\\"Medium\\\",\\\"High\\\",\\\"Critical\\\"]\",\n    \"orderIndex\": 2\n}"
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Updated Maintenance Template\",\n    \"description\": \"Updated template description for servicing jobs\",\n    \"archived\": false\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/job-templates/3",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"job-templates",
+								"3"
+							]
+						},
+						"description": "Update an existing job template.\n\n**Authentication:** Required (COMPANY role)\n\n**Path Parameter:**\n- id (long): Template ID\n\n**Request Body:**\n- name (string, optional): Updated template name\n- description (string, optional): Updated template description\n- archived (boolean, optional): Archive status\n\n**Authorization:** Only templates belonging to the authenticated company can be updated.\n\n**Status Code:** 200 OK"
 					},
-					{
-						"name": "Create DATE Field - Success",
-						"originalRequest": {
-							"method": "POST",
-							"header": [
-								{
-									"key": "Authorization",
-									"value": "Bearer {{jwt_token}}"
+					"response": [
+						{
+							"name": "Update Job Template - Success",
+							"originalRequest": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{jwt_token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"name\": \"Updated Maintenance Template\",\n    \"description\": \"Updated template description for servicing jobs\",\n    \"archived\": false\n}"
 								},
+								"url": {
+									"raw": "http://localhost:8080/api/v1/job-templates/3",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"api",
+										"v1",
+										"job-templates",
+										"3"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
 								{
 									"key": "Content-Type",
 									"value": "application/json"
 								}
 							],
-							"body": {
-								"mode": "raw",
-								"raw": "{\n    \"templateId\": 3,\n    \"name\": \"serviceDate\",\n    \"label\": \"Service Date\",\n    \"jobFieldType\": \"DATE\",\n    \"required\": true,\n    \"options\": null,\n    \"orderIndex\": 3\n}"
-							},
-							"url": {
-								"raw": "http://localhost:8080/api/v1/job-templates/fields",
-								"protocol": "http",
-								"host": ["localhost"],
-								"port": "8080",
-								"path": ["api", "v1", "job-templates", "fields"]
-							}
+							"body": "{\n    \"id\": 3,\n    \"companyId\": 1,\n    \"name\": \"Updated Maintenance Template\",\n    \"description\": \"Updated template description for servicing jobs\",\n    \"archived\": false,\n    \"createdAt\": \"2025-11-14T10:00:00\",\n    \"updatedAt\": \"2025-11-14T12:00:00\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Delete Job Template",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_token}}",
+									"type": "string"
+								}
+							]
 						},
-						"status": "Created",
-						"code": 201,
-						"_postman_previewlanguage": "json",
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/job-templates/3",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"job-templates",
+								"3"
+							]
+						},
+						"description": "Deletes a job template and all associated fields.\n\n**Authentication:** Required (COMPANY role)\n\n**Path Parameter:**\n- id (long): Template ID\n\n**Business Logic:**\n- Performs a permanent delete (hard delete) of the template and its fields.\n\n**Authorization:** Only templates belonging to the authenticated company can be deleted.\n\n**Status Code:** 204 No Content"
+					},
+					"response": [
+						{
+							"name": "Delete Job Template - Success",
+							"originalRequest": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{jwt_token}}"
+									}
+								],
+								"url": {
+									"raw": "http://localhost:8080/api/v1/job-templates/3",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"api",
+										"v1",
+										"job-templates",
+										"3"
+									]
+								}
+							},
+							"status": "No Content",
+							"code": 204,
+							"_postman_previewlanguage": null,
+							"header": [],
+							"body": null
+						}
+					]
+				},
+				{
+					"name": "Create Job Template Field",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
 						"header": [
 							{
 								"key": "Content-Type",
 								"value": "application/json"
 							}
 						],
-						"body": "{\n    \"id\": 103,\n    \"templateId\": 3,\n    \"name\": \"serviceDate\",\n    \"label\": \"Service Date\",\n    \"jobFieldType\": \"DATE\",\n    \"required\": true,\n    \"options\": null,\n    \"orderIndex\": 3\n}"
-					}
-				]
-			}
-		]
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"templateId\": 3,\n    \"name\": \"customerName\",\n    \"label\": \"Customer Name\",\n    \"jobFieldType\": \"TEXT\",\n    \"required\": true,\n    \"options\": null,\n    \"orderIndex\": 1\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/job-templates/fields",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"job-templates",
+								"fields"
+							]
+						},
+						"description": "Add a field to a job template.\n\n**Authentication:** Required (COMPANY role)\n\n**Request Body:**\n- templateId (long, required): ID of the parent template\n- name (string, required): Internal field key (unique per template)\n- label (string, required): User-facing label\n- jobFieldType (enum, required): Field type (TEXT, NUMBER, CHECKBOX, DROPDOWN, etc.)\n- required (boolean, required): Whether the field is mandatory for job creation/completion\n- options (string, optional): JSON string for dropdown/radio options (e.g., \"[\\\"Option A\\\", \\\"Option B\\\"]\")\n- orderIndex (int, required): Order in which the field should appear\n\n**Authorization:** Parent template must belong to the authenticated company.\n\n**Status Code:** 201 Created"
+					},
+					"response": [
+						{
+							"name": "Create Job Template Field - Success (TEXT)",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{jwt_token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"templateId\": 3,\n    \"name\": \"customerName\",\n    \"label\": \"Customer Name\",\n    \"jobFieldType\": \"TEXT\",\n    \"required\": true,\n    \"options\": null,\n    \"orderIndex\": 1\n}"
+								},
+								"url": {
+									"raw": "http://localhost:8080/api/v1/job-templates/fields",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"api",
+										"v1",
+										"job-templates",
+										"fields"
+									]
+								}
+							},
+							"status": "Created",
+							"code": 201,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n    \"id\": 101,\n    \"templateId\": 3,\n    \"name\": \"customerName\",\n    \"label\": \"Customer Name\",\n    \"jobFieldType\": \"TEXT\",\n    \"required\": true,\n    \"options\": null,\n    \"orderIndex\": 1,\n    \"createdAt\": \"2025-11-14T10:05:00\",\n    \"updatedAt\": \"2025-11-14T10:05:00\"\n}"
+						},
+						{
+							"name": "Create Job Template Field - Success (DROPDOWN)",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{jwt_token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"templateId\": 3,\n    \"name\": \"priority\",\n    \"label\": \"Priority Level\",\n    \"jobFieldType\": \"DROPDOWN\",\n    \"required\": true,\n    \"options\": \"[\\\"Low\\\", \\\"Medium\\\", \\\"High\\\"]\",\n    \"orderIndex\": 2\n}"
+								},
+								"url": {
+									"raw": "http://localhost:8080/api/v1/job-templates/fields",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"api",
+										"v1",
+										"job-templates",
+										"fields"
+									]
+								}
+							},
+							"status": "Created",
+							"code": 201,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n    \"id\": 102,\n    \"templateId\": 3,\n    \"name\": \"priority\",\n    \"label\": \"Priority Level\",\n    \"jobFieldType\": \"DROPDOWN\",\n    \"required\": true,\n    \"options\": \"[\\\"Low\\\", \\\"Medium\\\", \\\"High\\\"]\",\n    \"orderIndex\": 2,\n    \"createdAt\": \"2025-11-14T10:06:00\",\n    \"updatedAt\": \"2025-11-14T10:06:00\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Get Fields by Template",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/job-templates/3/fields",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"job-templates",
+								"3",
+								"fields"
+							]
+						},
+						"description": "Retrieve all fields for a specific job template.\n\n**Authentication:** Required (COMPANY role)\n\n**Path Parameter:**\n- id (long): Template ID\n\n**Response:** Array of job template field objects.\n\n**Authorization:** Parent template must belong to the authenticated company.\n\n**Status Code:** 200 OK"
+					},
+					"response": [
+						{
+							"name": "Get Fields by Template - Success",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{jwt_token}}"
+									}
+								],
+								"url": {
+									"raw": "http://localhost:8080/api/v1/job-templates/3/fields",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"api",
+										"v1",
+										"job-templates",
+										"3",
+										"fields"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "[\n    {\n        \"id\": 101,\n        \"templateId\": 3,\n        \"name\": \"customerName\",\n        \"label\": \"Customer Name\",\n        \"jobFieldType\": \"TEXT\",\n        \"required\": true,\n        \"options\": null,\n        \"orderIndex\": 1,\n        \"createdAt\": \"2025-11-14T10:05:00\",\n        \"updatedAt\": \"2025-11-14T10:05:00\"\n    },\n    {\n        \"id\": 102,\n        \"templateId\": 3,\n        \"name\": \"priority\",\n        \"label\": \"Priority Level\",\n        \"jobFieldType\": \"DROPDOWN\",\n        \"required\": true,\n        \"options\": \"[\\\"Low\\\", \\\"Medium\\\", \\\"High\\\"]\",\n        \"orderIndex\": 2,\n        \"createdAt\": \"2025-11-14T10:06:00\",\n        \"updatedAt\": \"2025-11-14T10:06:00\"\n    }\n]"
+						}
+					]
+				},
+				{
+					"name": "Get Field By ID",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/job-templates/fields/101",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"job-templates",
+								"fields",
+								"101"
+							]
+						},
+						"description": "Retrieve a single field by its ID.\n\n**Authentication:** Required (COMPANY role)\n\n**Path Parameter:**\n- id (long): Field ID\n\n**Authorization:** Parent template must belong to the authenticated company.\n\n**Status Code:** 200 OK"
+					},
+					"response": [
+						{
+							"name": "Get Field By ID - Success",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{jwt_token}}"
+									}
+								],
+								"url": {
+									"raw": "http://localhost:8080/api/v1/job-templates/fields/101",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"api",
+										"v1",
+										"job-templates",
+										"fields",
+										"101"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n    \"id\": 101,\n    \"templateId\": 3,\n    \"name\": \"customerName\",\n    \"label\": \"Customer Name\",\n    \"jobFieldType\": \"TEXT\",\n    \"required\": true,\n    \"options\": null,\n    \"orderIndex\": 1,\n    \"createdAt\": \"2025-11-14T10:05:00\",\n    \"updatedAt\": \"2025-11-14T10:05:00\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Update Job Template Field",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"label\": \"Priority Level (Changed)\",\n    \"jobFieldType\": \"DROPDOWN\",\n    \"required\": true,\n    \"options\": \"[\\\"Low\\\", \\\"Medium\\\", \\\"High\\\", \\\"Urgent\\\"]\",\n    \"orderIndex\": 2\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/job-templates/fields/102",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"job-templates",
+								"fields",
+								"102"
+							]
+						},
+						"description": "Update a template field.\n\n**Authentication:** Required (COMPANY role)\n\n**Path Parameter:**\n- id (long): Field ID\n\n**Request Body:** (All fields optional, provide only those to update)\n- label (string, optional): User-facing label\n- jobFieldType (enum, optional): Field type\n- required (boolean, optional): Mandatory status\n- options (string, optional): JSON string for dropdown/radio options\n- orderIndex (int, optional): Order index\n\n**Note:** `templateId` and `name` (internal key) cannot be updated via this endpoint.\n\n**Authorization:** Field's parent template must belong to the authenticated company.\n\n**Status Code:** 200 OK"
+					},
+					"response": [
+						{
+							"name": "Update Job Template Field - Success",
+							"originalRequest": {
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{jwt_token}}"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"label\": \"Priority Level (Changed)\",\n    \"jobFieldType\": \"DROPDOWN\",\n    \"required\": true,\n    \"options\": \"[\\\"Low\\\", \\\"Medium\\\", \\\"High\\\", \\\"Urgent\\\"]\",\n    \"orderIndex\": 2\n}"
+								},
+								"url": {
+									"raw": "http://localhost:8080/api/v1/job-templates/fields/102",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"api",
+										"v1",
+										"job-templates",
+										"fields",
+										"102"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n    \"id\": 102,\n    \"templateId\": 3,\n    \"name\": \"priority\",\n    \"label\": \"Priority Level (Changed)\",\n    \"jobFieldType\": \"DROPDOWN\",\n    \"required\": true,\n    \"options\": \"[\\\"Low\\\", \\\"Medium\\\", \\\"High\\\", \\\"Urgent\\\"]\",\n    \"orderIndex\": 2,\n    \"createdAt\": \"2025-11-14T10:06:00\",\n    \"updatedAt\": \"2025-11-14T12:30:00\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Delete Job Template Field",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/job-templates/fields/101",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"job-templates",
+								"fields",
+								"101"
+							]
+						},
+						"description": "Delete a job template field.\n\n**Authentication:** Required (COMPANY role)\n\n**Path Parameter:**\n- id (long): Field ID\n\n**Business Logic:**\n- Performs a permanent delete (hard delete) of the field.\n\n**Authorization:** Field's parent template must belong to the authenticated company.\n\n**Status Code:** 204 No Content"
+					},
+					"response": [
+						{
+							"name": "Delete Job Template Field - Success",
+							"originalRequest": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{jwt_token}}"
+									}
+								],
+								"url": {
+									"raw": "http://localhost:8080/api/v1/job-templates/fields/101",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"api",
+										"v1",
+										"job-templates",
+										"fields",
+										"101"
+									]
+								}
+							},
+							"status": "No Content",
+							"code": 204,
+							"_postman_previewlanguage": null,
+							"header": [],
+							"body": null
+						}
+					]
+				},
+				{
+					"name": "Get Template With Fields",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/v1/job-templates/3/with-fields",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"job-templates",
+								"3",
+								"with-fields"
+							]
+						},
+						"description": "Retrieve a job template along with all of its fields in a nested structure.\n\n**Authentication:** Required (COMPANY role)\n\n**Path Parameter:**\n- id (long): Template ID\n\n**Response:** Job template object including a nested list of field objects.\n\n**Authorization:** Template must belong to the authenticated company.\n\n**Status Code:** 200 OK"
+					},
+					"response": [
+						{
+							"name": "Get Template With Fields - Success",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{jwt_token}}"
+									}
+								],
+								"url": {
+									"raw": "http://localhost:8080/api/v1/job-templates/3/with-fields",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8080",
+									"path": [
+										"api",
+										"v1",
+										"job-templates",
+										"3",
+										"with-fields"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"body": "{\n    \"id\": 3,\n    \"companyId\": 1,\n    \"name\": \"Maintenance Job\",\n    \"description\": \"Standard maintenance workflow template for equipment servicing\",\n    \"archived\": false,\n    \"createdAt\": \"2025-11-14T10:00:00\",\n    \"updatedAt\": \"2025-11-14T12:00:00\",\n    \"fields\": [\n        {\n            \"id\": 101,\n            \"templateId\": 3,\n            \"name\": \"customerName\",\n            \"label\": \"Customer Name\",\n            \"jobFieldType\": \"TEXT\",\n            \"required\": true,\n            \"options\": null,\n            \"orderIndex\": 1,\n            \"createdAt\": \"2025-11-14T10:05:00\",\n            \"updatedAt\": \"2025-11-14T10:05:00\"\n        },\n        {\n            \"id\": 102,\n            \"templateId\": 3,\n            \"name\": \"priority\",\n            \"label\": \"Priority Level (Changed)\",\n            \"jobFieldType\": \"DROPDOWN\",\n            \"required\": true,\n            \"options\": \"[\\\"Low\\\", \\\"Medium\\\", \\\"High\\\", \\\"Urgent\\\"]\",\n            \"orderIndex\": 2,\n            \"createdAt\": \"2025-11-14T10:06:00\",\n            \"updatedAt\": \"2025-11-14T12:30:00\"\n        }\n    ]\n}"
+						}
+					]
+				}
+			]
 	},
-		{
+	{
 		"name": "Jobs",
 		"description": "Job management endpoints for creating, reading, updating, and managing job instances based on job templates.",
 		"item": [

@@ -1,5 +1,6 @@
 package com.workflow.config.auth;
 
+import com.workflow.common.constant.Role;
 import com.workflow.service.auth.JwtFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -23,6 +24,8 @@ import java.util.List;
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
+
+    private static final String COMPANY = Role.COMPANY.name();
 
     @Autowired
     @Qualifier("handlerExceptionResolver")
@@ -81,9 +84,11 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(PUBLIC_URLS)
                         .permitAll()
-                        .requestMatchers("/api/v1/companies/**").hasRole("COMPANY")
-                        .requestMatchers("/api/v1/workers/**").hasRole("COMPANY")
-                        .requestMatchers("/api/v1/clients/**").hasRole("COMPANY")
+                        .requestMatchers("/api/v1/companies/**").hasRole(COMPANY)
+                        .requestMatchers("/api/v1/workers/**").hasRole(COMPANY)
+                        .requestMatchers("/api/v1/clients/**").hasRole(COMPANY)
+                        .requestMatchers("/api/v1/jobs/**").hasRole(COMPANY)
+                        .requestMatchers("/api/v1/job-templates/**").hasRole(COMPANY)
                         .anyRequest().authenticated())
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

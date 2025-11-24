@@ -1,12 +1,8 @@
 package com.workflow.service.jobtemplate;
 
-import java.util.List;
-import java.util.stream.Collectors;
-
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
+import com.workflow.common.exception.customException.CompanyNotFoundException;
 import com.workflow.common.exception.customException.DuplicateNameException;
+import com.workflow.common.exception.customException.TemplateNotFoundException;
 import com.workflow.dto.jobtemplate.JobTemplateCreateRequest;
 import com.workflow.dto.jobtemplate.JobTemplateFieldCreateRequest;
 import com.workflow.dto.jobtemplate.JobTemplateFieldResponse;
@@ -17,8 +13,12 @@ import com.workflow.entity.JobTemplateField;
 import com.workflow.repository.CompanyRepository;
 import com.workflow.repository.JobTemplateFieldRepository;
 import com.workflow.repository.JobTemplateRepository;
-
 import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -33,12 +33,12 @@ public class JobTemplateService implements IJobTemplateService {
     public JobTemplateResponse createTemplate(JobTemplateCreateRequest request, Long companyId) {
 
         Company company = companyRepository.findById(companyId)
-                .orElseThrow(() -> new RuntimeException("Company not found"));
+                .orElseThrow(() -> new CompanyNotFoundException("Company not found"));
         
         if (templateRepository.existsByCompanyIdAndName(companyId, request.getName())) {
                 throw new DuplicateNameException("Template name must be unique within the company");
         }
-
+                
         JobTemplate template = JobTemplate.builder()
                 .company(company)
                 .name(request.getName())
@@ -63,7 +63,7 @@ public class JobTemplateService implements IJobTemplateService {
     public JobTemplateFieldResponse createTemplateField(JobTemplateFieldCreateRequest request, Long companyId) {
         JobTemplate template = templateRepository.findById(request.getTemplateId())
                 .filter(t -> t.getCompany().getId().equals(companyId))
-                .orElseThrow(() -> new RuntimeException("Template not found"));
+                .orElseThrow(() -> new TemplateNotFoundException("Template not found"));
 
         JobTemplateField field = JobTemplateField.builder()
                 .template(template)

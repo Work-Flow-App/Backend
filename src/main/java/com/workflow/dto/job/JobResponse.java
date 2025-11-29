@@ -18,5 +18,5 @@ public class JobResponse {
     private boolean archived;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-    private Map<Long, String> fieldValues;
+    private Map<Long, Object> fieldValues;
 }

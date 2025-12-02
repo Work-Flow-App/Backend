@@ -56,6 +56,16 @@ public class JobController {
         );
     }
 
+    @GetMapping("/by-template/{templateId}")
+    public ResponseEntity<List<JobResponse>> getJobsByTemplate(
+            @PathVariable Long templateId,
+            Authentication auth
+    ) {
+        return ResponseEntity.ok(
+                jobService.getJobsByTemplate(templateId, getCompanyId(auth))
+        );
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(
             @PathVariable Long id,

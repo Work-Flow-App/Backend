@@ -12,5 +12,5 @@ public class JobUpdateRequest {
     private Long assignedWorkerId;
     private String status;
     private boolean archived;
-    private Map<Long, String> fieldValues;
+    private Map<Long, Object> fieldValues;
 }

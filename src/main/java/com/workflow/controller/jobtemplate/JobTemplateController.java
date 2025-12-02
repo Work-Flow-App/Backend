@@ -29,7 +29,7 @@ public class JobTemplateController {
     // -------- TEMPLATE CRUD --------
 
     @PostMapping
-    public ResponseEntity<JobTemplateResponse> create(
+    public ResponseEntity<JobTemplateResponse> createTemplate(
             @RequestBody JobTemplateCreateRequest request,
             Authentication auth) {
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -37,18 +37,18 @@ public class JobTemplateController {
     }
 
     @GetMapping
-    public ResponseEntity<List<JobTemplateResponse>> getAll(Authentication auth) {
+    public ResponseEntity<List<JobTemplateResponse>> getAllTemplates(Authentication auth) {
         return ResponseEntity.ok(service.getAllTemplates(getCompanyId(auth)));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<JobTemplateResponse> get(
+    public ResponseEntity<JobTemplateResponse> getTemplate(
             @PathVariable Long id, Authentication auth) {
         return ResponseEntity.ok(service.getTemplate(id, getCompanyId(auth)));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<JobTemplateResponse> update(
+    public ResponseEntity<JobTemplateResponse> updateTemplate(
             @PathVariable Long id,
             @RequestBody JobTemplateCreateRequest request,
             Authentication auth) {
@@ -56,7 +56,7 @@ public class JobTemplateController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id, Authentication auth) {
+    public ResponseEntity<Void> deleteTemplate(@PathVariable Long id, Authentication auth) {
         service.deleteTemplate(id, getCompanyId(auth));
         return ResponseEntity.noContent().build();
     }
@@ -64,7 +64,7 @@ public class JobTemplateController {
     // -------- TEMPLATE FIELDS CRUD --------
 
     @PostMapping("/fields")
-    public ResponseEntity<JobTemplateFieldResponse> createField(
+    public ResponseEntity<JobTemplateFieldResponse> createTemplateField(
             @RequestBody JobTemplateFieldCreateRequest request,
             Authentication auth) {
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -72,19 +72,19 @@ public class JobTemplateController {
     }
 
     @GetMapping("/{id}/fields")
-    public ResponseEntity<List<JobTemplateFieldResponse>> getFields(
+    public ResponseEntity<List<JobTemplateFieldResponse>> getTemplateFields(
             @PathVariable Long id, Authentication auth) {
         return ResponseEntity.ok(service.getFieldsByTemplate(id, getCompanyId(auth)));
     }
 
     @GetMapping("/fields/{fieldId}")
-    public ResponseEntity<JobTemplateFieldResponse> getField(
+    public ResponseEntity<JobTemplateFieldResponse> getTemplateField(
             @PathVariable Long fieldId, Authentication auth) {
         return ResponseEntity.ok(service.getField(fieldId, getCompanyId(auth)));
     }
 
     @PutMapping("/fields/{fieldId}")
-    public ResponseEntity<JobTemplateFieldResponse> updateField(
+    public ResponseEntity<JobTemplateFieldResponse> updateTemplateField(
             @PathVariable Long fieldId,
             @RequestBody JobTemplateFieldCreateRequest request,
             Authentication auth) {
@@ -92,7 +92,7 @@ public class JobTemplateController {
     }
 
     @DeleteMapping("/fields/{fieldId}")
-    public ResponseEntity<Void> deleteField(
+    public ResponseEntity<Void> deleteTemplateField(
             @PathVariable Long fieldId, Authentication auth) {
         service.deleteField(fieldId, getCompanyId(auth));
         return ResponseEntity.noContent().build();

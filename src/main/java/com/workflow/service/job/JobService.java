@@ -179,6 +179,18 @@ public class JobService implements IJobService {
         }
 
         @Override
+        public List<JobResponse> getJobsByTemplate(Long templateId, Long companyId) {
+                JobTemplate template = templateRepository.findById(templateId)
+                                .filter(t -> t.getCompany().getId().equals(companyId))
+                                .orElseThrow(() -> new TemplateNotFoundException("Template not found"));
+
+                return jobRepository.findByTemplateIdAndCompanyId(templateId, companyId)
+                                .stream()
+                                .map(this::mapToResponse)
+                                .collect(Collectors.toList());
+        }
+
+        @Override
         public void deleteJob(Long jobId, Long companyId) {
                 Job job = jobRepository.findById(jobId)
                                 .filter(j -> j.getCompany().getId().equals(companyId))

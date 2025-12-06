@@ -2643,7 +2643,7 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"jobId\": 3,\n    \"notes\": \"Used for transport to client site\"\n}"
+              "raw": "{\n    \"assetId\": 3,\n    \"jobId\": 1,\n    \"assignedWorkerId\": 1,\n    \"notes\": \"Used for transport to client site\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/api/v1/assets/10/assign",

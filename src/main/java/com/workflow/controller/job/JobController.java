@@ -56,7 +56,7 @@ public class JobController {
         );
     }
 
-    @GetMapping("/by-template/{templateId}")
+    @GetMapping("/templates/{templateId}")
     public ResponseEntity<List<JobResponse>> getJobsByTemplate(
             @PathVariable Long templateId,
             Authentication auth

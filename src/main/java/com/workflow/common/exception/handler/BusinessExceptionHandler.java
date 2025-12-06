@@ -3,13 +3,14 @@ package com.workflow.common.exception.handler;
 import com.workflow.common.exception.ResponseBuilder;
 import com.workflow.common.exception.ErrorResponse;
 import com.workflow.common.exception.customException.*;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Component;
+import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
 import jakarta.servlet.http.HttpServletRequest;
 
-@Component
+@ControllerAdvice
 public class BusinessExceptionHandler {
 
     @ExceptionHandler(CompanyNotFoundException.class)
@@ -66,5 +67,32 @@ public class BusinessExceptionHandler {
             UserAlreadyExistsException ex,
             HttpServletRequest request) {
         return ResponseBuilder.buildConflictResponse(ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ErrorResponse> handleDataIntegrityViolation(
+            DataIntegrityViolationException ex,
+            HttpServletRequest request) {
+        String message = "A database constraint was violated";
+
+        // Extract meaningful error message from exception
+        String rootCauseMessage = ex.getRootCause() != null ? ex.getRootCause().getMessage() : ex.getMessage();
+
+        if (rootCauseMessage != null) {
+            // Check for duplicate entry errors
+            if (rootCauseMessage.contains("Duplicate entry")) {
+                if (rootCauseMessage.contains("'UK_users_username'") || rootCauseMessage.contains("username")) {
+                    message = "Username already exists";
+                } else if (rootCauseMessage.contains("'UK_users_email'") || rootCauseMessage.contains("email")) {
+                    message = "Email already exists";
+                } else if (rootCauseMessage.contains("'user_id'")) {
+                    message = "This user account is already associated with another worker";
+                } else {
+                    message = "This record already exists";
+                }
+            }
+        }
+
+        return ResponseBuilder.buildConflictResponse(message, request);
     }
 }

@@ -4,15 +4,15 @@ import com.workflow.common.exception.ResponseBuilder;
 import com.workflow.common.exception.ErrorResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
-import org.springframework.stereotype.Component;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-@Component
+@ControllerAdvice
 public class ValidationExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

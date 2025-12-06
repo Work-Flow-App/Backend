@@ -8,5 +8,6 @@ public interface IJobService {
     JobResponse updateJob(Long jobId, JobUpdateRequest request, Long companyId);
     JobResponse getJob(Long jobId, Long companyId);
     List<JobResponse> getAllJobs(Long companyId);
+    List<JobResponse> getJobsByTemplate(Long templateId, Long companyId);
     void deleteJob(Long jobId, Long companyId);
 }

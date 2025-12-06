@@ -1,7 +1,11 @@
 package com.workflow.dto.job;
 
-import lombok.*;
 import java.util.Map;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
@@ -12,5 +16,7 @@ public class JobCreateRequest {
     private Long clientId;
     private Long assignedWorkerId;
     private String status;
-    private Map<Long, String> fieldValues; // key = fieldId, value = value
+    // key = fieldId, value = actual object (String, Number, Boolean, Date, Map,
+    // Reference)
+    private Map<Long, Object> fieldValues;
 }

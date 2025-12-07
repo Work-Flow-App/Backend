@@ -2,14 +2,17 @@ package com.workflow.common.exception.handler;
 
 import com.workflow.common.exception.ResponseBuilder;
 import com.workflow.common.exception.ErrorResponse;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Component;
+import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.nio.file.AccessDeniedException;
 
-@Component
+@ControllerAdvice
+@Order(Ordered.HIGHEST_PRECEDENCE)
 public class SecurityExceptionHandler {
 
     @ExceptionHandler(AccessDeniedException.class)

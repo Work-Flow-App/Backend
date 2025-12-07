@@ -4,15 +4,18 @@ import com.workflow.common.exception.ResponseBuilder;
 import com.workflow.common.exception.ErrorResponse;
 import com.workflow.common.exception.customException.InvalidPasswordResetTokenException;
 import com.workflow.common.exception.customException.InvalidRefreshTokenException;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.*;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.stereotype.Component;
+import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
 import jakarta.servlet.http.HttpServletRequest;
 
-@Component
+@ControllerAdvice
+@Order(Ordered.HIGHEST_PRECEDENCE)
 public class AuthenticationExceptionHandler {
 
     @ExceptionHandler(BadCredentialsException.class)

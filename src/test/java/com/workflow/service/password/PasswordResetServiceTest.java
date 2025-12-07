@@ -1,7 +1,7 @@
 package com.workflow.service.password;
 
 import com.workflow.common.constant.Role;
-import com.workflow.common.exception.customException.InvalidPasswordResetTokenException;
+import com.workflow.common.exception.business.InvalidPasswordResetTokenException;
 import com.workflow.entity.PasswordResetToken;
 import com.workflow.entity.User;
 import com.workflow.repository.PasswordResetTokenRepository;

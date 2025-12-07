@@ -9,11 +9,11 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.workflow.common.exception.customException.ClientNotFoundException;
-import com.workflow.common.exception.customException.CompanyNotFoundException;
-import com.workflow.common.exception.customException.JobNotFoundException;
-import com.workflow.common.exception.customException.TemplateNotFoundException;
-import com.workflow.common.exception.customException.WorkerNotFoundException;
+import com.workflow.common.exception.business.ClientNotFoundException;
+import com.workflow.common.exception.business.CompanyNotFoundException;
+import com.workflow.common.exception.business.JobNotFoundException;
+import com.workflow.common.exception.business.TemplateNotFoundException;
+import com.workflow.common.exception.business.WorkerNotFoundException;
 import com.workflow.dto.job.JobCreateRequest;
 import com.workflow.dto.job.JobResponse;
 import com.workflow.dto.job.JobUpdateRequest;

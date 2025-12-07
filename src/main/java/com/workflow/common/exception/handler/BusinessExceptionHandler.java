@@ -2,7 +2,7 @@ package com.workflow.common.exception.handler;
 
 import com.workflow.common.exception.ResponseBuilder;
 import com.workflow.common.exception.ErrorResponse;
-import com.workflow.common.exception.customException.*;
+import com.workflow.common.exception.base.*;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -16,60 +16,40 @@ import jakarta.servlet.http.HttpServletRequest;
 @Order(Ordered.HIGHEST_PRECEDENCE)
 public class BusinessExceptionHandler {
 
-    @ExceptionHandler(CompanyNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleCompanyNotFound(
-            CompanyNotFoundException ex,
+    /**
+     * Handles all NotFoundException subclasses (404 Not Found)
+     * - CompanyNotFoundException, ClientNotFoundException, JobNotFoundException
+     * - TemplateNotFoundException, WorkerNotFoundException, AssetNotFoundException
+     */
+    @ExceptionHandler(NotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleNotFound(
+            NotFoundException ex,
             HttpServletRequest request) {
         return ResponseBuilder.buildNotFoundResponse(ex.getMessage(), request);
     }
 
-    @ExceptionHandler(CompanyAlreadyExistsException.class)
-    public ResponseEntity<ErrorResponse> handleCompanyAlreadyExists(
-            CompanyAlreadyExistsException ex,
+    /**
+     * Handles all ConflictException subclasses (409 Conflict)
+     * - CompanyAlreadyExistsException, UserAlreadyExistsException
+     * - WorkerAlreadyExistsException, DuplicateNameException
+     */
+    @ExceptionHandler(ConflictException.class)
+    public ResponseEntity<ErrorResponse> handleConflict(
+            ConflictException ex,
             HttpServletRequest request) {
         return ResponseBuilder.buildConflictResponse(ex.getMessage(), request);
     }
 
-    @ExceptionHandler(ClientNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleClientNotFound(
-            ClientNotFoundException ex,
+    /**
+     * Handles all BadRequestException subclasses (400 Bad Request)
+     * - InvalidPasswordResetTokenException, InvalidRefreshTokenException
+     * - AssignmentException
+     */
+    @ExceptionHandler(BadRequestException.class)
+    public ResponseEntity<ErrorResponse> handleBadRequest(
+            BadRequestException ex,
             HttpServletRequest request) {
-        return ResponseBuilder.buildNotFoundResponse(ex.getMessage(), request);
-    }
-
-    @ExceptionHandler(JobNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleJobNotFound(
-            JobNotFoundException ex,
-            HttpServletRequest request) {
-        return ResponseBuilder.buildNotFoundResponse(ex.getMessage(), request);
-    }
-
-    @ExceptionHandler(TemplateNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleTemplateNotFound(
-            TemplateNotFoundException ex,
-            HttpServletRequest request) {
-        return ResponseBuilder.buildNotFoundResponse(ex.getMessage(), request);
-    }
-
-    @ExceptionHandler(WorkerNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleWorkerNotFound(
-            WorkerNotFoundException ex,
-            HttpServletRequest request) {
-        return ResponseBuilder.buildNotFoundResponse(ex.getMessage(), request);
-    }
-
-    @ExceptionHandler(WorkerAlreadyExistsException.class)
-    public ResponseEntity<ErrorResponse> handleWorkerAlreadyExists(
-            WorkerAlreadyExistsException ex,
-            HttpServletRequest request) {
-        return ResponseBuilder.buildConflictResponse(ex.getMessage(), request);
-    }
-
-    @ExceptionHandler(UserAlreadyExistsException.class)
-    public ResponseEntity<ErrorResponse> handleUserAlreadyExists(
-            UserAlreadyExistsException ex,
-            HttpServletRequest request) {
-        return ResponseBuilder.buildConflictResponse(ex.getMessage(), request);
+        return ResponseBuilder.buildBadRequestResponse(ex.getMessage(), request);
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)

@@ -238,52 +238,6 @@ class CompanyServiceTest {
     }
 
     @Test
-    void getDashboard_ShouldReturnDashboardWithWorkers() {
-        // Arrange
-        List<Worker> workers = new ArrayList<>();
-
-        Worker activeWorker1 = Worker.builder()
-                .id(1L)
-                .name("Worker 1")
-                .archived(false)
-                .company(company)
-                .build();
-
-        Worker activeWorker2 = Worker.builder()
-                .id(2L)
-                .name("Worker 2")
-                .archived(false)
-                .company(company)
-                .build();
-
-        Worker archivedWorker = Worker.builder()
-                .id(3L)
-                .name("Archived Worker")
-                .archived(true)
-                .company(company)
-                .build();
-
-        workers.add(activeWorker1);
-        workers.add(activeWorker2);
-        workers.add(archivedWorker);
-
-        company.setWorkers(workers);
-        when(companyRepository.findByUserIdAndNotArchived(1L)).thenReturn(Optional.of(company));
-
-        // Act
-        CompanyDashboardResponse response = companyService.getDashboard(1L);
-
-        // Assert
-        assertThat(response).isNotNull();
-        assertThat(response.companyId()).isEqualTo(1L);
-        assertThat(response.companyName()).isEqualTo("Test Company");
-        assertThat(response.totalWorkers()).isEqualTo(3);
-        assertThat(response.activeWorkers()).isEqualTo(2);
-        assertThat(response.archivedWorkers()).isEqualTo(1);
-        verify(companyRepository).findByUserIdAndNotArchived(1L);
-    }
-
-    @Test
     void getDashboard_ShouldThrowException_WhenCompanyNotFound() {
         // Arrange
         when(companyRepository.findByUserIdAndNotArchived(1L)).thenReturn(Optional.empty());

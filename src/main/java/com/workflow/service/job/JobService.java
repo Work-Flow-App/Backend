@@ -14,6 +14,7 @@ import com.workflow.common.exception.business.CompanyNotFoundException;
 import com.workflow.common.exception.business.JobNotFoundException;
 import com.workflow.common.exception.business.TemplateNotFoundException;
 import com.workflow.common.exception.business.WorkerNotFoundException;
+import com.workflow.dto.job.FieldValueResponse;
 import com.workflow.dto.job.JobCreateRequest;
 import com.workflow.dto.job.JobResponse;
 import com.workflow.dto.job.JobUpdateRequest;
@@ -201,11 +202,16 @@ public class JobService implements IJobService {
         }
 
         private JobResponse mapToResponse(Job job) {
-                Map<Long, Object> values = fieldValueRepository.findByJobId(job.getId())
+                Map<Long, FieldValueResponse> values = fieldValueRepository.findByJobId(job.getId())
                                 .stream()
                                 .collect(Collectors.toMap(
                                                 v -> v.getField().getId(),
-                                                JobFieldValue::getTypedValue // Use the new method
+                                                v -> FieldValueResponse.builder()
+                                                                .name(v.getField().getName())
+                                                                .label(v.getField().getLabel())
+                                                                .type(v.getField().getJobFieldType())
+                                                                .value(v.getTypedValue())
+                                                                .build()
                                 ));
 
                 return JobResponse.builder()
@@ -219,7 +225,7 @@ public class JobService implements IJobService {
                                 .archived(job.isArchived())
                                 .createdAt(job.getCreatedAt())
                                 .updatedAt(job.getUpdatedAt())
-                                .fieldValues(values) // Change JobResponse DTO fieldValues type to Map<Long, Object>
+                                .fieldValues(values)
                                 .build();
         }
 

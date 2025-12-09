@@ -9,6 +9,7 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.workflow.common.constant.job.JobStatus;
 import com.workflow.common.exception.business.ClientNotFoundException;
 import com.workflow.common.exception.business.CompanyNotFoundException;
 import com.workflow.common.exception.business.JobNotFoundException;
@@ -73,7 +74,7 @@ public class JobService implements IJobService {
                                 .template(template)
                                 .client(client)
                                 .assignedWorker(worker)
-                                .status(request.getStatus())
+                                .status(request.getStatus() != null ? request.getStatus() : JobStatus.NEW)
                                 .archived(false)
                                 .build();
                 jobRepository.save(job);
@@ -103,7 +104,10 @@ public class JobService implements IJobService {
                         job.setAssignedWorker(worker);
                 }
 
-                job.setStatus(request.getStatus());
+                if (request.getStatus() != null) {
+                        job.setStatus(request.getStatus());
+                }
+
                 job.setArchived(request.isArchived());
                 jobRepository.save(job);
 

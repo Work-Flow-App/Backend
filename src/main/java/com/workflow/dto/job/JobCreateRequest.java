@@ -2,6 +2,8 @@ package com.workflow.dto.job;
 
 import java.util.Map;
 
+import com.workflow.common.constant.job.JobStatus;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -15,7 +17,7 @@ public class JobCreateRequest {
     private Long templateId;
     private Long clientId;
     private Long assignedWorkerId;
-    private String status;
+    private JobStatus status;
     // key = fieldId, value = actual object (String, Number, Boolean, Date, Map,
     // Reference)
     private Map<Long, Object> fieldValues;

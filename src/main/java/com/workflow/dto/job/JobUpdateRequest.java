@@ -1,5 +1,7 @@
 package com.workflow.dto.job;
 
+import com.workflow.common.constant.job.JobStatus;
+
 import lombok.*;
 import java.util.Map;
 
@@ -10,7 +12,7 @@ import java.util.Map;
 public class JobUpdateRequest {
     private Long clientId;
     private Long assignedWorkerId;
-    private String status;
+    private JobStatus status;
     private boolean archived;
     private Map<Long, Object> fieldValues;
 }

@@ -1,5 +1,7 @@
 package com.workflow.dto.job;
 
+import com.workflow.common.constant.job.JobStatus;
+
 import lombok.*;
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -14,7 +16,7 @@ public class JobResponse {
     private Long templateId;
     private Long clientId;
     private Long assignedWorkerId;
-    private String status;
+    private JobStatus status;
     private boolean archived;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

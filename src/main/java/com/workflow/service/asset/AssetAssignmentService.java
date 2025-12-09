@@ -1,5 +1,6 @@
 package com.workflow.service.asset;
 
+import com.workflow.common.constant.job.JobStatus;
 import com.workflow.dto.asset.*;
 import com.workflow.entity.*;
 import com.workflow.repository.*;
@@ -42,7 +43,7 @@ public class AssetAssignmentService implements IAssetAssignmentService {
                     .filter(j -> j.getCompany().getId().equals(companyId))
                     .orElseThrow(() -> new JobNotFoundException("Job not found"));
             // job cannot be COMPLETED or CANCELLED
-            if ("COMPLETED".equalsIgnoreCase(job.getStatus()) || "CANCELLED".equalsIgnoreCase(job.getStatus())) {
+            if (job.getStatus() == JobStatus.COMPLETED || job.getStatus() == JobStatus.CANCELLED) {
                 throw new IllegalStateException("Cannot assign asset to a completed or cancelled job");
             }
         }

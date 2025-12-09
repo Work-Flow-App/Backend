@@ -1788,6 +1788,80 @@
                 }
               ],
               "body": "{\n    \"id\": 102,\n    \"templateId\": 3,\n    \"name\": \"priority\",\n    \"label\": \"Priority Level\",\n    \"jobFieldType\": \"DROPDOWN\",\n    \"required\": true,\n    \"options\": \"[\\\"Low\\\", \\\"Medium\\\", \\\"High\\\"]\",\n    \"orderIndex\": 2,\n    \"createdAt\": \"2025-11-14T10:06:00\",\n    \"updatedAt\": \"2025-11-14T10:06:00\"\n}"
+            },
+            {
+              "name": "Create Job Template Field - Success (JSON)",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{jwt_token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"templateId\": 3,\n    \"name\": \"equipmentDetails\",\n    \"label\": \"Equipment Details\",\n    \"jobFieldType\": \"JSON\",\n    \"required\": false,\n    \"options\": null,\n    \"orderIndex\": 3\n}"
+                },
+                "url": {
+                  "raw": "http://localhost:8080/api/v1/job-templates/fields",
+                  "protocol": "http",
+                  "host": ["localhost"],
+                  "port": "8080",
+                  "path": ["api", "v1", "job-templates", "fields"]
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n    \"id\": 103,\n    \"templateId\": 3,\n    \"name\": \"equipmentDetails\",\n    \"label\": \"Equipment Details\",\n    \"jobFieldType\": \"JSON\",\n    \"required\": false,\n    \"options\": null,\n    \"orderIndex\": 3,\n    \"createdAt\": \"2025-11-14T10:07:00\",\n    \"updatedAt\": \"2025-11-14T10:07:00\"\n}"
+            },
+            {
+              "name": "Create Job Template Field - Success (REFERENCE)",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{jwt_token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"templateId\": 3,\n    \"name\": \"relatedAsset\",\n    \"label\": \"Related Asset\",\n    \"jobFieldType\": \"REFERENCE\",\n    \"required\": false,\n    \"options\": null,\n    \"orderIndex\": 4\n}"
+                },
+                "url": {
+                  "raw": "http://localhost:8080/api/v1/job-templates/fields",
+                  "protocol": "http",
+                  "host": ["localhost"],
+                  "port": "8080",
+                  "path": ["api", "v1", "job-templates", "fields"]
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n    \"id\": 104,\n    \"templateId\": 3,\n    \"name\": \"relatedAsset\",\n    \"label\": \"Related Asset\",\n    \"jobFieldType\": \"REFERENCE\",\n    \"required\": false,\n    \"options\": null,\n    \"orderIndex\": 4,\n    \"createdAt\": \"2025-11-14T10:08:00\",\n    \"updatedAt\": \"2025-11-14T10:08:00\"\n}"
             }
           ]
         },
@@ -2146,7 +2220,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n    \"id\": 55,\n    \"companyId\": 1,\n    \"templateId\": 3,\n    \"clientId\": 1,\n    \"assignedWorkerId\": 1,\n    \"status\": \"NEW\",\n    \"archived\": false,\n    \"createdAt\": \"2025-11-14T10:15:00\",\n    \"updatedAt\": \"2025-11-14T10:15:00\",\n    \"fieldValues\": {\n        \"101\": \"John Doe\",\n        \"102\": \"Medium\"\n    }\n}"
+              "body": "{\n    \"id\": 55,\n    \"companyId\": 1,\n    \"templateId\": 3,\n    \"clientId\": 1,\n    \"assignedWorkerId\": 1,\n    \"status\": \"NEW\",\n    \"archived\": false,\n    \"createdAt\": \"2025-11-14T10:15:00\",\n    \"updatedAt\": \"2025-11-14T10:15:00\",\n    \"fieldValues\": {\n        \"101\": {\n            \"name\": \"customerName\",\n            \"label\": \"Customer Name\",\n            \"type\": \"TEXT\",\n            \"value\": \"John Doe\"\n        },\n        \"102\": {\n            \"name\": \"priority\",\n            \"label\": \"Priority Level\",\n            \"type\": \"DROPDOWN\",\n            \"value\": \"Medium\"\n        }\n    }\n}"
             }
           ]
         },
@@ -2200,7 +2274,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "[\n    {\n        \"id\": 55,\n        \"companyId\": 1,\n        \"templateId\": 3,\n        \"clientId\": 1,\n        \"assignedWorkerId\": 1,\n        \"status\": \"NEW\",\n        \"archived\": false,\n        \"createdAt\": \"2025-11-14T10:15:00\",\n        \"updatedAt\": \"2025-11-14T10:15:00\",\n        \"fieldValues\": {\n            \"101\": \"John Doe\",\n            \"102\": \"Medium\"\n        }\n    },\n    {\n        \"id\": 56,\n        \"companyId\": 1,\n        \"templateId\": 3,\n        \"clientId\": 1,\n        \"assignedWorkerId\": 2,\n        \"status\": \"IN_PROGRESS\",\n        \"archived\": false,\n        \"createdAt\": \"2025-11-14T10:20:00\",\n        \"updatedAt\": \"2025-11-14T10:25:00\",\n        \"fieldValues\": {\n            \"101\": \"Jane Smith\",\n            \"102\": \"High\"\n        }\n    }\n]"
+              "body": "[\n    {\n        \"id\": 55,\n        \"companyId\": 1,\n        \"templateId\": 3,\n        \"clientId\": 1,\n        \"assignedWorkerId\": 1,\n        \"status\": \"NEW\",\n        \"archived\": false,\n        \"createdAt\": \"2025-11-14T10:15:00\",\n        \"updatedAt\": \"2025-11-14T10:15:00\",\n        \"fieldValues\": {\n            \"101\": {\n                \"name\": \"customerName\",\n                \"label\": \"Customer Name\",\n                \"type\": \"TEXT\",\n                \"value\": \"John Doe\"\n            },\n            \"102\": {\n                \"name\": \"priority\",\n                \"label\": \"Priority Level\",\n                \"type\": \"DROPDOWN\",\n                \"value\": \"Medium\"\n            }\n        }\n    },\n    {\n        \"id\": 56,\n        \"companyId\": 1,\n        \"templateId\": 3,\n        \"clientId\": 1,\n        \"assignedWorkerId\": 2,\n        \"status\": \"IN_PROGRESS\",\n        \"archived\": false,\n        \"createdAt\": \"2025-11-14T10:20:00\",\n        \"updatedAt\": \"2025-11-14T10:25:00\",\n        \"fieldValues\": {\n            \"101\": {\n                \"name\": \"customerName\",\n                \"label\": \"Customer Name\",\n                \"type\": \"TEXT\",\n                \"value\": \"Jane Smith\"\n            },\n            \"102\": {\n                \"name\": \"priority\",\n                \"label\": \"Priority Level\",\n                \"type\": \"DROPDOWN\",\n                \"value\": \"High\"\n            }\n        }\n    }\n]"
             }
           ]
         },
@@ -2254,7 +2328,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n    \"id\": 55,\n    \"companyId\": 1,\n    \"templateId\": 3,\n    \"clientId\": 1,\n    \"assignedWorkerId\": 1,\n    \"status\": \"NEW\",\n    \"archived\": false,\n    \"createdAt\": \"2025-11-14T10:15:00\",\n    \"updatedAt\": \"2025-11-14T10:15:00\",\n    \"fieldValues\": {\n        \"101\": \"John Doe\",\n        \"102\": \"Medium\"\n    }\n}"
+              "body": "{\n    \"id\": 55,\n    \"companyId\": 1,\n    \"templateId\": 3,\n    \"clientId\": 1,\n    \"assignedWorkerId\": 1,\n    \"status\": \"NEW\",\n    \"archived\": false,\n    \"createdAt\": \"2025-11-14T10:15:00\",\n    \"updatedAt\": \"2025-11-14T10:15:00\",\n    \"fieldValues\": {\n        \"101\": {\n            \"name\": \"customerName\",\n            \"label\": \"Customer Name\",\n            \"type\": \"TEXT\",\n            \"value\": \"John Doe\"\n        },\n        \"102\": {\n            \"name\": \"priority\",\n            \"label\": \"Priority Level\",\n            \"type\": \"DROPDOWN\",\n            \"value\": \"Medium\"\n        }\n    }\n}"
             }
           ]
         },
@@ -2325,7 +2399,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n    \"id\": 55,\n    \"companyId\": 1,\n    \"templateId\": 3,\n    \"clientId\": 1,\n    \"assignedWorkerId\": 1,\n    \"status\": \"IN_PROGRESS\",\n    \"archived\": false,\n    \"createdAt\": \"2025-11-14T10:15:00\",\n    \"updatedAt\": \"2025-11-14T10:20:00\",\n    \"fieldValues\": {\n        \"101\": \"John Doe Updated\",\n        \"102\": \"High\"\n    }\n}"
+              "body": "{\n    \"id\": 55,\n    \"companyId\": 1,\n    \"templateId\": 3,\n    \"clientId\": 1,\n    \"assignedWorkerId\": 1,\n    \"status\": \"IN_PROGRESS\",\n    \"archived\": false,\n    \"createdAt\": \"2025-11-14T10:15:00\",\n    \"updatedAt\": \"2025-11-14T10:20:00\",\n    \"fieldValues\": {\n        \"101\": {\n            \"name\": \"customerName\",\n            \"label\": \"Customer Name\",\n            \"type\": \"TEXT\",\n            \"value\": \"John Doe Updated\"\n        },\n        \"102\": {\n            \"name\": \"priority\",\n            \"label\": \"Priority Level\",\n            \"type\": \"DROPDOWN\",\n            \"value\": \"High\"\n        }\n    }\n}"
             }
           ]
         },
@@ -2375,6 +2449,60 @@
               "_postman_previewlanguage": null,
               "header": [],
               "body": null
+            }
+          ]
+        },
+        {
+          "name": "Get Jobs by Template",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/jobs/templates/3",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "jobs", "templates", "3"]
+            },
+            "description": "Retrieve all jobs for a specific job template.\n\n**Authentication:** Required (Bearer token in Authorization header)\n\n**Path Parameter:**\n- templateId (long): Job Template ID\n\n**Response:** Array of job objects (same format as Get All Jobs response)\n\n**Note:** Returns all jobs (including archived) belonging to the authenticated company that were created from the specified template.\n\n**Authorization:** Only jobs belonging to the authenticated company can be accessed.\n\n**Status Code:** 200 OK"
+          },
+          "response": [
+            {
+              "name": "Get Jobs by Template - Success",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{jwt_token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "http://localhost:8080/api/v1/jobs/templates/3",
+                  "protocol": "http",
+                  "host": ["localhost"],
+                  "port": "8080",
+                  "path": ["api", "v1", "jobs", "templates", "3"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "[\n    {\n        \"id\": 55,\n        \"companyId\": 1,\n        \"templateId\": 3,\n        \"clientId\": 1,\n        \"assignedWorkerId\": 1,\n        \"status\": \"NEW\",\n        \"archived\": false,\n        \"createdAt\": \"2025-11-14T10:15:00\",\n        \"updatedAt\": \"2025-11-14T10:15:00\",\n        \"fieldValues\": {\n            \"101\": {\n                \"name\": \"customerName\",\n                \"label\": \"Customer Name\",\n                \"type\": \"TEXT\",\n                \"value\": \"John Doe\"\n            },\n            \"102\": {\n                \"name\": \"priority\",\n                \"label\": \"Priority Level\",\n                \"type\": \"DROPDOWN\",\n                \"value\": \"Medium\"\n            }\n        }\n    },\n    {\n        \"id\": 56,\n        \"companyId\": 1,\n        \"templateId\": 3,\n        \"clientId\": 1,\n        \"assignedWorkerId\": 2,\n        \"status\": \"IN_PROGRESS\",\n        \"archived\": false,\n        \"createdAt\": \"2025-11-14T10:20:00\",\n        \"updatedAt\": \"2025-11-14T10:25:00\",\n        \"fieldValues\": {\n            \"101\": {\n                \"name\": \"customerName\",\n                \"label\": \"Customer Name\",\n                \"type\": \"TEXT\",\n                \"value\": \"Jane Smith\"\n            },\n            \"102\": {\n                \"name\": \"priority\",\n                \"label\": \"Priority Level\",\n                \"type\": \"DROPDOWN\",\n                \"value\": \"High\"\n            }\n        }\n    }\n]"
             }
           ]
         }

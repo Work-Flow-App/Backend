@@ -1,6 +1,6 @@
 package com.workflow.service.client;
 
-import com.workflow.common.exception.customException.*;
+import com.workflow.common.exception.business.*;
 import com.workflow.dto.client.ClientCreateRequest;
 import com.workflow.dto.client.ClientUpdateRequest;
 import com.workflow.dto.client.ClientResponse;

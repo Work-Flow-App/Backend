@@ -2,8 +2,8 @@ package com.workflow.common.exception.handler;
 
 import com.workflow.common.exception.ResponseBuilder;
 import com.workflow.common.exception.ErrorResponse;
-import com.workflow.common.exception.customException.InvalidPasswordResetTokenException;
-import com.workflow.common.exception.customException.InvalidRefreshTokenException;
+import com.workflow.common.exception.business.InvalidPasswordResetTokenException;
+import com.workflow.common.exception.business.InvalidRefreshTokenException;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.ResponseEntity;

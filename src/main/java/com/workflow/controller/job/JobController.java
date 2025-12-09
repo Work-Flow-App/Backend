@@ -5,6 +5,7 @@ import com.workflow.entity.Company;
 import com.workflow.entity.User;
 import com.workflow.service.company.ICompanyService;
 import com.workflow.service.job.IJobService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.*;
 import org.springframework.security.core.Authentication;
@@ -21,7 +22,7 @@ public class JobController {
 
     @PostMapping
     public ResponseEntity<JobResponse> create(
-            @RequestBody JobCreateRequest request,
+            @Valid @RequestBody JobCreateRequest request,
             Authentication auth
     ) {
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -31,7 +32,7 @@ public class JobController {
     @PutMapping("/{id}")
     public ResponseEntity<JobResponse> update(
             @PathVariable Long id,
-            @RequestBody JobUpdateRequest request,
+            @Valid @RequestBody JobUpdateRequest request,
             Authentication auth
     ) {
         return ResponseEntity.ok(

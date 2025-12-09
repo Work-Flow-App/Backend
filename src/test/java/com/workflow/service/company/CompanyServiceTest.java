@@ -1,8 +1,8 @@
 package com.workflow.service.company;
 
 import com.workflow.common.constant.Role;
-import com.workflow.common.exception.customException.CompanyAlreadyExistsException;
-import com.workflow.common.exception.customException.CompanyNotFoundException;
+import com.workflow.common.exception.business.CompanyAlreadyExistsException;
+import com.workflow.common.exception.business.CompanyNotFoundException;
 import com.workflow.dto.company.CompanyDashboardResponse;
 import com.workflow.dto.company.CompanyProfileResponse;
 import com.workflow.dto.company.CompanyProfileUpdateRequest;

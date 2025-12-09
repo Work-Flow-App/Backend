@@ -5,6 +5,8 @@ import java.time.LocalDateTime;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import com.workflow.common.constant.job.JobStatus;
+
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -33,8 +35,9 @@ public class Job {
     @JoinColumn(name = "assigned_worker_id")
     private Worker assignedWorker;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 50)
-    private String status;
+    private JobStatus status;
 
     @Column(nullable = false, columnDefinition = "BOOLEAN DEFAULT FALSE")
     private boolean archived;

@@ -1,4 +1,6 @@
--- V3__create_company_related_tables.sql
+-- ============================================
+--   COMPANY MANAGEMENT TABLES
+-- ============================================
 
 -- ----------------------------
 -- Table: companies

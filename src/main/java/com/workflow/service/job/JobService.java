@@ -9,11 +9,13 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.workflow.common.exception.customException.ClientNotFoundException;
-import com.workflow.common.exception.customException.CompanyNotFoundException;
-import com.workflow.common.exception.customException.JobNotFoundException;
-import com.workflow.common.exception.customException.TemplateNotFoundException;
-import com.workflow.common.exception.customException.WorkerNotFoundException;
+import com.workflow.common.constant.job.JobStatus;
+import com.workflow.common.exception.business.ClientNotFoundException;
+import com.workflow.common.exception.business.CompanyNotFoundException;
+import com.workflow.common.exception.business.JobNotFoundException;
+import com.workflow.common.exception.business.TemplateNotFoundException;
+import com.workflow.common.exception.business.WorkerNotFoundException;
+import com.workflow.dto.job.FieldValueResponse;
 import com.workflow.dto.job.JobCreateRequest;
 import com.workflow.dto.job.JobResponse;
 import com.workflow.dto.job.JobUpdateRequest;
@@ -72,7 +74,7 @@ public class JobService implements IJobService {
                                 .template(template)
                                 .client(client)
                                 .assignedWorker(worker)
-                                .status(request.getStatus())
+                                .status(request.getStatus() != null ? request.getStatus() : JobStatus.NEW)
                                 .archived(false)
                                 .build();
                 jobRepository.save(job);
@@ -102,7 +104,10 @@ public class JobService implements IJobService {
                         job.setAssignedWorker(worker);
                 }
 
-                job.setStatus(request.getStatus());
+                if (request.getStatus() != null) {
+                        job.setStatus(request.getStatus());
+                }
+
                 job.setArchived(request.isArchived());
                 jobRepository.save(job);
 
@@ -201,11 +206,16 @@ public class JobService implements IJobService {
         }
 
         private JobResponse mapToResponse(Job job) {
-                Map<Long, Object> values = fieldValueRepository.findByJobId(job.getId())
+                Map<Long, FieldValueResponse> values = fieldValueRepository.findByJobId(job.getId())
                                 .stream()
                                 .collect(Collectors.toMap(
                                                 v -> v.getField().getId(),
-                                                JobFieldValue::getTypedValue // Use the new method
+                                                v -> FieldValueResponse.builder()
+                                                                .name(v.getField().getName())
+                                                                .label(v.getField().getLabel())
+                                                                .type(v.getField().getJobFieldType())
+                                                                .value(v.getTypedValue())
+                                                                .build()
                                 ));
 
                 return JobResponse.builder()
@@ -219,7 +229,7 @@ public class JobService implements IJobService {
                                 .archived(job.isArchived())
                                 .createdAt(job.getCreatedAt())
                                 .updatedAt(job.getUpdatedAt())
-                                .fieldValues(values) // Change JobResponse DTO fieldValues type to Map<Long, Object>
+                                .fieldValues(values)
                                 .build();
         }
 

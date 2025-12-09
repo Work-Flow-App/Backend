@@ -1,3 +1,6 @@
+-- ============================================
+--   USERS TABLE
+-- ============================================
 CREATE TABLE users (
     id BIGINT NOT NULL AUTO_INCREMENT,
     uuid VARCHAR(255) NOT NULL,

@@ -1,6 +1,6 @@
 package com.workflow.service.auth;
 
-import com.workflow.common.exception.customException.InvalidRefreshTokenException;
+import com.workflow.common.exception.business.InvalidRefreshTokenException;
 import com.workflow.config.properties.JwtConfigProperties;
 import com.workflow.entity.RefreshToken;
 import com.workflow.entity.User;

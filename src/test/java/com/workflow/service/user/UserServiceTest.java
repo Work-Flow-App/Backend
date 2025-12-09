@@ -1,7 +1,7 @@
 package com.workflow.service.user;
 
 import com.workflow.common.constant.Role;
-import com.workflow.common.exception.customException.UserAlreadyExistsException;
+import com.workflow.common.exception.business.UserAlreadyExistsException;
 import com.workflow.dto.auth.SignupRequest;
 import com.workflow.entity.Company;
 import com.workflow.entity.User;

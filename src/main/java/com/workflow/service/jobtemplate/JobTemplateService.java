@@ -1,8 +1,8 @@
 package com.workflow.service.jobtemplate;
 
-import com.workflow.common.exception.customException.CompanyNotFoundException;
-import com.workflow.common.exception.customException.DuplicateNameException;
-import com.workflow.common.exception.customException.TemplateNotFoundException;
+import com.workflow.common.exception.business.CompanyNotFoundException;
+import com.workflow.common.exception.business.DuplicateNameException;
+import com.workflow.common.exception.business.TemplateNotFoundException;
 import com.workflow.dto.jobtemplate.*;
 import com.workflow.entity.Company;
 import com.workflow.entity.JobTemplate;

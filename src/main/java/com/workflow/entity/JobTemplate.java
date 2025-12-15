@@ -32,6 +32,9 @@ public class JobTemplate {
     @Column(length = 255)
     private String description;
 
+    @Column(nullable = false, columnDefinition = "BOOLEAN DEFAULT FALSE")
+    private boolean isDefault;
+
     @CreationTimestamp
     private LocalDateTime createdAt;
 

@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -40,10 +41,24 @@ public class JobTemplateService implements IJobTemplateService {
             throw new DuplicateNameException("Template name must be unique within the company");
         }
 
+        // Check if this is the first template for the company
+        boolean isFirstTemplate = templateRepository.findByCompanyId(companyId).isEmpty();
+
+        // Handle default template logic
+        // First template is ALWAYS default, regardless of request
+        // For subsequent templates, only set as default if explicitly requested
+        boolean shouldBeDefault = isFirstTemplate || (request.getIsDefault() != null && request.getIsDefault());
+
+        if (shouldBeDefault && !isFirstTemplate) {
+            // Clear previous default only if this is not the first template
+            handleDefaultTemplateChange(companyId, null);
+        }
+
         JobTemplate template = JobTemplate.builder()
                 .company(company)
                 .name(request.getName())
                 .description(request.getDescription())
+                .isDefault(shouldBeDefault)
                 .build();
 
         templateRepository.save(template);
@@ -78,6 +93,18 @@ public class JobTemplateService implements IJobTemplateService {
             throw new DuplicateNameException("Template name must be unique");
         }
 
+        // Handle default template logic
+        // Only allow SETTING as default (isDefault: true), not UNSETTING (isDefault: false)
+        boolean shouldBeDefault = request.getIsDefault() != null && request.getIsDefault();
+
+        if (shouldBeDefault && !template.isDefault()) {
+            // Setting this template as default - clear previous default
+            handleDefaultTemplateChange(companyId, templateId);
+            template.setDefault(true);
+        }
+        // Note: If isDefault is false or null, we DON'T change the current default status
+        // Users cannot unset the default flag - they can only switch to another template
+
         template.setName(request.getName());
         template.setDescription(request.getDescription());
         templateRepository.save(template);
@@ -90,6 +117,11 @@ public class JobTemplateService implements IJobTemplateService {
         JobTemplate template = templateRepository.findById(templateId)
                 .filter(t -> t.getCompany().getId().equals(companyId))
                 .orElseThrow(() -> new TemplateNotFoundException("Template not found"));
+
+        // Prevent deletion of default template
+        if (template.isDefault()) {
+            throw new IllegalStateException("Cannot delete the default template. Please set another template as default first.");
+        }
 
         // Delete associated fields
         fieldRepository.deleteAll(fieldRepository.findByTemplateIdOrderByOrderIndexAsc(templateId));
@@ -193,6 +225,34 @@ public class JobTemplateService implements IJobTemplateService {
     }
 
     // -------------------------------------------------------------------------
+    // DEFAULT TEMPLATE
+    // -------------------------------------------------------------------------
+
+    @Override
+    public Optional<JobTemplateResponse> getDefaultTemplate(Long companyId) {
+        return templateRepository.findByCompanyIdAndIsDefaultTrue(companyId)
+                .map(this::mapToResponse);
+    }
+
+    /**
+     * Ensures only one template per company is marked as default.
+     * Clears the default flag from any existing default template.
+     *
+     * @param companyId The company ID
+     * @param excludeTemplateId Template ID to exclude from clearing (null if creating new)
+     */
+    private void handleDefaultTemplateChange(Long companyId, Long excludeTemplateId) {
+        templateRepository.findByCompanyIdAndIsDefaultTrue(companyId)
+                .ifPresent(existingDefault -> {
+                    // Only clear if it's a different template
+                    if (excludeTemplateId == null || !existingDefault.getId().equals(excludeTemplateId)) {
+                        existingDefault.setDefault(false);
+                        templateRepository.save(existingDefault);
+                    }
+                });
+    }
+
+    // -------------------------------------------------------------------------
     // MAPPERS
     // -------------------------------------------------------------------------
 
@@ -202,6 +262,7 @@ public class JobTemplateService implements IJobTemplateService {
                 .companyId(template.getCompany().getId())
                 .name(template.getName())
                 .description(template.getDescription())
+                .isDefault(template.isDefault())
                 .createdAt(template.getCreatedAt())
                 .updatedAt(template.getUpdatedAt())
                 .build();

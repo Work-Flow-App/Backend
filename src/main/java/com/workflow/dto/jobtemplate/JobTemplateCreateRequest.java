@@ -9,4 +9,7 @@ import lombok.*;
 public class JobTemplateCreateRequest {
     private String name;
     private String description;
+
+    @Builder.Default
+    private Boolean isDefault = false;
 }

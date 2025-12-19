@@ -47,6 +47,13 @@ public class JobTemplateController {
         return ResponseEntity.ok(service.getTemplate(id, getCompanyId(auth)));
     }
 
+    @GetMapping("/default")
+    public ResponseEntity<JobTemplateResponse> getDefaultTemplate(Authentication auth) {
+        return service.getDefaultTemplate(getCompanyId(auth))
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.noContent().build());
+    }
+
     @PutMapping("/{id}")
     public ResponseEntity<JobTemplateResponse> updateTemplate(
             @PathVariable Long id,

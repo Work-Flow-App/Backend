@@ -10,6 +10,7 @@ CREATE TABLE job_templates (
     company_id BIGINT NOT NULL,
     name VARCHAR(150) NOT NULL,
     description VARCHAR(255),
+    is_default BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
@@ -19,7 +20,8 @@ CREATE TABLE job_templates (
         ON DELETE CASCADE,
 
     CONSTRAINT uq_company_name UNIQUE (company_id, name),
-    INDEX idx_company (company_id)
+    INDEX idx_company (company_id),
+    INDEX idx_is_default (is_default)
 ) ENGINE=InnoDB;
 
 

@@ -87,10 +87,10 @@ class JobTemplateServiceTest {
                 .orderIndex(2)
                 .build();
 
-        createTemplateRequest = new JobTemplateCreateRequest(
-                "New Template",
-                "New template description"
-        );
+        createTemplateRequest = JobTemplateCreateRequest.builder()
+                .name("New Template")
+                .description("New template description")
+                .build();
 
         createFieldRequest = new JobTemplateFieldCreateRequest(
                 3L,
@@ -247,10 +247,10 @@ class JobTemplateServiceTest {
     @Test
     void updateTemplate_ShouldUpdateTemplateSuccessfully() {
         // Arrange
-        JobTemplateCreateRequest updateRequest = new JobTemplateCreateRequest(
-                "Updated Template",
-                "Updated description"
-        );
+        JobTemplateCreateRequest updateRequest = JobTemplateCreateRequest.builder()
+                .name("Updated Template")
+                .description("Updated description")
+                .build();
 
         when(templateRepository.findById(3L)).thenReturn(Optional.of(template));
         when(templateRepository.existsByCompanyIdAndName(1L, "Updated Template")).thenReturn(false);
@@ -284,10 +284,10 @@ class JobTemplateServiceTest {
     @Test
     void updateTemplate_ShouldNotCheckNameUniqueness_WhenNameUnchanged() {
         // Arrange
-        JobTemplateCreateRequest sameNameRequest = new JobTemplateCreateRequest(
-                "Maintenance Job", // Same name as template
-                "Updated description"
-        );
+        JobTemplateCreateRequest sameNameRequest = JobTemplateCreateRequest.builder()
+                .name("Maintenance Job") // Same name as template
+                .description("Updated description")
+                .build();
 
         when(templateRepository.findById(3L)).thenReturn(Optional.of(template));
         when(templateRepository.save(any(JobTemplate.class))).thenReturn(template);
@@ -541,5 +541,315 @@ class JobTemplateServiceTest {
 
         verify(templateRepository).findById(99L);
         verify(fieldRepository, never()).findByTemplateIdOrderByOrderIndexAsc(anyLong());
+    }
+
+    // ============= Default Template Tests =============
+
+    @Test
+    void createTemplate_ShouldSetFirstTemplateAsDefault() {
+        // Arrange
+        JobTemplateCreateRequest request = JobTemplateCreateRequest.builder()
+                .name("First Template")
+                .description("First template for company")
+                .isDefault(false)  // Even though false, should become default
+                .build();
+
+        when(companyRepository.findById(1L)).thenReturn(Optional.of(company));
+        when(templateRepository.existsByCompanyIdAndName(1L, "First Template")).thenReturn(false);
+        when(templateRepository.findByCompanyId(1L)).thenReturn(List.of()); // Empty list = first template
+
+        JobTemplate savedTemplate = JobTemplate.builder()
+                .id(1L)
+                .name("First Template")
+                .description("First template for company")
+                .company(company)
+                .isDefault(true)
+                .build();
+        when(templateRepository.save(any(JobTemplate.class))).thenReturn(savedTemplate);
+
+        // Act
+        JobTemplateResponse response = jobTemplateService.createTemplate(request, 1L);
+
+        // Assert
+        assertThat(response).isNotNull();
+        assertThat(response.isDefault()).isTrue();
+        verify(templateRepository).findByCompanyId(1L);
+        verify(templateRepository, never()).findByCompanyIdAndIsDefaultTrue(anyLong());
+    }
+
+    @Test
+    void createTemplate_ShouldNotSetSecondTemplateAsDefault_WhenIsDefaultNotProvided() {
+        // Arrange
+        JobTemplate existingTemplate = JobTemplate.builder()
+                .id(1L)
+                .name("First Template")
+                .company(company)
+                .isDefault(true)
+                .build();
+
+        JobTemplateCreateRequest request = JobTemplateCreateRequest.builder()
+                .name("Second Template")
+                .description("Second template")
+                .build(); // isDefault defaults to false
+
+        when(companyRepository.findById(1L)).thenReturn(Optional.of(company));
+        when(templateRepository.existsByCompanyIdAndName(1L, "Second Template")).thenReturn(false);
+        when(templateRepository.findByCompanyId(1L)).thenReturn(List.of(existingTemplate)); // Not first
+
+        JobTemplate savedTemplate = JobTemplate.builder()
+                .id(2L)
+                .name("Second Template")
+                .description("Second template")
+                .company(company)
+                .isDefault(false)
+                .build();
+        when(templateRepository.save(any(JobTemplate.class))).thenReturn(savedTemplate);
+
+        // Act
+        JobTemplateResponse response = jobTemplateService.createTemplate(request, 1L);
+
+        // Assert
+        assertThat(response).isNotNull();
+        assertThat(response.isDefault()).isFalse();
+        verify(templateRepository).findByCompanyId(1L);
+        verify(templateRepository, never()).findByCompanyIdAndIsDefaultTrue(anyLong());
+    }
+
+    @Test
+    void createTemplate_ShouldSetSecondTemplateAsDefault_WhenIsDefaultIsTrue() {
+        // Arrange
+        JobTemplate existingDefaultTemplate = spy(JobTemplate.builder()
+                .id(1L)
+                .name("First Template")
+                .company(company)
+                .isDefault(true)
+                .build());
+
+        JobTemplateCreateRequest request = JobTemplateCreateRequest.builder()
+                .name("Second Template")
+                .description("Second template")
+                .isDefault(true)
+                .build();
+
+        when(companyRepository.findById(1L)).thenReturn(Optional.of(company));
+        when(templateRepository.existsByCompanyIdAndName(1L, "Second Template")).thenReturn(false);
+        when(templateRepository.findByCompanyId(1L)).thenReturn(List.of(existingDefaultTemplate));
+        when(templateRepository.findByCompanyIdAndIsDefaultTrue(1L)).thenReturn(Optional.of(existingDefaultTemplate));
+
+        JobTemplate savedTemplate = JobTemplate.builder()
+                .id(2L)
+                .name("Second Template")
+                .description("Second template")
+                .company(company)
+                .isDefault(true)
+                .build();
+        when(templateRepository.save(any(JobTemplate.class))).thenReturn(savedTemplate);
+
+        // Act
+        JobTemplateResponse response = jobTemplateService.createTemplate(request, 1L);
+
+        // Assert
+        assertThat(response).isNotNull();
+        assertThat(response.isDefault()).isTrue();
+        verify(templateRepository).findByCompanyIdAndIsDefaultTrue(1L);
+        verify(existingDefaultTemplate).setDefault(false);
+        verify(templateRepository, times(2)).save(any(JobTemplate.class)); // Once for clearing old default, once for new template
+    }
+
+    @Test
+    void updateTemplate_ShouldSetTemplateAsDefault_WhenIsDefaultIsTrue() {
+        // Arrange
+        JobTemplate currentDefaultTemplate = spy(JobTemplate.builder()
+                .id(1L)
+                .name("Current Default")
+                .company(company)
+                .isDefault(true)
+                .build());
+
+        JobTemplate templateToUpdate = spy(JobTemplate.builder()
+                .id(2L)
+                .name("Template To Update")
+                .company(company)
+                .isDefault(false)
+                .build());
+
+        JobTemplateCreateRequest request = JobTemplateCreateRequest.builder()
+                .name("Template To Update")
+                .description("Updated description")
+                .isDefault(true)
+                .build();
+
+        when(templateRepository.findById(2L)).thenReturn(Optional.of(templateToUpdate));
+        when(templateRepository.findByCompanyIdAndIsDefaultTrue(1L)).thenReturn(Optional.of(currentDefaultTemplate));
+        when(templateRepository.save(any(JobTemplate.class))).thenReturn(templateToUpdate);
+
+        // Act
+        JobTemplateResponse response = jobTemplateService.updateTemplate(2L, request, 1L);
+
+        // Assert
+        assertThat(response).isNotNull();
+        verify(templateRepository).findByCompanyIdAndIsDefaultTrue(1L);
+        verify(currentDefaultTemplate).setDefault(false);
+        verify(templateToUpdate).setDefault(true);
+        verify(templateRepository, times(2)).save(any(JobTemplate.class));
+    }
+
+    @Test
+    void updateTemplate_ShouldNotChangeDefaultStatus_WhenIsDefaultIsFalse() {
+        // Arrange
+        JobTemplate defaultTemplate = spy(JobTemplate.builder()
+                .id(1L)
+                .name("Current Default")
+                .company(company)
+                .isDefault(true)
+                .build());
+
+        JobTemplateCreateRequest request = JobTemplateCreateRequest.builder()
+                .name("Updated Name")
+                .description("Updated description")
+                .isDefault(false)  // Trying to unset default
+                .build();
+
+        when(templateRepository.findById(1L)).thenReturn(Optional.of(defaultTemplate));
+        when(templateRepository.save(any(JobTemplate.class))).thenReturn(defaultTemplate);
+
+        // Act
+        JobTemplateResponse response = jobTemplateService.updateTemplate(1L, request, 1L);
+
+        // Assert
+        assertThat(response).isNotNull();
+        verify(templateRepository, never()).findByCompanyIdAndIsDefaultTrue(anyLong());
+        verify(defaultTemplate, never()).setDefault(anyBoolean());
+        verify(templateRepository).save(defaultTemplate); // Still saves for name/description update
+    }
+
+    @Test
+    void getDefaultTemplate_ShouldReturnDefaultTemplate_WhenExists() {
+        // Arrange
+        JobTemplate defaultTemplate = JobTemplate.builder()
+                .id(1L)
+                .name("Default Template")
+                .description("This is the default")
+                .company(company)
+                .isDefault(true)
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .build();
+
+        when(templateRepository.findByCompanyIdAndIsDefaultTrue(1L)).thenReturn(Optional.of(defaultTemplate));
+
+        // Act
+        Optional<JobTemplateResponse> response = jobTemplateService.getDefaultTemplate(1L);
+
+        // Assert
+        assertThat(response).isPresent();
+        assertThat(response.get().getId()).isEqualTo(1L);
+        assertThat(response.get().isDefault()).isTrue();
+        assertThat(response.get().getName()).isEqualTo("Default Template");
+        verify(templateRepository).findByCompanyIdAndIsDefaultTrue(1L);
+    }
+
+    @Test
+    void getDefaultTemplate_ShouldReturnEmpty_WhenNoDefaultExists() {
+        // Arrange
+        when(templateRepository.findByCompanyIdAndIsDefaultTrue(1L)).thenReturn(Optional.empty());
+
+        // Act
+        Optional<JobTemplateResponse> response = jobTemplateService.getDefaultTemplate(1L);
+
+        // Assert
+        assertThat(response).isEmpty();
+        verify(templateRepository).findByCompanyIdAndIsDefaultTrue(1L);
+    }
+
+    @Test
+    void deleteTemplate_ShouldThrowException_WhenDeletingDefaultTemplate() {
+        // Arrange
+        JobTemplate defaultTemplate = JobTemplate.builder()
+                .id(1L)
+                .name("Default Template")
+                .company(company)
+                .isDefault(true)
+                .build();
+
+        when(templateRepository.findById(1L)).thenReturn(Optional.of(defaultTemplate));
+
+        // Act & Assert
+        assertThatThrownBy(() -> jobTemplateService.deleteTemplate(1L, 1L))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Cannot delete the default template");
+
+        verify(templateRepository).findById(1L);
+        verify(fieldRepository, never()).deleteAll(anyList());
+        verify(templateRepository, never()).delete(any(JobTemplate.class));
+    }
+
+    @Test
+    void deleteTemplate_ShouldDeleteSuccessfully_WhenNotDefaultTemplate() {
+        // Arrange
+        JobTemplate nonDefaultTemplate = JobTemplate.builder()
+                .id(2L)
+                .name("Non-Default Template")
+                .company(company)
+                .isDefault(false)
+                .build();
+
+        when(templateRepository.findById(2L)).thenReturn(Optional.of(nonDefaultTemplate));
+        when(fieldRepository.findByTemplateIdOrderByOrderIndexAsc(2L)).thenReturn(List.of());
+
+        // Act
+        jobTemplateService.deleteTemplate(2L, 1L);
+
+        // Assert
+        verify(templateRepository).findById(2L);
+        verify(fieldRepository).findByTemplateIdOrderByOrderIndexAsc(2L);
+        verify(fieldRepository).deleteAll(anyList());
+        verify(templateRepository).delete(nonDefaultTemplate);
+    }
+
+    @Test
+    void deleteTemplate_ShouldDeleteSuccessfully_AfterSettingAnotherAsDefault() {
+        // Arrange - First, we have two templates
+        JobTemplate oldDefaultTemplate = JobTemplate.builder()
+                .id(1L)
+                .name("Old Default")
+                .company(company)
+                .isDefault(true)
+                .build();
+
+        JobTemplate newDefaultTemplate = JobTemplate.builder()
+                .id(2L)
+                .name("New Default")
+                .company(company)
+                .isDefault(false)
+                .build();
+
+        // Step 1: Update template 2 to be default
+        JobTemplateCreateRequest updateRequest = JobTemplateCreateRequest.builder()
+                .name("New Default")
+                .description("Now default")
+                .isDefault(true)
+                .build();
+
+        when(templateRepository.findById(2L)).thenReturn(Optional.of(newDefaultTemplate));
+        when(templateRepository.findByCompanyIdAndIsDefaultTrue(1L)).thenReturn(Optional.of(oldDefaultTemplate));
+        when(templateRepository.save(any(JobTemplate.class))).thenReturn(newDefaultTemplate);
+
+        jobTemplateService.updateTemplate(2L, updateRequest, 1L);
+
+        // Update the templates' default status after the update
+        oldDefaultTemplate.setDefault(false);
+        newDefaultTemplate.setDefault(true);
+
+        // Step 2: Now delete template 1 (no longer default)
+        when(templateRepository.findById(1L)).thenReturn(Optional.of(oldDefaultTemplate));
+        when(fieldRepository.findByTemplateIdOrderByOrderIndexAsc(1L)).thenReturn(List.of());
+
+        // Act
+        jobTemplateService.deleteTemplate(1L, 1L);
+
+        // Assert
+        verify(templateRepository, times(1)).delete(oldDefaultTemplate); // Should successfully delete
+        verify(fieldRepository).deleteAll(anyList());
     }
 }

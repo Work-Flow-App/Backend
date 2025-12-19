@@ -2,6 +2,7 @@ package com.workflow.service.jobtemplate;
 
 import com.workflow.dto.jobtemplate.*;
 import java.util.List;
+import java.util.Optional;
 
 public interface IJobTemplateService {
 
@@ -9,6 +10,7 @@ public interface IJobTemplateService {
     JobTemplateResponse createTemplate(JobTemplateCreateRequest request, Long companyId);
     List<JobTemplateResponse> getAllTemplates(Long companyId);
     JobTemplateResponse getTemplate(Long templateId, Long companyId);
+    Optional<JobTemplateResponse> getDefaultTemplate(Long companyId);
     JobTemplateResponse updateTemplate(Long templateId, JobTemplateCreateRequest request, Long companyId);
     void deleteTemplate(Long templateId, Long companyId);
 

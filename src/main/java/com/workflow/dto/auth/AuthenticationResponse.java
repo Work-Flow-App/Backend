@@ -12,7 +12,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class AuthenticationResponse {
-    private String token;
+    private String accessToken;
+    private String refreshToken;
+    private String tokenType;
+    private Long expiresIn; // seconds
     private String errorMessage;
 
     public static AuthenticationResponse error(String errorMessage) {
@@ -21,9 +24,12 @@ public class AuthenticationResponse {
                 .build();
     }
 
-    public static AuthenticationResponse success(String token) {
+    public static AuthenticationResponse success(String accessToken, String refreshToken) {
         return AuthenticationResponse.builder()
-                .token(token)
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
+                .tokenType("Bearer")
+                .expiresIn(60 * 60L) // 1 hour in seconds (will be configurable)
                 .build();
     }
 }

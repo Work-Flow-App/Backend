@@ -1,10 +1,13 @@
 package com.workflow.service.auth;
 
+import com.workflow.config.properties.JwtConfigProperties;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
@@ -14,12 +17,21 @@ import java.util.HashMap;
 import java.util.function.Function;
 
 @Service
+@RequiredArgsConstructor
 public class JwtService {
     @Value("${JWT_SECRET}")
     private String SECRET_KEY;
 
+    private final JwtConfigProperties jwtConfigProperties;
+
     public String generateToken(UserDetails user){
-      return createToken(new HashMap<>(), user);
+        HashMap<String, Object> claims = new HashMap<>();
+        // Add role to JWT claims
+        claims.put("role", user.getAuthorities().stream()
+                .findFirst()
+                .map(GrantedAuthority::getAuthority)
+                .orElse(""));
+        return createToken(claims, user);
     }
 
     private String createToken(HashMap<String, Object> claims, UserDetails user) {
@@ -27,7 +39,7 @@ public class JwtService {
                 .claims(claims)
                 .subject(user.getUsername())
                 .issuedAt(new Date(System.currentTimeMillis()))
-                .expiration(new Date(System.currentTimeMillis() + 30 * 1000))
+                .expiration(new Date(System.currentTimeMillis() +  jwtConfigProperties.getAccessToken().getExpirationMinutes() * 60 * 1000))
                 .signWith(getSignInKey())
                 .compact();
     }
@@ -52,6 +64,10 @@ public class JwtService {
 
     public String extractUserName(String token) {
         return extractClaim(token, Claims::getSubject);
+    }
+
+    public String extractRole(String token) {
+        return extractClaim(token, claims -> claims.get("role", String.class));
     }
 
     public <T> T extractClaim(String token, Function<Claims, T> claimsResolver){

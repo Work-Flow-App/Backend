@@ -11,4 +11,5 @@ public interface AssetJobAssignmentRepository extends JpaRepository<AssetJobAssi
     Optional<AssetJobAssignment> findByAssetIdAndReturnedAtIsNull(Long assetId);
     Optional<AssetJobAssignment> findByIdAndAssetId(Long id, Long assetId);
     List<AssetJobAssignment> findByJobIdAndReturnedAtIsNull(Long jobId);
+    List<AssetJobAssignment> findByJobId(Long jobId);
 }

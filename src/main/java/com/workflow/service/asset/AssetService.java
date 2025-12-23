@@ -5,6 +5,7 @@ import com.workflow.entity.*;
 import com.workflow.repository.*;
 import com.workflow.common.exception.business.*;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,6 +16,7 @@ import java.time.*;
 import java.util.*;
 // import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -29,8 +31,14 @@ public class AssetService implements IAssetService {
     // ----------------- CREATE --------------------
     @Override
     public AssetResponse createAsset(AssetCreateRequest request, Long companyId) {
+        log.info("Creating asset: name={}, assetTag={}, purchasePrice={}, companyId={}",
+                 request.getName(), request.getAssetTag(), request.getPurchasePrice(), companyId);
+
         Company company = companyRepository.findById(companyId)
-                .orElseThrow(() -> new CompanyNotFoundException("Company not found"));
+                .orElseThrow(() -> {
+                    log.error("Company not found when creating asset: companyId={}", companyId);
+                    return new CompanyNotFoundException("Company not found");
+                });
 
         // validations
         if (request.getName() == null || request.getName().trim().length() < 2 || request.getName().length() > 150) {
@@ -232,28 +240,28 @@ public class AssetService implements IAssetService {
     // ----------------- DASHBOARD --------------------
     @Override
     public AssetStatistics getStatistics(Long companyId) {
-        // Efficient implementations should use DB aggregation queries (not implemented
-        // here).
-        // For simplicity we fetch non-archived assets and compute summary in Java.
         List<Asset> assets = assetRepository.findByCompanyIdAndArchivedFalse(companyId, Pageable.unpaged())
                 .getContent();
 
         long total = assets.size();
         long available = assets.stream().filter(Asset::isAvailable).count();
         long inUse = total - available;
-        BigDecimal totalPurchase = assets.stream()
-                .map(Asset::getPurchasePrice)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-        BigDecimal totalCurrent = assets.stream()
-                .map(a -> calculateAssetValue(a.getId(), companyId, LocalDate.now()).getCurrentValue())
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-        BigDecimal totalDep = totalPurchase.subtract(totalCurrent);
-        double avgRate = assets.stream()
-                .map(Asset::getDepreciationRate)
-                .filter(Objects::nonNull)
-                .mapToDouble(BigDecimal::doubleValue)
-                .average()
-                .orElse(0.0);
+
+        LocalDate today = LocalDate.now();
+        BigDecimal totalPurchase = BigDecimal.ZERO;
+        BigDecimal totalCurrent = BigDecimal.ZERO;
+        double totalRate = 0;
+
+        // Calculate in single pass to avoid N+1 queries
+        for (Asset asset : assets) {
+            totalPurchase = totalPurchase.add(asset.getPurchasePrice());
+            totalCurrent = totalCurrent.add(calculateCurrentValue(asset, today));
+            totalRate += asset.getDepreciationRate().doubleValue();
+        }
+
+        BigDecimal totalDep = totalPurchase.subtract(totalCurrent).max(BigDecimal.ZERO);
+        double avgRate = total > 0 ? totalRate / total : 0.0;
+
         return AssetStatistics.builder()
                 .totalAssets(total)
                 .availableAssets(available)
@@ -263,6 +271,38 @@ public class AssetService implements IAssetService {
                 .totalDepreciation(totalDep.setScale(2, RoundingMode.HALF_UP))
                 .averageDepreciationRate(Math.round(avgRate * 100.0) / 100.0)
                 .build();
+    }
+
+    // ----------------- HELPERS --------------------
+    /**
+     * Calculate current depreciated value of an asset without making database queries.
+     * Used internally for efficient batch calculations (e.g., in getStatistics).
+     */
+    private BigDecimal calculateCurrentValue(Asset asset, LocalDate asOfDate) {
+        LocalDate date = asOfDate == null ? LocalDate.now() : asOfDate;
+
+        // If date is before purchase, value equals purchase price
+        if (date.isBefore(asset.getPurchaseDate())) {
+            return asset.getPurchasePrice();
+        }
+
+        long daysOwned = Duration.between(asset.getPurchaseDate().atStartOfDay(), date.atStartOfDay()).toDays();
+        double yearsOwned = daysOwned / 365.25;
+
+        // Convert depreciation rate from percentage to fraction
+        double rate = asset.getDepreciationRate().divide(new BigDecimal("100"), 8, RoundingMode.HALF_UP).doubleValue();
+
+        // Declining balance formula: current = purchase * (1 - rate)^years
+        double depreciationFactor = Math.pow(1.0 - rate, yearsOwned);
+        BigDecimal currentValue = asset.getPurchasePrice().multiply(new BigDecimal(depreciationFactor));
+
+        // Never go below salvage value
+        BigDecimal salvageValue = asset.getSalvageValue() == null ? BigDecimal.ZERO : asset.getSalvageValue();
+        if (currentValue.compareTo(salvageValue) < 0) {
+            currentValue = salvageValue;
+        }
+
+        return currentValue.setScale(2, RoundingMode.HALF_UP);
     }
 
     // ----------------- MAPPERS --------------------

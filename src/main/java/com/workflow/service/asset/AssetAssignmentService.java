@@ -6,6 +6,7 @@ import com.workflow.entity.*;
 import com.workflow.repository.*;
 import com.workflow.common.exception.business.*;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -13,6 +14,7 @@ import java.time.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -25,25 +27,44 @@ public class AssetAssignmentService implements IAssetAssignmentService {
 
     @Override
     public AssetAssignmentResponse assignAsset(AssetAssignmentCreateRequest request, Long companyId) {
+        log.info("Assigning asset: assetId={}, jobId={}, workerId={}, companyId={}",
+                 request.getAssetId(), request.getJobId(), request.getAssignedWorkerId(), companyId);
+
         Asset asset = assetRepository.findById(request.getAssetId())
                 .filter(a -> a.getCompany().getId().equals(companyId))
-                .orElseThrow(() -> new AssetNotFoundException("Asset not found"));
+                .orElseThrow(() -> {
+                    log.error("Asset not found or does not belong to company: assetId={}, companyId={}",
+                              request.getAssetId(), companyId);
+                    return new AssetNotFoundException("Asset not found");
+                });
 
-        if (asset.isArchived())
+        if (asset.isArchived()) {
+            log.warn("Attempted to assign archived asset: assetId={}, assetTag={}, companyId={}",
+                     asset.getId(), asset.getAssetTag(), companyId);
             throw new IllegalStateException("Cannot assign archived asset");
+        }
 
         // asset must be available
         Optional<AssetJobAssignment> existing = assignmentRepository.findByAssetIdAndReturnedAtIsNull(asset.getId());
-        if (existing.isPresent())
+        if (existing.isPresent()) {
+            log.warn("Attempted to assign already assigned asset: assetId={}, assetTag={}, existingAssignmentId={}",
+                     asset.getId(), asset.getAssetTag(), existing.get().getId());
             throw new IllegalStateException("Asset is already assigned");
+        }
 
         Job job = null;
         if (request.getJobId() != null) {
             job = jobRepository.findById(request.getJobId())
                     .filter(j -> j.getCompany().getId().equals(companyId))
-                    .orElseThrow(() -> new JobNotFoundException("Job not found"));
+                    .orElseThrow(() -> {
+                        log.error("Job not found or does not belong to company: jobId={}, companyId={}",
+                                  request.getJobId(), companyId);
+                        return new JobNotFoundException("Job not found");
+                    });
             // job cannot be COMPLETED or CANCELLED
             if (job.getStatus() == JobStatus.COMPLETED || job.getStatus() == JobStatus.CANCELLED) {
+                log.warn("Attempted to assign asset to completed/cancelled job: assetId={}, jobId={}, jobStatus={}",
+                         asset.getId(), job.getId(), job.getStatus());
                 throw new IllegalStateException("Cannot assign asset to a completed or cancelled job");
             }
         }
@@ -52,7 +73,11 @@ public class AssetAssignmentService implements IAssetAssignmentService {
         if (request.getAssignedWorkerId() != null) {
             worker = workerRepository.findById(request.getAssignedWorkerId())
                     .filter(w -> w.getCompany().getId().equals(companyId))
-                    .orElseThrow(() -> new WorkerNotFoundException("Worker not found"));
+                    .orElseThrow(() -> {
+                        log.error("Worker not found or does not belong to company: workerId={}, companyId={}",
+                                  request.getAssignedWorkerId(), companyId);
+                        return new WorkerNotFoundException("Worker not found");
+                    });
         }
 
         AssetJobAssignment assignment = AssetJobAssignment.builder()
@@ -76,22 +101,40 @@ public class AssetAssignmentService implements IAssetAssignmentService {
         }
         assetRepository.save(asset);
 
+        log.info("Asset assigned successfully: assignmentId={}, assetId={}, assetTag={}, jobId={}, workerId={}, location={}",
+                 assignment.getId(), asset.getId(), asset.getAssetTag(),
+                 job != null ? job.getId() : null, worker != null ? worker.getId() : null,
+                 asset.getCurrentLocation());
+
         return mapAssignmentToResponse(assignment);
     }
 
     @Override
     public AssetAssignmentResponse returnAsset(AssetAssignmentReturnRequest request, Long companyId) {
+        log.info("Returning asset: assignmentId={}, companyId={}", request.getAssignmentId(), companyId);
+
         AssetJobAssignment assignment = assignmentRepository.findById(request.getAssignmentId())
-                .orElseThrow(() -> new IllegalArgumentException("Assignment not found"));
+                .orElseThrow(() -> {
+                    log.error("Assignment not found: assignmentId={}", request.getAssignmentId());
+                    return new IllegalArgumentException("Assignment not found");
+                });
 
         // check asset company
         if (!assignment.getAsset().getCompany().getId().equals(companyId)) {
+            log.error("Assignment does not belong to company: assignmentId={}, assignmentCompanyId={}, requestCompanyId={}",
+                      assignment.getId(), assignment.getAsset().getCompany().getId(), companyId);
             throw new AssetNotFoundException("Assignment not found for company");
         }
 
         if (assignment.getReturnedAt() != null) {
+            log.warn("Attempted to return already returned assignment: assignmentId={}, assetId={}, returnedAt={}",
+                     assignment.getId(), assignment.getAsset().getId(), assignment.getReturnedAt());
             throw new IllegalStateException("Assignment already returned");
         }
+
+        Long assetId = assignment.getAsset().getId();
+        String assetTag = assignment.getAsset().getAssetTag();
+        long durationDays = Duration.between(assignment.getAssignedAt(), LocalDateTime.now()).toDays();
 
         assignment.setReturnedAt(LocalDateTime.now());
         if (request.getNotes() != null && !request.getNotes().isBlank()) {
@@ -110,6 +153,11 @@ public class AssetAssignmentService implements IAssetAssignmentService {
             // for now set to "Returned"
             asset.setCurrentLocation("Returned");
             assetRepository.save(asset);
+            log.info("Asset returned and marked as available: assignmentId={}, assetId={}, assetTag={}, durationDays={}",
+                     assignment.getId(), assetId, assetTag, durationDays);
+        } else {
+            log.info("Asset returned but remains unavailable (other active assignment): assignmentId={}, assetId={}, assetTag={}, durationDays={}, otherActiveAssignmentId={}",
+                     assignment.getId(), assetId, assetTag, durationDays, active.get().getId());
         }
 
         return mapAssignmentToResponse(assignment);
@@ -117,31 +165,42 @@ public class AssetAssignmentService implements IAssetAssignmentService {
 
     @Override
     public List<AssetAssignmentResponse> getAssignmentHistory(Long assetId, Long companyId) {
+        log.debug("Fetching assignment history: assetId={}, companyId={}", assetId, companyId);
+
         Asset asset = assetRepository.findById(assetId)
                 .filter(a -> a.getCompany().getId().equals(companyId))
-                .orElseThrow(() -> new AssetNotFoundException("Asset not found"));
+                .orElseThrow(() -> {
+                    log.error("Asset not found when fetching history: assetId={}, companyId={}", assetId, companyId);
+                    return new AssetNotFoundException("Asset not found");
+                });
 
         List<AssetJobAssignment> list = assignmentRepository.findByAssetIdOrderByAssignedAtDesc(asset.getId());
+        log.debug("Retrieved assignment history: assetId={}, assetTag={}, historyCount={}",
+                  assetId, asset.getAssetTag(), list.size());
+
         return list.stream().map(this::mapAssignmentToResponse).collect(Collectors.toList());
     }
 
     @Override
     public List<AssetAssignmentResponse> getAssignedAssetsForJob(Long jobId, Long companyId, boolean onlyActive) {
+        log.debug("Fetching assigned assets for job: jobId={}, companyId={}, onlyActive={}",
+                  jobId, companyId, onlyActive);
+
         // verify job belongs to company
         Job job = jobRepository.findById(jobId)
                 .filter(j -> j.getCompany().getId().equals(companyId))
-                .orElseThrow(() -> new JobNotFoundException("Job not found"));
+                .orElseThrow(() -> {
+                    log.error("Job not found when fetching assets: jobId={}, companyId={}", jobId, companyId);
+                    return new JobNotFoundException("Job not found");
+                });
 
-        List<AssetJobAssignment> list;
-        if (onlyActive) {
-            list = assignmentRepository.findByJobIdAndReturnedAtIsNull(job.getId());
-        } else {
-            // get all by job id - we'd need a repository method; for simplicity fetch all
-            // assignments and filter
-            list = assignmentRepository.findAll().stream()
-                    .filter(a -> a.getJob() != null && jobId.equals(a.getJob().getId()))
-                    .collect(Collectors.toList());
-        }
+        List<AssetJobAssignment> list = onlyActive
+            ? assignmentRepository.findByJobIdAndReturnedAtIsNull(job.getId())
+            : assignmentRepository.findByJobId(job.getId());
+
+        log.debug("Retrieved assigned assets for job: jobId={}, assignmentCount={}, onlyActive={}",
+                  jobId, list.size(), onlyActive);
+
         return list.stream().map(this::mapAssignmentToResponse).collect(Collectors.toList());
     }
 

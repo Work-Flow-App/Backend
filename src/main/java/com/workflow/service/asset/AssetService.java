@@ -77,9 +77,6 @@ public class AssetService implements IAssetService {
                 .depreciationRate(request.getDepreciationRate().setScale(2, RoundingMode.HALF_UP))
                 .salvageValue(request.getSalvageValue() == null ? BigDecimal.ZERO
                         : request.getSalvageValue().setScale(2, RoundingMode.HALF_UP))
-                .currentLocation(request.getCurrentLocation())
-                .latitude(request.getLatitude())
-                .longitude(request.getLongitude())
                 .available(true) // requirement: available on creation
                 .archived(false)
                 .build();
@@ -121,9 +118,6 @@ public class AssetService implements IAssetService {
             }
             asset.setSalvageValue(request.getSalvageValue().setScale(2, RoundingMode.HALF_UP));
         }
-        asset.setCurrentLocation(request.getCurrentLocation());
-        asset.setLatitude(request.getLatitude());
-        asset.setLongitude(request.getLongitude());
 
         assetRepository.save(asset);
         return mapToResponse(asset);
@@ -318,9 +312,6 @@ public class AssetService implements IAssetService {
                 .purchaseDate(asset.getPurchaseDate())
                 .depreciationRate(asset.getDepreciationRate())
                 .salvageValue(asset.getSalvageValue())
-                .currentLocation(asset.getCurrentLocation())
-                .latitude(asset.getLatitude())
-                .longitude(asset.getLongitude())
                 .available(asset.isAvailable())
                 .archived(asset.isArchived())
                 .createdAt(asset.getCreatedAt())

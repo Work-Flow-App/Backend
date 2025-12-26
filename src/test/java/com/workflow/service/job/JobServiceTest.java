@@ -47,6 +47,12 @@ class JobServiceTest {
     @Mock
     private WorkerRepository workerRepository;
 
+    @Mock
+    private AssetRepository assetRepository;
+
+    @Mock
+    private AssetJobAssignmentRepository assetJobAssignmentRepository;
+
     @InjectMocks
     private JobService jobService;
 
@@ -178,6 +184,7 @@ class JobServiceTest {
         when(fieldValueRepository.saveAll(anyList())).thenReturn(Arrays.asList(fieldValue1, fieldValue2));
         when(fieldValueRepository.findByJobId(any()))
                 .thenReturn(Arrays.asList(fieldValue1, fieldValue2));
+        when(assetJobAssignmentRepository.findByJobIdAndReturnedAtIsNull(any())).thenReturn(Arrays.asList());
 
         // Act
         JobResponse response = jobService.createJob(createRequest, 1L);
@@ -282,6 +289,7 @@ class JobServiceTest {
             return savedJob;
         }).when(jobRepository).save(any(Job.class));
         when(fieldValueRepository.findByJobId(any())).thenReturn(Arrays.asList());
+        when(assetJobAssignmentRepository.findByJobIdAndReturnedAtIsNull(any())).thenReturn(Arrays.asList());
 
         // Act
         JobResponse response = jobService.createJob(requestWithoutClientAndWorker, 1L);
@@ -315,6 +323,7 @@ class JobServiceTest {
             return savedJob;
         }).when(jobRepository).save(any(Job.class));
         when(fieldValueRepository.findByJobId(any())).thenReturn(Arrays.asList());
+        when(assetJobAssignmentRepository.findByJobIdAndReturnedAtIsNull(any())).thenReturn(Arrays.asList());
 
         // Act
         jobService.createJob(requestWithoutStatus, 1L);
@@ -338,6 +347,7 @@ class JobServiceTest {
         when(fieldValueRepository.saveAll(anyList())).thenReturn(Arrays.asList());
         when(fieldValueRepository.findByJobId(55L))
                 .thenReturn(Arrays.asList(fieldValue1, fieldValue2));
+        when(assetJobAssignmentRepository.findByJobIdAndReturnedAtIsNull(55L)).thenReturn(Arrays.asList());
 
         // Act
         JobResponse response = jobService.updateJob(55L, updateRequest, 1L);
@@ -383,6 +393,7 @@ class JobServiceTest {
         when(jobRepository.save(any(Job.class))).thenReturn(job);
         doNothing().when(fieldValueRepository).deleteByJobId(55L);
         when(fieldValueRepository.findByJobId(55L)).thenReturn(Arrays.asList());
+        when(assetJobAssignmentRepository.findByJobIdAndReturnedAtIsNull(55L)).thenReturn(Arrays.asList());
 
         JobStatus originalStatus = job.getStatus();
 
@@ -402,6 +413,7 @@ class JobServiceTest {
         when(jobRepository.findById(55L)).thenReturn(Optional.of(job));
         when(fieldValueRepository.findByJobId(55L))
                 .thenReturn(Arrays.asList(fieldValue1, fieldValue2));
+        when(assetJobAssignmentRepository.findByJobIdAndReturnedAtIsNull(55L)).thenReturn(Arrays.asList());
 
         // Act
         JobResponse response = jobService.getJob(55L, 1L);
@@ -447,6 +459,8 @@ class JobServiceTest {
         when(fieldValueRepository.findByJobId(55L))
                 .thenReturn(Arrays.asList(fieldValue1, fieldValue2));
         when(fieldValueRepository.findByJobId(56L)).thenReturn(Arrays.asList());
+        when(assetJobAssignmentRepository.findByJobIdAndReturnedAtIsNull(55L)).thenReturn(Arrays.asList());
+        when(assetJobAssignmentRepository.findByJobIdAndReturnedAtIsNull(56L)).thenReturn(Arrays.asList());
 
         // Act
         List<JobResponse> responses = jobService.getAllJobs(1L);
@@ -481,6 +495,7 @@ class JobServiceTest {
                 .thenReturn(Arrays.asList(job));
         when(fieldValueRepository.findByJobId(55L))
                 .thenReturn(Arrays.asList(fieldValue1, fieldValue2));
+        when(assetJobAssignmentRepository.findByJobIdAndReturnedAtIsNull(55L)).thenReturn(Arrays.asList());
 
         // Act
         List<JobResponse> responses = jobService.getJobsByTemplate(3L, 1L);
@@ -538,5 +553,376 @@ class JobServiceTest {
 
         verify(jobRepository).findById(99L);
         verify(jobRepository, never()).delete(any());
+    }
+
+    // ============= Asset Assignment Tests =============
+
+    @Test
+    void createJob_WithAssets_ShouldAssignAssetsSuccessfully() {
+        // Arrange
+        Asset asset1 = Asset.builder()
+                .id(1L)
+                .company(company)
+                .name("Excavator")
+                .available(true)
+                .archived(false)
+                .build();
+
+        Asset asset2 = Asset.builder()
+                .id(2L)
+                .company(company)
+                .name("Drill")
+                .available(true)
+                .archived(false)
+                .build();
+
+        createRequest.setAssetIds(Arrays.asList(1L, 2L));
+
+        when(companyRepository.findById(1L)).thenReturn(Optional.of(company));
+        when(templateRepository.findById(3L)).thenReturn(Optional.of(template));
+        when(clientRepository.findById(1L)).thenReturn(Optional.of(client));
+        when(workerRepository.findById(1L)).thenReturn(Optional.of(worker));
+        when(templateFieldRepository.findByTemplateIdOrderByOrderIndexAsc(3L))
+                .thenReturn(Arrays.asList(field1, field2));
+        when(assetRepository.findById(1L)).thenReturn(Optional.of(asset1));
+        when(assetRepository.findById(2L)).thenReturn(Optional.of(asset2));
+        when(assetJobAssignmentRepository.findByJobIdAndReturnedAtIsNull(any())).thenReturn(Arrays.asList());
+
+        doAnswer(invocation -> {
+            Job savedJob = invocation.getArgument(0);
+            savedJob.setId(55L);
+            return savedJob;
+        }).when(jobRepository).save(any(Job.class));
+
+        // Act
+        JobResponse response = jobService.createJob(createRequest, 1L);
+
+        // Assert
+        assertThat(response).isNotNull();
+        verify(assetRepository).findById(1L);
+        verify(assetRepository).findById(2L);
+        verify(assetJobAssignmentRepository, times(2)).save(any(AssetJobAssignment.class));
+        verify(assetRepository, times(2)).save(any(Asset.class));
+        assertThat(asset1.isAvailable()).isFalse();
+        assertThat(asset2.isAvailable()).isFalse();
+    }
+
+    @Test
+    void createJob_WithArchivedAsset_ShouldThrowException() {
+        // Arrange
+        Asset archivedAsset = Asset.builder()
+                .id(1L)
+                .company(company)
+                .name("Old Equipment")
+                .available(true)
+                .archived(true)
+                .build();
+
+        createRequest.setAssetIds(Arrays.asList(1L));
+
+        when(companyRepository.findById(1L)).thenReturn(Optional.of(company));
+        when(templateRepository.findById(3L)).thenReturn(Optional.of(template));
+        when(clientRepository.findById(1L)).thenReturn(Optional.of(client));
+        when(workerRepository.findById(1L)).thenReturn(Optional.of(worker));
+        when(templateFieldRepository.findByTemplateIdOrderByOrderIndexAsc(3L))
+                .thenReturn(Arrays.asList(field1, field2));
+        when(assetRepository.findById(1L)).thenReturn(Optional.of(archivedAsset));
+
+        doAnswer(invocation -> {
+            Job savedJob = invocation.getArgument(0);
+            savedJob.setId(55L);
+            return savedJob;
+        }).when(jobRepository).save(any(Job.class));
+
+        // Act & Assert
+        assertThatThrownBy(() -> jobService.createJob(createRequest, 1L))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Cannot assign archived asset");
+
+        verify(assetJobAssignmentRepository, never()).save(any());
+    }
+
+    @Test
+    void createJob_WithUnavailableAsset_ShouldThrowException() {
+        // Arrange
+        Asset unavailableAsset = Asset.builder()
+                .id(1L)
+                .company(company)
+                .name("Busy Equipment")
+                .available(false)
+                .archived(false)
+                .build();
+
+        Job otherJob = Job.builder()
+                .id(99L)
+                .template(template)
+                .company(company)
+                .build();
+
+        AssetJobAssignment activeAssignment = AssetJobAssignment.builder()
+                .id(1L)
+                .asset(unavailableAsset)
+                .job(otherJob)
+                .assignedAt(LocalDateTime.now())
+                .build();
+
+        createRequest.setAssetIds(Arrays.asList(1L));
+
+        when(companyRepository.findById(1L)).thenReturn(Optional.of(company));
+        when(templateRepository.findById(3L)).thenReturn(Optional.of(template));
+        when(clientRepository.findById(1L)).thenReturn(Optional.of(client));
+        when(workerRepository.findById(1L)).thenReturn(Optional.of(worker));
+        when(templateFieldRepository.findByTemplateIdOrderByOrderIndexAsc(3L))
+                .thenReturn(Arrays.asList(field1, field2));
+        when(assetRepository.findById(1L)).thenReturn(Optional.of(unavailableAsset));
+        when(assetJobAssignmentRepository.findByAssetIdAndReturnedAtIsNull(1L))
+                .thenReturn(Optional.of(activeAssignment));
+
+        doAnswer(invocation -> {
+            Job savedJob = invocation.getArgument(0);
+            savedJob.setId(55L);
+            return savedJob;
+        }).when(jobRepository).save(any(Job.class));
+
+        // Act & Assert
+        assertThatThrownBy(() -> jobService.createJob(createRequest, 1L))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("already assigned to job")
+                .hasMessageContaining("99");
+
+        verify(assetJobAssignmentRepository, never()).save(any());
+    }
+
+    @Test
+    void updateJob_WithNewAssets_ShouldReturnOldAndAssignNew() {
+        // Arrange
+        Asset oldAsset = Asset.builder()
+                .id(1L)
+                .company(company)
+                .name("Old Equipment")
+                .available(false)
+                .archived(false)
+                .build();
+
+        Asset newAsset = Asset.builder()
+                .id(2L)
+                .company(company)
+                .name("New Equipment")
+                .available(true)
+                .archived(false)
+                .build();
+
+        AssetJobAssignment oldAssignment = AssetJobAssignment.builder()
+                .id(1L)
+                .asset(oldAsset)
+                .job(job)
+                .assignedAt(LocalDateTime.now())
+                .build();
+
+        updateRequest.setAssetIds(Arrays.asList(2L));
+
+        when(jobRepository.findById(55L)).thenReturn(Optional.of(job));
+        when(clientRepository.findById(1L)).thenReturn(Optional.of(client));
+        when(workerRepository.findById(1L)).thenReturn(Optional.of(worker));
+        when(templateFieldRepository.findByTemplateIdOrderByOrderIndexAsc(3L))
+                .thenReturn(Arrays.asList(field1, field2));
+        when(assetJobAssignmentRepository.findByJobIdAndReturnedAtIsNull(55L))
+                .thenReturn(Arrays.asList(oldAssignment))
+                .thenReturn(Arrays.asList());
+        when(assetJobAssignmentRepository.findByAssetIdAndReturnedAtIsNull(1L))
+                .thenReturn(Optional.empty());
+        when(assetRepository.findById(2L)).thenReturn(Optional.of(newAsset));
+
+        // Act
+        JobResponse response = jobService.updateJob(55L, updateRequest, 1L);
+
+        // Assert
+        assertThat(response).isNotNull();
+        verify(assetJobAssignmentRepository, times(2)).save(any(AssetJobAssignment.class));
+        assertThat(oldAssignment.getReturnedAt()).isNotNull();
+        verify(assetRepository).save(oldAsset);
+        assertThat(oldAsset.isAvailable()).isTrue();
+        verify(assetRepository).save(newAsset);
+        assertThat(newAsset.isAvailable()).isFalse();
+    }
+
+    @Test
+    void updateJob_WithEmptyAssetList_ShouldRemoveAllAssets() {
+        // Arrange
+        Asset asset1 = Asset.builder()
+                .id(1L)
+                .company(company)
+                .name("Equipment 1")
+                .available(false)
+                .archived(false)
+                .build();
+
+        Asset asset2 = Asset.builder()
+                .id(2L)
+                .company(company)
+                .name("Equipment 2")
+                .available(false)
+                .archived(false)
+                .build();
+
+        AssetJobAssignment assignment1 = AssetJobAssignment.builder()
+                .id(1L)
+                .asset(asset1)
+                .job(job)
+                .assignedAt(LocalDateTime.now())
+                .build();
+
+        AssetJobAssignment assignment2 = AssetJobAssignment.builder()
+                .id(2L)
+                .asset(asset2)
+                .job(job)
+                .assignedAt(LocalDateTime.now())
+                .build();
+
+        updateRequest.setAssetIds(Arrays.asList()); // Empty list to remove all
+
+        when(jobRepository.findById(55L)).thenReturn(Optional.of(job));
+        when(clientRepository.findById(1L)).thenReturn(Optional.of(client));
+        when(workerRepository.findById(1L)).thenReturn(Optional.of(worker));
+        when(templateFieldRepository.findByTemplateIdOrderByOrderIndexAsc(3L))
+                .thenReturn(Arrays.asList(field1, field2));
+        when(assetJobAssignmentRepository.findByJobIdAndReturnedAtIsNull(55L))
+                .thenReturn(Arrays.asList(assignment1, assignment2))
+                .thenReturn(Arrays.asList());
+        when(assetJobAssignmentRepository.findByAssetIdAndReturnedAtIsNull(1L))
+                .thenReturn(Optional.empty());
+        when(assetJobAssignmentRepository.findByAssetIdAndReturnedAtIsNull(2L))
+                .thenReturn(Optional.empty());
+
+        // Act
+        JobResponse response = jobService.updateJob(55L, updateRequest, 1L);
+
+        // Assert
+        assertThat(response).isNotNull();
+        assertThat(response.getAssetIds()).isEmpty();
+        verify(assetJobAssignmentRepository).save(assignment1);
+        verify(assetJobAssignmentRepository).save(assignment2);
+        assertThat(assignment1.getReturnedAt()).isNotNull();
+        assertThat(assignment2.getReturnedAt()).isNotNull();
+        verify(assetRepository).save(asset1);
+        verify(assetRepository).save(asset2);
+        assertThat(asset1.isAvailable()).isTrue();
+        assertThat(asset2.isAvailable()).isTrue();
+    }
+
+    @Test
+    void updateJob_RemoveAssetWithOtherActiveAssignments_ShouldKeepAssetUnavailable() {
+        // Arrange
+        Asset sharedAsset = Asset.builder()
+                .id(1L)
+                .company(company)
+                .name("Shared Equipment")
+                .available(false)
+                .archived(false)
+                .build();
+
+        Job otherJob = Job.builder()
+                .id(99L)
+                .template(template)
+                .company(company)
+                .build();
+
+        AssetJobAssignment thisJobAssignment = AssetJobAssignment.builder()
+                .id(1L)
+                .asset(sharedAsset)
+                .job(job)
+                .assignedAt(LocalDateTime.now())
+                .build();
+
+        AssetJobAssignment otherJobAssignment = AssetJobAssignment.builder()
+                .id(2L)
+                .asset(sharedAsset)
+                .job(otherJob)
+                .assignedAt(LocalDateTime.now())
+                .build();
+
+        updateRequest.setAssetIds(Arrays.asList()); // Remove all assets
+
+        when(jobRepository.findById(55L)).thenReturn(Optional.of(job));
+        when(clientRepository.findById(1L)).thenReturn(Optional.of(client));
+        when(workerRepository.findById(1L)).thenReturn(Optional.of(worker));
+        when(templateFieldRepository.findByTemplateIdOrderByOrderIndexAsc(3L))
+                .thenReturn(Arrays.asList(field1, field2));
+        when(assetJobAssignmentRepository.findByJobIdAndReturnedAtIsNull(55L))
+                .thenReturn(Arrays.asList(thisJobAssignment))
+                .thenReturn(Arrays.asList());
+        when(assetJobAssignmentRepository.findByAssetIdAndReturnedAtIsNull(1L))
+                .thenReturn(Optional.of(otherJobAssignment));
+
+        // Act
+        JobResponse response = jobService.updateJob(55L, updateRequest, 1L);
+
+        // Assert
+        assertThat(response).isNotNull();
+        verify(assetJobAssignmentRepository).save(thisJobAssignment);
+        assertThat(thisJobAssignment.getReturnedAt()).isNotNull();
+        // Asset should remain unavailable because it's still assigned to otherJob
+        verify(assetRepository, never()).save(sharedAsset);
+        assertThat(sharedAsset.isAvailable()).isFalse();
+    }
+
+    @Test
+    void updateJob_WithNullAssetIds_ShouldNotChangeAssets() {
+        // Arrange
+        updateRequest.setAssetIds(null); // null means don't change assets
+
+        when(jobRepository.findById(55L)).thenReturn(Optional.of(job));
+        when(clientRepository.findById(1L)).thenReturn(Optional.of(client));
+        when(workerRepository.findById(1L)).thenReturn(Optional.of(worker));
+        when(templateFieldRepository.findByTemplateIdOrderByOrderIndexAsc(3L))
+                .thenReturn(Arrays.asList(field1, field2));
+        when(fieldValueRepository.findByJobId(55L))
+                .thenReturn(Arrays.asList(fieldValue1, fieldValue2));
+        when(assetJobAssignmentRepository.findByJobIdAndReturnedAtIsNull(55L))
+                .thenReturn(Arrays.asList());
+
+        // Act
+        JobResponse response = jobService.updateJob(55L, updateRequest, 1L);
+
+        // Assert
+        assertThat(response).isNotNull();
+        // Should not interact with asset repositories when assetIds is null
+        verify(assetJobAssignmentRepository, never()).save(any(AssetJobAssignment.class));
+        verify(assetRepository, never()).save(any(Asset.class));
+    }
+
+    @Test
+    void updateJob_WithAssetFromDifferentCompany_ShouldThrowException() {
+        // Arrange
+        Company otherCompany = Company.builder()
+                .id(2L)
+                .name("Other Company")
+                .build();
+
+        Asset otherCompanyAsset = Asset.builder()
+                .id(1L)
+                .company(otherCompany)
+                .name("Other Company Equipment")
+                .available(true)
+                .archived(false)
+                .build();
+
+        updateRequest.setAssetIds(Arrays.asList(1L));
+
+        when(jobRepository.findById(55L)).thenReturn(Optional.of(job));
+        when(clientRepository.findById(1L)).thenReturn(Optional.of(client));
+        when(workerRepository.findById(1L)).thenReturn(Optional.of(worker));
+        when(templateFieldRepository.findByTemplateIdOrderByOrderIndexAsc(3L))
+                .thenReturn(Arrays.asList(field1, field2));
+        when(assetJobAssignmentRepository.findByJobIdAndReturnedAtIsNull(55L))
+                .thenReturn(Arrays.asList());
+        when(assetRepository.findById(1L)).thenReturn(Optional.of(otherCompanyAsset));
+
+        // Act & Assert
+        assertThatThrownBy(() -> jobService.updateJob(55L, updateRequest, 1L))
+                .isInstanceOf(AssetNotFoundException.class)
+                .hasMessageContaining("Asset not found with id: 1");
+
+        verify(assetJobAssignmentRepository, never()).save(any());
     }
 }

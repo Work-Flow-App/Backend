@@ -67,9 +67,6 @@ class AssetServiceTest {
                 .purchaseDate(LocalDate.of(2024, 1, 15))
                 .depreciationRate(new BigDecimal("20.00"))
                 .salvageValue(new BigDecimal("5000.00"))
-                .currentLocation("Warehouse A")
-                .latitude(40.7128)
-                .longitude(-74.0060)
                 .available(true)
                 .archived(false)
                 .createdAt(LocalDateTime.now())
@@ -85,12 +82,10 @@ class AssetServiceTest {
                 .purchaseDate(LocalDate.of(2024, 6, 1))
                 .depreciationRate(new BigDecimal("15.00"))
                 .salvageValue(new BigDecimal("50.00"))
-                .currentLocation("Tool Room")
                 .build();
 
         updateRequest = AssetUpdateRequest.builder()
                 .name("Updated Excavator")
-                .currentLocation("Job Site B")
                 .build();
     }
 
@@ -235,7 +230,6 @@ class AssetServiceTest {
         assertThat(response).isNotNull();
         verify(assetRepository).save(asset);
         assertThat(asset.getName()).isEqualTo("Updated Excavator");
-        assertThat(asset.getCurrentLocation()).isEqualTo("Job Site B");
     }
 
     @Test

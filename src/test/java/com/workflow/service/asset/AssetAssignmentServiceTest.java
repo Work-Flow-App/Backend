@@ -140,7 +140,6 @@ class AssetAssignmentServiceTest {
         verify(assignmentRepository).save(any(AssetJobAssignment.class));
         verify(assetRepository).save(asset);
         assertThat(asset.isAvailable()).isFalse();
-        assertThat(asset.getCurrentLocation()).isEqualTo("On job: 1");
     }
 
     @Test
@@ -182,7 +181,6 @@ class AssetAssignmentServiceTest {
         assertThat(response).isNotNull();
         assertThat(response.getJobId()).isNull();
         assertThat(response.getAssignedWorkerId()).isEqualTo(1L);
-        assertThat(asset.getCurrentLocation()).contains("worker:1");
         verify(jobRepository, never()).findById(any());
     }
 
@@ -346,7 +344,6 @@ class AssetAssignmentServiceTest {
         verify(assignmentRepository).save(assignment);
         verify(assetRepository).save(asset);
         assertThat(asset.isAvailable()).isTrue();
-        assertThat(asset.getCurrentLocation()).isEqualTo("Returned");
     }
 
     @Test

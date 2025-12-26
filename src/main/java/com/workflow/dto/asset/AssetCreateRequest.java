@@ -17,7 +17,4 @@ public class AssetCreateRequest {
     private LocalDate purchaseDate;
     private BigDecimal depreciationRate; // percent 0-100
     private BigDecimal salvageValue;
-    private String currentLocation;
-    private Double latitude;
-    private Double longitude;
 }

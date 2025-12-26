@@ -90,21 +90,13 @@ public class AssetAssignmentService implements IAssetAssignmentService {
 
         assignmentRepository.save(assignment);
 
-        // update asset availability and possibly location (if assigned to job, could
-        // update location)
+        // update asset availability
         asset.setAvailable(false);
-        if (request.getJobId() != null && job != null) {
-            asset.setCurrentLocation("On job: " + job.getId()); // or more detailed job title if needed
-        } else if (worker != null) {
-            asset.setCurrentLocation(
-                    "With " + "worker:" + worker.getId());
-        }
         assetRepository.save(asset);
 
-        log.info("Asset assigned successfully: assignmentId={}, assetId={}, assetTag={}, jobId={}, workerId={}, location={}",
+        log.info("Asset assigned successfully: assignmentId={}, assetId={}, assetTag={}, jobId={}, workerId={}",
                  assignment.getId(), asset.getId(), asset.getAssetTag(),
-                 job != null ? job.getId() : null, worker != null ? worker.getId() : null,
-                 asset.getCurrentLocation());
+                 job != null ? job.getId() : null, worker != null ? worker.getId() : null);
 
         return mapAssignmentToResponse(assignment);
     }
@@ -149,9 +141,6 @@ public class AssetAssignmentService implements IAssetAssignmentService {
         if (active.isEmpty()) {
             Asset asset = assignment.getAsset();
             asset.setAvailable(true);
-            // optionally set location to warehouse/office or keep as provided in notes —
-            // for now set to "Returned"
-            asset.setCurrentLocation("Returned");
             assetRepository.save(asset);
             log.info("Asset returned and marked as available: assignmentId={}, assetId={}, assetTag={}, durationDays={}",
                      assignment.getId(), assetId, assetTag, durationDays);

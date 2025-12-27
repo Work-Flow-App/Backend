@@ -20,9 +20,6 @@ public class AssetResponse {
     private LocalDate purchaseDate;
     private BigDecimal depreciationRate;
     private BigDecimal salvageValue;
-    private String currentLocation;
-    private Double latitude;
-    private Double longitude;
     private boolean available;
     private boolean archived;
     private LocalDateTime createdAt;

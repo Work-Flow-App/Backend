@@ -55,13 +55,6 @@ public class Asset {
     @Column(precision = 19, scale = 2)
     private BigDecimal salvageValue;
 
-    @Column(length = 255)
-    private String currentLocation;
-
-    private Double latitude;
-
-    private Double longitude;
-
     @Column(nullable = false, columnDefinition = "BOOLEAN DEFAULT TRUE")
     @Builder.Default
     private boolean available = true;

@@ -4,6 +4,7 @@ import com.workflow.common.constant.job.JobStatus;
 
 import lombok.*;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 
 @Data
@@ -21,4 +22,5 @@ public class JobResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private Map<Long, FieldValueResponse> fieldValues;
+    private List<Long> assetIds;
 }

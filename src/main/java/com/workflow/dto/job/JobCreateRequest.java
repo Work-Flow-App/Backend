@@ -1,5 +1,6 @@
 package com.workflow.dto.job;
 
+import java.util.List;
 import java.util.Map;
 
 import com.workflow.common.constant.job.JobStatus;
@@ -21,4 +22,5 @@ public class JobCreateRequest {
     // key = fieldId, value = actual object (String, Number, Boolean, Date, Map,
     // Reference)
     private Map<Long, Object> fieldValues;
+    private List<Long> assetIds;
 }

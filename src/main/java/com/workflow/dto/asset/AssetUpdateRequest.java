@@ -13,8 +13,5 @@ public class AssetUpdateRequest {
     private String serialNumber;
     private String assetTag;
     private BigDecimal salvageValue;
-    private String currentLocation;
-    private Double latitude;
-    private Double longitude;
     // cannot update purchasePrice, purchaseDate, depreciationRate per requirements
 }

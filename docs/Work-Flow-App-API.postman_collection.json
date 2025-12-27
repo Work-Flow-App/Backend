@@ -2175,14 +2175,14 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"templateId\": 3,\n    \"clientId\": 1,\n    \"assignedWorkerId\": 1,\n    \"status\": \"NEW\",\n    \"fieldValues\": {\n        \"101\": \"John Doe\",\n        \"102\": \"Medium\"\n    }\n}"
+              "raw": "{\n    \"templateId\": 3,\n    \"clientId\": 1,\n    \"assignedWorkerId\": 1,\n    \"status\": \"NEW\",\n    \"fieldValues\": {\n        \"101\": \"John Doe\",\n        \"102\": \"Medium\"\n    },\n    \"assetIds\": [1, 2]\n}"
             },
             "url": {
               "raw": "{{base_url}}/api/v1/jobs",
               "host": ["{{base_url}}"],
               "path": ["api", "v1", "jobs"]
             },
-            "description": "Create a new job instance based on a job template.\n\n**Authentication:** Required (Bearer token in Authorization header)\n\n**Request Body:**\n- templateId (long, required): The job template ID to use\n- clientId (long, optional): The client associated with this job\n- assignedWorkerId (long, optional): The worker assigned to this job\n- status (string, required): Job status (e.g., NEW, IN_PROGRESS, COMPLETED, ON_HOLD, CANCELLED)\n- fieldValues (object, required): Map of field ID to value (e.g., {\"101\": \"John Doe\", \"102\": \"Medium\"})\n\n**Business Logic:**\n- Job is associated with the company of the authenticated user\n- Must reference a valid template ID\n- Client and worker must belong to the same company\n- All required template fields must have values in fieldValues\n\n**Response:** Created job object with id, companyId, templateId, clientId, assignedWorkerId, status, archived flag, timestamps, and fieldValues\n\n**Status Code:** 201 Created"
+            "description": "Create a new job instance based on a job template.\n\n**Authentication:** Required (Bearer token in Authorization header)\n\n**Request Body:**\n- templateId (long, required): The job template ID to use\n- clientId (long, optional): The client associated with this job\n- assignedWorkerId (long, optional): The worker assigned to this job\n- status (string, required): Job status (e.g., NEW, IN_PROGRESS, COMPLETED, ON_HOLD, CANCELLED)\n- fieldValues (object, required): Map of field ID to value (e.g., {\"101\": \"John Doe\", \"102\": \"Medium\"})\n- assetIds (array of long, optional): IDs of assets to assign to this job\n\n**Business Logic:**\n- Job is associated with the company of the authenticated user\n- Must reference a valid template ID\n- Client and worker must belong to the same company\n- All required template fields must have values in fieldValues\n- Assets must be available, not archived, and belong to the same company\n- Asset assignment will mark assets as unavailable\n\n**Response:** Created job object with id, companyId, templateId, clientId, assignedWorkerId, status, archived flag, timestamps, fieldValues, and assetIds\n\n**Status Code:** 201 Created"
           },
           "response": [
             {
@@ -2201,7 +2201,7 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n    \"templateId\": 3,\n    \"clientId\": 1,\n    \"assignedWorkerId\": 1,\n    \"status\": \"NEW\",\n    \"fieldValues\": {\n        \"101\": \"John Doe\",\n        \"102\": \"Medium\"\n    }\n}"
+                  "raw": "{\n    \"templateId\": 3,\n    \"clientId\": 1,\n    \"assignedWorkerId\": 1,\n    \"status\": \"NEW\",\n    \"fieldValues\": {\n        \"101\": \"John Doe\",\n        \"102\": \"Medium\"\n    },\n    \"assetIds\": [1, 2]\n}"
                 },
                 "url": {
                   "raw": "http://localhost:8080/api/v1/jobs",
@@ -2220,7 +2220,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n    \"id\": 55,\n    \"companyId\": 1,\n    \"templateId\": 3,\n    \"clientId\": 1,\n    \"assignedWorkerId\": 1,\n    \"status\": \"NEW\",\n    \"archived\": false,\n    \"createdAt\": \"2025-11-14T10:15:00\",\n    \"updatedAt\": \"2025-11-14T10:15:00\",\n    \"fieldValues\": {\n        \"101\": {\n            \"name\": \"customerName\",\n            \"label\": \"Customer Name\",\n            \"type\": \"TEXT\",\n            \"value\": \"John Doe\"\n        },\n        \"102\": {\n            \"name\": \"priority\",\n            \"label\": \"Priority Level\",\n            \"type\": \"DROPDOWN\",\n            \"value\": \"Medium\"\n        }\n    }\n}"
+              "body": "{\n    \"id\": 55,\n    \"companyId\": 1,\n    \"templateId\": 3,\n    \"clientId\": 1,\n    \"assignedWorkerId\": 1,\n    \"status\": \"NEW\",\n    \"archived\": false,\n    \"createdAt\": \"2025-11-14T10:15:00\",\n    \"updatedAt\": \"2025-11-14T10:15:00\",\n    \"fieldValues\": {\n        \"101\": {\n            \"name\": \"customerName\",\n            \"label\": \"Customer Name\",\n            \"type\": \"TEXT\",\n            \"value\": \"John Doe\"\n        },\n        \"102\": {\n            \"name\": \"priority\",\n            \"label\": \"Priority Level\",\n            \"type\": \"DROPDOWN\",\n            \"value\": \"Medium\"\n        }\n    },\n    \"assetIds\": [1, 2]\n}"
             }
           ]
         },
@@ -2274,7 +2274,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "[\n    {\n        \"id\": 55,\n        \"companyId\": 1,\n        \"templateId\": 3,\n        \"clientId\": 1,\n        \"assignedWorkerId\": 1,\n        \"status\": \"NEW\",\n        \"archived\": false,\n        \"createdAt\": \"2025-11-14T10:15:00\",\n        \"updatedAt\": \"2025-11-14T10:15:00\",\n        \"fieldValues\": {\n            \"101\": {\n                \"name\": \"customerName\",\n                \"label\": \"Customer Name\",\n                \"type\": \"TEXT\",\n                \"value\": \"John Doe\"\n            },\n            \"102\": {\n                \"name\": \"priority\",\n                \"label\": \"Priority Level\",\n                \"type\": \"DROPDOWN\",\n                \"value\": \"Medium\"\n            }\n        }\n    },\n    {\n        \"id\": 56,\n        \"companyId\": 1,\n        \"templateId\": 3,\n        \"clientId\": 1,\n        \"assignedWorkerId\": 2,\n        \"status\": \"IN_PROGRESS\",\n        \"archived\": false,\n        \"createdAt\": \"2025-11-14T10:20:00\",\n        \"updatedAt\": \"2025-11-14T10:25:00\",\n        \"fieldValues\": {\n            \"101\": {\n                \"name\": \"customerName\",\n                \"label\": \"Customer Name\",\n                \"type\": \"TEXT\",\n                \"value\": \"Jane Smith\"\n            },\n            \"102\": {\n                \"name\": \"priority\",\n                \"label\": \"Priority Level\",\n                \"type\": \"DROPDOWN\",\n                \"value\": \"High\"\n            }\n        }\n    }\n]"
+              "body": "[\n    {\n        \"id\": 55,\n        \"companyId\": 1,\n        \"templateId\": 3,\n        \"clientId\": 1,\n        \"assignedWorkerId\": 1,\n        \"status\": \"NEW\",\n        \"archived\": false,\n        \"createdAt\": \"2025-11-14T10:15:00\",\n        \"updatedAt\": \"2025-11-14T10:15:00\",\n        \"fieldValues\": {\n            \"101\": {\n                \"name\": \"customerName\",\n                \"label\": \"Customer Name\",\n                \"type\": \"TEXT\",\n                \"value\": \"John Doe\"\n            },\n            \"102\": {\n                \"name\": \"priority\",\n                \"label\": \"Priority Level\",\n                \"type\": \"DROPDOWN\",\n                \"value\": \"Medium\"\n            }\n        },\n        \"assetIds\": [1, 2]\n    },\n    {\n        \"id\": 56,\n        \"companyId\": 1,\n        \"templateId\": 3,\n        \"clientId\": 1,\n        \"assignedWorkerId\": 2,\n        \"status\": \"IN_PROGRESS\",\n        \"archived\": false,\n        \"createdAt\": \"2025-11-14T10:20:00\",\n        \"updatedAt\": \"2025-11-14T10:25:00\",\n        \"fieldValues\": {\n            \"101\": {\n                \"name\": \"customerName\",\n                \"label\": \"Customer Name\",\n                \"type\": \"TEXT\",\n                \"value\": \"Jane Smith\"\n            },\n            \"102\": {\n                \"name\": \"priority\",\n                \"label\": \"Priority Level\",\n                \"type\": \"DROPDOWN\",\n                \"value\": \"High\"\n            }\n        },\n        \"assetIds\": [3]\n    }\n]"
             }
           ]
         },
@@ -2328,7 +2328,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n    \"id\": 55,\n    \"companyId\": 1,\n    \"templateId\": 3,\n    \"clientId\": 1,\n    \"assignedWorkerId\": 1,\n    \"status\": \"NEW\",\n    \"archived\": false,\n    \"createdAt\": \"2025-11-14T10:15:00\",\n    \"updatedAt\": \"2025-11-14T10:15:00\",\n    \"fieldValues\": {\n        \"101\": {\n            \"name\": \"customerName\",\n            \"label\": \"Customer Name\",\n            \"type\": \"TEXT\",\n            \"value\": \"John Doe\"\n        },\n        \"102\": {\n            \"name\": \"priority\",\n            \"label\": \"Priority Level\",\n            \"type\": \"DROPDOWN\",\n            \"value\": \"Medium\"\n        }\n    }\n}"
+              "body": "{\n    \"id\": 55,\n    \"companyId\": 1,\n    \"templateId\": 3,\n    \"clientId\": 1,\n    \"assignedWorkerId\": 1,\n    \"status\": \"NEW\",\n    \"archived\": false,\n    \"createdAt\": \"2025-11-14T10:15:00\",\n    \"updatedAt\": \"2025-11-14T10:15:00\",\n    \"fieldValues\": {\n        \"101\": {\n            \"name\": \"customerName\",\n            \"label\": \"Customer Name\",\n            \"type\": \"TEXT\",\n            \"value\": \"John Doe\"\n        },\n        \"102\": {\n            \"name\": \"priority\",\n            \"label\": \"Priority Level\",\n            \"type\": \"DROPDOWN\",\n            \"value\": \"Medium\"\n        }\n    },\n    \"assetIds\": [1, 2]\n}"
             }
           ]
         },
@@ -2399,7 +2399,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n    \"id\": 55,\n    \"companyId\": 1,\n    \"templateId\": 3,\n    \"clientId\": 1,\n    \"assignedWorkerId\": 1,\n    \"status\": \"IN_PROGRESS\",\n    \"archived\": false,\n    \"createdAt\": \"2025-11-14T10:15:00\",\n    \"updatedAt\": \"2025-11-14T10:20:00\",\n    \"fieldValues\": {\n        \"101\": {\n            \"name\": \"customerName\",\n            \"label\": \"Customer Name\",\n            \"type\": \"TEXT\",\n            \"value\": \"John Doe Updated\"\n        },\n        \"102\": {\n            \"name\": \"priority\",\n            \"label\": \"Priority Level\",\n            \"type\": \"DROPDOWN\",\n            \"value\": \"High\"\n        }\n    }\n}"
+              "body": "{\n    \"id\": 55,\n    \"companyId\": 1,\n    \"templateId\": 3,\n    \"clientId\": 1,\n    \"assignedWorkerId\": 1,\n    \"status\": \"IN_PROGRESS\",\n    \"archived\": false,\n    \"createdAt\": \"2025-11-14T10:15:00\",\n    \"updatedAt\": \"2025-11-14T10:20:00\",\n    \"fieldValues\": {\n        \"101\": {\n            \"name\": \"customerName\",\n            \"label\": \"Customer Name\",\n            \"type\": \"TEXT\",\n            \"value\": \"John Doe Updated\"\n        },\n        \"102\": {\n            \"name\": \"priority\",\n            \"label\": \"Priority Level\",\n            \"type\": \"DROPDOWN\",\n            \"value\": \"High\"\n        }\n    },\n    \"assetIds\": [1, 2]\n}"
             }
           ]
         },
@@ -2502,7 +2502,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "[\n    {\n        \"id\": 55,\n        \"companyId\": 1,\n        \"templateId\": 3,\n        \"clientId\": 1,\n        \"assignedWorkerId\": 1,\n        \"status\": \"NEW\",\n        \"archived\": false,\n        \"createdAt\": \"2025-11-14T10:15:00\",\n        \"updatedAt\": \"2025-11-14T10:15:00\",\n        \"fieldValues\": {\n            \"101\": {\n                \"name\": \"customerName\",\n                \"label\": \"Customer Name\",\n                \"type\": \"TEXT\",\n                \"value\": \"John Doe\"\n            },\n            \"102\": {\n                \"name\": \"priority\",\n                \"label\": \"Priority Level\",\n                \"type\": \"DROPDOWN\",\n                \"value\": \"Medium\"\n            }\n        }\n    },\n    {\n        \"id\": 56,\n        \"companyId\": 1,\n        \"templateId\": 3,\n        \"clientId\": 1,\n        \"assignedWorkerId\": 2,\n        \"status\": \"IN_PROGRESS\",\n        \"archived\": false,\n        \"createdAt\": \"2025-11-14T10:20:00\",\n        \"updatedAt\": \"2025-11-14T10:25:00\",\n        \"fieldValues\": {\n            \"101\": {\n                \"name\": \"customerName\",\n                \"label\": \"Customer Name\",\n                \"type\": \"TEXT\",\n                \"value\": \"Jane Smith\"\n            },\n            \"102\": {\n                \"name\": \"priority\",\n                \"label\": \"Priority Level\",\n                \"type\": \"DROPDOWN\",\n                \"value\": \"High\"\n            }\n        }\n    }\n]"
+              "body": "[\n    {\n        \"id\": 55,\n        \"companyId\": 1,\n        \"templateId\": 3,\n        \"clientId\": 1,\n        \"assignedWorkerId\": 1,\n        \"status\": \"NEW\",\n        \"archived\": false,\n        \"createdAt\": \"2025-11-14T10:15:00\",\n        \"updatedAt\": \"2025-11-14T10:15:00\",\n        \"fieldValues\": {\n            \"101\": {\n                \"name\": \"customerName\",\n                \"label\": \"Customer Name\",\n                \"type\": \"TEXT\",\n                \"value\": \"John Doe\"\n            },\n            \"102\": {\n                \"name\": \"priority\",\n                \"label\": \"Priority Level\",\n                \"type\": \"DROPDOWN\",\n                \"value\": \"Medium\"\n            }\n        },\n        \"assetIds\": [1, 2]\n    },\n    {\n        \"id\": 56,\n        \"companyId\": 1,\n        \"templateId\": 3,\n        \"clientId\": 1,\n        \"assignedWorkerId\": 2,\n        \"status\": \"IN_PROGRESS\",\n        \"archived\": false,\n        \"createdAt\": \"2025-11-14T10:20:00\",\n        \"updatedAt\": \"2025-11-14T10:25:00\",\n        \"fieldValues\": {\n            \"101\": {\n                \"name\": \"customerName\",\n                \"label\": \"Customer Name\",\n                \"type\": \"TEXT\",\n                \"value\": \"Jane Smith\"\n            },\n            \"102\": {\n                \"name\": \"priority\",\n                \"label\": \"Priority Level\",\n                \"type\": \"DROPDOWN\",\n                \"value\": \"High\"\n            }\n        },\n        \"assetIds\": [3]\n    }\n]"
             }
           ]
         }
@@ -2510,6 +2510,7 @@
     },
     {
       "name": "Assets",
+      "description": "Asset management endpoints for creating, reading, updating, and managing company assets with depreciation tracking.",
       "item": [
         {
           "name": "Create Asset",
@@ -2524,14 +2525,14 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"name\": \"Company Van A1\",\n    \"assetTag\": \"VAN-001\",\n    \"serialNumber\": \"SN-2025-AX11\",\n    \"purchasePrice\": 30000.00,\n    \"purchaseDate\": \"2023-01-01\",\n    \"depreciationRate\": 20.00,\n    \"salvageValue\": 5000.00,\n    \"currentLocation\": \"Head Office Parking\",\n    \"latitude\": 40.7128,\n    \"longitude\": -74.0060\n}"
+              "raw": "{\n    \"name\": \"Company Van A1\",\n    \"assetTag\": \"VAN-001\",\n    \"serialNumber\": \"SN-2025-AX11\",\n    \"purchasePrice\": 30000.00,\n    \"purchaseDate\": \"2023-01-01\",\n    \"depreciationRate\": 20.00,\n    \"salvageValue\": 5000.00\n}"
             },
             "url": {
               "raw": "{{base_url}}/api/v1/assets",
               "host": ["{{base_url}}"],
               "path": ["api", "v1", "assets"]
             },
-            "description": "Create a new company asset\n\n```bash\ncurl -X POST \"{{base_url}}/api/v1/assets\" \\\n  -H \"Authorization: Bearer {{jwt_token}}\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n    \"name\": \"Company Van A1\",\n    \"assetTag\": \"VAN-001\",\n    \"serialNumber\": \"SN-2025-AX11\",\n    \"purchasePrice\": 30000.00,\n    \"purchaseDate\": \"2023-01-01\",\n    \"depreciationRate\": 20.00,\n    \"salvageValue\": 5000.00,\n    \"currentLocation\": \"Head Office Parking\",\n    \"latitude\": 40.7128,\n    \"longitude\": -74.0060\n  }'\n```"
+            "description": "Create a new company asset\n\n```bash\ncurl -X POST \"{{base_url}}/api/v1/assets\" \\\n  -H \"Authorization: Bearer {{jwt_token}}\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n    \"name\": \"Company Van A1\",\n    \"assetTag\": \"VAN-001\",\n    \"serialNumber\": \"SN-2025-AX11\",\n    \"purchasePrice\": 30000.00,\n    \"purchaseDate\": \"2023-01-01\",\n    \"depreciationRate\": 20.00,\n    \"salvageValue\": 5000.00\n  }'\n```"
           },
           "response": [
             {
@@ -2543,7 +2544,7 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n    \"name\": \"Company Van A1\",\n    \"assetTag\": \"VAN-001\",\n    \"serialNumber\": \"SN-2025-AX11\",\n    \"purchasePrice\": 30000.00,\n    \"purchaseDate\": \"2023-01-01\",\n    \"depreciationRate\": 20.00,\n    \"salvageValue\": 5000.00,\n    \"currentLocation\": \"Head Office Parking\",\n    \"latitude\": 40.7128,\n    \"longitude\": -74.0060\n}"
+                  "raw": "{\n    \"name\": \"Company Van A1\",\n    \"assetTag\": \"VAN-001\",\n    \"serialNumber\": \"SN-2025-AX11\",\n    \"purchasePrice\": 30000.00,\n    \"purchaseDate\": \"2023-01-01\",\n    \"depreciationRate\": 20.00,\n    \"salvageValue\": 5000.00\n}"
                 },
                 "url": {
                   "raw": "http://localhost:8080/api/v1/assets",
@@ -2559,7 +2560,7 @@
               "header": [
                 { "key": "Content-Type", "value": "application/json" }
               ],
-              "body": "{\n    \"id\": 10,\n    \"companyId\": 1,\n    \"name\": \"Company Van A1\",\n    \"assetTag\": \"VAN-001\",\n    \"serialNumber\": \"SN-2025-AX11\",\n    \"purchasePrice\": 30000.00,\n    \"purchaseDate\": \"2023-01-01\",\n    \"depreciationRate\": 20.00,\n    \"salvageValue\": 5000.00,\n    \"currentLocation\": \"Head Office Parking\",\n    \"latitude\": 40.7128,\n    \"longitude\": -74.0060,\n    \"available\": true,\n    \"archived\": false,\n    \"createdAt\": \"2025-11-20T10:00:00\",\n    \"updatedAt\": \"2025-11-20T10:00:00\"\n}"
+              "body": "{\n    \"id\": 10,\n    \"companyId\": 1,\n    \"name\": \"Company Van A1\",\n    \"assetTag\": \"VAN-001\",\n    \"serialNumber\": \"SN-2025-AX11\",\n    \"purchasePrice\": 30000.00,\n    \"purchaseDate\": \"2023-01-01\",\n    \"depreciationRate\": 20.00,\n    \"salvageValue\": 5000.00,\n    \"available\": true,\n    \"archived\": false,\n    \"createdAt\": \"2025-11-20T10:00:00\",\n    \"updatedAt\": \"2025-11-20T10:00:00\"\n}"
             }
           ]
         },
@@ -2649,14 +2650,14 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"name\": \"Company Van A1 (Updated)\",\n    \"currentLocation\": \"Service Center\"\n}"
+              "raw": "{\n    \"name\": \"Company Van A1 (Updated)\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/api/v1/assets/10",
               "host": ["{{base_url}}"],
               "path": ["api", "v1", "assets", "10"]
             },
-            "description": "Update non-immutable fields of an asset\n\n```bash\ncurl -X PUT \"{{base_url}}/api/v1/assets/10\" \\\n  -H \"Authorization: Bearer {{jwt_token}}\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{ \"name\": \"Company Van A1 (Updated)\", \"currentLocation\": \"Service Center\" }'\n```"
+            "description": "Update non-immutable fields of an asset\n\n```bash\ncurl -X PUT \"{{base_url}}/api/v1/assets/10\" \\\n  -H \"Authorization: Bearer {{jwt_token}}\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{ \"name\": \"Company Van A1 (Updated)\" }'\n```"
           },
           "response": [
             {
@@ -2667,7 +2668,7 @@
               "header": [
                 { "key": "Content-Type", "value": "application/json" }
               ],
-              "body": "{\n    \"id\": 10,\n    \"name\": \"Company Van A1 (Updated)\",\n    \"currentLocation\": \"Service Center\",\n    \"updatedAt\": \"2025-11-22T10:00:00\"\n}"
+              "body": "{\n    \"id\": 10,\n    \"name\": \"Company Van A1 (Updated)\",\n    \"updatedAt\": \"2025-11-22T10:00:00\"\n}"
             }
           ]
         },
@@ -2726,39 +2727,12 @@
               "body": "{\n    \"assetId\": 10,\n    \"assetName\": \"Company Van A1\",\n    \"purchasePrice\": 30000.00,\n    \"currentValue\": 19200.00,\n    \"totalDepreciation\": 10800.00,\n    \"depreciationRate\": 20.00,\n    \"salvageValue\": 5000.00,\n    \"purchaseDate\": \"2023-01-01\",\n    \"daysOwned\": 693,\n    \"yearsOwned\": 1.90,\n    \"valueAsOfDate\": \"2025-11-24\"\n}"
             }
           ]
-        },
-
-        {
-          "name": "Assets Map View",
-          "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [{ "value": "{{jwt_token}}" }]
-            },
-            "method": "GET",
-            "url": {
-              "raw": "{{base_url}}/api/v1/assets/map",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "assets", "map"]
-            },
-            "description": "Return only assets with GPS coordinates for map display\n\n```bash\ncurl -X GET \"{{base_url}}/api/v1/assets/map\" \\\n  -H \"Authorization: Bearer {{jwt_token}}\"\n```"
-          },
-          "response": [
-            {
-              "name": "Assets Map - Success",
-              "status": "OK",
-              "code": 200,
-              "header": [
-                { "key": "Content-Type", "value": "application/json" }
-              ],
-              "body": "[\n    {\n        \"assetId\": 10,\n        \"name\": \"Company Van A1\",\n        \"currentLocation\": \"Head Office Parking\",\n        \"latitude\": 40.7128,\n        \"longitude\": -74.0060,\n        \"available\": true,\n        \"currentJobId\": null,\n        \"currentValue\": 19200.00\n    }\n]"
-            }
-          ]
         }
       ]
     },
     {
       "name": "Asset Assignments",
+      "description": "Asset assignment endpoints for assigning assets to jobs, returning assets, and tracking assignment history.",
       "item": [
         {
           "name": "Assign Asset to Job",

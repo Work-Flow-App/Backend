@@ -2757,14 +2757,14 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"assetId\": 3,\n    \"jobId\": 1,\n    \"assignedWorkerId\": 1,\n    \"notes\": \"Used for transport to client site\"\n}"
+              "raw": "{\n    \"assetId\": 10,\n    \"jobId\": 3,\n    \"notes\": \"Used for transport to client site\"\n}"
             },
             "url": {
-              "raw": "{{base_url}}/api/v1/assets/10/assign",
+              "raw": "{{base_url}}/api/v1/asset-assignments/assign",
               "host": ["{{base_url}}"],
-              "path": ["api", "v1", "assets", "10", "assign"]
+              "path": ["api", "v1", "asset-assignments", "assign"]
             },
-            "description": "Assign an asset to a job (sets asset.available=false)\n\n```bash\ncurl -X POST \"{{base_url}}/api/v1/assets/10/assign\" \\\n  -H \"Authorization: Bearer {{jwt_token}}\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{ \"jobId\": 3, \"notes\": \"Used for transport to client site\" }'\n```"
+            "description": "Assign an asset to a job (sets asset.available=false)\n\n```bash\ncurl -X POST \"{{base_url}}/api/v1/asset-assignments/assign\" \\\n  -H \"Authorization: Bearer {{jwt_token}}\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{ \"assetId\": 10, \"jobId\": 3, \"notes\": \"Used for transport to client site\" }'\n```"
           },
           "response": [
             {
@@ -2793,14 +2793,14 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"jobId\": 3,\n    \"notes\": \"Returned after completion\"\n}"
+              "raw": "{\n    \"assetId\": 10,\n    \"jobId\": 3,\n    \"notes\": \"Returned after completion\"\n}"
             },
             "url": {
-              "raw": "{{base_url}}/api/v1/assets/10/return",
+              "raw": "{{base_url}}/api/v1/asset-assignments/return",
               "host": ["{{base_url}}"],
-              "path": ["api", "v1", "assets", "10", "return"]
+              "path": ["api", "v1", "asset-assignments", "return"]
             },
-            "description": "Return an asset from a job (sets returnedAt and asset.available=true)\n\n```bash\ncurl -X POST \"{{base_url}}/api/v1/assets/10/return\" \\\n  -H \"Authorization: Bearer {{jwt_token}}\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{ \"jobId\": 3, \"notes\": \"Returned after completion\" }'\n```"
+            "description": "Return an asset from a job (sets returnedAt and asset.available=true)\n\n```bash\ncurl -X POST \"{{base_url}}/api/v1/asset-assignments/return\" \\\n  -H \"Authorization: Bearer {{jwt_token}}\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{ \"assetId\": 10, \"jobId\": 3, \"notes\": \"Returned after completion\" }'\n```"
           },
           "response": [
             {
@@ -2827,11 +2827,11 @@
             },
             "method": "GET",
             "url": {
-              "raw": "{{base_url}}/api/v1/assets/10/assignments",
+              "raw": "{{base_url}}/api/v1/asset-assignments/asset/10/history",
               "host": ["{{base_url}}"],
-              "path": ["api", "v1", "assets", "10", "assignments"]
+              "path": ["api", "v1", "asset-assignments", "asset", "10", "history"]
             },
-            "description": "Get the assignment history (latest first)\n\n```bash\ncurl -X GET \"{{base_url}}/api/v1/assets/10/assignments\" \\\n  -H \"Authorization: Bearer {{jwt_token}}\"\n```"
+            "description": "Get the assignment history for an asset (latest first)\n\n```bash\ncurl -X GET \"{{base_url}}/api/v1/asset-assignments/asset/10/history\" \\\n  -H \"Authorization: Bearer {{jwt_token}}\"\n```"
           },
           "response": [
             {

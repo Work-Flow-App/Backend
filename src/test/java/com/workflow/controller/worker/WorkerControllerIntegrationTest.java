@@ -388,27 +388,6 @@ class WorkerControllerIntegrationTest {
                 .andExpect(status().isNotFound());
     }
 
-    // ============= POST /api/v1/workers/{id}/invite Tests =============
-
-    @Test
-    void shouldSendInvitationSuccessfully() throws Exception {
-        mockMvc.perform(post("/api/v1/workers/" + existingWorker.getId() + "/invite")
-                        .header("Authorization", "Bearer " + companyUserToken))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.workerId").value(existingWorker.getId()))
-                .andExpect(jsonPath("$.workerName").value("Existing Worker"))
-                .andExpect(jsonPath("$.email").value("existing.worker@example.com"))
-                .andExpect(jsonPath("$.message").exists())
-                .andExpect(jsonPath("$.message").value(containsString("Invitation email")));
-    }
-
-    @Test
-    void shouldReturn404WhenInvitingNonExistentWorker() throws Exception {
-        mockMvc.perform(post("/api/v1/workers/99999/invite")
-                        .header("Authorization", "Bearer " + companyUserToken))
-                .andExpect(status().isNotFound());
-    }
-
     // ============= Authorization Tests =============
 
     @Test

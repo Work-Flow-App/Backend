@@ -1,7 +1,6 @@
 package com.workflow.service.worker;
 
 import com.workflow.dto.worker.WorkerCreateRequest;
-import com.workflow.dto.worker.WorkerInviteResponse;
 import com.workflow.dto.worker.WorkerResponse;
 import com.workflow.dto.worker.WorkerUpdateRequest;
 
@@ -13,5 +12,4 @@ public interface IWorkerService {
     WorkerResponse getWorkerById(Long workerId, Long companyUserId);
     WorkerResponse updateWorker(Long workerId, WorkerUpdateRequest request, Long companyUserId);
     void deleteWorker(Long workerId, Long companyUserId);
-    WorkerInviteResponse sendInvitation(Long workerId, Long companyUserId);
 }

@@ -4,13 +4,17 @@ import com.workflow.dto.auth.*;
 import com.workflow.dto.auth.password.ForgotPasswordRequest;
 import com.workflow.dto.auth.password.PasswordResetResponse;
 import com.workflow.dto.auth.password.ResetPasswordRequest;
+import com.workflow.dto.worker.WorkerSignupRequest;
+import com.workflow.dto.worker.WorkerSignupResponse;
 import com.workflow.entity.User;
 import com.workflow.service.auth.AuthenticationService;
 import com.workflow.service.auth.PasswordResetService;
 import com.workflow.service.user.IUserService;
+import com.workflow.service.worker.WorkerInvitationService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -23,6 +27,7 @@ public class AuthController {
     private final IUserService userService;
     private final AuthenticationService authService;
     private final PasswordResetService passwordResetService;
+    private final WorkerInvitationService workerInvitationService;
 
     @PostMapping("/login")
     public ResponseEntity<AuthenticationResponse> login(
@@ -82,6 +87,14 @@ public class AuthController {
         return ResponseEntity.ok(
                 new PasswordResetResponse("Password has been reset successfully. Please login with your new password.")
         );
+    }
+
+    @PostMapping("/signup/worker")
+    public ResponseEntity<WorkerSignupResponse> signupWorker(
+            @Valid @RequestBody WorkerSignupRequest request
+    ) {
+        WorkerSignupResponse response = this.workerInvitationService.validateAndAcceptInvitation(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 }
 

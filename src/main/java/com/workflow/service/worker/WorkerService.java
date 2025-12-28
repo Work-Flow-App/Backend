@@ -145,24 +145,4 @@ public class WorkerService implements IWorkerService {
         workerRepository.save(worker);
         log.info("Archived worker with ID: {}", workerId);
     }
-
-    @Override
-    @Transactional(readOnly = true)
-    public WorkerInviteResponse sendInvitation(Long workerId, Long companyUserId) {
-        Company company = companyService.findCompanyByUserId(companyUserId);
-
-        Worker worker = workerRepository.findByIdAndCompanyIdAndNotArchived(workerId, company.getId())
-                .orElseThrow(() -> new WorkerNotFoundException("Worker not found with ID: " + workerId));
-
-        // TODO: Implement actual email sending logic here
-        // For now, just return a response indicating invitation would be sent
-        log.info("Invitation email would be sent to worker: {} at {}", worker.getName(), worker.getEmail());
-
-        return new WorkerInviteResponse(
-                worker.getId(),
-                worker.getName(),
-                worker.getEmail(),
-                "Invitation email will be sent to " + worker.getEmail()
-        );
-    }
 }

@@ -29,6 +29,9 @@ public class EmailService {
     @Value("${password-reset.token.expiration-minutes}")
     private int expiryMinutes;
 
+    @Value("${worker-invitation.frontend-url}")
+    private String frontendUrl;
+
     /**
      * Send password reset email with verification code asynchronously
      */
@@ -61,6 +64,44 @@ public class EmailService {
 
         } catch (MessagingException e) {
             log.error("Failed to send password reset email to: {}", toEmail, e);
+            // Don't throw exception - email failure shouldn't break the flow
+        }
+    }
+
+    /**
+     * Send worker invitation email with signup link asynchronously
+     */
+    @Async
+    public void sendWorkerInvitationEmail(String toEmail, String companyName, String invitationToken) {
+        try {
+            log.info("Sending worker invitation email to: {} from company: {}", toEmail, companyName);
+
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            // Set email properties
+            helper.setFrom(String.format("%s <%s>", fromName, fromEmail));
+            helper.setTo(toEmail);
+            helper.setSubject("You're Invited to Join " + companyName + " - WorkFlow App");
+
+            // Prepare template context
+            String signupLink = frontendUrl + "/signup/worker?token=" + invitationToken;
+            Context context = new Context();
+            context.setVariable("companyName", companyName);
+            context.setVariable("signupLink", signupLink);
+            context.setVariable("expiryDays", 7);
+            context.setVariable("email", toEmail);
+
+            // Generate HTML content from template
+            String htmlContent = templateEngine.process("email/worker-invitation", context);
+            helper.setText(htmlContent, true);
+
+            // Send email
+            mailSender.send(message);
+            log.info("Worker invitation email sent successfully to: {}", toEmail);
+
+        } catch (MessagingException e) {
+            log.error("Failed to send worker invitation email to: {}", toEmail, e);
             // Don't throw exception - email failure shouldn't break the flow
         }
     }

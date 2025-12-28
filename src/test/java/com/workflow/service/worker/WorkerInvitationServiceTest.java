@@ -1,5 +1,6 @@
 package com.workflow.service.worker;
 
+import com.workflow.common.constant.InvitationStatus;
 import com.workflow.common.constant.Role;
 import com.workflow.common.exception.business.*;
 import com.workflow.dto.worker.*;
@@ -652,7 +653,7 @@ class WorkerInvitationServiceTest {
         // Assert
         assertEquals(1, responses.size());
         WorkerInvitationStatusResponse response = responses.get(0);
-        assertEquals("PENDING", response.status());
+        assertEquals(InvitationStatus.PENDING, response.status());
         assertEquals(validInvitation.getId(), response.invitationId());
         assertEquals(validInvitation.getEmail(), response.email());
         assertNull(response.usedAt());
@@ -673,7 +674,7 @@ class WorkerInvitationServiceTest {
         // Assert
         assertEquals(1, responses.size());
         WorkerInvitationStatusResponse response = responses.get(0);
-        assertEquals("EXPIRED", response.status());
+        assertEquals(InvitationStatus.EXPIRED, response.status());
         assertEquals(expiredInvitation.getEmail(), response.email());
         assertNull(response.usedAt());
     }
@@ -693,7 +694,7 @@ class WorkerInvitationServiceTest {
         // Assert
         assertEquals(1, responses.size());
         WorkerInvitationStatusResponse response = responses.get(0);
-        assertEquals("ACCEPTED", response.status());
+        assertEquals(InvitationStatus.ACCEPTED, response.status());
         assertEquals(usedInvitation.getEmail(), response.email());
         assertNotNull(response.usedAt());
     }

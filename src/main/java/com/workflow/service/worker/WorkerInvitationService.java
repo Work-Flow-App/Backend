@@ -1,5 +1,6 @@
 package com.workflow.service.worker;
 
+import com.workflow.common.constant.InvitationStatus;
 import com.workflow.common.constant.Role;
 import com.workflow.common.exception.business.*;
 import com.workflow.dto.worker.*;
@@ -204,13 +205,13 @@ public class WorkerInvitationService {
      * Map invitation to status response
      */
     private WorkerInvitationStatusResponse mapToStatusResponse(WorkerInvitation invitation) {
-        String status;
+        InvitationStatus status;
         if (invitation.isUsed()) {
-            status = "ACCEPTED";
+            status = InvitationStatus.ACCEPTED;
         } else if (invitation.isExpired()) {
-            status = "EXPIRED";
+            status = InvitationStatus.EXPIRED;
         } else {
-            status = "PENDING";
+            status = InvitationStatus.PENDING;
         }
 
         return new WorkerInvitationStatusResponse(

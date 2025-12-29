@@ -2829,7 +2829,14 @@
             "url": {
               "raw": "{{base_url}}/api/v1/asset-assignments/asset/10/history",
               "host": ["{{base_url}}"],
-              "path": ["api", "v1", "asset-assignments", "asset", "10", "history"]
+              "path": [
+                "api",
+                "v1",
+                "asset-assignments",
+                "asset",
+                "10",
+                "history"
+              ]
             },
             "description": "Get the assignment history for an asset (latest first)\n\n```bash\ncurl -X GET \"{{base_url}}/api/v1/asset-assignments/asset/10/history\" \\\n  -H \"Authorization: Bearer {{jwt_token}}\"\n```"
           },
@@ -2877,6 +2884,215 @@
           ]
         }
       ]
+    },
+    {
+      "name": "Workflows",
+      "item": [
+        {
+          "name": "Create Workflow",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Plumbing Workflow\",\n  \"description\": \"Standard plumbing job process\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/workflows",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "workflows"]
+            },
+            "description": "Create a new workflow for the authenticated company.\n\n**Authentication:** Required (COMPANY role)\n\n**Request Body:**\n- name (string, required): 2-150 characters, unique per company\n- description (string, optional)\n\n**Business Logic:**\n- Workflow is associated with the authenticated company\n- Workflow name must be unique within the company\n\n**Response:**\n- id (long): Workflow ID\n- name (string): Workflow name\n- description (string)\n- createdAt (datetime)\n- updatedAt (datetime)"
+          },
+          "response": [
+            {
+              "name": "Create Workflow - Success",
+              "status": "Created",
+              "code": 201,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": 1,\n  \"name\": \"Plumbing Workflow\",\n  \"description\": \"Standard plumbing job process\",\n  \"createdAt\": \"2025-10-23T12:00:00\",\n  \"updatedAt\": \"2025-10-23T12:00:00\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get All Workflows",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/workflows",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "workflows"]
+            },
+            "description": "Retrieve all workflows for the authenticated company.\n\n**Authentication:** Required (COMPANY role)\n\n**Response:** Array of workflow objects"
+          },
+          "response": [
+            {
+              "name": "Get All Workflows - Success",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "[\n  {\n    \"id\": 1,\n    \"name\": \"Plumbing Workflow\",\n    \"description\": \"Standard plumbing job process\",\n    \"createdAt\": \"2025-10-23T12:00:00\",\n    \"updatedAt\": \"2025-10-23T12:00:00\"\n  }\n]"
+            }
+          ]
+        },
+        {
+          "name": "Create Workflow Step",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"workflowId\": 1,\n  \"name\": \"Initial Inspection\",\n  \"description\": \"Visit site and inspect issue\",\n  \"orderIndex\": 1,\n  \"optional\": false\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/workflows/steps",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "workflows", "steps"]
+            },
+            "description": "Add a step to an existing workflow.\n\n**Authentication:** Required (COMPANY role)\n\n**Request Body:**\n- workflowId (long, required)\n- name (string, required)\n- description (string, optional)\n- orderIndex (number, required): Step order\n- optional (boolean, optional)\n\n**Business Logic:**\n- Step is linked to a workflow belonging to the company\n- orderIndex defines execution order"
+          },
+          "response": [
+            {
+              "name": "Create Workflow Step - Success",
+              "status": "Created",
+              "code": 201,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": 1,\n  \"name\": \"Initial Inspection\",\n  \"description\": \"Visit site and inspect issue\",\n  \"orderIndex\": 1,\n  \"optional\": false\n}"
+            }
+          ]
+        },
+        {
+          "name": "Start Workflow for Job",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/jobs/1/workflows/1/start",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "jobs", "1", "workflows", "1", "start"]
+            },
+            "description": "Start a workflow for a job.\n\n**Authentication:** Required (COMPANY role)\n\n**Path Parameters:**\n- jobId (long)\n- workflowId (long)\n\n**Business Logic:**\n- Creates JobWorkflow\n- Initializes JobWorkflowSteps\n- First step set to ONGOING, others to PENDING"
+          },
+          "response": [
+            {
+              "name": "Start Workflow - Success",
+              "status": "Created",
+              "code": 201,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"jobId\": 1,\n  \"workflowId\": 1,\n  \"steps\": [\n    {\n      \"stepId\": 1,\n      \"name\": \"Initial Inspection\",\n      \"status\": \"ONGOING\"\n    }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "Complete Job Workflow Step",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/job-workflow-steps/1/complete",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "job-workflow-steps", "1", "complete"]
+            },
+            "description": "Mark a job workflow step as completed.\n\n**Authentication:** Required (COMPANY role)\n\n**Path Parameter:**\n- id (long): JobWorkflowStep ID\n\n**Business Logic:**\n- Marks step as DONE\n- Automatically moves next PENDING step to ONGOING"
+          },
+          "response": [
+            {
+              "name": "Complete Step - Success",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"message\": \"Step completed successfully\"\n}"
+            }
+          ]
+        }
+      ],
+      "description": "Workflow management endpoints for defining workflows and executing them on jobs."
     }
   ],
   "event": [

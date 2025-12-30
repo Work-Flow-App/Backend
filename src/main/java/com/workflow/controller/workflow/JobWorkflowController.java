@@ -52,7 +52,7 @@ public class JobWorkflowController {
                                 .orElseThrow(() -> new IllegalStateException("Workflow not found"));
 
                 return ResponseEntity.status(HttpStatus.CREATED)
-                                .body(jobWorkflowService.startWorkflow(job, workflow));
+                                .body(jobWorkflowService.startWorkflow(job, workflow, companyId));
         }
 
         @GetMapping("/jobs/{jobId}")
@@ -65,7 +65,7 @@ public class JobWorkflowController {
                                 .filter(j -> j.getCompany().getId().equals(companyId))
                                 .orElseThrow(() -> new IllegalStateException("Job not found"));
 
-                JobWorkflowResponse response = jobWorkflowService.getJobWorkflow(job);
+                JobWorkflowResponse response = jobWorkflowService.getJobWorkflow(job, companyId);
                 return ResponseEntity.ok(response);
         }
 
@@ -73,8 +73,11 @@ public class JobWorkflowController {
         public JobWorkflowStepResponse updateStep(
                         @PathVariable Long jobId,
                         @PathVariable Long stepId,
-                        @RequestBody JobWorkflowStepUpdateRequest request) {
-                return jobWorkflowService.updateStep(jobId, stepId, request);
+                        @RequestBody JobWorkflowStepUpdateRequest request,
+                        Authentication auth) {
+
+                return jobWorkflowService.updateStep(
+                                jobId, stepId, request, getCompanyId(auth));
         }
 
         @GetMapping("/{jobWorkflowId}")
@@ -94,7 +97,10 @@ public class JobWorkflowController {
         }
 
         @DeleteMapping("/job/{jobId}")
-        public void deleteByJobId(@PathVariable Long jobId) {
-                jobWorkflowService.deleteByJobId(jobId);
+        public void deleteByJobId(
+                        @PathVariable Long jobId,
+                        Authentication auth) {
+
+                jobWorkflowService.deleteByJobId(jobId, getCompanyId(auth));
         }
 }

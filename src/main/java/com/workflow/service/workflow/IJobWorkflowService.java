@@ -8,5 +8,8 @@ public interface IJobWorkflowService {
 
     JobWorkflowResponse getJobWorkflow(Job job);
 
-    void completeStep(Long stepId);
+    JobWorkflowStepResponse updateStep(Long jobId, Long stepId, JobWorkflowStepUpdateRequest request);
+
+    void deleteByJobId(Long jobId);
+
 }

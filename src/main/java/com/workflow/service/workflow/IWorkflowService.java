@@ -19,4 +19,13 @@ public interface IWorkflowService {
     WorkflowStepResponse createStep(WorkflowStepCreateRequest request, Long companyId);
 
     List<WorkflowStepResponse> getSteps(Long workflowId, Long companyId);
+
+    WorkflowStepResponse getStep(Long stepId, Long companyId);
+
+    List<WorkflowStepResponse> getAllSteps(Long companyId);
+
+    WorkflowStepResponse updateStep(Long stepId, WorkflowStepCreateRequest request, Long companyId);
+
+    void deleteStep(Long stepId, Long companyId);
+
 }

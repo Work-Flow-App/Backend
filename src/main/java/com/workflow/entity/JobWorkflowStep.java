@@ -32,6 +32,9 @@ public class JobWorkflowStep {
     private WorkflowStepStatus status;
 
     private LocalDateTime startedAt;
-
     private LocalDateTime completedAt;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "assigned_worker_id")
+    private Worker assignedWorker;
 }

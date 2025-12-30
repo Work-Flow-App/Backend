@@ -1,15 +1,27 @@
 package com.workflow.service.workflow;
 
-import com.workflow.common.constant.workflow.WorkflowStepStatus;
-import com.workflow.dto.workflow.*;
-import com.workflow.entity.*;
-import com.workflow.repository.*;
-import lombok.RequiredArgsConstructor;
+import java.time.LocalDateTime;
+import java.util.List;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-import java.util.List;
+import com.workflow.common.constant.workflow.WorkflowStepStatus;
+import com.workflow.dto.workflow.JobWorkflowResponse;
+import com.workflow.dto.workflow.JobWorkflowStepResponse;
+import com.workflow.dto.workflow.JobWorkflowStepUpdateRequest;
+import com.workflow.entity.Job;
+import com.workflow.entity.JobWorkflow;
+import com.workflow.entity.JobWorkflowStep;
+import com.workflow.entity.Worker;
+import com.workflow.entity.Workflow;
+import com.workflow.entity.WorkflowStep;
+import com.workflow.repository.JobWorkflowRepository;
+import com.workflow.repository.JobWorkflowStepRepository;
+import com.workflow.repository.WorkflowStepRepository;
+import com.workflow.repository.WorkerRepository;
+
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -19,6 +31,7 @@ public class JobWorkflowService implements IJobWorkflowService {
         private final JobWorkflowRepository jobWorkflowRepository;
         private final JobWorkflowStepRepository jobWorkflowStepRepository;
         private final WorkflowStepRepository workflowStepRepository;
+        private final WorkerRepository workerRepository;
 
         public JobWorkflowResponse startWorkflow(Job job, Workflow workflow) {
 
@@ -31,17 +44,15 @@ public class JobWorkflowService implements IJobWorkflowService {
                 List<WorkflowStep> steps = workflowStepRepository
                                 .findByWorkflowIdOrderByOrderIndexAsc(workflow.getId());
 
-                for (int i = 0; i < steps.size(); i++) {
+                for (WorkflowStep s : steps) {
                         jobWorkflowStepRepository.save(
                                         JobWorkflowStep.builder()
                                                         .jobWorkflow(jobWorkflow)
-                                                        .step(steps.get(i))
-                                                        .status(i == 0 ? WorkflowStepStatus.ONGOING
-                                                                        : WorkflowStepStatus.PENDING)
-                                                        .startedAt(i == 0 ? LocalDateTime.now() : null)
+                                                        .step(s)
+                                                        .status(WorkflowStepStatus.PENDING) // set all steps as PENDING
+                                                                                            // initially
                                                         .build());
                 }
-
                 return buildResponse(jobWorkflow);
         }
 
@@ -68,20 +79,50 @@ public class JobWorkflowService implements IJobWorkflowService {
                                 .build();
         }
 
-        public void completeStep(Long stepId) {
-                JobWorkflowStep step = jobWorkflowStepRepository.findById(stepId).orElseThrow();
-                step.setStatus(WorkflowStepStatus.DONE);
-                step.setCompletedAt(LocalDateTime.now());
+        @Transactional
+        public JobWorkflowStepResponse updateStep(Long jobId, Long stepId, JobWorkflowStepUpdateRequest request) {
+                JobWorkflowStep step = jobWorkflowStepRepository.findById(stepId)
+                                .orElseThrow(() -> new IllegalStateException("Step not found"));
 
-                jobWorkflowStepRepository.findByJobWorkflowIdOrderByStep_OrderIndexAsc(
-                                step.getJobWorkflow().getId())
-                                .stream()
-                                .filter(s -> s.getStatus() == WorkflowStepStatus.PENDING)
-                                .findFirst()
-                                .ifPresent(next -> {
-                                        next.setStatus(WorkflowStepStatus.ONGOING);
-                                        next.setStartedAt(LocalDateTime.now());
-                                });
+                if (!step.getJobWorkflow().getJob().getId().equals(jobId)) {
+                        throw new IllegalArgumentException("Step does not belong to this job");
+                }
+
+                if (request.getStatus() != null) {
+                        step.setStatus(request.getStatus());
+                        if (request.getStatus() == WorkflowStepStatus.ONGOING) {
+                                step.setStartedAt(LocalDateTime.now());
+                        } else if (request.getStatus() == WorkflowStepStatus.DONE) {
+                                step.setCompletedAt(LocalDateTime.now());
+                        }
+                }
+
+                if (request.getAssignedWorkerId() != null) {
+                        Worker worker = workerRepository.findById(request.getAssignedWorkerId())
+                                        .orElseThrow(() -> new IllegalStateException("Worker not found"));
+                        step.setAssignedWorker(worker);
+                }
+
+                return JobWorkflowStepResponse.builder()
+                                .id(step.getId())
+                                .name(step.getStep().getName())
+                                .status(step.getStatus())
+                                .startedAt(step.getStartedAt())
+                                .completedAt(step.getCompletedAt())
+                                .build();
+        }
+
+        @Transactional
+        public void deleteByJobId(Long jobId) {
+
+                JobWorkflow jobWorkflow = jobWorkflowRepository.findByJobId(jobId)
+                                .orElseThrow(() -> new IllegalStateException("Job workflow not found for job"));
+
+                // delete steps first (important!)
+                jobWorkflowStepRepository.deleteByJobWorkflowId(jobWorkflow.getId());
+
+                // delete workflow
+                jobWorkflowRepository.delete(jobWorkflow);
         }
 
         private JobWorkflowResponse buildResponse(JobWorkflow jw) {

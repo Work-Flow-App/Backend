@@ -7,4 +7,6 @@ import java.util.Optional;
 
 public interface JobWorkflowRepository extends JpaRepository<JobWorkflow, Long> {
     Optional<JobWorkflow> findByJobId(Long jobId);
+
+    void deleteByJobId(Long jobId);
 }

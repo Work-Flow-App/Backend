@@ -93,6 +93,46 @@ public class WorkflowService implements IWorkflowService {
                 .stream().map(this::map).collect(Collectors.toList());
     }
 
+    @Transactional
+    public WorkflowStepResponse updateStep(Long stepId, WorkflowStepCreateRequest request, Long companyId) {
+        WorkflowStep step = stepRepository.findById(stepId)
+                .filter(s -> s.getWorkflow().getCompany().getId().equals(companyId))
+                .orElseThrow(() -> new IllegalStateException("Step not found"));
+
+        step.setName(request.getName());
+        step.setDescription(request.getDescription());
+        step.setOrderIndex(request.getOrderIndex());
+        step.setOptional(request.isOptional());
+
+        return map(step);
+    }
+
+    @Override
+    public WorkflowStepResponse getStep(Long stepId, Long companyId) {
+        WorkflowStep step = stepRepository.findById(stepId)
+                .filter(s -> s.getWorkflow().getCompany().getId().equals(companyId))
+                .orElseThrow(() -> new IllegalStateException("Workflow step not found"));
+
+        return map(step);
+    }
+
+    @Override
+    public List<WorkflowStepResponse> getAllSteps(Long companyId) {
+        return stepRepository
+                .findByWorkflow_Company_IdOrderByWorkflow_IdAscOrderIndexAsc(companyId)
+                .stream()
+                .map(this::map)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public void deleteStep(Long stepId, Long companyId) {
+        WorkflowStep step = stepRepository.findById(stepId)
+                .filter(s -> s.getWorkflow().getCompany().getId().equals(companyId))
+                .orElseThrow(() -> new IllegalStateException("Step not found"));
+        stepRepository.delete(step);
+    }
+
     private WorkflowResponse map(Workflow w) {
         return WorkflowResponse.builder()
                 .id(w.getId())

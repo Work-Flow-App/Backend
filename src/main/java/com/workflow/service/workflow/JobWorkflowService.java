@@ -18,8 +18,8 @@ import com.workflow.entity.Workflow;
 import com.workflow.entity.WorkflowStep;
 import com.workflow.repository.JobWorkflowRepository;
 import com.workflow.repository.JobWorkflowStepRepository;
-import com.workflow.repository.WorkflowStepRepository;
 import com.workflow.repository.WorkerRepository;
+import com.workflow.repository.WorkflowStepRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -49,11 +49,31 @@ public class JobWorkflowService implements IJobWorkflowService {
                                         JobWorkflowStep.builder()
                                                         .jobWorkflow(jobWorkflow)
                                                         .step(s)
-                                                        .status(WorkflowStepStatus.PENDING) // set all steps as PENDING
-                                                                                            // initially
+                                                        .status(WorkflowStepStatus.INITIATED) // set all steps as
+                                                                                              // INITIATED
+                                                                                              // initially
                                                         .build());
                 }
                 return buildResponse(jobWorkflow);
+        }
+
+        @Override
+        public JobWorkflowResponse getJobWorkflowById(Long jobWorkflowId, Long companyId) {
+
+                JobWorkflow jobWorkflow = jobWorkflowRepository.findById(jobWorkflowId)
+                                .filter(jw -> jw.getJob().getCompany().getId().equals(companyId))
+                                .orElseThrow(() -> new IllegalStateException("Job workflow not found"));
+
+                return buildResponse(jobWorkflow);
+        }
+
+        @Override
+        public List<JobWorkflowResponse> getAllJobWorkflows(Long companyId) {
+
+                return jobWorkflowRepository.findByJob_Company_Id(companyId)
+                                .stream()
+                                .map(this::buildResponse)
+                                .toList();
         }
 
         public JobWorkflowResponse getJobWorkflow(Job job) {
@@ -69,6 +89,10 @@ public class JobWorkflowService implements IJobWorkflowService {
                                                 .status(s.getStatus())
                                                 .startedAt(s.getStartedAt())
                                                 .completedAt(s.getCompletedAt())
+                                                .assignedWorkerId(
+                                                                s.getAssignedWorker() != null
+                                                                                ? s.getAssignedWorker().getId()
+                                                                                : null)
                                                 .build())
                                 .toList();
 
@@ -90,9 +114,9 @@ public class JobWorkflowService implements IJobWorkflowService {
 
                 if (request.getStatus() != null) {
                         step.setStatus(request.getStatus());
-                        if (request.getStatus() == WorkflowStepStatus.ONGOING) {
+                        if (request.getStatus() == WorkflowStepStatus.STARTED) {
                                 step.setStartedAt(LocalDateTime.now());
-                        } else if (request.getStatus() == WorkflowStepStatus.DONE) {
+                        } else if (request.getStatus() == WorkflowStepStatus.COMPLETED) {
                                 step.setCompletedAt(LocalDateTime.now());
                         }
                 }
@@ -109,6 +133,10 @@ public class JobWorkflowService implements IJobWorkflowService {
                                 .status(step.getStatus())
                                 .startedAt(step.getStartedAt())
                                 .completedAt(step.getCompletedAt())
+                                .assignedWorkerId(
+                                                step.getAssignedWorker() != null
+                                                                ? step.getAssignedWorker().getId()
+                                                                : null)
                                 .build();
         }
 
@@ -126,6 +154,7 @@ public class JobWorkflowService implements IJobWorkflowService {
         }
 
         private JobWorkflowResponse buildResponse(JobWorkflow jw) {
+
                 List<JobWorkflowStepResponse> steps = jobWorkflowStepRepository
                                 .findByJobWorkflowIdOrderByStep_OrderIndexAsc(jw.getId())
                                 .stream()
@@ -133,13 +162,21 @@ public class JobWorkflowService implements IJobWorkflowService {
                                                 .id(s.getId())
                                                 .name(s.getStep().getName())
                                                 .status(s.getStatus())
+                                                .startedAt(s.getStartedAt())
+                                                .completedAt(s.getCompletedAt())
+                                                .assignedWorkerId(
+                                                                s.getAssignedWorker() != null
+                                                                                ? s.getAssignedWorker().getId()
+                                                                                : null)
                                                 .build())
                                 .toList();
 
                 return JobWorkflowResponse.builder()
+                                .id(jw.getId())
                                 .jobId(jw.getJob().getId())
                                 .workflowId(jw.getWorkflow().getId())
                                 .steps(steps)
                                 .build();
         }
+
 }

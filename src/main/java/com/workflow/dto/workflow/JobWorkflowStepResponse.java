@@ -16,4 +16,6 @@ public class JobWorkflowStepResponse {
 
     private LocalDateTime startedAt;
     private LocalDateTime completedAt;
+
+    private Long assignedWorkerId;
 }

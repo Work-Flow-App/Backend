@@ -9,6 +9,7 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class JobWorkflowResponse {
+    private Long id;
     private Long jobId;
     private Long workflowId;
     private List<JobWorkflowStepResponse> steps;

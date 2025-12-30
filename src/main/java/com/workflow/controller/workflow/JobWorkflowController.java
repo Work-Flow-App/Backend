@@ -12,6 +12,9 @@ import com.workflow.repository.WorkflowRepository;
 import com.workflow.service.company.ICompanyService;
 import com.workflow.service.workflow.IJobWorkflowService;
 import lombok.RequiredArgsConstructor;
+
+import java.util.List;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -72,6 +75,22 @@ public class JobWorkflowController {
                         @PathVariable Long stepId,
                         @RequestBody JobWorkflowStepUpdateRequest request) {
                 return jobWorkflowService.updateStep(jobId, stepId, request);
+        }
+
+        @GetMapping("/{jobWorkflowId}")
+        public ResponseEntity<JobWorkflowResponse> getJobWorkflowById(
+                        @PathVariable Long jobWorkflowId,
+                        Authentication auth) {
+
+                Long companyId = getCompanyId(auth);
+                return ResponseEntity.ok(
+                                jobWorkflowService.getJobWorkflowById(jobWorkflowId, companyId));
+        }
+
+        @GetMapping
+        public ResponseEntity<List<JobWorkflowResponse>> getAllJobWorkflows(Authentication auth) {
+                Long companyId = getCompanyId(auth);
+                return ResponseEntity.ok(jobWorkflowService.getAllJobWorkflows(companyId));
         }
 
         @DeleteMapping("/job/{jobId}")

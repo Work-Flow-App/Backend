@@ -1,9 +1,10 @@
 package com.workflow.common.constant.workflow;
 
 public enum WorkflowStepStatus {
-    NEW,
+    INITIATED,
     PENDING,
     ONGOING,
-    DONE,
+    STARTED,
+    COMPLETED,
     SKIPPED
 }

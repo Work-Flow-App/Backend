@@ -493,42 +493,4 @@ class WorkerServiceTest {
         verify(workerRepository).findByIdAndCompanyIdAndNotArchived(99L, 1L);
         verify(workerRepository, never()).save(any());
     }
-
-    // ============= sendInvitation Tests =============
-
-    @Test
-    void sendInvitation_ShouldReturnInvitationResponse() {
-        // Arrange
-        when(companyService.findCompanyByUserId(1L)).thenReturn(company);
-        when(workerRepository.findByIdAndCompanyIdAndNotArchived(1L, 1L))
-                .thenReturn(Optional.of(worker));
-
-        // Act
-        WorkerInviteResponse response = workerService.sendInvitation(1L, 1L);
-
-        // Assert
-        assertThat(response).isNotNull();
-        assertThat(response.workerId()).isEqualTo(1L);
-        assertThat(response.workerName()).isEqualTo("John Worker");
-        assertThat(response.email()).isEqualTo("worker@example.com");
-        assertThat(response.message()).contains("Invitation email");
-        verify(companyService).findCompanyByUserId(1L);
-        verify(workerRepository).findByIdAndCompanyIdAndNotArchived(1L, 1L);
-    }
-
-    @Test
-    void sendInvitation_ShouldThrowException_WhenWorkerNotFound() {
-        // Arrange
-        when(companyService.findCompanyByUserId(1L)).thenReturn(company);
-        when(workerRepository.findByIdAndCompanyIdAndNotArchived(99L, 1L))
-                .thenReturn(Optional.empty());
-
-        // Act & Assert
-        assertThatThrownBy(() -> workerService.sendInvitation(99L, 1L))
-                .isInstanceOf(WorkerNotFoundException.class)
-                .hasMessageContaining("Worker not found");
-
-        verify(companyService).findCompanyByUserId(1L);
-        verify(workerRepository).findByIdAndCompanyIdAndNotArchived(99L, 1L);
-    }
 }

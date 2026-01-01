@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Worker Invitation - WorkFlow App</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333333;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+        }
+        .email-wrapper {
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #ffffff;
+            padding: 40px 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+        .content {
+            padding: 40px 30px;
+        }
+        .content h2 {
+            color: #333333;
+            font-size: 24px;
+            margin: 0 0 20px 0;
+            font-weight: 600;
+        }
+        .content p {
+            margin: 15px 0;
+            color: #555555;
+            font-size: 15px;
+        }
+        .button-container {
+            text-align: center;
+            margin: 35px 0;
+        }
+        .signup-button {
+            display: inline-block;
+            padding: 16px 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #ffffff;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 16px;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+            transition: transform 0.2s;
+        }
+        .signup-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+        }
+        .warning {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 18px;
+            margin: 25px 0;
+            border-radius: 4px;
+        }
+        .warning-icon {
+            font-size: 20px;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+        .warning strong {
+            color: #856404;
+            font-size: 15px;
+        }
+        .warning-description {
+            color: #856404;
+            font-size: 14px;
+            margin-top: 8px;
+            display: block;
+        }
+        .security-notice {
+            background-color: #f0f9ff;
+            border-left: 4px solid #3b82f6;
+            padding: 18px;
+            margin: 25px 0;
+            border-radius: 4px;
+        }
+        .security-notice strong {
+            color: #1e40af;
+            display: block;
+            margin-bottom: 8px;
+            font-size: 15px;
+        }
+        .security-notice p {
+            margin: 0;
+            color: #1e3a8a;
+            font-size: 14px;
+        }
+        .company-badge {
+            display: inline-block;
+            padding: 6px 14px;
+            background-color: #f3f4f6;
+            color: #667eea;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 14px;
+            margin: 10px 0;
+        }
+        .footer {
+            background-color: #f8f9fa;
+            padding: 25px 30px;
+            text-align: center;
+            border-top: 1px solid #e9ecef;
+        }
+        .footer p {
+            margin: 5px 0;
+            font-size: 13px;
+            color: #6c757d;
+        }
+        .footer strong {
+            color: #495057;
+        }
+    </style>
+</head>
+<body>
+    <div class="email-wrapper">
+        <div class="container">
+            <div class="header">
+                <h1>🎉 WorkFlow App</h1>
+            </div>
+
+            <div class="content">
+                <h2>You're Invited!</h2>
+                <p>You've been invited to join <span class="company-badge" th:text="${companyName}">Company Name</span> on WorkFlow App.</p>
+
+                <p>Click the button below to complete your signup and start working with the team:</p>
+
+                <div class="button-container">
+                    <a th:href="${signupLink}" class="signup-button">Complete Your Signup</a>
+                </div>
+
+                <p style="color: #888888; font-size: 13px; text-align: center;">
+                    Or copy and paste this link into your browser:<br>
+                    <span th:text="${signupLink}" style="word-break: break-all; display: inline-block; margin-top: 8px;">signup-link</span>
+                </p>
+
+                <div class="warning">
+                    <span class="warning-icon">⏰</span>
+                    <strong>This invitation expires in <span th:text="${expiryDays}">7</span> days</strong>
+                    <span class="warning-description">For security reasons, this invitation link will only work once and will expire after <span th:text="${expiryDays}">7</span> days.</span>
+                </div>
+
+                <div class="security-notice">
+                    <strong>🔒 Security Notice</strong>
+                    <p>This invitation was sent to <strong th:text="${email}">email@example.com</strong>. You must use this email address to complete your signup. The email cannot be changed during registration.</p>
+                </div>
+
+                <p style="margin-top: 30px; color: #666666; font-size: 14px;">
+                    If you weren't expecting this invitation or have any questions, please contact the company administrator.
+                </p>
+            </div>
+
+            <div class="footer">
+                <p><strong>WorkFlow App</strong></p>
+                <p>This is an automated message, please do not reply to this email.</p>
+                <p>&copy; 2025 WorkFlow App. All rights reserved.</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

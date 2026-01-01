@@ -1,8 +1,9 @@
 package com.workflow.dto.worker;
 
+import java.time.LocalDateTime;
+
 public record WorkerInviteResponse(
-        Long workerId,
-        String workerName,
         String email,
-        String message
+        String message,
+        LocalDateTime expiresAt
 ) {}

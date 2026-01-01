@@ -83,6 +83,7 @@ public class WorkerInvitationService {
 
         return new WorkerInviteResponse(
                 email,
+                token,
                 "Invitation sent successfully",
                 expiresAt
         );
@@ -263,6 +264,7 @@ public class WorkerInvitationService {
         return new WorkerInvitationStatusResponse(
                 invitation.getId(),
                 invitation.getEmail(),
+                invitation.getInvitationToken(),
                 status,
                 invitation.getCreatedAt(),
                 invitation.getExpiresAt(),

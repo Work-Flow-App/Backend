@@ -180,6 +180,52 @@ public class WorkerInvitationService {
     }
 
     /**
+     * Check invitation token and return details (public endpoint for frontend)
+     */
+    @Transactional(readOnly = true)
+    public WorkerInvitationCheckResponse checkInvitation(String token) {
+        log.debug("Checking invitation token");
+
+        // Find invitation by token
+        WorkerInvitation invitation = invitationRepository.findByInvitationToken(token)
+                .orElseThrow(() -> {
+                    log.warn("Invalid invitation token attempted");
+                    return new InvalidWorkerInvitationException("Invalid invitation token");
+                });
+
+        // Determine status
+        InvitationStatus status;
+        boolean valid;
+        if (invitation.isUsed()) {
+            status = InvitationStatus.ACCEPTED;
+            valid = false;
+        } else if (invitation.isExpired()) {
+            status = InvitationStatus.EXPIRED;
+            valid = false;
+        } else {
+            status = InvitationStatus.PENDING;
+            valid = true;
+        }
+
+        // Check if company is archived
+        if (invitation.getCompany().isArchived()) {
+            log.warn("Invitation belongs to archived company: {}", invitation.getCompany().getId());
+            throw new CompanyNotFoundException("Company not found");
+        }
+
+        log.debug("Invitation check successful - email: {}, status: {}, valid: {}",
+                invitation.getEmail(), status, valid);
+
+        return new WorkerInvitationCheckResponse(
+                valid,
+                invitation.getEmail(),
+                invitation.getCompany().getName(),
+                status,
+                invitation.getExpiresAt()
+        );
+    }
+
+    /**
      * Get all invitations for a company with status
      */
     @Transactional(readOnly = true)

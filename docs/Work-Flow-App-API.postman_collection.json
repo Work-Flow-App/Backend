@@ -1383,6 +1383,105 @@
               "body": "[]"
             }
           ]
+        },
+        {
+          "name": "Check Invitation Token",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/workers/invites/check/{{invitation_token}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "workers", "invites", "check", "{{invitation_token}}"]
+            },
+            "description": "Check invitation token validity and retrieve invitation details.\n\n**Authentication:** NOT REQUIRED (Public endpoint)\n\n**Path Parameter:**\n- token (string): Invitation token from email URL\n\n**Response:**\n- valid (boolean): Whether the invitation is still valid (not used, not expired)\n- email (string): Email address of the invitee\n- companyName (string): Name of the company sending the invitation\n- status (string): PENDING, ACCEPTED, or EXPIRED\n- expiresAt (datetime): Expiration timestamp\n\n**Use Case:**\n- Frontend calls this endpoint when user clicks invitation link\n- Pre-fills and disables email field on signup form\n- Shows company name and validates token before user fills form\n\n**Status Code:** 200 OK"
+          },
+          "response": [
+            {
+              "name": "Check Invitation - Valid (Pending)",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "http://localhost:8080/api/v1/workers/invites/check/a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+                  "protocol": "http",
+                  "host": ["localhost"],
+                  "port": "8080",
+                  "path": ["api", "v1", "workers", "invites", "check", "a1b2c3d4-e5f6-7890-abcd-ef1234567890"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n    \"valid\": true,\n    \"email\": \"newworker@example.com\",\n    \"companyName\": \"Tech Solutions Inc\",\n    \"status\": \"PENDING\",\n    \"expiresAt\": \"2025-11-30T10:00:00\"\n}"
+            },
+            {
+              "name": "Check Invitation - Already Used",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "http://localhost:8080/api/v1/workers/invites/check/used-token-123",
+                  "protocol": "http",
+                  "host": ["localhost"],
+                  "port": "8080",
+                  "path": ["api", "v1", "workers", "invites", "check", "used-token-123"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n    \"valid\": false,\n    \"email\": \"existingworker@example.com\",\n    \"companyName\": \"Tech Solutions Inc\",\n    \"status\": \"ACCEPTED\",\n    \"expiresAt\": \"2025-11-25T10:00:00\"\n}"
+            },
+            {
+              "name": "Check Invitation - Expired",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "http://localhost:8080/api/v1/workers/invites/check/expired-token-456",
+                  "protocol": "http",
+                  "host": ["localhost"],
+                  "port": "8080",
+                  "path": ["api", "v1", "workers", "invites", "check", "expired-token-456"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n    \"valid\": false,\n    \"email\": \"oldworker@example.com\",\n    \"companyName\": \"Tech Solutions Inc\",\n    \"status\": \"EXPIRED\",\n    \"expiresAt\": \"2025-11-15T10:00:00\"\n}"
+            },
+            {
+              "name": "Check Invitation - Invalid Token",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "http://localhost:8080/api/v1/workers/invites/check/invalid-token",
+                  "protocol": "http",
+                  "host": ["localhost"],
+                  "port": "8080",
+                  "path": ["api", "v1", "workers", "invites", "check", "invalid-token"]
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "_postman_previewlanguage": "json",
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n    \"status\": 400,\n    \"error\": \"Bad Request\",\n    \"message\": \"Invalid invitation token\",\n    \"path\": \"/api/v1/workers/invites/check/invalid-token\"\n}"
+            }
+          ]
         }
       ],
       "description": "Worker management endpoints for creating, reading, updating, and deleting workers."

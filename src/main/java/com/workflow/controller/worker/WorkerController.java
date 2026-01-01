@@ -91,4 +91,12 @@ public class WorkerController {
                 workerInvitationService.getInvitationsByCompany(user.getId());
         return ResponseEntity.ok(invitations);
     }
+
+    @GetMapping("/invites/check/{token}")
+    public ResponseEntity<WorkerInvitationCheckResponse> checkInvitation(
+            @PathVariable String token
+    ) {
+        WorkerInvitationCheckResponse response = workerInvitationService.checkInvitation(token);
+        return ResponseEntity.ok(response);
+    }
 }

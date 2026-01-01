@@ -38,7 +38,7 @@ build/
 .env.dev
 .env.prod
 !.env.example
-
+.claude
 docs/**.md
 
 .DS_Store

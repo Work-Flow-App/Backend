@@ -56,4 +56,15 @@ public class ValidationExceptionHandler {
 
         return ResponseBuilder.buildBadRequestResponse(message, request);
     }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ErrorResponse> handleIllegalArgumentException(
+            IllegalArgumentException ex,
+            HttpServletRequest request) {
+
+        return ResponseBuilder.buildBadRequestResponse(
+                ex.getMessage() != null ? ex.getMessage() : "Invalid request parameters",
+                request
+        );
+    }
 }

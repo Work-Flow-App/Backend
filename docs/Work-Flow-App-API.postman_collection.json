@@ -527,6 +527,181 @@
               "body": "{\n    \"status\": 400,\n    \"error\": \"Bad Request\",\n    \"message\": \"Password reset token has expired\",\n    \"path\": \"/api/v1/auth/reset-password\"\n}"
             }
           ]
+        },
+        {
+          "name": "Worker Signup (with Invitation)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Store JWT and Refresh tokens for future requests",
+                  "if (pm.response.code === 200) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.environment.set(\"jwt_token\", jsonData.accessToken);",
+                  "    pm.environment.set(\"refresh_token\", jsonData.refreshToken);",
+                  "    console.log(\"Worker signup successful. Tokens saved.\");",
+                  "    console.log(\"Access Token: \" + jsonData.accessToken);",
+                  "    console.log(\"Refresh Token: \" + jsonData.refreshToken);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"token\": \"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJuZXd3b3JrZXJAZXhhbXBsZS5jb20iLCJpbnZpdGF0aW9uSWQiOjEsImV4cCI6MTczMjI3MjAwMH0.abcdef123456\",\n    \"username\": \"janeworker\",\n    \"password\": \"securePassword123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/signup/worker",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "signup", "worker"]
+            },
+            "description": "Complete worker signup using an invitation token. Creates worker account and authenticates automatically.\n\n**Request Body:**\n- token (string, required): JWT invitation token from email\n- username (string, required): Desired username (3-20 characters, alphanumeric + underscore)\n- password (string, required): Password (minimum 8 characters)\n\n**Response:**\n- accessToken (string): JWT access token (expires in 15 minutes)\n- refreshToken (string): Refresh token (expires in 30 days)\n- tokenType (string): Token type (\"Bearer\")\n- expiresIn (long): Access token expiration in seconds (900)\n- user (object): Created worker user details\n  - id (long): Worker ID\n  - username (string): Worker username\n  - email (string): Worker email\n  - role (string): User role (\"WORKER\")\n  - firstName (string): Worker's first name\n  - lastName (string): Worker's last name\n  - companyId (long): Associated company ID\n\n**Business Logic:**\n- Validates invitation token (must be valid, not expired, not already used)\n- Token expires after 7 days from invitation creation\n- Creates worker account with WORKER role\n- Marks invitation as ACCEPTED\n- Automatically logs in the new worker\n- Username must be unique across the system\n- Associates worker with company from invitation\n\n**Security Features:**\n- Token-based verification ensures worker is invited\n- Password is BCrypt encoded before storage\n- Returns JWT tokens for immediate authentication\n- Token can only be used once\n- Invitation status updated to ACCEPTED on success\n\n**Status Code:** 200 OK\n\n**Error Responses:**\n- 400 Bad Request: Invalid, expired, or already used token\n- 400 Bad Request: Invalid username format or password too short\n- 409 Conflict: Username already exists\n\n**Use Case:** Worker receives invitation email with token, creates account using this endpoint"
+          },
+          "response": [
+            {
+              "name": "Worker Signup - Success",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"token\": \"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJuZXd3b3JrZXJAZXhhbXBsZS5jb20iLCJpbnZpdGF0aW9uSWQiOjEsImV4cCI6MTczMjI3MjAwMH0.abcdef123456\",\n    \"username\": \"janeworker\",\n    \"password\": \"securePassword123\"\n}"
+                },
+                "url": {
+                  "raw": "http://localhost:8080/api/v1/auth/signup/worker",
+                  "protocol": "http",
+                  "host": ["localhost"],
+                  "port": "8080",
+                  "path": ["api", "v1", "auth", "signup", "worker"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n    \"accessToken\": \"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJqYW5ld29ya2VyIiwiaWF0IjoxNjk5OTYzMjAwLCJleHAiOjE2OTk5NjQxMDB9.def456ghi789\",\n    \"refreshToken\": \"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJqYW5ld29ya2VyIiwiaWF0IjoxNjk5OTYzMjAwLCJleHAiOjE3MDI1NTUyMDB9.ghi789jkl012\",\n    \"tokenType\": \"Bearer\",\n    \"expiresIn\": 900,\n    \"user\": {\n        \"id\": 5,\n        \"username\": \"janeworker\",\n        \"email\": \"newworker@example.com\",\n        \"role\": \"WORKER\",\n        \"firstName\": \"Jane\",\n        \"lastName\": \"Smith\",\n        \"companyId\": 1\n    }\n}"
+            },
+            {
+              "name": "Worker Signup - Invalid Token",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"token\": \"invalid.token.here\",\n    \"username\": \"janeworker\",\n    \"password\": \"securePassword123\"\n}"
+                },
+                "url": {
+                  "raw": "http://localhost:8080/api/v1/auth/signup/worker",
+                  "protocol": "http",
+                  "host": ["localhost"],
+                  "port": "8080",
+                  "path": ["api", "v1", "auth", "signup", "worker"]
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n    \"timestamp\": \"2025-11-14T11:00:00\",\n    \"status\": 400,\n    \"error\": \"Bad Request\",\n    \"message\": \"Invalid or expired invitation token\",\n    \"path\": \"/api/v1/auth/signup/worker\"\n}"
+            },
+            {
+              "name": "Worker Signup - Expired Token",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"token\": \"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJleHBpcmVkQGV4YW1wbGUuY29tIiwiaW52aXRhdGlvbklkIjoyLCJleHAiOjE2OTk4NzY4MDB9.expired123\",\n    \"username\": \"expiredworker\",\n    \"password\": \"securePassword123\"\n}"
+                },
+                "url": {
+                  "raw": "http://localhost:8080/api/v1/auth/signup/worker",
+                  "protocol": "http",
+                  "host": ["localhost"],
+                  "port": "8080",
+                  "path": ["api", "v1", "auth", "signup", "worker"]
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n    \"timestamp\": \"2025-11-14T11:00:00\",\n    \"status\": 400,\n    \"error\": \"Bad Request\",\n    \"message\": \"Invitation token has expired\",\n    \"path\": \"/api/v1/auth/signup/worker\"\n}"
+            },
+            {
+              "name": "Worker Signup - Username Taken",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"token\": \"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJuZXd3b3JrZXJAZXhhbXBsZS5jb20iLCJpbnZpdGF0aW9uSWQiOjEsImV4cCI6MTczMjI3MjAwMH0.abcdef123456\",\n    \"username\": \"existinguser\",\n    \"password\": \"securePassword123\"\n}"
+                },
+                "url": {
+                  "raw": "http://localhost:8080/api/v1/auth/signup/worker",
+                  "protocol": "http",
+                  "host": ["localhost"],
+                  "port": "8080",
+                  "path": ["api", "v1", "auth", "signup", "worker"]
+                }
+              },
+              "status": "Conflict",
+              "code": 409,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n    \"timestamp\": \"2025-11-14T11:00:00\",\n    \"status\": 409,\n    \"error\": \"Conflict\",\n    \"message\": \"Username already exists\",\n    \"path\": \"/api/v1/auth/signup/worker\"\n}"
+            }
+          ]
         }
       ],
       "description": "Authentication endpoints for user registration, login, token refresh, and logout.\n\n**Token Management:**\n- Access tokens expire after 15 minutes\n- Refresh tokens expire after 30 days\n- Token rotation implemented for security (refresh tokens are single-use)\n- Max 5 active sessions per user\n- Device tracking (User-Agent + IP address)\n\n**Security Features:**\n- Automatic revocation of oldest session when limit exceeded\n- Single-device logout via /logout\n- All-device logout via /logout-all\n- Daily cleanup of expired tokens"
@@ -1019,7 +1194,7 @@
           ]
         },
         {
-          "name": "Send Worker Invitation",
+          "name": "Invite Worker by Email",
           "request": {
             "auth": {
               "type": "bearer",
@@ -1032,19 +1207,127 @@
               ]
             },
             "method": "POST",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/api/v1/workers/1/invite",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "workers", "1", "invite"]
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"newworker@example.com\",\n    \"firstName\": \"Jane\",\n    \"lastName\": \"Smith\"\n}"
             },
-            "description": "Send invitation to a worker.\n\n**Authentication:** Required (COMPANY role)\n\n**Path Parameter:**\n- id (long): Worker ID\n\n**Response:**\n- message (string): Invitation status message\n- workerName (string): Name of the invited worker\n- workerEmail (string): Email of the invited worker\n- sentAt (datetime): Timestamp of invitation\n\n**Business Logic:**\n- Currently returns a mock response\n- Intended for future email invitation functionality\n\n**Authorization:** Only workers belonging to the authenticated company can receive invitations."
+            "url": {
+              "raw": "{{base_url}}/api/v1/workers/invite",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "workers", "invite"]
+            },
+            "description": "Invite a new worker by email. Creates an invitation record and sends an email with a unique verification token.\n\n**Authentication:** Required (COMPANY role)\n\n**Request Body:**\n- email (string, required): Worker's email address\n- firstName (string, required): Worker's first name\n- lastName (string, required): Worker's last name\n\n**Response:**\n- id (long): Invitation ID\n- companyId (long): Company ID\n- email (string): Worker's email\n- firstName (string): Worker's first name\n- lastName (string): Worker's last name\n- status (string): Invitation status (PENDING)\n- token (string): Unique verification token (for testing only, not sent in production)\n- expiresAt (datetime): Token expiration timestamp (7 days from creation)\n- createdAt (datetime): Invitation creation timestamp\n\n**Business Logic:**\n- Generates unique verification token valid for 7 days\n- Sends invitation email with signup link containing token\n- Token can be used for worker signup\n- Only one pending invitation per email allowed\n\n**Status Code:** 201 Created\n\n**Error Responses:**\n- 400 Bad Request: Invalid email or missing required fields\n- 409 Conflict: Active invitation already exists for this email"
           },
           "response": [
             {
-              "name": "Send Worker Invitation - Success",
+              "name": "Invite Worker by Email - Success",
               "originalRequest": {
                 "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{jwt_token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"email\": \"newworker@example.com\",\n    \"firstName\": \"Jane\",\n    \"lastName\": \"Smith\"\n}"
+                },
+                "url": {
+                  "raw": "http://localhost:8080/api/v1/workers/invite",
+                  "protocol": "http",
+                  "host": ["localhost"],
+                  "port": "8080",
+                  "path": ["api", "v1", "workers", "invite"]
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n    \"id\": 1,\n    \"companyId\": 1,\n    \"email\": \"newworker@example.com\",\n    \"firstName\": \"Jane\",\n    \"lastName\": \"Smith\",\n    \"status\": \"PENDING\",\n    \"token\": \"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJuZXd3b3JrZXJAZXhhbXBsZS5jb20iLCJpbnZpdGF0aW9uSWQiOjEsImV4cCI6MTczMjI3MjAwMH0.abcdef123456\",\n    \"expiresAt\": \"2025-11-21T10:00:00\",\n    \"createdAt\": \"2025-11-14T10:00:00\"\n}"
+            },
+            {
+              "name": "Invite Worker by Email - Conflict",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{jwt_token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"email\": \"existing@example.com\",\n    \"firstName\": \"Jane\",\n    \"lastName\": \"Smith\"\n}"
+                },
+                "url": {
+                  "raw": "http://localhost:8080/api/v1/workers/invite",
+                  "protocol": "http",
+                  "host": ["localhost"],
+                  "port": "8080",
+                  "path": ["api", "v1", "workers", "invite"]
+                }
+              },
+              "status": "Conflict",
+              "code": 409,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n    \"timestamp\": \"2025-11-14T10:30:00\",\n    \"status\": 409,\n    \"error\": \"Conflict\",\n    \"message\": \"Active invitation already exists for this email\",\n    \"path\": \"/api/v1/workers/invite\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Worker Invitations",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/workers/invites",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "workers", "invites"]
+            },
+            "description": "Get all worker invitations for the authenticated company.\n\n**Authentication:** Required (COMPANY role)\n\n**Response:** Array of invitation objects\n- id (long): Invitation ID\n- companyId (long): Company ID\n- email (string): Worker's email\n- firstName (string): Worker's first name\n- lastName (string): Worker's last name\n- status (string): Invitation status (PENDING, ACCEPTED, EXPIRED, CANCELLED)\n- expiresAt (datetime): Token expiration timestamp\n- createdAt (datetime): Invitation creation timestamp\n- acceptedAt (datetime, optional): When invitation was accepted\n\n**Business Logic:**\n- Returns all invitations for the authenticated company\n- Invitations are ordered by creation date (newest first)\n- Expired invitations are automatically marked as EXPIRED\n\n**Authorization:** Only invitations belonging to the authenticated company are returned.\n\n**Status Code:** 200 OK"
+          },
+          "response": [
+            {
+              "name": "Get Worker Invitations - Success",
+              "originalRequest": {
+                "method": "GET",
                 "header": [
                   {
                     "key": "Authorization",
@@ -1052,11 +1335,11 @@
                   }
                 ],
                 "url": {
-                  "raw": "http://localhost:8080/api/v1/workers/1/invite",
+                  "raw": "http://localhost:8080/api/v1/workers/invites",
                   "protocol": "http",
                   "host": ["localhost"],
                   "port": "8080",
-                  "path": ["api", "v1", "workers", "1", "invite"]
+                  "path": ["api", "v1", "workers", "invites"]
                 }
               },
               "status": "OK",
@@ -1068,7 +1351,135 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n    \"message\": \"Invitation sent successfully\",\n    \"workerName\": \"John Doe\",\n    \"workerEmail\": \"john.doe@example.com\",\n    \"sentAt\": \"2025-10-23T15:00:00\"\n}"
+              "body": "[\n    {\n        \"id\": 1,\n        \"companyId\": 1,\n        \"email\": \"newworker@example.com\",\n        \"firstName\": \"Jane\",\n        \"lastName\": \"Smith\",\n        \"status\": \"PENDING\",\n        \"expiresAt\": \"2025-11-21T10:00:00\",\n        \"createdAt\": \"2025-11-14T10:00:00\",\n        \"acceptedAt\": null\n    },\n    {\n        \"id\": 2,\n        \"companyId\": 1,\n        \"email\": \"anotherworker@example.com\",\n        \"firstName\": \"Bob\",\n        \"lastName\": \"Johnson\",\n        \"status\": \"ACCEPTED\",\n        \"expiresAt\": \"2025-11-20T09:00:00\",\n        \"createdAt\": \"2025-11-13T09:00:00\",\n        \"acceptedAt\": \"2025-11-13T15:30:00\"\n    },\n    {\n        \"id\": 3,\n        \"companyId\": 1,\n        \"email\": \"expired@example.com\",\n        \"firstName\": \"Alice\",\n        \"lastName\": \"Williams\",\n        \"status\": \"EXPIRED\",\n        \"expiresAt\": \"2025-11-10T08:00:00\",\n        \"createdAt\": \"2025-11-03T08:00:00\",\n        \"acceptedAt\": null\n    }\n]"
+            },
+            {
+              "name": "Get Worker Invitations - Empty",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{jwt_token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "http://localhost:8080/api/v1/workers/invites",
+                  "protocol": "http",
+                  "host": ["localhost"],
+                  "port": "8080",
+                  "path": ["api", "v1", "workers", "invites"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "[]"
+            }
+          ]
+        },
+        {
+          "name": "Check Invitation Token",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/workers/invites/check/{{invitation_token}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "workers", "invites", "check", "{{invitation_token}}"]
+            },
+            "description": "Check invitation token validity and retrieve invitation details.\n\n**Authentication:** NOT REQUIRED (Public endpoint)\n\n**Path Parameter:**\n- token (string): Invitation token from email URL\n\n**Response:**\n- valid (boolean): Whether the invitation is still valid (not used, not expired)\n- email (string): Email address of the invitee\n- companyName (string): Name of the company sending the invitation\n- status (string): PENDING, ACCEPTED, or EXPIRED\n- expiresAt (datetime): Expiration timestamp\n\n**Use Case:**\n- Frontend calls this endpoint when user clicks invitation link\n- Pre-fills and disables email field on signup form\n- Shows company name and validates token before user fills form\n\n**Status Code:** 200 OK"
+          },
+          "response": [
+            {
+              "name": "Check Invitation - Valid (Pending)",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "http://localhost:8080/api/v1/workers/invites/check/a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+                  "protocol": "http",
+                  "host": ["localhost"],
+                  "port": "8080",
+                  "path": ["api", "v1", "workers", "invites", "check", "a1b2c3d4-e5f6-7890-abcd-ef1234567890"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n    \"valid\": true,\n    \"email\": \"newworker@example.com\",\n    \"companyName\": \"Tech Solutions Inc\",\n    \"status\": \"PENDING\",\n    \"expiresAt\": \"2025-11-30T10:00:00\"\n}"
+            },
+            {
+              "name": "Check Invitation - Already Used",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "http://localhost:8080/api/v1/workers/invites/check/used-token-123",
+                  "protocol": "http",
+                  "host": ["localhost"],
+                  "port": "8080",
+                  "path": ["api", "v1", "workers", "invites", "check", "used-token-123"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n    \"valid\": false,\n    \"email\": \"existingworker@example.com\",\n    \"companyName\": \"Tech Solutions Inc\",\n    \"status\": \"ACCEPTED\",\n    \"expiresAt\": \"2025-11-25T10:00:00\"\n}"
+            },
+            {
+              "name": "Check Invitation - Expired",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "http://localhost:8080/api/v1/workers/invites/check/expired-token-456",
+                  "protocol": "http",
+                  "host": ["localhost"],
+                  "port": "8080",
+                  "path": ["api", "v1", "workers", "invites", "check", "expired-token-456"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n    \"valid\": false,\n    \"email\": \"oldworker@example.com\",\n    \"companyName\": \"Tech Solutions Inc\",\n    \"status\": \"EXPIRED\",\n    \"expiresAt\": \"2025-11-15T10:00:00\"\n}"
+            },
+            {
+              "name": "Check Invitation - Invalid Token",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "http://localhost:8080/api/v1/workers/invites/check/invalid-token",
+                  "protocol": "http",
+                  "host": ["localhost"],
+                  "port": "8080",
+                  "path": ["api", "v1", "workers", "invites", "check", "invalid-token"]
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "_postman_previewlanguage": "json",
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n    \"status\": 400,\n    \"error\": \"Bad Request\",\n    \"message\": \"Invalid invitation token\",\n    \"path\": \"/api/v1/workers/invites/check/invalid-token\"\n}"
             }
           ]
         }
@@ -1406,14 +1817,14 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"name\": \"Maintenance Job\",\n    \"description\": \"Standard maintenance workflow template for equipment servicing\"\n}"
+              "raw": "{\n    \"name\": \"Maintenance Job\",\n    \"description\": \"Standard maintenance workflow template for equipment servicing\",\n    \"isDefault\": false\n}"
             },
             "url": {
               "raw": "{{base_url}}/api/v1/job-templates",
               "host": ["{{base_url}}"],
               "path": ["api", "v1", "job-templates"]
             },
-            "description": "Create a new job template for the authenticated company.\n\n**Authentication:** Required (COMPANY role)\n\n**Request Body:**\n- name (string, required): Template name (2-150 characters, unique per company)\n- description (string, optional): Template description\n\n**Business Logic:**\n- Template is associated with the company of the authenticated user.\n\n**Response:** Created template object with metadata (id, timestamps, archived flag)."
+            "description": "Create a new job template for the authenticated company.\n\n**Authentication:** Required (COMPANY role)\n\n**Request Body:**\n- name (string, required): Template name (2-150 characters, unique per company)\n- description (string, optional): Template description\n- isDefault (boolean, optional): Set as default template for the company (default: false). Only one template can be default per company.\n\n**Business Logic:**\n- Template is associated with the company of the authenticated user.\n- If isDefault is true, any existing default template will be unmarked as default.\n\n**Response:** Created template object with metadata (id, timestamps, archived flag, isDefault)."
           },
           "response": [
             {
@@ -1451,7 +1862,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n    \"id\": 3,\n    \"companyId\": 1,\n    \"name\": \"Maintenance Job\",\n    \"description\": \"Standard maintenance workflow template for equipment servicing\",\n    \"archived\": false,\n    \"createdAt\": \"2025-11-14T10:00:00\",\n    \"updatedAt\": \"2025-11-14T10:00:00\"\n}"
+              "body": "{\n    \"id\": 3,\n    \"companyId\": 1,\n    \"name\": \"Maintenance Job\",\n    \"description\": \"Standard maintenance workflow template for equipment servicing\",\n    \"archived\": false,\n    \"isDefault\": false,\n    \"createdAt\": \"2025-11-14T10:00:00\",\n    \"updatedAt\": \"2025-11-14T10:00:00\"\n}"
             }
           ]
         },
@@ -1505,7 +1916,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "[\n    {\n        \"id\": 3,\n        \"companyId\": 1,\n        \"name\": \"Maintenance Job\",\n        \"description\": \"Standard maintenance workflow template for equipment servicing\",\n        \"archived\": false,\n        \"createdAt\": \"2025-11-14T10:00:00\",\n        \"updatedAt\": \"2025-11-14T10:00:00\"\n    },\n    {\n        \"id\": 4,\n        \"companyId\": 1,\n        \"name\": \"Installation Checklist\",\n        \"description\": \"Checklist for new equipment installation.\",\n        \"archived\": false,\n        \"createdAt\": \"2025-11-14T11:00:00\",\n        \"updatedAt\": \"2025-11-14T11:00:00\"\n    }\n]"
+              "body": "[\n    {\n        \"id\": 3,\n        \"companyId\": 1,\n        \"name\": \"Maintenance Job\",\n        \"description\": \"Standard maintenance workflow template for equipment servicing\",\n        \"archived\": false,\n        \"isDefault\": false,\n        \"createdAt\": \"2025-11-14T10:00:00\",\n        \"updatedAt\": \"2025-11-14T10:00:00\"\n    },\n    {\n        \"id\": 4,\n        \"companyId\": 1,\n        \"name\": \"Installation Checklist\",\n        \"description\": \"Checklist for new equipment installation.\",\n        \"archived\": false,\n        \"isDefault\": false,\n        \"createdAt\": \"2025-11-14T11:00:00\",\n        \"updatedAt\": \"2025-11-14T11:00:00\"\n    }\n]"
             }
           ]
         },
@@ -1559,7 +1970,90 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n    \"id\": 3,\n    \"companyId\": 1,\n    \"name\": \"Maintenance Job\",\n    \"description\": \"Standard maintenance workflow template for equipment servicing\",\n    \"archived\": false,\n    \"createdAt\": \"2025-11-14T10:00:00\",\n    \"updatedAt\": \"2025-11-14T10:00:00\"\n}"
+              "body": "{\n    \"id\": 3,\n    \"companyId\": 1,\n    \"name\": \"Maintenance Job\",\n    \"description\": \"Standard maintenance workflow template for equipment servicing\",\n    \"archived\": false,\n    \"isDefault\": false,\n    \"createdAt\": \"2025-11-14T10:00:00\",\n    \"updatedAt\": \"2025-11-14T10:00:00\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Default Template",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/job-templates/default",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "job-templates", "default"]
+            },
+            "description": "Get the default job template for the authenticated company.\n\n**Authentication:** Required (COMPANY role)\n\n**Authorization:** Returns the default template for the authenticated company.\n\n**Status Code:** 200 OK\n\n**Error Responses:**\n- 404 Not Found: No default template exists for the company"
+          },
+          "response": [
+            {
+              "name": "Get Default Template - Success",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{jwt_token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "http://localhost:8080/api/v1/job-templates/default",
+                  "protocol": "http",
+                  "host": ["localhost"],
+                  "port": "8080",
+                  "path": ["api", "v1", "job-templates", "default"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n    \"id\": 3,\n    \"companyId\": 1,\n    \"name\": \"Maintenance Job\",\n    \"description\": \"Standard maintenance workflow template for equipment servicing\",\n    \"archived\": false,\n    \"isDefault\": true,\n    \"createdAt\": \"2025-11-14T10:00:00\",\n    \"updatedAt\": \"2025-11-14T10:00:00\"\n}"
+            },
+            {
+              "name": "Get Default Template - Not Found",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{jwt_token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "http://localhost:8080/api/v1/job-templates/default",
+                  "protocol": "http",
+                  "host": ["localhost"],
+                  "port": "8080",
+                  "path": ["api", "v1", "job-templates", "default"]
+                }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n    \"timestamp\": \"2025-11-14T14:30:00\",\n    \"status\": 404,\n    \"error\": \"Not Found\",\n    \"message\": \"No default template found for company\",\n    \"path\": \"/api/v1/job-templates/default\"\n}"
             }
           ]
         },
@@ -1585,7 +2079,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"name\": \"Updated Maintenance Template\",\n    \"description\": \"Updated template description for servicing jobs\",\n    \"archived\": false\n}"
+              "raw": "{\n    \"name\": \"Updated Maintenance Template\",\n    \"description\": \"Updated template description for servicing jobs\",\n    \"isDefault\": false,\n    \"archived\": false\n}"
             },
             "url": {
               "raw": "{{base_url}}/api/v1/job-templates/3",
@@ -1630,7 +2124,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n    \"id\": 3,\n    \"companyId\": 1,\n    \"name\": \"Updated Maintenance Template\",\n    \"description\": \"Updated template description for servicing jobs\",\n    \"archived\": false,\n    \"createdAt\": \"2025-11-14T10:00:00\",\n    \"updatedAt\": \"2025-11-14T12:00:00\"\n}"
+              "body": "{\n    \"id\": 3,\n    \"companyId\": 1,\n    \"name\": \"Updated Maintenance Template\",\n    \"description\": \"Updated template description for servicing jobs\",\n    \"archived\": false,\n    \"isDefault\": false,\n    \"createdAt\": \"2025-11-14T10:00:00\",\n    \"updatedAt\": \"2025-11-14T12:00:00\"\n}"
             }
           ]
         },
@@ -2143,7 +2637,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n    \"id\": 3,\n    \"companyId\": 1,\n    \"name\": \"Maintenance Job\",\n    \"description\": \"Standard maintenance workflow template for equipment servicing\",\n    \"archived\": false,\n    \"createdAt\": \"2025-11-14T10:00:00\",\n    \"updatedAt\": \"2025-11-14T12:00:00\",\n    \"fields\": [\n        {\n            \"id\": 101,\n            \"templateId\": 3,\n            \"name\": \"customerName\",\n            \"label\": \"Customer Name\",\n            \"jobFieldType\": \"TEXT\",\n            \"required\": true,\n            \"options\": null,\n            \"orderIndex\": 1,\n            \"createdAt\": \"2025-11-14T10:05:00\",\n            \"updatedAt\": \"2025-11-14T10:05:00\"\n        },\n        {\n            \"id\": 102,\n            \"templateId\": 3,\n            \"name\": \"priority\",\n            \"label\": \"Priority Level (Changed)\",\n            \"jobFieldType\": \"DROPDOWN\",\n            \"required\": true,\n            \"options\": \"[\\\"Low\\\", \\\"Medium\\\", \\\"High\\\", \\\"Urgent\\\"]\",\n            \"orderIndex\": 2,\n            \"createdAt\": \"2025-11-14T10:06:00\",\n            \"updatedAt\": \"2025-11-14T12:30:00\"\n        }\n    ]\n}"
+              "body": "{\n    \"id\": 3,\n    \"companyId\": 1,\n    \"name\": \"Maintenance Job\",\n    \"description\": \"Standard maintenance workflow template for equipment servicing\",\n    \"archived\": false,\n    \"isDefault\": false,\n    \"createdAt\": \"2025-11-14T10:00:00\",\n    \"updatedAt\": \"2025-11-14T12:00:00\",\n    \"fields\": [\n        {\n            \"id\": 101,\n            \"templateId\": 3,\n            \"name\": \"customerName\",\n            \"label\": \"Customer Name\",\n            \"jobFieldType\": \"TEXT\",\n            \"required\": true,\n            \"options\": null,\n            \"orderIndex\": 1,\n            \"createdAt\": \"2025-11-14T10:05:00\",\n            \"updatedAt\": \"2025-11-14T10:05:00\"\n        },\n        {\n            \"id\": 102,\n            \"templateId\": 3,\n            \"name\": \"priority\",\n            \"label\": \"Priority Level (Changed)\",\n            \"jobFieldType\": \"DROPDOWN\",\n            \"required\": true,\n            \"options\": \"[\\\"Low\\\", \\\"Medium\\\", \\\"High\\\", \\\"Urgent\\\"]\",\n            \"orderIndex\": 2,\n            \"createdAt\": \"2025-11-14T10:06:00\",\n            \"updatedAt\": \"2025-11-14T12:30:00\"\n        }\n    ]\n}"
             }
           ]
         }

@@ -1,6 +1,8 @@
 package com.workflow.service.job;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -156,10 +158,11 @@ public class JobService implements IJobService {
                                                 case BOOLEAN ->
                                                         fieldValue.setBooleanValue(Boolean.valueOf(val.toString()));
                                                 case DATE -> {
-                                                        if (val instanceof String s)
-                                                                fieldValue.setDateValue(LocalDateTime.parse(s));
-                                                        else if (val instanceof LocalDateTime dt)
+                                                        if (val instanceof String s) {
+                                                                fieldValue.setDateValue(parseDateTime(s));
+                                                        } else if (val instanceof LocalDateTime dt) {
                                                                 fieldValue.setDateValue(dt);
+                                                        }
                                                 }
                                                 case JSON -> fieldValue.setJsonValue(JsonUtil.toJson(val));
                                                 case REFERENCE -> {
@@ -306,6 +309,31 @@ public class JobService implements IJobService {
 
                         asset.setAvailable(false);
                         assetRepository.save(asset);
+                }
+        }
+
+        /**
+         * Parses a date string that can be either:
+         * - Date only: "2024-01-15" -> converted to LocalDateTime with time 00:00:00
+         * - Date and time: "2024-01-15T10:30:00" -> parsed as-is
+         *
+         * @param dateString The date string to parse
+         * @return LocalDateTime representation
+         * @throws IllegalArgumentException if the string cannot be parsed
+         */
+        private LocalDateTime parseDateTime(String dateString) {
+                try {
+                        // First try to parse as full LocalDateTime (with time)
+                        return LocalDateTime.parse(dateString);
+                } catch (DateTimeParseException e) {
+                        try {
+                                // If that fails, try parsing as LocalDate and convert to LocalDateTime at start of day
+                                LocalDate date = LocalDate.parse(dateString);
+                                return date.atStartOfDay();
+                        } catch (DateTimeParseException ex) {
+                                throw new IllegalArgumentException(
+                                        "Invalid date format. Expected ISO date (yyyy-MM-dd) or ISO date-time (yyyy-MM-ddTHH:mm:ss). Got: " + dateString);
+                        }
                 }
         }
 

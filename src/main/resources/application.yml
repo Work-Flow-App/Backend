@@ -64,6 +64,11 @@ password-reset:
     expiration-minutes: 60
     max-active-per-user: 3
 
+worker-invitation:
+  token:
+    expiration-days: 7
+  frontend-url: ${WORKER_INVITATION_FRONTEND_URL:http://localhost:3000}
+
 
 
 #      jakarta:

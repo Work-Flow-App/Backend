@@ -1,11 +1,9 @@
 package com.workflow.controller.worker;
 
-import com.workflow.dto.worker.WorkerCreateRequest;
-import com.workflow.dto.worker.WorkerInviteResponse;
-import com.workflow.dto.worker.WorkerResponse;
-import com.workflow.dto.worker.WorkerUpdateRequest;
+import com.workflow.dto.worker.*;
 import com.workflow.entity.User;
 import com.workflow.service.worker.IWorkerService;
+import com.workflow.service.worker.WorkerInvitationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -21,6 +19,7 @@ import java.util.List;
 public class WorkerController {
 
     private final IWorkerService workerService;
+    private final WorkerInvitationService workerInvitationService;
 
     @PostMapping
     public ResponseEntity<WorkerResponse> createWorker(
@@ -70,13 +69,34 @@ public class WorkerController {
         return ResponseEntity.noContent().build();
     }
 
-    @PostMapping("/{id}/invite")
+    @PostMapping("/invite")
     public ResponseEntity<WorkerInviteResponse> sendInvitation(
-            @PathVariable Long id,
+            @Valid @RequestBody WorkerInvitationRequest request,
             Authentication authentication
     ) {
         User user = (User) authentication.getPrincipal();
-        WorkerInviteResponse response = workerService.sendInvitation(id, user.getId());
+        WorkerInviteResponse response = workerInvitationService.createInvitation(
+                request.email(),
+                user.getId()
+        );
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/invites")
+    public ResponseEntity<List<WorkerInvitationStatusResponse>> getInvitationStatus(
+            Authentication authentication
+    ) {
+        User user = (User) authentication.getPrincipal();
+        List<WorkerInvitationStatusResponse> invitations =
+                workerInvitationService.getInvitationsByCompany(user.getId());
+        return ResponseEntity.ok(invitations);
+    }
+
+    @GetMapping("/invites/check/{token}")
+    public ResponseEntity<WorkerInvitationCheckResponse> checkInvitation(
+            @PathVariable String token
+    ) {
+        WorkerInvitationCheckResponse response = workerInvitationService.checkInvitation(token);
         return ResponseEntity.ok(response);
     }
 }

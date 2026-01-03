@@ -9,6 +9,7 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.Map;
@@ -66,5 +67,25 @@ public class ValidationExceptionHandler {
                 ex.getMessage() != null ? ex.getMessage() : "Invalid request parameters",
                 request
         );
+    }
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<ErrorResponse> handleMaxUploadSizeExceeded(
+            MaxUploadSizeExceededException ex,
+            HttpServletRequest request) {
+
+        long maxSize = ex.getMaxUploadSize();
+        String maxSizeStr = maxSize > 0 ? formatFileSize(maxSize) : "10MB";
+
+        return ResponseBuilder.buildBadRequestResponse(
+                "File size exceeds the maximum allowed limit of " + maxSizeStr + ". Please upload a smaller file.",
+                request
+        );
+    }
+
+    private String formatFileSize(long bytes) {
+        if (bytes < 1024) return bytes + " bytes";
+        if (bytes < 1024 * 1024) return (bytes / 1024) + " KB";
+        return (bytes / (1024 * 1024)) + " MB";
     }
 }

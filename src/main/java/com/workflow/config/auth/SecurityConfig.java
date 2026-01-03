@@ -70,6 +70,7 @@ public class SecurityConfig {
             "/api/v1/auth/forgot-password",
             "/api/v1/auth/reset-password",
             "/api/v1/workers/invites/check/**",
+            "/api/v1/files/**",
             "/swagger-ui/**",
             "/swagger-ui.html",
             "/v3/api-docs/**",
@@ -91,6 +92,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/clients/**").hasRole(COMPANY)
                         .requestMatchers("/api/v1/jobs/**").hasRole(COMPANY)
                         .requestMatchers("/api/v1/job-templates/**").hasRole(COMPANY)
+                        .requestMatchers("/api/v1/assets/**").hasRole(COMPANY)
                         .anyRequest().authenticated())
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

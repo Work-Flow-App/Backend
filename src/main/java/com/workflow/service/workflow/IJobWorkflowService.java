@@ -5,6 +5,7 @@ import java.util.List;
 import com.workflow.dto.workflow.JobWorkflowResponse;
 import com.workflow.dto.workflow.JobWorkflowStepResponse;
 import com.workflow.dto.workflow.JobWorkflowStepUpdateRequest;
+import com.workflow.dto.workflow.JobWorkflowUpdateRequest;
 import com.workflow.entity.Job;
 import com.workflow.entity.JobWorkflow;
 import com.workflow.entity.Workflow;
@@ -27,5 +28,7 @@ public interface IJobWorkflowService {
     void deleteByJobId(Long jobId, Long companyId);
 
     JobWorkflowResponse assignAWorkerToAllSteps(Long jobWorkflowId, Long workerId, Long companyId);
+
+    JobWorkflowResponse updateJobWorkflowById(Long jobWorkflowId, JobWorkflowUpdateRequest request, Long companyId);
 
 }

@@ -3801,6 +3801,32 @@
           ]
         },
         {
+          "name": "Update Job Workflow (Bulk)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{jwt_token}}", "type": "string" }
+              ]
+            },
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"ONGOING\",\n  \"steps\": [\n    {\"id\": 10, \"status\": \"COMPLETED\", \"assignedWorkerId\": 1},\n    {\"id\": 11, \"status\": \"STARTED\", \"assignedWorkerId\": 2}\n  ]\n}"
+            },
+            "url": "{{base_url}}/api/v1/job-workflows/1"
+          },
+          "response": [
+            {
+              "name": "Update Workflow - Success",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"id\": 1,\n  \"jobId\": 1,\n  \"workflowId\": 1,\n  \"status\": \"ONGOING\",\n  \"workerIds\": [1,2],\n  \"steps\": [\n    {\"id\": 10, \"name\": \"Inspection\", \"status\": \"COMPLETED\", \"startedAt\": \"2026-01-04T05:18:50\", \"completedAt\": \"2026-01-04T06:00:00\", \"assignedWorkerId\": 1},\n    {\"id\": 11, \"name\": \"Repair Work\", \"status\": \"STARTED\", \"startedAt\": \"2026-01-04T06:10:00\", \"completedAt\": null, \"assignedWorkerId\": 2}\n  ]\n}"
+            }
+          ]
+        },
+        {
           "name": "Assign Worker to All Steps",
           "request": {
             "auth": {

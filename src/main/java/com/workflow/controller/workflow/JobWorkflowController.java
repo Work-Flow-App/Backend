@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.workflow.dto.workflow.JobWorkflowResponse;
 import com.workflow.dto.workflow.JobWorkflowStepResponse;
 import com.workflow.dto.workflow.JobWorkflowStepUpdateRequest;
+import com.workflow.dto.workflow.JobWorkflowUpdateRequest;
 import com.workflow.entity.Company;
 import com.workflow.entity.Job;
 import com.workflow.entity.User;
@@ -61,6 +62,19 @@ public class JobWorkflowController {
 
                 return ResponseEntity.status(HttpStatus.CREATED)
                                 .body(jobWorkflowService.startWorkflow(job, workflow, companyId));
+        }
+
+        @PutMapping("/{jobWorkflowId}")
+        public ResponseEntity<JobWorkflowResponse> updateJobWorkflow(
+                        @PathVariable Long jobWorkflowId,
+                        @RequestBody JobWorkflowUpdateRequest request,
+                        Authentication auth) {
+
+                Long companyId = getCompanyId(auth);
+                JobWorkflowResponse response = jobWorkflowService.updateJobWorkflowById(
+                                jobWorkflowId, request, companyId);
+
+                return ResponseEntity.ok(response);
         }
 
         @GetMapping("/jobs/{jobId}")

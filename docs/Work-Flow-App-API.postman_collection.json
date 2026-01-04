@@ -1392,7 +1392,14 @@
             "url": {
               "raw": "{{base_url}}/api/v1/workers/invites/check/{{invitation_token}}",
               "host": ["{{base_url}}"],
-              "path": ["api", "v1", "workers", "invites", "check", "{{invitation_token}}"]
+              "path": [
+                "api",
+                "v1",
+                "workers",
+                "invites",
+                "check",
+                "{{invitation_token}}"
+              ]
             },
             "description": "Check invitation token validity and retrieve invitation details.\n\n**Authentication:** NOT REQUIRED (Public endpoint)\n\n**Path Parameter:**\n- token (string): Invitation token from email URL\n\n**Response:**\n- valid (boolean): Whether the invitation is still valid (not used, not expired)\n- email (string): Email address of the invitee\n- companyName (string): Name of the company sending the invitation\n- status (string): PENDING, ACCEPTED, or EXPIRED\n- expiresAt (datetime): Expiration timestamp\n\n**Use Case:**\n- Frontend calls this endpoint when user clicks invitation link\n- Pre-fills and disables email field on signup form\n- Shows company name and validates token before user fills form\n\n**Status Code:** 200 OK"
           },
@@ -1407,7 +1414,14 @@
                   "protocol": "http",
                   "host": ["localhost"],
                   "port": "8080",
-                  "path": ["api", "v1", "workers", "invites", "check", "a1b2c3d4-e5f6-7890-abcd-ef1234567890"]
+                  "path": [
+                    "api",
+                    "v1",
+                    "workers",
+                    "invites",
+                    "check",
+                    "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+                  ]
                 }
               },
               "status": "OK",
@@ -1428,7 +1442,14 @@
                   "protocol": "http",
                   "host": ["localhost"],
                   "port": "8080",
-                  "path": ["api", "v1", "workers", "invites", "check", "used-token-123"]
+                  "path": [
+                    "api",
+                    "v1",
+                    "workers",
+                    "invites",
+                    "check",
+                    "used-token-123"
+                  ]
                 }
               },
               "status": "OK",
@@ -1449,7 +1470,14 @@
                   "protocol": "http",
                   "host": ["localhost"],
                   "port": "8080",
-                  "path": ["api", "v1", "workers", "invites", "check", "expired-token-456"]
+                  "path": [
+                    "api",
+                    "v1",
+                    "workers",
+                    "invites",
+                    "check",
+                    "expired-token-456"
+                  ]
                 }
               },
               "status": "OK",
@@ -1470,7 +1498,14 @@
                   "protocol": "http",
                   "host": ["localhost"],
                   "port": "8080",
-                  "path": ["api", "v1", "workers", "invites", "check", "invalid-token"]
+                  "path": [
+                    "api",
+                    "v1",
+                    "workers",
+                    "invites",
+                    "check",
+                    "invalid-token"
+                  ]
                 }
               },
               "status": "Bad Request",
@@ -3401,18 +3436,14 @@
               "raw": "{{base_url}}/api/v1/workflows",
               "host": ["{{base_url}}"],
               "path": ["api", "v1", "workflows"]
-            },
-            "description": "Create a new workflow.\n\n**Authentication:** Required (COMPANY role)\n\n**Request Body:**\n- name (string, required)\n- description (string, optional)\n\n**Response:** WorkflowResponse"
+            }
           },
           "response": [
             {
               "name": "Create Workflow - Success",
               "status": "Created",
               "code": 201,
-              "header": [
-                { "key": "Content-Type", "value": "application/json" }
-              ],
-              "body": "{\n  \"id\": 1,\n  \"name\": \"Repair Workflow\",\n  \"description\": \"Standard repair process\"\n}"
+              "body": "{\n  \"id\": 1,\n  \"companyId\": 1,\n  \"name\": \"Repair Workflow\",\n  \"description\": \"Standard repair process\"\n}"
             }
           ]
         },
@@ -3435,18 +3466,14 @@
               "raw": "{{base_url}}/api/v1/workflows/1",
               "host": ["{{base_url}}"],
               "path": ["api", "v1", "workflows", "1"]
-            },
-            "description": "Update an existing workflow.\n\n**Authentication:** Required (COMPANY role)\n\n**Path Parameter:**\n- id (long)"
+            }
           },
           "response": [
             {
               "name": "Update Workflow - Success",
               "status": "OK",
               "code": 200,
-              "header": [
-                { "key": "Content-Type", "value": "application/json" }
-              ],
-              "body": "{\n  \"id\": 1,\n  \"name\": \"Updated Workflow\",\n  \"description\": \"Updated description\"\n}"
+              "body": "{\n  \"id\": 1,\n  \"companyId\": 1,\n  \"name\": \"Updated Workflow\",\n  \"description\": \"Updated description\"\n}"
             }
           ]
         },
@@ -3460,13 +3487,11 @@
               ]
             },
             "method": "DELETE",
-            "header": [],
             "url": {
               "raw": "{{base_url}}/api/v1/workflows/1",
               "host": ["{{base_url}}"],
               "path": ["api", "v1", "workflows", "1"]
-            },
-            "description": "Delete a workflow.\n\n**Authentication:** Required (COMPANY role)\n\n**Response:** 204 No Content"
+            }
           },
           "response": [
             {
@@ -3486,22 +3511,17 @@
               ]
             },
             "method": "GET",
-            "header": [],
             "url": {
               "raw": "{{base_url}}/api/v1/workflows",
               "host": ["{{base_url}}"],
               "path": ["api", "v1", "workflows"]
-            },
-            "description": "Retrieve all workflows for the authenticated company."
+            }
           },
           "response": [
             {
               "name": "Get All Workflows - Success",
               "status": "OK",
               "code": 200,
-              "header": [
-                { "key": "Content-Type", "value": "application/json" }
-              ],
               "body": "[]"
             }
           ]
@@ -3516,23 +3536,18 @@
               ]
             },
             "method": "GET",
-            "header": [],
             "url": {
               "raw": "{{base_url}}/api/v1/workflows/1",
               "host": ["{{base_url}}"],
               "path": ["api", "v1", "workflows", "1"]
-            },
-            "description": "Retrieve a workflow by ID."
+            }
           },
           "response": [
             {
               "name": "Get Workflow - Success",
               "status": "OK",
               "code": 200,
-              "header": [
-                { "key": "Content-Type", "value": "application/json" }
-              ],
-              "body": "{\n  \"id\": 1,\n  \"name\": \"Repair Workflow\",\n  \"description\": \"Standard repair process\"\n}"
+              "body": "{\n  \"id\": 1,\n  \"companyId\": 1,\n  \"name\": \"Repair Workflow\",\n  \"description\": \"Standard repair process\"\n}"
             }
           ]
         },
@@ -3555,18 +3570,14 @@
               "raw": "{{base_url}}/api/v1/workflows/steps",
               "host": ["{{base_url}}"],
               "path": ["api", "v1", "workflows", "steps"]
-            },
-            "description": "Create a workflow step."
+            }
           },
           "response": [
             {
               "name": "Create Step - Success",
               "status": "OK",
               "code": 200,
-              "header": [
-                { "key": "Content-Type", "value": "application/json" }
-              ],
-              "body": "{\n  \"id\": 10,\n  \"workflowId\": 1,\n  \"name\": \"Inspection\",\n  \"orderIndex\": 1\n}"
+              "body": "{\n  \"id\": 10,\n  \"workflowId\": 1,\n  \"name\": \"Inspection\",\n  \"orderIndex\": 1,\n  \"optional\": false\n}"
             }
           ]
         },
@@ -3580,22 +3591,17 @@
               ]
             },
             "method": "GET",
-            "header": [],
             "url": {
               "raw": "{{base_url}}/api/v1/workflows/1/steps",
               "host": ["{{base_url}}"],
               "path": ["api", "v1", "workflows", "1", "steps"]
-            },
-            "description": "Retrieve all steps for a workflow."
+            }
           },
           "response": [
             {
               "name": "Get Workflow Steps - Success",
               "status": "OK",
               "code": 200,
-              "header": [
-                { "key": "Content-Type", "value": "application/json" }
-              ],
               "body": "[]"
             }
           ]
@@ -3610,23 +3616,18 @@
               ]
             },
             "method": "GET",
-            "header": [],
             "url": {
               "raw": "{{base_url}}/api/v1/workflows/steps/10",
               "host": ["{{base_url}}"],
               "path": ["api", "v1", "workflows", "steps", "10"]
-            },
-            "description": "Retrieve a workflow step by ID."
+            }
           },
           "response": [
             {
               "name": "Get Step - Success",
               "status": "OK",
               "code": 200,
-              "header": [
-                { "key": "Content-Type", "value": "application/json" }
-              ],
-              "body": "{\n  \"id\": 10,\n  \"name\": \"Inspection\",\n  \"orderIndex\": 1\n}"
+              "body": "{\n  \"id\": 10,\n  \"workflowId\": 1,\n  \"name\": \"Inspection\",\n  \"orderIndex\": 1,\n  \"optional\": false\n}"
             }
           ]
         },
@@ -3640,22 +3641,17 @@
               ]
             },
             "method": "GET",
-            "header": [],
             "url": {
               "raw": "{{base_url}}/api/v1/workflows/steps",
               "host": ["{{base_url}}"],
               "path": ["api", "v1", "workflows", "steps"]
-            },
-            "description": "Retrieve all workflow steps for the company."
+            }
           },
           "response": [
             {
               "name": "Get All Steps - Success",
               "status": "OK",
               "code": 200,
-              "header": [
-                { "key": "Content-Type", "value": "application/json" }
-              ],
               "body": "[]"
             }
           ]
@@ -3673,22 +3669,16 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"workflowId\": 1,\n  \"name\": \"Updated Step\",\n  \"orderIndex\": 2\n}"
+              "raw": "{\n  \"workflowId\": 1,\n  \"name\": \"Updated Step\",\n  \"orderIndex\": 2,\n  \"optional\": false\n}"
             },
             "url": {
               "raw": "{{base_url}}/api/v1/workflows/steps/10",
               "host": ["{{base_url}}"],
               "path": ["api", "v1", "workflows", "steps", "10"]
-            },
-            "description": "Update a workflow step."
+            }
           },
           "response": [
-            {
-              "name": "Update Step - Success",
-              "status": "OK",
-              "code": 200,
-              "header": [{ "key": "Content-Type", "value": "application/json" }]
-            }
+            { "name": "Update Step - Success", "status": "OK", "code": 200 }
           ]
         },
         {
@@ -3701,13 +3691,11 @@
               ]
             },
             "method": "DELETE",
-            "header": [],
             "url": {
               "raw": "{{base_url}}/api/v1/workflows/steps/10",
               "host": ["{{base_url}}"],
               "path": ["api", "v1", "workflows", "steps", "10"]
-            },
-            "description": "Delete a workflow step."
+            }
           },
           "response": [
             {
@@ -3729,15 +3717,10 @@
             "auth": {
               "type": "bearer",
               "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{jwt_token}}",
-                  "type": "string"
-                }
+                { "key": "token", "value": "{{jwt_token}}", "type": "string" }
               ]
             },
             "method": "POST",
-            "header": [],
             "url": {
               "raw": "{{base_url}}/api/v1/job-workflows/jobs/1/workflows/1/start",
               "host": ["{{base_url}}"],
@@ -3751,18 +3734,14 @@
                 "1",
                 "start"
               ]
-            },
-            "description": "Start a workflow for a specific job.\n\n**Authentication:** Required (COMPANY role)\n\n**Path Parameters:**\n- jobId (long): Job ID\n- workflowId (long): Workflow ID\n\n**Business Logic:**\n- Validates job and workflow belong to the authenticated company\n- Creates JobWorkflow entity\n- Initializes all workflow steps with INITIATED status\n\n**Response:** JobWorkflowResponse"
+            }
           },
           "response": [
             {
               "name": "Start Workflow - Success",
               "status": "Created",
               "code": 201,
-              "header": [
-                { "key": "Content-Type", "value": "application/json" }
-              ],
-              "body": "{\n  \"jobId\": 1,\n  \"workflowId\": 1,\n  \"steps\": [\n    {\n      \"id\": 10,\n      \"name\": \"Inspection\",\n      \"status\": \"INITIATED\"\n    },\n    {\n      \"id\": 11,\n      \"name\": \"Repair\",\n      \"status\": \"INITIATED\"\n    }\n  ]\n}"
+              "body": "{\n  \"id\": 1,\n  \"jobId\": 1,\n  \"workflowId\": 1,\n  \"status\": \"NOT_STARTED\",\n  \"workers\": [],\n  \"steps\": [\n    {\"id\": 10, \"name\": \"Inspection\", \"status\": \"INITIATED\", \"assignedWorkerId\": null}\n  ]\n}"
             }
           ]
         },
@@ -3776,23 +3755,18 @@
               ]
             },
             "method": "GET",
-            "header": [],
             "url": {
               "raw": "{{base_url}}/api/v1/job-workflows/jobs/1",
               "host": ["{{base_url}}"],
               "path": ["api", "v1", "job-workflows", "jobs", "1"]
-            },
-            "description": "Retrieve job workflow by job ID.\n\n**Authentication:** Required (COMPANY role)\n\n**Path Parameter:**\n- jobId (long)\n\n**Response:** JobWorkflowResponse"
+            }
           },
           "response": [
             {
               "name": "Get Job Workflow - Success",
               "status": "OK",
               "code": 200,
-              "header": [
-                { "key": "Content-Type", "value": "application/json" }
-              ],
-              "body": "{\n  \"jobId\": 1,\n  \"workflowId\": 1,\n  \"steps\": [\n    {\n      \"id\": 10,\n      \"name\": \"Inspection\",\n      \"status\": \"STARTED\",\n      \"startedAt\": \"2025-10-23T10:00:00\"\n    }\n  ]\n}"
+              "body": "{\n  \"id\": 1,\n  \"jobId\": 1,\n  \"workflowId\": 1,\n  \"status\": \"ONGOING\",\n  \"workers\": [{\"id\": 1}],\n  \"steps\": [\n    {\"id\": 10, \"name\": \"Inspection\", \"status\": \"STARTED\", \"assignedWorkerId\": 1}\n  ]\n}"
             }
           ]
         },
@@ -3815,18 +3789,46 @@
               "raw": "{{base_url}}/api/v1/job-workflows/1/steps/10",
               "host": ["{{base_url}}"],
               "path": ["api", "v1", "job-workflows", "1", "steps", "10"]
-            },
-            "description": "Update status or assigned worker for a workflow step.\n\n**Authentication:** Required (COMPANY role)\n\n**Path Parameters:**\n- jobId (long)\n- stepId (long)\n\n**Request Body:**\n- status (INITIATED | STARTED | COMPLETED)\n- assignedWorkerId (optional)\n\n**Response:** JobWorkflowStepResponse"
+            }
           },
           "response": [
             {
               "name": "Update Step - Success",
               "status": "OK",
               "code": 200,
-              "header": [
-                { "key": "Content-Type", "value": "application/json" }
-              ],
-              "body": "{\n  \"id\": 10,\n  \"name\": \"Inspection\",\n  \"status\": \"STARTED\",\n  \"startedAt\": \"2025-10-23T11:00:00\"\n}"
+              "body": "{\n  \"id\": 10,\n  \"name\": \"Inspection\",\n  \"status\": \"STARTED\",\n  \"startedAt\": \"2025-10-23T11:00:00\",\n  \"assignedWorkerId\": 1\n}"
+            }
+          ]
+        },
+        {
+          "name": "Assign Worker to All Steps",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{jwt_token}}", "type": "string" }
+              ]
+            },
+            "method": "PUT",
+            "url": {
+              "raw": "{{base_url}}/api/v1/job-workflows/1/assign-a-worker/1",
+              "host": ["{{base_url}}"],
+              "path": [
+                "api",
+                "v1",
+                "job-workflows",
+                "1",
+                "assign-a-worker",
+                "1"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Assign Worker - Success",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"id\": 1,\n  \"jobId\": 1,\n  \"workflowId\": 1,\n  \"status\": \"NOT_STARTED\",\n  \"workers\": [{\"id\": 1}],\n  \"steps\": [\n    {\"id\": 10, \"name\": \"Inspection\", \"status\": \"INITIATED\", \"assignedWorkerId\": 1}\n  ]\n}"
             }
           ]
         },
@@ -3840,23 +3842,18 @@
               ]
             },
             "method": "GET",
-            "header": [],
             "url": {
-              "raw": "{{base_url}}/api/v1/job-workflows/5",
+              "raw": "{{base_url}}/api/v1/job-workflows/1",
               "host": ["{{base_url}}"],
-              "path": ["api", "v1", "job-workflows", "5"]
-            },
-            "description": "Retrieve a job workflow by JobWorkflow ID.\n\n**Authentication:** Required (COMPANY role)\n\n**Path Parameter:**\n- jobWorkflowId (long)"
+              "path": ["api", "v1", "job-workflows", "1"]
+            }
           },
           "response": [
             {
               "name": "Get Job Workflow By ID - Success",
               "status": "OK",
               "code": 200,
-              "header": [
-                { "key": "Content-Type", "value": "application/json" }
-              ],
-              "body": "{\n  \"jobId\": 1,\n  \"workflowId\": 1,\n  \"steps\": []\n}"
+              "body": "{\n  \"id\": 1,\n  \"jobId\": 1,\n  \"workflowId\": 1,\n  \"status\": \"ONGOING\",\n  \"workers\": [{\"id\": 1}],\n  \"steps\": []\n}"
             }
           ]
         },
@@ -3870,22 +3867,17 @@
               ]
             },
             "method": "GET",
-            "header": [],
             "url": {
               "raw": "{{base_url}}/api/v1/job-workflows",
               "host": ["{{base_url}}"],
               "path": ["api", "v1", "job-workflows"]
-            },
-            "description": "Retrieve all job workflows for the authenticated company.\n\n**Authentication:** Required (COMPANY role)"
+            }
           },
           "response": [
             {
               "name": "Get All Job Workflows - Success",
               "status": "OK",
               "code": 200,
-              "header": [
-                { "key": "Content-Type", "value": "application/json" }
-              ],
               "body": "[]"
             }
           ]
@@ -3900,13 +3892,11 @@
               ]
             },
             "method": "DELETE",
-            "header": [],
             "url": {
               "raw": "{{base_url}}/api/v1/job-workflows/job/1",
               "host": ["{{base_url}}"],
               "path": ["api", "v1", "job-workflows", "job", "1"]
-            },
-            "description": "Delete a job workflow by job ID.\n\n**Authentication:** Required (COMPANY role)\n\n**Path Parameter:**\n- jobId (long)\n\n**Business Logic:**\n- Deletes workflow steps first\n- Deletes job workflow\n\n**Response:** 204 No Content"
+            }
           },
           "response": [
             {
@@ -3917,7 +3907,7 @@
           ]
         }
       ],
-      "description": "Job Workflow management endpoints for starting workflows, managing steps, and tracking job progress."
+      "description": "Job Workflow management endpoints including assigning workers to all steps."
     }
   ],
   "event": [

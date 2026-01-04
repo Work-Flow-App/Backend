@@ -2,6 +2,8 @@ package com.workflow.service.workflow;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,6 +35,21 @@ public class JobWorkflowService implements IJobWorkflowService {
         private final WorkflowStepRepository workflowStepRepository;
         private final WorkerRepository workerRepository;
 
+        private void updateJobWorkflowStatus(JobWorkflow jobWorkflow) {
+                List<JobWorkflowStep> steps = jobWorkflowStepRepository
+                                .findByJobWorkflowIdOrderByStep_OrderIndexAsc(jobWorkflow.getId());
+
+                if (steps.stream().allMatch(s -> s.getStatus() == WorkflowStepStatus.COMPLETED)) {
+                        jobWorkflow.setStatus(WorkflowStepStatus.COMPLETED);
+                        jobWorkflow.setCompletedAt(LocalDateTime.now());
+                } else if (steps.stream().anyMatch(s -> s.getStatus() == WorkflowStepStatus.STARTED
+                                || s.getStatus() == WorkflowStepStatus.ONGOING)) {
+                        jobWorkflow.setStatus(WorkflowStepStatus.ONGOING);
+                } else {
+                        jobWorkflow.setStatus(WorkflowStepStatus.NOT_STARTED);
+                }
+        }
+
         @Override
         public JobWorkflowResponse startWorkflow(Job job, Workflow workflow, Long companyId) {
 
@@ -48,6 +65,7 @@ public class JobWorkflowService implements IJobWorkflowService {
                                 JobWorkflow.builder()
                                                 .job(job)
                                                 .workflow(workflow)
+                                                .status(WorkflowStepStatus.INITIATED)
                                                 .build());
 
                 List<WorkflowStep> steps = workflowStepRepository
@@ -94,30 +112,6 @@ public class JobWorkflowService implements IJobWorkflowService {
                                 .orElseThrow(() -> new IllegalStateException("Workflow not started for this job"));
 
                 return buildResponse(jobWorkflow);
-
-                /*
-                 * List<JobWorkflowStepResponse> steps = jobWorkflowStepRepository
-                 * .findByJobWorkflowIdOrderByStep_OrderIndexAsc(jobWorkflow.getId())
-                 * .stream()
-                 * .<JobWorkflowStepResponse>map(s -> JobWorkflowStepResponse.builder()
-                 * .id(s.getId())
-                 * .name(s.getStep().getName())
-                 * .status(s.getStatus())
-                 * .startedAt(s.getStartedAt())
-                 * .completedAt(s.getCompletedAt())
-                 * .assignedWorkerId(
-                 * s.getAssignedWorker() != null
-                 * ? s.getAssignedWorker().getId()
-                 * : null)
-                 * .build())
-                 * .toList();
-                 * 
-                 * return JobWorkflowResponse.builder()
-                 * .jobId(job.getId())
-                 * .workflowId(jobWorkflow.getWorkflow().getId())
-                 * .steps(steps)
-                 * .build();
-                 */
         }
 
         @Override
@@ -129,16 +123,6 @@ public class JobWorkflowService implements IJobWorkflowService {
 
                 JobWorkflowStep step = jobWorkflowStepRepository.findById(stepId)
                                 .orElseThrow(() -> new IllegalStateException("Step not found"));
-
-                Job job = step.getJobWorkflow().getJob();
-
-                if (!job.getId().equals(jobId)) {
-                        throw new IllegalArgumentException("Step does not belong to job");
-                }
-
-                if (!job.getCompany().getId().equals(companyId)) {
-                        throw new IllegalArgumentException("Unauthorized access");
-                }
 
                 if (request.getStatus() != null) {
                         step.setStatus(request.getStatus());
@@ -159,7 +143,10 @@ public class JobWorkflowService implements IJobWorkflowService {
                         }
 
                         step.setAssignedWorker(worker);
+                        step.getJobWorkflow().getWorkers().add(worker);
                 }
+
+                updateJobWorkflowStatus(step.getJobWorkflow());
 
                 return mapStep(step);
         }
@@ -192,29 +179,62 @@ public class JobWorkflowService implements IJobWorkflowService {
                 jobWorkflowRepository.delete(jobWorkflow);
         }
 
-        private JobWorkflowResponse buildResponse(JobWorkflow jw) {
+        @Transactional
+        public JobWorkflowResponse assignAWorkerToAllSteps(Long jobWorkflowId, Long workerId, Long companyId) {
 
+                // 1️⃣ Load JobWorkflow
+                JobWorkflow jobWorkflow = jobWorkflowRepository.findById(jobWorkflowId)
+                                .orElseThrow(() -> new IllegalStateException("Job workflow not found"));
+
+                if (!jobWorkflow.getJob().getCompany().getId().equals(companyId)) {
+                        throw new IllegalArgumentException("Unauthorized access");
+                }
+
+                // 2️⃣ Load Worker
+                Worker worker = workerRepository.findById(workerId)
+                                .orElseThrow(() -> new IllegalStateException("Worker not found"));
+
+                if (!worker.getCompany().getId().equals(companyId)) {
+                        throw new IllegalArgumentException("Worker does not belong to company");
+                }
+
+                // 3️⃣ Assign worker to all steps
+                List<JobWorkflowStep> steps = jobWorkflowStepRepository
+                                .findByJobWorkflowIdOrderByStep_OrderIndexAsc(jobWorkflow.getId());
+
+                for (JobWorkflowStep step : steps) {
+                        step.setAssignedWorker(worker);
+                }
+
+                // 4️⃣ Add worker to JobWorkflow workers set
+                jobWorkflow.getWorkers().add(worker);
+
+                // 5️⃣ Update JobWorkflow status
+                updateJobWorkflowStatus(jobWorkflow);
+
+                // 6️⃣ Save and return mapped DTO
+                jobWorkflowRepository.save(jobWorkflow);
+                return buildResponse(jobWorkflow);
+        }
+
+        private JobWorkflowResponse buildResponse(JobWorkflow jw) {
                 List<JobWorkflowStepResponse> steps = jobWorkflowStepRepository
                                 .findByJobWorkflowIdOrderByStep_OrderIndexAsc(jw.getId())
                                 .stream()
-                                .map(s -> JobWorkflowStepResponse.builder()
-                                                .id(s.getId())
-                                                .name(s.getStep().getName())
-                                                .status(s.getStatus())
-                                                .startedAt(s.getStartedAt())
-                                                .completedAt(s.getCompletedAt())
-                                                .assignedWorkerId(
-                                                                s.getAssignedWorker() != null
-                                                                                ? s.getAssignedWorker().getId()
-                                                                                : null)
-                                                .build())
+                                .map(this::mapStep)
                                 .toList();
+
+                Set<Long> workerIds = jw.getWorkers().stream()
+                                .map(Worker::getId)
+                                .collect(Collectors.toSet());
 
                 return JobWorkflowResponse.builder()
                                 .id(jw.getId())
                                 .jobId(jw.getJob().getId())
                                 .workflowId(jw.getWorkflow().getId())
                                 .steps(steps)
+                                .status(jw.getStatus())
+                                .workerIds(workerIds)
                                 .build();
         }
 

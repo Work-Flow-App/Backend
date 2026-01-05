@@ -8,6 +8,7 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class JobWorkflowStepUpdateRequest {
+    private Long id;
     private WorkflowStepStatus status;
     private Long assignedWorkerId; // optional, can assign worker
 }

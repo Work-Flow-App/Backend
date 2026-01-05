@@ -1,10 +1,13 @@
 package com.workflow.entity;
 
+import com.workflow.common.constant.workflow.WorkflowStepStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "job_workflows")
@@ -31,4 +34,12 @@ public class JobWorkflow {
     private LocalDateTime startedAt;
 
     private LocalDateTime completedAt;
+
+    @Enumerated(EnumType.STRING)
+    private WorkflowStepStatus status;
+
+    @ManyToMany
+    @JoinTable(name = "job_workflow_workers", joinColumns = @JoinColumn(name = "job_workflow_id"), inverseJoinColumns = @JoinColumn(name = "worker_id"))
+    @Builder.Default
+    private Set<Worker> workers = new HashSet<>();
 }

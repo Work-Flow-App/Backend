@@ -7,7 +7,6 @@ import com.workflow.dto.workflow.JobWorkflowStepResponse;
 import com.workflow.dto.workflow.JobWorkflowStepUpdateRequest;
 import com.workflow.dto.workflow.JobWorkflowUpdateRequest;
 import com.workflow.entity.Job;
-import com.workflow.entity.JobWorkflow;
 import com.workflow.entity.Workflow;
 
 public interface IJobWorkflowService {

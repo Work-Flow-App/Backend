@@ -1,6 +1,7 @@
 package com.workflow.dto.workflow;
 
 import java.time.LocalDateTime;
+import java.util.Set;
 
 import com.workflow.common.constant.workflow.WorkflowStepStatus;
 import lombok.*;
@@ -10,6 +11,7 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class JobWorkflowStepResponse {
+
     private Long id;
     private String name;
     private WorkflowStepStatus status;
@@ -17,5 +19,5 @@ public class JobWorkflowStepResponse {
     private LocalDateTime startedAt;
     private LocalDateTime completedAt;
 
-    private Long assignedWorkerId;
+    private Set<Long> assignedWorkerIds;
 }

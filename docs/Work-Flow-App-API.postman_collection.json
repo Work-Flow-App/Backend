@@ -3722,7 +3722,20 @@
               ]
             },
             "method": "POST",
-            "url": "{{base_url}}/api/v1/job-workflows/jobs/1/workflows/1/start"
+            "url": {
+              "raw": "{{base_url}}/api/v1/job-workflows/jobs/1/workflows/1/start",
+              "host": ["{{base_url}}"],
+              "path": [
+                "api",
+                "v1",
+                "job-workflows",
+                "jobs",
+                "1",
+                "workflows",
+                "1",
+                "start"
+              ]
+            }
           },
           "response": [
             {
@@ -3743,7 +3756,11 @@
               ]
             },
             "method": "GET",
-            "url": "{{base_url}}/api/v1/job-workflows/jobs/1"
+            "url": {
+              "raw": "{{base_url}}/api/v1/job-workflows/jobs/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "job-workflows", "jobs", "1"]
+            }
           },
           "response": [
             {
@@ -3769,7 +3786,11 @@
               "mode": "raw",
               "raw": "{\n  \"status\": \"STARTED\",\n  \"assignedWorkerIds\": [1, 3]\n}"
             },
-            "url": "{{base_url}}/api/v1/job-workflows/1/steps/10"
+            "url": {
+              "raw": "{{base_url}}/api/v1/job-workflows/1/steps/10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "job-workflows", "1", "steps", "10"]
+            }
           },
           "response": [
             {
@@ -3816,7 +3837,18 @@
               ]
             },
             "method": "PUT",
-            "url": "{{base_url}}/api/v1/job-workflows/1/assign-a-worker/4"
+            "url": {
+              "raw": "{{base_url}}/api/v1/job-workflows/1/assign-a-worker/1",
+              "host": ["{{base_url}}"],
+              "path": [
+                "api",
+                "v1",
+                "job-workflows",
+                "1",
+                "assign-a-worker",
+                "1"
+              ]
+            }
           },
           "response": [
             {
@@ -3837,7 +3869,11 @@
               ]
             },
             "method": "GET",
-            "url": "{{base_url}}/api/v1/job-workflows/1"
+            "url": {
+              "raw": "{{base_url}}/api/v1/job-workflows/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "job-workflows", "1"]
+            }
           },
           "response": [
             {
@@ -3858,7 +3894,11 @@
               ]
             },
             "method": "GET",
-            "url": "{{base_url}}/api/v1/job-workflows"
+            "url": {
+              "raw": "{{base_url}}/api/v1/job-workflows",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "job-workflows"]
+            }
           },
           "response": [
             {
@@ -3879,7 +3919,11 @@
               ]
             },
             "method": "DELETE",
-            "url": "{{base_url}}/api/v1/job-workflows/job/1"
+            "url": {
+              "raw": "{{base_url}}/api/v1/job-workflows/job/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "job-workflows", "job", "1"]
+            }
           },
           "response": [
             {
@@ -3889,7 +3933,8 @@
             }
           ]
         }
-      ]
+      ],
+      "description": "Job Workflow management endpoints including assigning workers to all steps."
     }
   ],
   "event": [

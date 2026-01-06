@@ -2,7 +2,6 @@ package com.workflow.service.workflow;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -71,11 +70,11 @@ public class JobWorkflowService implements IJobWorkflowService {
          * This is the ONLY place JobWorkflow.workers is mutated.
          */
         private void syncWorkflowWorkers(JobWorkflow jobWorkflow) {
-                Set<Worker> workers = jobWorkflowStepRepository.findByJobWorkflowIdOrderByStep_OrderIndexAsc(
-                                jobWorkflow.getId())
+
+                Set<Worker> workers = jobWorkflowStepRepository
+                                .findByJobWorkflowIdOrderByStep_OrderIndexAsc(jobWorkflow.getId())
                                 .stream()
-                                .map(JobWorkflowStep::getAssignedWorker)
-                                .filter(Objects::nonNull)
+                                .flatMap(step -> step.getAssignedWorkers().stream())
                                 .collect(Collectors.toSet());
 
                 jobWorkflow.getWorkers().clear();
@@ -190,15 +189,21 @@ public class JobWorkflowService implements IJobWorkflowService {
                         }
                 }
 
-                if (request.getAssignedWorkerId() != null) {
-                        Worker worker = workerRepository.findById(request.getAssignedWorkerId())
-                                        .orElseThrow(() -> new IllegalStateException("Worker not found"));
+                if (request.getAssignedWorkerIds() != null) {
+                        Set<Worker> workers = request.getAssignedWorkerIds().stream()
+                                        .map(id -> workerRepository.findById(id)
+                                                        .orElseThrow(() -> new IllegalStateException(
+                                                                        "Worker not found")))
+                                        .peek(w -> {
+                                                if (!w.getCompany().getId().equals(companyId)) {
+                                                        throw new IllegalArgumentException(
+                                                                        "Worker does not belong to company");
+                                                }
+                                        })
+                                        .collect(Collectors.toSet());
 
-                        if (!worker.getCompany().getId().equals(companyId)) {
-                                throw new IllegalArgumentException("Worker does not belong to company");
-                        }
-
-                        step.setAssignedWorker(worker);
+                        step.getAssignedWorkers().clear();
+                        step.getAssignedWorkers().addAll(workers);
                 }
 
                 syncWorkflowWorkers(jobWorkflow);
@@ -230,7 +235,7 @@ public class JobWorkflowService implements IJobWorkflowService {
                         for (JobWorkflowStepUpdateRequest stepUpdate : request.getSteps()) {
                                 JobWorkflowStep step = jobWorkflowStepRepository.findById(stepUpdate.getId())
                                                 .orElseThrow(() -> new IllegalStateException("Step not found"));
-                                                
+
                                 if (!step.getJobWorkflow().getId().equals(jobWorkflowId)) {
                                         throw new IllegalArgumentException("Step does not belong to this workflow");
                                 }
@@ -245,19 +250,23 @@ public class JobWorkflowService implements IJobWorkflowService {
                                         }
                                 }
 
-                                if (stepUpdate.getAssignedWorkerId() != null) {
-                                        Worker worker = workerRepository.findById(stepUpdate.getAssignedWorkerId())
-                                                        .orElseThrow(
-                                                                        () -> new IllegalStateException(
-                                                                                        "Worker not found"));
+                                if (stepUpdate.getAssignedWorkerIds() != null) {
+                                        Set<Worker> workers = stepUpdate.getAssignedWorkerIds().stream()
+                                                        .map(id -> workerRepository.findById(id)
+                                                                        .orElseThrow(() -> new IllegalStateException(
+                                                                                        "Worker not found")))
+                                                        .peek(w -> {
+                                                                if (!w.getCompany().getId().equals(companyId)) {
+                                                                        throw new IllegalArgumentException(
+                                                                                        "Worker does not belong to company");
+                                                                }
+                                                        })
+                                                        .collect(Collectors.toSet());
 
-                                        if (!worker.getCompany().getId().equals(companyId)) {
-                                                throw new IllegalArgumentException(
-                                                                "Worker does not belong to company");
-                                        }
-
-                                        step.setAssignedWorker(worker);
+                                        step.getAssignedWorkers().clear();
+                                        step.getAssignedWorkers().addAll(workers);
                                 }
+
                         }
                 }
 
@@ -295,7 +304,7 @@ public class JobWorkflowService implements IJobWorkflowService {
                                 jobWorkflow.getId());
 
                 for (JobWorkflowStep step : steps) {
-                        step.setAssignedWorker(worker);
+                        step.getAssignedWorkers().add(worker);
                 }
 
                 syncWorkflowWorkers(jobWorkflow);
@@ -337,10 +346,11 @@ public class JobWorkflowService implements IJobWorkflowService {
                                 .status(step.getStatus())
                                 .startedAt(step.getStartedAt())
                                 .completedAt(step.getCompletedAt())
-                                .assignedWorkerId(
-                                                step.getAssignedWorker() != null
-                                                                ? step.getAssignedWorker().getId()
-                                                                : null)
+                                .assignedWorkerIds(
+                                                step.getAssignedWorkers()
+                                                                .stream()
+                                                                .map(Worker::getId)
+                                                                .collect(Collectors.toSet()))
                                 .build();
         }
 

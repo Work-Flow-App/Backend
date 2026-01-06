@@ -5,6 +5,8 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "job_workflow_steps")
@@ -34,7 +36,8 @@ public class JobWorkflowStep {
     private LocalDateTime startedAt;
     private LocalDateTime completedAt;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "assigned_worker_id")
-    private Worker assignedWorker;
+    @ManyToMany
+    @JoinTable(name = "job_workflow_step_workers", joinColumns = @JoinColumn(name = "job_workflow_step_id"), inverseJoinColumns = @JoinColumn(name = "worker_id"))
+    @Builder.Default
+    private Set<Worker> assignedWorkers = new HashSet<>();
 }

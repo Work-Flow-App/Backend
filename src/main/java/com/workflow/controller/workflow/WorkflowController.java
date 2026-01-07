@@ -101,4 +101,15 @@ public class WorkflowController {
         workflowService.deleteStep(stepId, companyId(auth));
     }
 
+    @PutMapping("/{workflowId}/bulk")
+    public ResponseEntity<WorkflowResponse> bulkUpdate(
+            @PathVariable Long workflowId,
+            @RequestBody WorkflowBulkUpdateRequest request,
+            Authentication auth) {
+
+        Long companyId = companyId(auth);
+        return ResponseEntity.ok(
+                workflowService.bulkUpdateWorkflow(workflowId, request, companyId));
+    }
+
 }

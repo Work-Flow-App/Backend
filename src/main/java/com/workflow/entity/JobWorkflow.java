@@ -26,10 +26,6 @@ public class JobWorkflow {
     @JoinColumn(name = "job_id", nullable = false)
     private Job job;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "workflow_id", nullable = false)
-    private Workflow workflow;
-
     @CreationTimestamp
     private LocalDateTime startedAt;
 
@@ -37,9 +33,4 @@ public class JobWorkflow {
 
     @Enumerated(EnumType.STRING)
     private WorkflowStepStatus status;
-
-    @ManyToMany
-    @JoinTable(name = "job_workflow_workers", joinColumns = @JoinColumn(name = "job_workflow_id"), inverseJoinColumns = @JoinColumn(name = "worker_id"))
-    @Builder.Default
-    private Set<Worker> workers = new HashSet<>();
 }

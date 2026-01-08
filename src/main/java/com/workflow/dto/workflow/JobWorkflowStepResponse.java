@@ -14,6 +14,8 @@ public class JobWorkflowStepResponse {
 
     private Long id;
     private String name;
+    private String description;
+    private Integer orderIndex;
     private WorkflowStepStatus status;
 
     private LocalDateTime startedAt;

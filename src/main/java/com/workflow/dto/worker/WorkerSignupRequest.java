@@ -16,15 +16,6 @@ public record WorkerSignupRequest(
         @Size(min = 2, max = 100, message = "Name must be between 2 and 100 characters")
         String name,
 
-        @Size(max = 10, message = "Initials cannot exceed 10 characters")
-        String initials,
-
-        @Size(max = 20, message = "Telephone cannot exceed 20 characters")
-        String telephone,
-
-        @Size(max = 20, message = "Mobile cannot exceed 20 characters")
-        String mobile,
-
         @NotBlank(message = "Username is required")
         @Size(min = 3, max = 20, message = "Username must be between 3 and 20 characters")
         String username,

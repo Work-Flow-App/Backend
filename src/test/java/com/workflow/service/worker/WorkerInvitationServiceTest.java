@@ -275,9 +275,6 @@ class WorkerInvitationServiceTest {
                 TEST_TOKEN,
                 TEST_EMAIL,
                 "John Doe",
-                "JD",
-                "123-456-7890",
-                "987-654-3210",
                 "johndoe",
                 "password123"
         );
@@ -319,9 +316,6 @@ class WorkerInvitationServiceTest {
                 "invalid-token",
                 TEST_EMAIL,
                 "John Doe",
-                null,
-                null,
-                null,
                 "johndoe",
                 "password123"
         );
@@ -347,9 +341,6 @@ class WorkerInvitationServiceTest {
                 expiredInvitation.getInvitationToken(),
                 expiredInvitation.getEmail(),
                 "John Doe",
-                null,
-                null,
-                null,
                 "johndoe",
                 "password123"
         );
@@ -374,11 +365,8 @@ class WorkerInvitationServiceTest {
         WorkerSignupRequest request = new WorkerSignupRequest(
                 usedInvitation.getInvitationToken(),
                 usedInvitation.getEmail(),
-                "John Doe",
-                null,
-                null,
-                null,
-                "johndoe",
+                                "John Doe",
+                                "johndoe",
                 "password123"
         );
 
@@ -402,11 +390,8 @@ class WorkerInvitationServiceTest {
         WorkerSignupRequest request = new WorkerSignupRequest(
                 TEST_TOKEN,
                 "different@example.com",
-                "John Doe",
-                null,
-                null,
-                null,
-                "johndoe",
+                                "John Doe",
+                                "johndoe",
                 "password123"
         );
 
@@ -429,11 +414,8 @@ class WorkerInvitationServiceTest {
         WorkerSignupRequest request = new WorkerSignupRequest(
                 TEST_TOKEN,
                 TEST_EMAIL,
-                "John Doe",
-                null,
-                null,
-                null,
-                "existinguser",
+                                "John Doe",
+                                "existinguser",
                 "password123"
         );
 
@@ -461,11 +443,8 @@ class WorkerInvitationServiceTest {
         WorkerSignupRequest request = new WorkerSignupRequest(
                 TEST_TOKEN,
                 TEST_EMAIL,
-                "John Doe",
-                null,
-                null,
-                null,
-                "johndoe",
+                                "John Doe",
+                                "johndoe",
                 "password123"
         );
 
@@ -488,11 +467,8 @@ class WorkerInvitationServiceTest {
         WorkerSignupRequest request = new WorkerSignupRequest(
                 TEST_TOKEN,
                 TEST_EMAIL,
-                "John Doe",
-                null,
-                null,
-                null,
-                "johndoe",
+                                "John Doe",
+                                "johndoe",
                 "password123"
         );
 
@@ -527,11 +503,8 @@ class WorkerInvitationServiceTest {
         WorkerSignupRequest request = new WorkerSignupRequest(
                 TEST_TOKEN,
                 TEST_EMAIL,
-                "John Doe",
-                null,
-                null,
-                null,
-                "johndoe",
+                                "John Doe",
+                                "johndoe",
                 "password123"
         );
 
@@ -556,6 +529,7 @@ class WorkerInvitationServiceTest {
         verify(userRepository).save(userCaptor.capture());
         User savedUser = userCaptor.getValue();
 
+        assertNotNull(savedUser.getUuid()); // UUID should be generated
         assertEquals("johndoe", savedUser.getUsername());
         assertEquals(TEST_EMAIL, savedUser.getEmail());
         assertEquals("$2a$10$encodedPassword", savedUser.getPassword());
@@ -570,11 +544,8 @@ class WorkerInvitationServiceTest {
         WorkerSignupRequest request = new WorkerSignupRequest(
                 TEST_TOKEN,
                 TEST_EMAIL,
-                "John Doe",
-                "JD",
-                "123-456-7890",
-                "987-654-3210",
-                "johndoe",
+                                "John Doe",
+                                "johndoe",
                 "password123"
         );
 
@@ -600,9 +571,6 @@ class WorkerInvitationServiceTest {
         Worker savedWorker = workerCaptor.getValue();
 
         assertEquals("John Doe", savedWorker.getName());
-        assertEquals("JD", savedWorker.getInitials());
-        assertEquals("123-456-7890", savedWorker.getTelephone());
-        assertEquals("987-654-3210", savedWorker.getMobile());
         assertEquals(TEST_EMAIL, savedWorker.getEmail());
         assertEquals(testCompany, savedWorker.getCompany());
         assertNotNull(savedWorker.getUser());
@@ -723,11 +691,8 @@ class WorkerInvitationServiceTest {
         WorkerSignupRequest request = new WorkerSignupRequest(
                 TEST_TOKEN,
                 "WORKER@EXAMPLE.COM", // Different case
-                "John Doe",
-                null,
-                null,
-                null,
-                "johndoe",
+                                "John Doe",
+                                "johndoe",
                 "password123"
         );
 

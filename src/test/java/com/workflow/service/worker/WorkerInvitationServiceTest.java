@@ -274,12 +274,9 @@ class WorkerInvitationServiceTest {
         WorkerSignupRequest request = new WorkerSignupRequest(
                 TEST_TOKEN,
                 TEST_EMAIL,
-                "John Doe",
-                "JD",
-                "123-456-7890",
-                "987-654-3210",
                 "johndoe",
-                "password123"
+                "password123",
+                "John Doe"
         );
 
         when(invitationRepository.findByInvitationToken(TEST_TOKEN)).thenReturn(Optional.of(validInvitation));
@@ -318,12 +315,9 @@ class WorkerInvitationServiceTest {
         WorkerSignupRequest request = new WorkerSignupRequest(
                 "invalid-token",
                 TEST_EMAIL,
-                "John Doe",
-                null,
-                null,
-                null,
                 "johndoe",
-                "password123"
+                "password123",
+                "John Doe"
         );
 
         when(invitationRepository.findByInvitationToken("invalid-token")).thenReturn(Optional.empty());
@@ -346,12 +340,9 @@ class WorkerInvitationServiceTest {
         WorkerSignupRequest request = new WorkerSignupRequest(
                 expiredInvitation.getInvitationToken(),
                 expiredInvitation.getEmail(),
-                "John Doe",
-                null,
-                null,
-                null,
                 "johndoe",
-                "password123"
+                "password123",
+                "John Doe"
         );
 
         when(invitationRepository.findByInvitationToken(expiredInvitation.getInvitationToken()))
@@ -374,12 +365,9 @@ class WorkerInvitationServiceTest {
         WorkerSignupRequest request = new WorkerSignupRequest(
                 usedInvitation.getInvitationToken(),
                 usedInvitation.getEmail(),
-                "John Doe",
-                null,
-                null,
-                null,
                 "johndoe",
-                "password123"
+                "password123",
+                "John Doe"
         );
 
         when(invitationRepository.findByInvitationToken(usedInvitation.getInvitationToken()))
@@ -402,12 +390,9 @@ class WorkerInvitationServiceTest {
         WorkerSignupRequest request = new WorkerSignupRequest(
                 TEST_TOKEN,
                 "different@example.com",
-                "John Doe",
-                null,
-                null,
-                null,
                 "johndoe",
-                "password123"
+                "password123",
+                "John Doe"
         );
 
         when(invitationRepository.findByInvitationToken(TEST_TOKEN)).thenReturn(Optional.of(validInvitation));
@@ -429,12 +414,9 @@ class WorkerInvitationServiceTest {
         WorkerSignupRequest request = new WorkerSignupRequest(
                 TEST_TOKEN,
                 TEST_EMAIL,
-                "John Doe",
-                null,
-                null,
-                null,
                 "existinguser",
-                "password123"
+                "password123",
+                "John Doe"
         );
 
         User existingUser = User.builder().id(99L).username("existinguser").build();
@@ -461,12 +443,9 @@ class WorkerInvitationServiceTest {
         WorkerSignupRequest request = new WorkerSignupRequest(
                 TEST_TOKEN,
                 TEST_EMAIL,
-                "John Doe",
-                null,
-                null,
-                null,
                 "johndoe",
-                "password123"
+                "password123",
+                "John Doe"
         );
 
         when(invitationRepository.findByInvitationToken(TEST_TOKEN)).thenReturn(Optional.of(validInvitation));
@@ -488,12 +467,9 @@ class WorkerInvitationServiceTest {
         WorkerSignupRequest request = new WorkerSignupRequest(
                 TEST_TOKEN,
                 TEST_EMAIL,
-                "John Doe",
-                null,
-                null,
-                null,
                 "johndoe",
-                "password123"
+                "password123",
+                "John Doe"
         );
 
         when(invitationRepository.findByInvitationToken(TEST_TOKEN)).thenReturn(Optional.of(validInvitation));
@@ -527,12 +503,9 @@ class WorkerInvitationServiceTest {
         WorkerSignupRequest request = new WorkerSignupRequest(
                 TEST_TOKEN,
                 TEST_EMAIL,
-                "John Doe",
-                null,
-                null,
-                null,
                 "johndoe",
-                "password123"
+                "password123",
+                "John Doe"
         );
 
         when(invitationRepository.findByInvitationToken(TEST_TOKEN)).thenReturn(Optional.of(validInvitation));
@@ -556,6 +529,7 @@ class WorkerInvitationServiceTest {
         verify(userRepository).save(userCaptor.capture());
         User savedUser = userCaptor.getValue();
 
+        assertNotNull(savedUser.getUuid()); // UUID should be generated
         assertEquals("johndoe", savedUser.getUsername());
         assertEquals(TEST_EMAIL, savedUser.getEmail());
         assertEquals("$2a$10$encodedPassword", savedUser.getPassword());
@@ -570,12 +544,9 @@ class WorkerInvitationServiceTest {
         WorkerSignupRequest request = new WorkerSignupRequest(
                 TEST_TOKEN,
                 TEST_EMAIL,
-                "John Doe",
-                "JD",
-                "123-456-7890",
-                "987-654-3210",
                 "johndoe",
-                "password123"
+                "password123",
+                "John Doe"
         );
 
         when(invitationRepository.findByInvitationToken(TEST_TOKEN)).thenReturn(Optional.of(validInvitation));
@@ -600,9 +571,6 @@ class WorkerInvitationServiceTest {
         Worker savedWorker = workerCaptor.getValue();
 
         assertEquals("John Doe", savedWorker.getName());
-        assertEquals("JD", savedWorker.getInitials());
-        assertEquals("123-456-7890", savedWorker.getTelephone());
-        assertEquals("987-654-3210", savedWorker.getMobile());
         assertEquals(TEST_EMAIL, savedWorker.getEmail());
         assertEquals(testCompany, savedWorker.getCompany());
         assertNotNull(savedWorker.getUser());
@@ -723,12 +691,9 @@ class WorkerInvitationServiceTest {
         WorkerSignupRequest request = new WorkerSignupRequest(
                 TEST_TOKEN,
                 "WORKER@EXAMPLE.COM", // Different case
-                "John Doe",
-                null,
-                null,
-                null,
                 "johndoe",
-                "password123"
+                "password123",
+                "John Doe"
         );
 
         when(invitationRepository.findByInvitationToken(TEST_TOKEN)).thenReturn(Optional.of(validInvitation));

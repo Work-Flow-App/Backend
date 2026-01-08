@@ -145,6 +145,7 @@ public class WorkerInvitationService {
 
         // Create User account with WORKER role
         User user = User.builder()
+                .uuid(UUID.randomUUID().toString())
                 .username(request.username())
                 .email(request.email())
                 .password(passwordEncoder.encode(request.password()))
@@ -156,9 +157,6 @@ public class WorkerInvitationService {
         // Create Worker entity linked to company
         Worker worker = Worker.builder()
                 .name(request.name())
-                .initials(request.initials())
-                .telephone(request.telephone())
-                .mobile(request.mobile())
                 .email(request.email())
                 .company(company)
                 .user(user)

@@ -25,9 +25,11 @@ public class JobWorkflowStep {
     @JoinColumn(name = "job_workflow_id", nullable = false)
     private JobWorkflow jobWorkflow;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "workflow_step_id", nullable = false)
-    private WorkflowStep step;
+    private String name;
+    private String description;
+
+    @Column(nullable = false)
+    private Integer orderIndex;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

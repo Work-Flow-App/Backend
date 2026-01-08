@@ -3416,31 +3416,23 @@
     },
     {
       "name": "Workflows",
+      "description": "Workflow and workflow step management endpoints.",
       "item": [
         {
           "name": "Create Workflow",
           "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                { "key": "token", "value": "{{jwt_token}}", "type": "string" }
-              ]
-            },
+            "auth": { "type": "bearer" },
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"name\": \"Repair Workflow\",\n  \"description\": \"Standard repair process\"\n}"
             },
-            "url": {
-              "raw": "{{base_url}}/api/v1/workflows",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "workflows"]
-            }
+            "url": "{{base_url}}/api/v1/workflows"
           },
           "response": [
             {
-              "name": "Create Workflow - Success",
+              "name": "201 Created",
               "status": "Created",
               "code": 201,
               "body": "{\n  \"id\": 1,\n  \"companyId\": 1,\n  \"name\": \"Repair Workflow\",\n  \"description\": \"Standard repair process\"\n}"
@@ -3450,27 +3442,18 @@
         {
           "name": "Update Workflow",
           "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                { "key": "token", "value": "{{jwt_token}}", "type": "string" }
-              ]
-            },
+            "auth": { "type": "bearer" },
             "method": "PUT",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"name\": \"Updated Workflow\",\n  \"description\": \"Updated description\"\n}"
             },
-            "url": {
-              "raw": "{{base_url}}/api/v1/workflows/1",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "workflows", "1"]
-            }
+            "url": "{{base_url}}/api/v1/workflows/1"
           },
           "response": [
             {
-              "name": "Update Workflow - Success",
+              "name": "200 OK",
               "status": "OK",
               "code": 200,
               "body": "{\n  \"id\": 1,\n  \"companyId\": 1,\n  \"name\": \"Updated Workflow\",\n  \"description\": \"Updated description\"\n}"
@@ -3480,22 +3463,13 @@
         {
           "name": "Delete Workflow",
           "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                { "key": "token", "value": "{{jwt_token}}", "type": "string" }
-              ]
-            },
+            "auth": { "type": "bearer" },
             "method": "DELETE",
-            "url": {
-              "raw": "{{base_url}}/api/v1/workflows/1",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "workflows", "1"]
-            }
+            "url": "{{base_url}}/api/v1/workflows/1"
           },
           "response": [
             {
-              "name": "Delete Workflow - Success",
+              "name": "204 No Content",
               "status": "No Content",
               "code": 204
             }
@@ -3504,47 +3478,29 @@
         {
           "name": "Get All Workflows",
           "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                { "key": "token", "value": "{{jwt_token}}", "type": "string" }
-              ]
-            },
+            "auth": { "type": "bearer" },
             "method": "GET",
-            "url": {
-              "raw": "{{base_url}}/api/v1/workflows",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "workflows"]
-            }
+            "url": "{{base_url}}/api/v1/workflows"
           },
           "response": [
             {
-              "name": "Get All Workflows - Success",
+              "name": "200 OK",
               "status": "OK",
               "code": 200,
-              "body": "[]"
+              "body": "[{\n  \"id\": 1,\n  \"companyId\": 1,\n  \"name\": \"Repair Workflow\",\n  \"description\": \"Standard repair process\"\n}]"
             }
           ]
         },
         {
           "name": "Get Workflow by ID",
           "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                { "key": "token", "value": "{{jwt_token}}", "type": "string" }
-              ]
-            },
+            "auth": { "type": "bearer" },
             "method": "GET",
-            "url": {
-              "raw": "{{base_url}}/api/v1/workflows/1",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "workflows", "1"]
-            }
+            "url": "{{base_url}}/api/v1/workflows/1"
           },
           "response": [
             {
-              "name": "Get Workflow - Success",
+              "name": "200 OK",
               "status": "OK",
               "code": 200,
               "body": "{\n  \"id\": 1,\n  \"companyId\": 1,\n  \"name\": \"Repair Workflow\",\n  \"description\": \"Standard repair process\"\n}"
@@ -3554,163 +3510,102 @@
         {
           "name": "Create Workflow Step",
           "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                { "key": "token", "value": "{{jwt_token}}", "type": "string" }
-              ]
-            },
+            "auth": { "type": "bearer" },
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"workflowId\": 1,\n  \"name\": \"Inspection\",\n  \"orderIndex\": 1\n}"
+              "raw": "{\n  \"workflowId\": 1,\n  \"name\": \"Inspection\",\n  \"description\": \"Initial inspection\",\n  \"orderIndex\": 1,\n  \"optional\": false\n}"
             },
-            "url": {
-              "raw": "{{base_url}}/api/v1/workflows/steps",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "workflows", "steps"]
-            }
+            "url": "{{base_url}}/api/v1/workflows/steps"
           },
           "response": [
             {
-              "name": "Create Step - Success",
+              "name": "200 OK",
               "status": "OK",
               "code": 200,
-              "body": "{\n  \"id\": 10,\n  \"workflowId\": 1,\n  \"name\": \"Inspection\",\n  \"orderIndex\": 1,\n  \"optional\": false\n}"
+              "body": "{\n  \"id\": 10,\n  \"workflowId\": 1,\n  \"name\": \"Inspection\",\n  \"description\": \"Initial inspection\",\n  \"orderIndex\": 1,\n  \"optional\": false\n}"
             }
           ]
         },
         {
           "name": "Get Steps by Workflow",
           "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                { "key": "token", "value": "{{jwt_token}}", "type": "string" }
-              ]
-            },
+            "auth": { "type": "bearer" },
             "method": "GET",
-            "url": {
-              "raw": "{{base_url}}/api/v1/workflows/1/steps",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "workflows", "1", "steps"]
-            }
+            "url": "{{base_url}}/api/v1/workflows/1/steps"
           },
           "response": [
             {
-              "name": "Get Workflow Steps - Success",
+              "name": "200 OK",
               "status": "OK",
               "code": 200,
-              "body": "[]"
-            }
-          ]
-        },
-        {
-          "name": "Get Workflow Step by ID",
-          "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                { "key": "token", "value": "{{jwt_token}}", "type": "string" }
-              ]
-            },
-            "method": "GET",
-            "url": {
-              "raw": "{{base_url}}/api/v1/workflows/steps/10",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "workflows", "steps", "10"]
-            }
-          },
-          "response": [
-            {
-              "name": "Get Step - Success",
-              "status": "OK",
-              "code": 200,
-              "body": "{\n  \"id\": 10,\n  \"workflowId\": 1,\n  \"name\": \"Inspection\",\n  \"orderIndex\": 1,\n  \"optional\": false\n}"
-            }
-          ]
-        },
-        {
-          "name": "Get All Workflow Steps",
-          "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                { "key": "token", "value": "{{jwt_token}}", "type": "string" }
-              ]
-            },
-            "method": "GET",
-            "url": {
-              "raw": "{{base_url}}/api/v1/workflows/steps",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "workflows", "steps"]
-            }
-          },
-          "response": [
-            {
-              "name": "Get All Steps - Success",
-              "status": "OK",
-              "code": 200,
-              "body": "[]"
+              "body": "[{\n  \"id\": 10,\n  \"workflowId\": 1,\n  \"name\": \"Inspection\",\n  \"description\": \"Initial inspection\",\n  \"orderIndex\": 1,\n  \"optional\": false\n}]"
             }
           ]
         },
         {
           "name": "Update Workflow Step",
           "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                { "key": "token", "value": "{{jwt_token}}", "type": "string" }
-              ]
-            },
+            "auth": { "type": "bearer" },
             "method": "PUT",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"workflowId\": 1,\n  \"name\": \"Updated Step\",\n  \"orderIndex\": 2,\n  \"optional\": false\n}"
+              "raw": "{\n  \"workflowId\": 1,\n  \"name\": \"Updated Inspection\",\n  \"description\": \"Updated desc\",\n  \"orderIndex\": 2,\n  \"optional\": true\n}"
             },
-            "url": {
-              "raw": "{{base_url}}/api/v1/workflows/steps/10",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "workflows", "steps", "10"]
-            }
+            "url": "{{base_url}}/api/v1/workflows/steps/10"
           },
           "response": [
-            { "name": "Update Step - Success", "status": "OK", "code": 200 }
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"id\": 10,\n  \"workflowId\": 1,\n  \"name\": \"Updated Inspection\",\n  \"description\": \"Updated desc\",\n  \"orderIndex\": 2,\n  \"optional\": true\n}"
+            }
           ]
         },
         {
           "name": "Delete Workflow Step",
           "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                { "key": "token", "value": "{{jwt_token}}", "type": "string" }
-              ]
-            },
+            "auth": { "type": "bearer" },
             "method": "DELETE",
-            "url": {
-              "raw": "{{base_url}}/api/v1/workflows/steps/10",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "workflows", "steps", "10"]
-            }
+            "url": "{{base_url}}/api/v1/workflows/steps/10"
           },
           "response": [
             {
-              "name": "Delete Step - Success",
+              "name": "204 No Content",
               "status": "No Content",
               "code": 204
             }
           ]
+        },
+        {
+          "name": "Bulk Update Workflow",
+          "request": {
+            "auth": { "type": "bearer" },
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Repair Workflow v2\",\n  \"description\": \"Updated bulk workflow\",\n  \"steps\": [\n    {\n      \"id\": 10,\n      \"name\": \"Inspection\",\n      \"description\": \"Updated\",\n      \"orderIndex\": 1,\n      \"optional\": false\n    },\n    {\n      \"name\": \"Final Check\",\n      \"description\": \"New step\",\n      \"orderIndex\": 2,\n      \"optional\": true\n    }\n  ]\n}"
+            },
+            "url": "{{base_url}}/api/v1/workflows/1/bulk"
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"id\": 1,\n  \"companyId\": 1,\n  \"name\": \"Repair Workflow v2\",\n  \"description\": \"Updated bulk workflow\"\n}"
+            }
+          ]
         }
-      ],
-      "description": "Workflow and workflow step management endpoints."
+      ]
     },
     {
       "name": "Job Workflows",
-      "description": "Job Workflow management endpoints including multi-worker step assignments.",
+      "description": "Job workflow execution, step updates, reordering, and worker assignment.",
       "item": [
         {
           "name": "Start Job Workflow",
@@ -3723,7 +3618,7 @@
             },
             "method": "POST",
             "url": {
-              "raw": "{{base_url}}/api/v1/job-workflows/jobs/1/workflows/1/start",
+              "raw": "{{base_url}}/api/v1/job-workflows/jobs/1/workflows/2/start",
               "host": ["{{base_url}}"],
               "path": [
                 "api",
@@ -3732,17 +3627,17 @@
                 "jobs",
                 "1",
                 "workflows",
-                "1",
+                "2",
                 "start"
               ]
             }
           },
           "response": [
             {
-              "name": "Start Workflow - Success",
+              "name": "Start Workflow - Created",
               "status": "Created",
               "code": 201,
-              "body": "{\n  \"id\": 1,\n  \"jobId\": 1,\n  \"workflowId\": 1,\n  \"status\": \"INITIATED\",\n  \"workerIds\": [],\n  \"steps\": [\n    {\n      \"id\": 10,\n      \"name\": \"Inspection\",\n      \"status\": \"INITIATED\",\n      \"assignedWorkerIds\": []\n    }\n  ]\n}"
+              "body": "{\n  \"id\": 10,\n  \"jobId\": 1,\n  \"status\": \"NOT_STARTED\",\n  \"steps\": [\n    {\n      \"id\": 101,\n      \"name\": \"Inspection\",\n      \"description\": \"Initial inspection\",\n      \"orderIndex\": 1,\n      \"status\": \"NOT_STARTED\",\n      \"startedAt\": null,\n      \"completedAt\": null,\n      \"assignedWorkerIds\": []\n    }\n  ]\n}"
             }
           ]
         },
@@ -3767,100 +3662,12 @@
               "name": "Get Job Workflow - Success",
               "status": "OK",
               "code": 200,
-              "body": "{\n  \"id\": 1,\n  \"jobId\": 1,\n  \"workflowId\": 1,\n  \"status\": \"ONGOING\",\n  \"workerIds\": [1, 2],\n  \"steps\": [\n    {\n      \"id\": 10,\n      \"name\": \"Inspection\",\n      \"status\": \"STARTED\",\n      \"startedAt\": \"2026-01-04T10:00:00\",\n      \"assignedWorkerIds\": [1, 2]\n    }\n  ]\n}"
+              "body": "{\n  \"id\": 10,\n  \"jobId\": 1,\n  \"status\": \"ONGOING\",\n  \"steps\": [\n    {\n      \"id\": 101,\n      \"name\": \"Inspection\",\n      \"description\": \"Initial inspection\",\n      \"orderIndex\": 1,\n      \"status\": \"STARTED\",\n      \"startedAt\": \"2026-01-07T10:00:00\",\n      \"completedAt\": null,\n      \"assignedWorkerIds\": [5]\n    }\n  ]\n}"
             }
           ]
         },
         {
-          "name": "Update Job Workflow Step",
-          "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                { "key": "token", "value": "{{jwt_token}}", "type": "string" }
-              ]
-            },
-            "method": "PUT",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"status\": \"STARTED\",\n  \"assignedWorkerIds\": [1, 3]\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/api/v1/job-workflows/1/steps/10",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "job-workflows", "1", "steps", "10"]
-            }
-          },
-          "response": [
-            {
-              "name": "Update Step - Success",
-              "status": "OK",
-              "code": 200,
-              "body": "{\n  \"id\": 10,\n  \"name\": \"Inspection\",\n  \"status\": \"STARTED\",\n  \"startedAt\": \"2026-01-04T11:00:00\",\n  \"assignedWorkerIds\": [1, 3]\n}"
-            }
-          ]
-        },
-        {
-          "name": "Update Job Workflow (Bulk)",
-          "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                { "key": "token", "value": "{{jwt_token}}", "type": "string" }
-              ]
-            },
-            "method": "PUT",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"steps\": [\n    {\"id\": 10, \"status\": \"COMPLETED\", \"assignedWorkerIds\": [1,2]},\n    {\"id\": 11, \"status\": \"STARTED\", \"assignedWorkerIds\": [3]}\n  ]\n}"
-            },
-            "url": "{{base_url}}/api/v1/job-workflows/1"
-          },
-          "response": [
-            {
-              "name": "Update Workflow - Success",
-              "status": "OK",
-              "code": 200,
-              "body": "{\n  \"id\": 1,\n  \"jobId\": 1,\n  \"workflowId\": 1,\n  \"status\": \"ONGOING\",\n  \"workerIds\": [1,2,3],\n  \"steps\": [\n    {\n      \"id\": 10,\n      \"name\": \"Inspection\",\n      \"status\": \"COMPLETED\",\n      \"completedAt\": \"2026-01-04T12:00:00\",\n      \"assignedWorkerIds\": [1,2]\n    },\n    {\n      \"id\": 11,\n      \"name\": \"Repair Work\",\n      \"status\": \"STARTED\",\n      \"startedAt\": \"2026-01-04T12:10:00\",\n      \"assignedWorkerIds\": [3]\n    }\n  ]\n}"
-            }
-          ]
-        },
-        {
-          "name": "Assign Worker to All Steps",
-          "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                { "key": "token", "value": "{{jwt_token}}", "type": "string" }
-              ]
-            },
-            "method": "PUT",
-            "url": {
-              "raw": "{{base_url}}/api/v1/job-workflows/1/assign-a-worker/1",
-              "host": ["{{base_url}}"],
-              "path": [
-                "api",
-                "v1",
-                "job-workflows",
-                "1",
-                "assign-a-worker",
-                "1"
-              ]
-            }
-          },
-          "response": [
-            {
-              "name": "Assign Worker - Success",
-              "status": "OK",
-              "code": 200,
-              "body": "{\n  \"id\": 1,\n  \"jobId\": 1,\n  \"workflowId\": 1,\n  \"status\": \"ONGOING\",\n  \"workerIds\": [1,2,3,4],\n  \"steps\": [\n    {\n      \"id\": 10,\n      \"name\": \"Inspection\",\n      \"status\": \"ONGOING\",\n      \"assignedWorkerIds\": [1,2,4]\n    }\n  ]\n}"
-            }
-          ]
-        },
-        {
-          "name": "Get Job Workflow by Workflow ID",
+          "name": "Get Job Workflow by ID",
           "request": {
             "auth": {
               "type": "bearer",
@@ -3870,9 +3677,9 @@
             },
             "method": "GET",
             "url": {
-              "raw": "{{base_url}}/api/v1/job-workflows/1",
+              "raw": "{{base_url}}/api/v1/job-workflows/10",
               "host": ["{{base_url}}"],
-              "path": ["api", "v1", "job-workflows", "1"]
+              "path": ["api", "v1", "job-workflows", "10"]
             }
           },
           "response": [
@@ -3880,7 +3687,7 @@
               "name": "Get Job Workflow By ID - Success",
               "status": "OK",
               "code": 200,
-              "body": "{\n  \"id\": 1,\n  \"jobId\": 1,\n  \"workflowId\": 1,\n  \"status\": \"ONGOING\",\n  \"workerIds\": [1,2,3,4],\n  \"steps\": []\n}"
+              "body": "{\n  \"id\": 10,\n  \"jobId\": 1,\n  \"status\": \"ONGOING\",\n  \"steps\": []\n}"
             }
           ]
         },
@@ -3905,7 +3712,99 @@
               "name": "Get All Job Workflows - Success",
               "status": "OK",
               "code": 200,
-              "body": "[]"
+              "body": "[{\n  \"id\": 10,\n  \"jobId\": 1,\n  \"status\": \"NOT_STARTED\",\n  \"steps\": []\n}]"
+            }
+          ]
+        },
+        {
+          "name": "Update Job Workflow (Bulk)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{jwt_token}}", "type": "string" }
+              ]
+            },
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"steps\": [\n    {\"id\": 101, \"name\": \"Inspection\", \"orderIndex\": 2},\n    {\"name\": \"Repair\", \"orderIndex\": 1}\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/job-workflows/10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "job-workflows", "10"]
+            }
+          },
+          "response": [
+            {
+              "name": "Bulk Update - Success",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"id\": 10,\n  \"jobId\": 1,\n  \"status\": \"NOT_STARTED\",\n  \"steps\": [\n    {\n      \"id\": 102,\n      \"name\": \"Repair\",\n      \"description\": null,\n      \"orderIndex\": 1,\n      \"status\": \"NOT_STARTED\",\n      \"startedAt\": null,\n      \"completedAt\": null,\n      \"assignedWorkerIds\": []\n    },\n    {\n      \"id\": 101,\n      \"name\": \"Inspection\",\n      \"description\": \"Initial inspection\",\n      \"orderIndex\": 2,\n      \"status\": \"NOT_STARTED\",\n      \"startedAt\": null,\n      \"completedAt\": null,\n      \"assignedWorkerIds\": []\n    }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "Update Job Workflow Step",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{jwt_token}}", "type": "string" }
+              ]
+            },
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"COMPLETED\",\n  \"orderIndex\": 1,\n  \"assignedWorkerIds\": [5,6]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/job-workflows/1/steps/101",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "job-workflows", "1", "steps", "101"]
+            }
+          },
+          "response": [
+            {
+              "name": "Update Step - Success",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"id\": 101,\n  \"name\": \"Inspection\",\n  \"description\": \"Initial inspection\",\n  \"orderIndex\": 1,\n  \"status\": \"COMPLETED\",\n  \"startedAt\": \"2026-01-07T10:00:00\",\n  \"completedAt\": \"2026-01-07T11:00:00\",\n  \"assignedWorkerIds\": [5,6]\n}"
+            }
+          ]
+        },
+        {
+          "name": "Assign Worker to All Steps",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{jwt_token}}", "type": "string" }
+              ]
+            },
+            "method": "PUT",
+            "url": {
+              "raw": "{{base_url}}/api/v1/job-workflows/10/assign-a-worker/7",
+              "host": ["{{base_url}}"],
+              "path": [
+                "api",
+                "v1",
+                "job-workflows",
+                "10",
+                "assign-a-worker",
+                "7"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Assign Worker - Success",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"id\": 10,\n  \"jobId\": 1,\n  \"status\": \"ONGOING\",\n  \"steps\": [\n    {\n      \"id\": 101,\n      \"name\": \"Inspection\",\n      \"description\": \"Initial inspection\",\n      \"orderIndex\": 1,\n      \"status\": \"STARTED\",\n      \"startedAt\": \"2026-01-07T10:00:00\",\n      \"completedAt\": null,\n      \"assignedWorkerIds\": [5,7]\n    }\n  ]\n}"
             }
           ]
         },
@@ -3933,8 +3832,7 @@
             }
           ]
         }
-      ],
-      "description": "Job Workflow management endpoints including assigning workers to all steps."
+      ]
     }
   ],
   "event": [

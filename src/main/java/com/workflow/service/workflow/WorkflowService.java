@@ -1,14 +1,28 @@
 package com.workflow.service.workflow;
 
-import com.workflow.dto.workflow.*;
-import com.workflow.entity.*;
-import com.workflow.repository.*;
-import lombok.RequiredArgsConstructor;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.stream.Collectors;
+import com.workflow.dto.workflow.WorkflowBulkUpdateRequest;
+import com.workflow.dto.workflow.WorkflowCreateRequest;
+import com.workflow.dto.workflow.WorkflowResponse;
+import com.workflow.dto.workflow.WorkflowStepBulkRequest;
+import com.workflow.dto.workflow.WorkflowStepCreateRequest;
+import com.workflow.dto.workflow.WorkflowStepResponse;
+import com.workflow.entity.Company;
+import com.workflow.entity.Workflow;
+import com.workflow.entity.WorkflowStep;
+import com.workflow.repository.CompanyRepository;
+import com.workflow.repository.WorkflowRepository;
+import com.workflow.repository.WorkflowStepRepository;
+
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -89,11 +103,18 @@ public class WorkflowService implements IWorkflowService {
 
     @Override
     public List<WorkflowStepResponse> getSteps(Long workflowId, Long companyId) {
-        return stepRepository.findByWorkflowIdOrderByOrderIndexAsc(workflowId)
-                .stream().map(this::map).collect(Collectors.toList());
+
+        Workflow workflow = workflowRepository.findById(workflowId)
+                .filter(w -> w.getCompany().getId().equals(companyId))
+                .orElseThrow(() -> new IllegalArgumentException("Unauthorized access"));
+
+        return stepRepository.findByWorkflowIdOrderByOrderIndexAsc(workflow.getId())
+                .stream()
+                .map(this::map)
+                .collect(Collectors.toList());
     }
 
-    @Transactional
+    @Override
     public WorkflowStepResponse updateStep(Long stepId, WorkflowStepCreateRequest request, Long companyId) {
         WorkflowStep step = stepRepository.findById(stepId)
                 .filter(s -> s.getWorkflow().getCompany().getId().equals(companyId))
@@ -125,12 +146,78 @@ public class WorkflowService implements IWorkflowService {
                 .collect(Collectors.toList());
     }
 
-    @Transactional
+    @Override
     public void deleteStep(Long stepId, Long companyId) {
         WorkflowStep step = stepRepository.findById(stepId)
                 .filter(s -> s.getWorkflow().getCompany().getId().equals(companyId))
                 .orElseThrow(() -> new IllegalStateException("Step not found"));
         stepRepository.delete(step);
+    }
+
+    @Override
+    public WorkflowResponse bulkUpdateWorkflow(
+            Long workflowId,
+            WorkflowBulkUpdateRequest request,
+            Long companyId) {
+
+        Workflow workflow = workflowRepository.findById(workflowId)
+                .filter(w -> w.getCompany().getId().equals(companyId))
+                .orElseThrow(() -> new IllegalStateException("Workflow not found"));
+
+        // 1️⃣ Update workflow fields
+        if (request.getName() != null) {
+            workflow.setName(request.getName());
+        }
+        if (request.getDescription() != null) {
+            workflow.setDescription(request.getDescription());
+        }
+
+        // 2️⃣ Handle steps
+        List<WorkflowStep> existingSteps = stepRepository.findByWorkflowIdOrderByOrderIndexAsc(workflowId);
+
+        Map<Long, WorkflowStep> existingMap = existingSteps.stream()
+                .collect(Collectors.toMap(WorkflowStep::getId, s -> s));
+
+        Set<Long> incomingIds = new HashSet<>();
+
+        for (WorkflowStepBulkRequest stepReq : request.getSteps()) {
+
+            // 🔹 UPDATE
+            if (stepReq.getId() != null) {
+                WorkflowStep step = existingMap.get(stepReq.getId());
+                if (step == null) {
+                    throw new IllegalStateException("Invalid step id " + stepReq.getId());
+                }
+
+                step.setName(stepReq.getName());
+                step.setDescription(stepReq.getDescription());
+                step.setOrderIndex(stepReq.getOrderIndex());
+                step.setOptional(stepReq.isOptional());
+
+                incomingIds.add(step.getId());
+            }
+
+            // 🔹 CREATE
+            else {
+                stepRepository.save(
+                        WorkflowStep.builder()
+                                .workflow(workflow)
+                                .name(stepReq.getName())
+                                .description(stepReq.getDescription())
+                                .orderIndex(stepReq.getOrderIndex())
+                                .optional(stepReq.isOptional())
+                                .build());
+            }
+        }
+
+        // 3️⃣ DELETE removed steps
+        for (WorkflowStep step : existingSteps) {
+            if (!incomingIds.contains(step.getId())) {
+                stepRepository.delete(step);
+            }
+        }
+
+        return map(workflow);
     }
 
     private WorkflowResponse map(Workflow w) {

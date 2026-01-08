@@ -9,27 +9,24 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class JobWorkflowStepUpdateRequest {
-
-    /**
-     * Existing JobWorkflowStep ID (required)
-     */
-    private Long id;
+public class JobWorkflowStepCreateRequest {
 
     private String name;
     private String description;
 
     /**
-     * Change order to reorder steps
+     * Position of the step in the job workflow
      */
     private Integer orderIndex;
 
+    /**
+     * Optional initial status.
+     * Defaults to NOT_STARTED if null.
+     */
     private WorkflowStepStatus status;
 
     /**
-     * Replace assigned workers.
-     * null → do not change
-     * empty set → remove all workers
+     * Workers assigned to this step
      */
     private Set<Long> assignedWorkerIds;
 }

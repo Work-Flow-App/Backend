@@ -28,4 +28,9 @@ public interface IWorkflowService {
 
     void deleteStep(Long stepId, Long companyId);
 
+    WorkflowResponse bulkUpdateWorkflow(
+            Long workflowId,
+            WorkflowBulkUpdateRequest request,
+            Long companyId);
+
 }

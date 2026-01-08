@@ -88,6 +88,7 @@ jobs:
              MAIL_PASSWORD=${{ secrets.MAIL_PASSWORD }}
              MAIL_FROM=${{ secrets.MAIL_FROM }}
              MAIL_FROM_NAME=${{ secrets.MAIL_FROM_NAME }}
+             WORKER_INVITATION_FRONTEND_URL=${{ secrets.WORKER_INVITATION_FRONTEND_URL }}
              SPRING_PROFILES_ACTIVE=dev
              HIBERNATE_DDL_AUTO=create-drop
              FLYWAY_ENABLED=false

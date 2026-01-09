@@ -15,6 +15,7 @@ import com.workflow.dto.workflow.WorkflowResponse;
 import com.workflow.dto.workflow.WorkflowStepBulkRequest;
 import com.workflow.dto.workflow.WorkflowStepCreateRequest;
 import com.workflow.dto.workflow.WorkflowStepResponse;
+import com.workflow.dto.workflow.WorkflowWithStepsResponse;
 import com.workflow.entity.Company;
 import com.workflow.entity.Workflow;
 import com.workflow.entity.WorkflowStep;
@@ -220,6 +221,28 @@ public class WorkflowService implements IWorkflowService {
         return map(workflow);
     }
 
+    @Override
+    public WorkflowWithStepsResponse getWorkflowWithSteps(Long workflowId, Long companyId) {
+
+        Workflow workflow = workflowRepository.findById(workflowId)
+                .filter(w -> w.getCompany().getId().equals(companyId))
+                .orElseThrow(() -> new IllegalStateException("Workflow not found"));
+
+        List<WorkflowStepResponse> steps = stepRepository
+                .findByWorkflowIdOrderByOrderIndexAsc(workflowId)
+                .stream()
+                .map(this::map)
+                .toList();
+
+        return WorkflowWithStepsResponse.builder()
+                .id(workflow.getId())
+                .companyId(workflow.getCompany().getId())
+                .name(workflow.getName())
+                .description(workflow.getDescription())
+                .steps(steps)
+                .build();
+    }
+
     private WorkflowResponse map(Workflow w) {
         return WorkflowResponse.builder()
                 .id(w.getId())
@@ -239,4 +262,5 @@ public class WorkflowService implements IWorkflowService {
                 .optional(s.isOptional())
                 .build();
     }
+
 }

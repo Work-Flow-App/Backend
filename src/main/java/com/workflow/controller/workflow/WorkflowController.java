@@ -112,4 +112,12 @@ public class WorkflowController {
                 workflowService.bulkUpdateWorkflow(workflowId, request, companyId));
     }
 
+    @GetMapping("/{workflowId}/with-steps")
+    public WorkflowWithStepsResponse getWorkflowWithSteps(
+            @PathVariable Long workflowId,
+            Authentication auth) {
+
+        return workflowService.getWorkflowWithSteps(workflowId, companyId(auth));
+    }
+
 }

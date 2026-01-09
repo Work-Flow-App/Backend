@@ -33,4 +33,6 @@ public interface IWorkflowService {
             WorkflowBulkUpdateRequest request,
             Long companyId);
 
+    WorkflowWithStepsResponse getWorkflowWithSteps(Long workflowId, Long companyId);
+
 }

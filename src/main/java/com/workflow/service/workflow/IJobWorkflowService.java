@@ -3,12 +3,10 @@ package com.workflow.service.workflow;
 import java.util.List;
 
 import com.workflow.dto.workflow.JobWorkflowResponse;
-import com.workflow.dto.workflow.JobWorkflowStepCreateRequest;
 import com.workflow.dto.workflow.JobWorkflowStepResponse;
 import com.workflow.dto.workflow.JobWorkflowStepUpdateRequest;
 import com.workflow.dto.workflow.JobWorkflowUpdateRequest;
 import com.workflow.entity.Job;
-import com.workflow.entity.JobWorkflowStep;
 import com.workflow.entity.Workflow;
 
 public interface IJobWorkflowService {

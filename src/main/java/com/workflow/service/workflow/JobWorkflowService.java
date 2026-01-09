@@ -12,7 +12,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.workflow.common.constant.workflow.WorkflowStepStatus;
 import com.workflow.dto.workflow.JobWorkflowResponse;
-import com.workflow.dto.workflow.JobWorkflowStepCreateRequest;
 import com.workflow.dto.workflow.JobWorkflowStepResponse;
 import com.workflow.dto.workflow.JobWorkflowStepUpdateRequest;
 import com.workflow.dto.workflow.JobWorkflowUpdateRequest;
@@ -290,44 +289,131 @@ public class JobWorkflowService implements IJobWorkflowService {
 
                 Set<Long> incomingIds = new HashSet<>();
 
-                // CREATE / UPDATE
-                for (JobWorkflowStepUpdateRequest sr : request.getSteps()) {
+                // ============================
+                // CREATE / UPDATE STEPS
+                // ============================
+                if (request.getSteps() != null) {
+                        for (JobWorkflowStepUpdateRequest sr : request.getSteps()) {
 
-                        if (sr.getId() != null) {
+                                WorkflowStepStatus status = sr.getStatus() != null ? sr.getStatus()
+                                                : WorkflowStepStatus.NOT_STARTED;
 
-                                JobWorkflowStep step = existingMap.get(sr.getId());
-                                if (step == null) {
-                                        throw new IllegalStateException("Invalid step id " + sr.getId());
+                                LocalDateTime startedAt = null;
+                                LocalDateTime completedAt = null;
+
+                                if (status == WorkflowStepStatus.STARTED) {
+                                        startedAt = LocalDateTime.now();
                                 }
 
-                                step.setName(sr.getName());
-                                step.setDescription(sr.getDescription());
-                                step.setOrderIndex(sr.getOrderIndex());
-                                incomingIds.add(step.getId());
+                                if (status == WorkflowStepStatus.COMPLETED) {
+                                        completedAt = LocalDateTime.now();
+                                }
 
-                        } else {
-                                jobWorkflowStepRepository.save(
-                                                JobWorkflowStep.builder()
-                                                                .jobWorkflow(jw)
-                                                                .name(sr.getName())
-                                                                .description(sr.getDescription())
-                                                                .orderIndex(sr.getOrderIndex())
-                                                                .status(WorkflowStepStatus.NOT_STARTED)
-                                                                .build());
+                                // 🔹 UPDATE
+                                if (sr.getId() != null) {
+
+                                        JobWorkflowStep step = existingMap.get(sr.getId());
+                                        if (step == null) {
+                                                throw new IllegalStateException("Invalid step id " + sr.getId());
+                                        }
+
+                                        if (sr.getName() != null) {
+                                                step.setName(sr.getName());
+                                        }
+
+                                        if (sr.getDescription() != null) {
+                                                step.setDescription(sr.getDescription());
+                                        }
+
+                                        if (sr.getOrderIndex() != null) {
+                                                step.setOrderIndex(sr.getOrderIndex());
+                                        }
+
+                                        if (sr.getStatus() != null) {
+                                                step.setStatus(status);
+                                                step.setStartedAt(startedAt);
+                                                step.setCompletedAt(completedAt);
+                                        }
+
+                                        // 🔹 WORKERS (UPDATE)
+                                        if (sr.getAssignedWorkerIds() != null) {
+
+                                                Set<Worker> workers = sr.getAssignedWorkerIds().stream()
+                                                                .map(id -> workerRepository.findById(id)
+                                                                                .orElseThrow(() -> new IllegalStateException(
+                                                                                                "Worker not found: "
+                                                                                                                + id)))
+                                                                .peek(w -> {
+                                                                        if (!w.getCompany().getId().equals(companyId)) {
+                                                                                throw new IllegalArgumentException(
+                                                                                                "Worker not in company");
+                                                                        }
+                                                                })
+                                                                .collect(Collectors.toSet());
+
+                                                step.getAssignedWorkers().clear();
+                                                step.getAssignedWorkers().addAll(workers);
+                                        }
+
+                                        incomingIds.add(step.getId());
+                                }
+
+                                // 🔹 CREATE
+                                else {
+
+                                        JobWorkflowStep newStep = JobWorkflowStep.builder()
+                                                        .jobWorkflow(jw)
+                                                        .name(sr.getName())
+                                                        .description(sr.getDescription())
+                                                        .orderIndex(sr.getOrderIndex())
+                                                        .status(status)
+                                                        .startedAt(startedAt)
+                                                        .completedAt(completedAt)
+                                                        .build();
+
+                                        // 🔹 WORKERS (CREATE)
+                                        if (sr.getAssignedWorkerIds() != null) {
+
+                                                Set<Worker> workers = sr.getAssignedWorkerIds().stream()
+                                                                .map(id -> workerRepository.findById(id)
+                                                                                .orElseThrow(() -> new IllegalStateException(
+                                                                                                "Worker not found: "
+                                                                                                                + id)))
+                                                                .peek(w -> {
+                                                                        if (!w.getCompany().getId().equals(companyId)) {
+                                                                                throw new IllegalArgumentException(
+                                                                                                "Worker not in company");
+                                                                        }
+                                                                })
+                                                                .collect(Collectors.toSet());
+
+                                                newStep.getAssignedWorkers().addAll(workers);
+                                        }
+
+                                        jobWorkflowStepRepository.save(newStep);
+                                }
                         }
                 }
 
-                // DELETE removed
+                // ============================
+                // DELETE REMOVED STEPS
+                // ============================
                 for (JobWorkflowStep step : existingSteps) {
                         if (!incomingIds.contains(step.getId())) {
                                 jobWorkflowStepRepository.delete(step);
                         }
                 }
 
-                // Normalize order (1-based)
+                // ============================
+                // NORMALIZE ORDER (1-BASED)
+                // ============================
                 normalizeOrderIndexes(jw.getId());
 
+                // ============================
+                // UPDATE WORKFLOW STATUS
+                // ============================
                 updateJobWorkflowStatus(jw);
+
                 return buildResponse(jw);
         }
 
@@ -387,21 +473,24 @@ public class JobWorkflowService implements IJobWorkflowService {
                 jobWorkflowRepository.delete(jobWorkflow);
         }
 
-/*         @Transactional
-        public JobWorkflowStep addStep(Long jobWorkflowId, JobWorkflowStepCreateRequest req) {
-
-                JobWorkflow jw = jobWorkflowRepository.findById(jobWorkflowId)
-                                .orElseThrow();
-
-                return jobWorkflowStepRepository.save(
-                                JobWorkflowStep.builder()
-                                                .jobWorkflow(jw)
-                                                .name(req.getName())
-                                                .description(req.getDescription())
-                                                .orderIndex(req.getOrderIndex())
-                                                .status(WorkflowStepStatus.NOT_STARTED)
-                                                .build());
-        } */
+        /*
+         * @Transactional
+         * public JobWorkflowStep addStep(Long jobWorkflowId,
+         * JobWorkflowStepCreateRequest req) {
+         * 
+         * JobWorkflow jw = jobWorkflowRepository.findById(jobWorkflowId)
+         * .orElseThrow();
+         * 
+         * return jobWorkflowStepRepository.save(
+         * JobWorkflowStep.builder()
+         * .jobWorkflow(jw)
+         * .name(req.getName())
+         * .description(req.getDescription())
+         * .orderIndex(req.getOrderIndex())
+         * .status(WorkflowStepStatus.NOT_STARTED)
+         * .build());
+         * }
+         */
 
         /*
          * =======================

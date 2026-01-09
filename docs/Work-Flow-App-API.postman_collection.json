@@ -3600,6 +3600,22 @@
               "body": "{\n  \"id\": 1,\n  \"companyId\": 1,\n  \"name\": \"Repair Workflow v2\",\n  \"description\": \"Updated bulk workflow\"\n}"
             }
           ]
+        },
+        {
+          "name": "Get Workflow with Steps",
+          "request": {
+            "auth": { "type": "bearer" },
+            "method": "GET",
+            "url": "{{base_url}}/api/v1/workflows/1/with-steps"
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"id\": 1,\n  \"companyId\": 1,\n  \"name\": \"Repair Workflow\",\n  \"description\": \"Standard repair process\",\n  \"steps\": [\n    {\n      \"id\": 10,\n      \"workflowId\": 1,\n      \"name\": \"Inspection\",\n      \"description\": \"Initial inspection\",\n      \"orderIndex\": 1,\n      \"optional\": false\n    },\n    {\n      \"id\": 11,\n      \"workflowId\": 1,\n      \"name\": \"Final Check\",\n      \"description\": \"Quality assurance\",\n      \"orderIndex\": 2,\n      \"optional\": true\n    }\n  ]\n}"
+            }
+          ]
         }
       ]
     },

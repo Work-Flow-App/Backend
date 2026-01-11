@@ -11,6 +11,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.workflow.common.constant.workflow.WorkflowStepStatus;
+import com.workflow.common.exception.business.JobWorkflowNotFoundException;
+import com.workflow.common.exception.business.JobWorkflowStepNotFoundException;
+import com.workflow.common.exception.business.UnauthorizedWorkflowAccessException;
+import com.workflow.common.exception.business.WorkerNotFoundException;
+import com.workflow.common.exception.business.WorkflowNotStartedException;
 import com.workflow.dto.workflow.JobWorkflowResponse;
 import com.workflow.dto.workflow.JobWorkflowStepResponse;
 import com.workflow.dto.workflow.JobWorkflowStepUpdateRequest;
@@ -124,11 +129,12 @@ public class JobWorkflowService implements IJobWorkflowService {
         public JobWorkflowResponse startWorkflow(Job job, Workflow workflow, Long companyId) {
 
                 if (!job.getCompany().getId().equals(companyId)) {
-                        throw new IllegalArgumentException("Job does not belong to company");
+                        throw new UnauthorizedWorkflowAccessException("Job does not belong to company");
                 }
 
                 if (!workflow.getCompany().getId().equals(companyId)) {
-                        throw new IllegalArgumentException("Workflow does not belong to company");
+                        throw new UnauthorizedWorkflowAccessException(
+                                        "Workflow does not belong to company");
                 }
 
                 JobWorkflow jw = jobWorkflowRepository.save(
@@ -165,7 +171,7 @@ public class JobWorkflowService implements IJobWorkflowService {
         public JobWorkflowResponse getJobWorkflowById(Long jobWorkflowId, Long companyId) {
                 JobWorkflow jobWorkflow = jobWorkflowRepository.findById(jobWorkflowId)
                                 .filter(jw -> jw.getJob().getCompany().getId().equals(companyId))
-                                .orElseThrow(() -> new IllegalStateException("Job workflow not found"));
+                                .orElseThrow(() -> new JobWorkflowNotFoundException("Job workflow not found"));
 
                 return buildResponse(jobWorkflow);
         }
@@ -182,12 +188,13 @@ public class JobWorkflowService implements IJobWorkflowService {
         public JobWorkflowResponse getJobWorkflow(Job job, Long companyId) {
 
                 if (!job.getCompany().getId().equals(companyId)) {
-                        throw new IllegalArgumentException("Job does not belong to company");
+                        throw new UnauthorizedWorkflowAccessException("Job does not belong to company");
                 }
 
                 JobWorkflow jobWorkflow = jobWorkflowRepository.findByJobId(job.getId())
                                 .orElseThrow(
-                                                () -> new IllegalStateException("Workflow not started for this job"));
+                                                () -> new WorkflowNotStartedException(
+                                                                "Workflow not started for this job"));
 
                 return buildResponse(jobWorkflow);
         }
@@ -206,12 +213,12 @@ public class JobWorkflowService implements IJobWorkflowService {
                         Long companyId) {
 
                 JobWorkflowStep step = jobWorkflowStepRepository.findById(stepId)
-                                .orElseThrow(() -> new IllegalStateException("Step not found"));
+                                .orElseThrow(() -> new JobWorkflowStepNotFoundException("Workflow step not found"));
 
                 JobWorkflow jw = step.getJobWorkflow();
 
                 if (!jw.getJob().getCompany().getId().equals(companyId)) {
-                        throw new IllegalArgumentException("Unauthorized access");
+                        throw new UnauthorizedWorkflowAccessException("Job does not belong to company");
                 }
 
                 // 🔹 Name / description
@@ -245,11 +252,12 @@ public class JobWorkflowService implements IJobWorkflowService {
 
                         Set<Worker> workers = request.getAssignedWorkerIds().stream()
                                         .map(id -> workerRepository.findById(id)
-                                                        .orElseThrow(() -> new IllegalStateException(
+                                                        .orElseThrow(() -> new WorkerNotFoundException(
                                                                         "Worker not found")))
                                         .peek(w -> {
                                                 if (!w.getCompany().getId().equals(companyId)) {
-                                                        throw new IllegalArgumentException("Worker not in company");
+                                                        throw new UnauthorizedWorkflowAccessException(
+                                                                        "Worker does not belong to company");
                                                 }
                                         })
                                         .collect(Collectors.toSet());
@@ -275,10 +283,11 @@ public class JobWorkflowService implements IJobWorkflowService {
                         Long companyId) {
 
                 JobWorkflow jw = jobWorkflowRepository.findById(jobWorkflowId)
-                                .orElseThrow(() -> new IllegalStateException("Job workflow not found"));
+                                .orElseThrow(() -> new JobWorkflowNotFoundException("Job workflow not found"));
 
                 if (!jw.getJob().getCompany().getId().equals(companyId)) {
-                        throw new IllegalArgumentException("Unauthorized access");
+                        throw new UnauthorizedWorkflowAccessException(
+                                        "Unauthorized access");
                 }
 
                 List<JobWorkflowStep> existingSteps = jobWorkflowStepRepository
@@ -314,7 +323,9 @@ public class JobWorkflowService implements IJobWorkflowService {
 
                                         JobWorkflowStep step = existingMap.get(sr.getId());
                                         if (step == null) {
-                                                throw new IllegalStateException("Invalid step id " + sr.getId());
+                                                throw new JobWorkflowStepNotFoundException(
+                                                                "Invalid workflow step id: " + sr.getId());
+
                                         }
 
                                         if (sr.getName() != null) {
@@ -340,13 +351,14 @@ public class JobWorkflowService implements IJobWorkflowService {
 
                                                 Set<Worker> workers = sr.getAssignedWorkerIds().stream()
                                                                 .map(id -> workerRepository.findById(id)
-                                                                                .orElseThrow(() -> new IllegalStateException(
+                                                                                .orElseThrow(() -> new WorkerNotFoundException(
                                                                                                 "Worker not found: "
                                                                                                                 + id)))
                                                                 .peek(w -> {
                                                                         if (!w.getCompany().getId().equals(companyId)) {
-                                                                                throw new IllegalArgumentException(
-                                                                                                "Worker not in company");
+                                                                                throw new UnauthorizedWorkflowAccessException(
+                                                                                                "Worker does not belong to company");
+
                                                                         }
                                                                 })
                                                                 .collect(Collectors.toSet());
@@ -376,13 +388,14 @@ public class JobWorkflowService implements IJobWorkflowService {
 
                                                 Set<Worker> workers = sr.getAssignedWorkerIds().stream()
                                                                 .map(id -> workerRepository.findById(id)
-                                                                                .orElseThrow(() -> new IllegalStateException(
+                                                                                .orElseThrow(() -> new WorkerNotFoundException(
                                                                                                 "Worker not found: "
                                                                                                                 + id)))
                                                                 .peek(w -> {
                                                                         if (!w.getCompany().getId().equals(companyId)) {
-                                                                                throw new IllegalArgumentException(
-                                                                                                "Worker not in company");
+                                                                                throw new UnauthorizedWorkflowAccessException(
+                                                                                                "Worker does not belong to company");
+
                                                                         }
                                                                 })
                                                                 .collect(Collectors.toSet());
@@ -428,17 +441,20 @@ public class JobWorkflowService implements IJobWorkflowService {
                         Long jobWorkflowId, Long workerId, Long companyId) {
 
                 JobWorkflow jobWorkflow = jobWorkflowRepository.findById(jobWorkflowId)
-                                .orElseThrow(() -> new IllegalStateException("Job workflow not found"));
+                                .orElseThrow(() -> new JobWorkflowNotFoundException("Job workflow not found"));
 
                 if (!jobWorkflow.getJob().getCompany().getId().equals(companyId)) {
-                        throw new IllegalArgumentException("Unauthorized access");
+                        throw new UnauthorizedWorkflowAccessException(
+                                        "Unauthorized access");
                 }
 
                 Worker worker = workerRepository.findById(workerId)
-                                .orElseThrow(() -> new IllegalStateException("Worker not found"));
+                                .orElseThrow(() -> new WorkerNotFoundException("Worker not found"));
 
                 if (!worker.getCompany().getId().equals(companyId)) {
-                        throw new IllegalArgumentException("Worker does not belong to company");
+                        throw new UnauthorizedWorkflowAccessException(
+                                        "Worker does not belong to company");
+
                 }
 
                 List<JobWorkflowStep> steps = jobWorkflowStepRepository.findByJobWorkflowIdOrderByOrderIndexAsc(
@@ -463,10 +479,11 @@ public class JobWorkflowService implements IJobWorkflowService {
         public void deleteByJobId(Long jobId, Long companyId) {
 
                 JobWorkflow jobWorkflow = jobWorkflowRepository.findByJobId(jobId)
-                                .orElseThrow(() -> new IllegalStateException("Job workflow not found"));
+                                .orElseThrow(() -> new JobWorkflowNotFoundException("Job workflow not found"));
 
                 if (!jobWorkflow.getJob().getCompany().getId().equals(companyId)) {
-                        throw new IllegalArgumentException("Unauthorized delete");
+                        throw new UnauthorizedWorkflowAccessException("Job does not belong to company");
+
                 }
 
                 jobWorkflowStepRepository.deleteByJobWorkflowId(jobWorkflow.getId());

@@ -9,6 +9,9 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.workflow.common.exception.business.UnauthorizedWorkflowAccessException;
+import com.workflow.common.exception.business.WorkflowNotFoundException;
+import com.workflow.common.exception.business.WorkflowStepNotFoundException;
 import com.workflow.dto.workflow.WorkflowBulkUpdateRequest;
 import com.workflow.dto.workflow.WorkflowCreateRequest;
 import com.workflow.dto.workflow.WorkflowResponse;
@@ -36,7 +39,8 @@ public class WorkflowService implements IWorkflowService {
 
     @Override
     public WorkflowResponse createWorkflow(WorkflowCreateRequest request, Long companyId) {
-        Company company = companyRepository.findById(companyId).orElseThrow();
+        Company company = companyRepository.findById(companyId)
+                .orElseThrow(() -> new UnauthorizedWorkflowAccessException("Company not found"));
 
         Workflow workflow = workflowRepository.save(
                 Workflow.builder()
@@ -52,7 +56,7 @@ public class WorkflowService implements IWorkflowService {
     public WorkflowResponse updateWorkflow(Long id, WorkflowCreateRequest request, Long companyId) {
         Workflow workflow = workflowRepository.findById(id)
                 .filter(w -> w.getCompany().getId().equals(companyId))
-                .orElseThrow();
+                .orElseThrow(() -> new WorkflowNotFoundException("Workflow not found"));
 
         workflow.setName(request.getName());
         workflow.setDescription(request.getDescription());
@@ -64,7 +68,7 @@ public class WorkflowService implements IWorkflowService {
     public void deleteWorkflow(Long id, Long companyId) {
         Workflow workflow = workflowRepository.findById(id)
                 .filter(w -> w.getCompany().getId().equals(companyId))
-                .orElseThrow();
+                .orElseThrow(() -> new WorkflowNotFoundException("Workflow not found"));
 
         workflowRepository.delete(workflow);
     }
@@ -79,7 +83,7 @@ public class WorkflowService implements IWorkflowService {
     public WorkflowResponse getWorkflow(Long id, Long companyId) {
         Workflow workflow = workflowRepository.findById(id)
                 .filter(w -> w.getCompany().getId().equals(companyId))
-                .orElseThrow(() -> new IllegalStateException("Workflow not found"));
+                .orElseThrow(() -> new WorkflowNotFoundException("Workflow not found"));
 
         return map(workflow);
     }
@@ -88,7 +92,7 @@ public class WorkflowService implements IWorkflowService {
     public WorkflowStepResponse createStep(WorkflowStepCreateRequest request, Long companyId) {
         Workflow workflow = workflowRepository.findById(request.getWorkflowId())
                 .filter(w -> w.getCompany().getId().equals(companyId))
-                .orElseThrow();
+                .orElseThrow(() -> new WorkflowNotFoundException("Workflow not found"));
 
         WorkflowStep step = stepRepository.save(
                 WorkflowStep.builder()
@@ -107,7 +111,7 @@ public class WorkflowService implements IWorkflowService {
 
         Workflow workflow = workflowRepository.findById(workflowId)
                 .filter(w -> w.getCompany().getId().equals(companyId))
-                .orElseThrow(() -> new IllegalArgumentException("Unauthorized access"));
+                .orElseThrow(() -> new UnauthorizedWorkflowAccessException("Unauthorized access"));
 
         return stepRepository.findByWorkflowIdOrderByOrderIndexAsc(workflow.getId())
                 .stream()
@@ -119,7 +123,7 @@ public class WorkflowService implements IWorkflowService {
     public WorkflowStepResponse updateStep(Long stepId, WorkflowStepCreateRequest request, Long companyId) {
         WorkflowStep step = stepRepository.findById(stepId)
                 .filter(s -> s.getWorkflow().getCompany().getId().equals(companyId))
-                .orElseThrow(() -> new IllegalStateException("Step not found"));
+                .orElseThrow(() -> new WorkflowStepNotFoundException("Workflow step not found"));
 
         step.setName(request.getName());
         step.setDescription(request.getDescription());
@@ -133,7 +137,7 @@ public class WorkflowService implements IWorkflowService {
     public WorkflowStepResponse getStep(Long stepId, Long companyId) {
         WorkflowStep step = stepRepository.findById(stepId)
                 .filter(s -> s.getWorkflow().getCompany().getId().equals(companyId))
-                .orElseThrow(() -> new IllegalStateException("Workflow step not found"));
+                .orElseThrow(() -> new WorkflowStepNotFoundException("Workflow step not found"));
 
         return map(step);
     }
@@ -151,7 +155,8 @@ public class WorkflowService implements IWorkflowService {
     public void deleteStep(Long stepId, Long companyId) {
         WorkflowStep step = stepRepository.findById(stepId)
                 .filter(s -> s.getWorkflow().getCompany().getId().equals(companyId))
-                .orElseThrow(() -> new IllegalStateException("Step not found"));
+                .orElseThrow(() -> new WorkflowStepNotFoundException("Workflow step not found"));
+
         stepRepository.delete(step);
     }
 
@@ -163,7 +168,7 @@ public class WorkflowService implements IWorkflowService {
 
         Workflow workflow = workflowRepository.findById(workflowId)
                 .filter(w -> w.getCompany().getId().equals(companyId))
-                .orElseThrow(() -> new IllegalStateException("Workflow not found"));
+                .orElseThrow(() -> new WorkflowNotFoundException("Workflow not found"));
 
         // 1️⃣ Update workflow fields
         if (request.getName() != null) {
@@ -187,7 +192,9 @@ public class WorkflowService implements IWorkflowService {
             if (stepReq.getId() != null) {
                 WorkflowStep step = existingMap.get(stepReq.getId());
                 if (step == null) {
-                    throw new IllegalStateException("Invalid step id " + stepReq.getId());
+                    throw new WorkflowStepNotFoundException(
+                            "Invalid workflow step id: " + stepReq.getId());
+
                 }
 
                 step.setName(stepReq.getName());
@@ -226,7 +233,7 @@ public class WorkflowService implements IWorkflowService {
 
         Workflow workflow = workflowRepository.findById(workflowId)
                 .filter(w -> w.getCompany().getId().equals(companyId))
-                .orElseThrow(() -> new IllegalStateException("Workflow not found"));
+                .orElseThrow(() -> new WorkflowNotFoundException("Workflow not found"));
 
         List<WorkflowStepResponse> steps = stepRepository
                 .findByWorkflowIdOrderByOrderIndexAsc(workflowId)

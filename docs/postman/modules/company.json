@@ -1,0 +1,227 @@
+{
+  "name": "Company",
+  "item": [
+    {
+      "name": "Get Company Profile",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/v1/companies/profile",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "companies",
+            "profile"
+          ]
+        },
+        "description": "Retrieve the authenticated company's profile.\n\n**Authentication:** Required (COMPANY role)\n\n**Response:**\n- id (long): Company ID\n- name (string): Company name\n- email (string): Company email\n- telephone (string): Phone number\n- mobile (string): Mobile number\n- fax (string): Fax number\n- addressLine1, addressLine2, addressLine3 (string): Address details\n- town (string): Town/city\n- country (string): Country\n- postcode (string): Postal code\n- contactEmail (string): Contact email\n- contactNumber (string): Contact number\n- archived (boolean): Archive status\n- createdAt (datetime): Creation timestamp\n- updatedAt (datetime): Last update timestamp"
+      },
+      "response": [
+        {
+          "name": "Get Company Profile - Success",
+          "originalRequest": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8080/api/v1/companies/profile",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "companies",
+                "profile"
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n    \"id\": 1,\n    \"name\": \"Tech Solutions Inc\",\n    \"email\": \"company1@example.com\",\n    \"telephone\": \"1234567890\",\n    \"mobile\": \"0987654321\",\n    \"fax\": \"1111111111\",\n    \"addressLine1\": \"123 Main St\",\n    \"addressLine2\": \"Suite 200\",\n    \"addressLine3\": null,\n    \"town\": \"New York\",\n    \"country\": \"USA\",\n    \"postcode\": \"10001\",\n    \"contactEmail\": \"contact@techsolutions.com\",\n    \"contactNumber\": \"ACC123\",\n    \"archived\": false,\n    \"createdAt\": \"2025-10-23T10:00:00\",\n    \"updatedAt\": \"2025-10-23T10:00:00\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Update Company Profile",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"name\": \"Tech Solutions Inc\",\n    \"addressLine1\": \"123 Main Street\",\n    \"addressLine2\": \"Suite 200\",\n    \"addressLine3\": null,\n    \"town\": \"New York\",\n    \"country\": \"USA\",\n    \"postcode\": \"10001\",\n    \"telephone\": \"1234567890\",\n    \"mobile\": \"0987654321\",\n    \"fax\": \"1111111111\",\n    \"email\": \"info@techsolutions.com\",\n    \"contactEmail\": \"contact@techsolutions.com\",\n    \"contactNumber\": \"ACC123\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/companies/profile",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "companies",
+            "profile"
+          ]
+        },
+        "description": "Update the authenticated company's profile.\n\n**Authentication:** Required (COMPANY role)\n\n**Request Body:**\n- name (string, required): 2-150 characters\n- addressLine1 (string, optional): Max 255 characters\n- addressLine2 (string, optional): Max 255 characters\n- addressLine3 (string, optional): Max 255 characters\n- town (string, optional): Max 100 characters\n- country (string, optional): Max 100 characters\n- postcode (string, optional): Max 20 characters\n- telephone (string, optional): Max 20 characters\n- mobile (string, optional): Max 20 characters\n- fax (string, optional): Max 20 characters\n- email (string, optional): Valid email format, max 100 characters\n- contactEmail (string, optional): Valid email format, max 100 characters\n- contactNumber (string, optional): Max 50 characters\n\n**Business Rules:**\n- Company name must be unique (case-insensitive)\n- Updating to the same name (different case) is allowed\n\n**Response:** Updated company profile (same format as GET)"
+      },
+      "response": [
+        {
+          "name": "Update Company Profile - Success",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Tech Solutions Inc\",\n    \"addressLine1\": \"123 Main Street\",\n    \"addressLine2\": \"Suite 200\",\n    \"addressLine3\": null,\n    \"town\": \"New York\",\n    \"country\": \"USA\",\n    \"postcode\": \"10001\",\n    \"telephone\": \"1234567890\",\n    \"mobile\": \"0987654321\",\n    \"fax\": \"1111111111\",\n    \"email\": \"info@techsolutions.com\",\n    \"contactEmail\": \"contact@techsolutions.com\",\n    \"contactNumber\": \"ACC123\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/v1/companies/profile",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "companies",
+                "profile"
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n    \"id\": 1,\n    \"name\": \"Tech Solutions Inc\",\n    \"email\": \"info@techsolutions.com\",\n    \"telephone\": \"1234567890\",\n    \"mobile\": \"0987654321\",\n    \"fax\": \"1111111111\",\n    \"addressLine1\": \"123 Main Street\",\n    \"addressLine2\": \"Suite 200\",\n    \"addressLine3\": null,\n    \"town\": \"New York\",\n    \"country\": \"USA\",\n    \"postcode\": \"10001\",\n    \"contactEmail\": \"contact@techsolutions.com\",\n    \"contactNumber\": \"ACC123\",\n    \"archived\": false,\n    \"createdAt\": \"2025-10-23T10:00:00\",\n    \"updatedAt\": \"2025-10-23T11:30:00\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Get Company Dashboard",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/v1/companies/dashboard",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "companies",
+            "dashboard"
+          ]
+        },
+        "description": "Retrieve company dashboard with statistics.\n\n**Authentication:** Required (COMPANY role)\n\n**Response:**\n- companyId (long): Company ID\n- companyName (string): Company name\n- totalWorkers (long): Total number of workers (active + archived)\n- totalClients (long): Total number of clients\n- activeWorkers (long): Number of active (non-archived) workers\n- archivedWorkers (long): Number of archived workers"
+      },
+      "response": [
+        {
+          "name": "Get Company Dashboard - Success",
+          "originalRequest": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8080/api/v1/companies/dashboard",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "companies",
+                "dashboard"
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n    \"companyId\": 1,\n    \"companyName\": \"Tech Solutions Inc\",\n    \"totalWorkers\": 15,\n    \"totalClients\": 8,\n    \"activeWorkers\": 12,\n    \"archivedWorkers\": 3\n}"
+        }
+      ]
+    }
+  ],
+  "description": "Company profile and dashboard management endpoints."
+}

@@ -16,6 +16,7 @@ import com.workflow.dto.workflow.StepActivityResponse;
 import com.workflow.dto.workflow.StepAttachmentResponse;
 import com.workflow.dto.workflow.StepCommentCreateRequest;
 import com.workflow.dto.workflow.StepCommentResponse;
+import com.workflow.dto.workflow.StepTimelineItemResponse;
 import com.workflow.entity.Company;
 import com.workflow.entity.JobWorkflowStep;
 import com.workflow.entity.JobWorkflowStepActivity;
@@ -35,6 +36,8 @@ import lombok.RequiredArgsConstructor;
 @Transactional
 public class JobWorkflowStepActivityService
                 implements IJobWorkflowStepActivityService {
+
+        private static final long MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 
         private final JobWorkflowStepRepository stepRepository;
         private final JobWorkflowStepCommentRepository commentRepository;
@@ -181,6 +184,10 @@ public class JobWorkflowStepActivityService
                         MultipartFile file,
                         Long companyId) throws IOException {
 
+                if (file.getSize() > MAX_FILE_SIZE) {
+                        throw new IllegalArgumentException("File size must not exceed 10 MB");
+                }
+
                 Company company = getCompany(companyId);
                 JobWorkflowStep step = getStep(stepId, companyId);
 
@@ -272,6 +279,44 @@ public class JobWorkflowStepActivityService
                 return attachmentRepository.findByStepIdOrderByCreatedAtAsc(stepId)
                                 .stream()
                                 .map(this::map)
+                                .toList();
+        }
+
+        @Override
+        @Transactional(readOnly = true)
+        public List<StepTimelineItemResponse> getCommentsAndAttachmentsTimeline(
+                        Long stepId,
+                        Long companyId) {
+
+                getStep(stepId, companyId);
+
+                List<StepTimelineItemResponse> comments = commentRepository.findByStepIdOrderByCreatedAtAsc(stepId)
+                                .stream()
+                                .map(c -> StepTimelineItemResponse.builder()
+                                                .id(c.getId())
+                                                .itemType("COMMENT")
+                                                .content(c.getContent())
+                                                .actorId(c.getAuthor().getId())
+                                                .createdAt(c.getCreatedAt())
+                                                .build())
+                                .toList();
+
+                List<StepTimelineItemResponse> attachments = attachmentRepository
+                                .findByStepIdOrderByCreatedAtAsc(stepId)
+                                .stream()
+                                .map(a -> StepTimelineItemResponse.builder()
+                                                .id(a.getId())
+                                                .itemType("ATTACHMENT")
+                                                .content(a.getFileName())
+                                                .fileUrl(a.getFileUrl())
+                                                .actorId(a.getUploadedBy().getId())
+                                                .createdAt(a.getCreatedAt())
+                                                .build())
+                                .toList();
+
+                return java.util.stream.Stream
+                                .concat(comments.stream(), attachments.stream())
+                                .sorted(java.util.Comparator.comparing(StepTimelineItemResponse::getCreatedAt))
                                 .toList();
         }
 

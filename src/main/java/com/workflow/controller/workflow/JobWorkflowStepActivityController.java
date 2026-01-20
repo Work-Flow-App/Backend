@@ -22,6 +22,7 @@ import com.workflow.dto.workflow.StepActivityResponse;
 import com.workflow.dto.workflow.StepAttachmentResponse;
 import com.workflow.dto.workflow.StepCommentCreateRequest;
 import com.workflow.dto.workflow.StepCommentResponse;
+import com.workflow.dto.workflow.StepTimelineItemResponse;
 import com.workflow.entity.Company;
 import com.workflow.entity.User;
 import com.workflow.service.company.ICompanyService;
@@ -34,138 +35,149 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class JobWorkflowStepActivityController {
 
-    private final IJobWorkflowStepActivityService stepActivityService;
-    private final ICompanyService companyService;
+        private final IJobWorkflowStepActivityService stepActivityService;
+        private final ICompanyService companyService;
 
-    /*
-     * ===========================
-     * HELPERS
-     * ===========================
-     */
+        /*
+         * ===========================
+         * HELPERS
+         * ===========================
+         */
 
-    private Long getCompanyId(Authentication auth) {
-        User user = (User) auth.getPrincipal();
-        Company company = companyService.findCompanyByUserId(user.getId());
-        return company.getId();
-    }
+        private Long getCompanyId(Authentication auth) {
+                User user = (User) auth.getPrincipal();
+                Company company = companyService.findCompanyByUserId(user.getId());
+                return company.getId();
+        }
 
-    /*
-     * ===========================
-     * COMMENTS
-     * ===========================
-     */
+        /*
+         * ===========================
+         * COMMENTS
+         * ===========================
+         */
 
-    @PostMapping("/{stepId}/comments")
-    public ResponseEntity<StepCommentResponse> addComment(
-            @PathVariable Long stepId,
-            @RequestBody StepCommentCreateRequest request,
-            Authentication auth) {
+        @PostMapping("/{stepId}/comments")
+        public ResponseEntity<StepCommentResponse> addComment(
+                        @PathVariable Long stepId,
+                        @RequestBody StepCommentCreateRequest request,
+                        Authentication auth) {
 
-        StepCommentResponse response = stepActivityService.addComment(
-                stepId,
-                request,
-                getCompanyId(auth));
+                StepCommentResponse response = stepActivityService.addComment(
+                                stepId,
+                                request,
+                                getCompanyId(auth));
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
-    }
+                return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        }
 
-    @PutMapping("/comments/{commentId}")
-    public ResponseEntity<StepCommentResponse> updateComment(
-            @PathVariable Long commentId,
-            @RequestBody StepCommentCreateRequest request,
-            Authentication auth) {
+        @PutMapping("/comments/{commentId}")
+        public ResponseEntity<StepCommentResponse> updateComment(
+                        @PathVariable Long commentId,
+                        @RequestBody StepCommentCreateRequest request,
+                        Authentication auth) {
 
-        return ResponseEntity.ok(
-                stepActivityService.updateComment(
-                        commentId,
-                        request,
-                        getCompanyId(auth)));
-    }
+                return ResponseEntity.ok(
+                                stepActivityService.updateComment(
+                                                commentId,
+                                                request,
+                                                getCompanyId(auth)));
+        }
 
-    @DeleteMapping("/comments/{commentId}")
-    public ResponseEntity<Void> deleteComment(
-            @PathVariable Long commentId,
-            Authentication auth) {
+        @DeleteMapping("/comments/{commentId}")
+        public ResponseEntity<Void> deleteComment(
+                        @PathVariable Long commentId,
+                        Authentication auth) {
 
-        stepActivityService.deleteComment(commentId, getCompanyId(auth));
-        return ResponseEntity.noContent().build();
-    }
+                stepActivityService.deleteComment(commentId, getCompanyId(auth));
+                return ResponseEntity.noContent().build();
+        }
 
-    @GetMapping("/{stepId}/comments")
-    public ResponseEntity<List<StepCommentResponse>> getComments(
-            @PathVariable Long stepId,
-            Authentication auth) {
+        @GetMapping("/{stepId}/comments")
+        public ResponseEntity<List<StepCommentResponse>> getComments(
+                        @PathVariable Long stepId,
+                        Authentication auth) {
 
-        return ResponseEntity.ok(
-                stepActivityService.getComments(stepId, getCompanyId(auth)));
-    }
+                return ResponseEntity.ok(
+                                stepActivityService.getComments(stepId, getCompanyId(auth)));
+        }
 
-    /*
-     * ===========================
-     * ATTACHMENTS
-     * ===========================
-     */
+        /*
+         * ===========================
+         * ATTACHMENTS
+         * ===========================
+         */
 
-    @PostMapping(value = "/{stepId}/attachments", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<StepAttachmentResponse> uploadAttachment(
-            @PathVariable Long stepId,
-            @RequestParam("file") MultipartFile file,
-            Authentication auth) throws IOException {
+        @PostMapping(value = "/{stepId}/attachments", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+        public ResponseEntity<StepAttachmentResponse> uploadAttachment(
+                        @PathVariable Long stepId,
+                        @RequestParam("file") MultipartFile file,
+                        Authentication auth) throws IOException {
 
-        StepAttachmentResponse response = stepActivityService.uploadAttachment(
-                stepId,
-                file,
-                getCompanyId(auth));
+                StepAttachmentResponse response = stepActivityService.uploadAttachment(
+                                stepId,
+                                file,
+                                getCompanyId(auth));
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
-    }
+                return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        }
 
-    @PutMapping("/attachments/{attachmentId}")
-    public ResponseEntity<StepAttachmentResponse> renameAttachment(
-            @PathVariable Long attachmentId,
-            @RequestParam("fileName") String newFileName,
-            Authentication auth) {
+        @PutMapping("/attachments/{attachmentId}")
+        public ResponseEntity<StepAttachmentResponse> renameAttachment(
+                        @PathVariable Long attachmentId,
+                        @RequestParam("fileName") String newFileName,
+                        Authentication auth) {
 
-        return ResponseEntity.ok(
-                stepActivityService.updateAttachmentName(
-                        attachmentId,
-                        newFileName,
-                        getCompanyId(auth)));
-    }
+                return ResponseEntity.ok(
+                                stepActivityService.updateAttachmentName(
+                                                attachmentId,
+                                                newFileName,
+                                                getCompanyId(auth)));
+        }
 
-    @DeleteMapping("/attachments/{attachmentId}")
-    public ResponseEntity<Void> deleteAttachment(
-            @PathVariable Long attachmentId,
-            Authentication auth) {
+        @DeleteMapping("/attachments/{attachmentId}")
+        public ResponseEntity<Void> deleteAttachment(
+                        @PathVariable Long attachmentId,
+                        Authentication auth) {
 
-        stepActivityService.deleteAttachment(
-                attachmentId,
-                getCompanyId(auth));
+                stepActivityService.deleteAttachment(
+                                attachmentId,
+                                getCompanyId(auth));
 
-        return ResponseEntity.noContent().build();
-    }
+                return ResponseEntity.noContent().build();
+        }
 
-    @GetMapping("/{stepId}/attachments")
-    public ResponseEntity<List<StepAttachmentResponse>> getAttachments(
-            @PathVariable Long stepId,
-            Authentication auth) {
+        @GetMapping("/{stepId}/attachments")
+        public ResponseEntity<List<StepAttachmentResponse>> getAttachments(
+                        @PathVariable Long stepId,
+                        Authentication auth) {
 
-        return ResponseEntity.ok(
-                stepActivityService.getAttachments(stepId, getCompanyId(auth)));
-    }
+                return ResponseEntity.ok(
+                                stepActivityService.getAttachments(stepId, getCompanyId(auth)));
+        }
 
-    /*
-     * ===========================
-     * TIMELINE
-     * ===========================
-     */
+        @GetMapping("/{stepId}/discussion")
+        public ResponseEntity<List<StepTimelineItemResponse>> getDiscussionTimeline(
+                        @PathVariable Long stepId,
+                        Authentication auth) {
 
-    @GetMapping("/{stepId}/timeline")
-    public ResponseEntity<List<StepActivityResponse>> getTimeline(
-            @PathVariable Long stepId,
-            Authentication auth) {
+                return ResponseEntity.ok(
+                                stepActivityService.getCommentsAndAttachmentsTimeline(
+                                                stepId,
+                                                getCompanyId(auth)));
+        }
 
-        return ResponseEntity.ok(
-                stepActivityService.getTimeline(stepId, getCompanyId(auth)));
-    }
+        /*
+         * ===========================
+         * TIMELINE
+         * ===========================
+         */
+
+        @GetMapping("/{stepId}/timeline")
+        public ResponseEntity<List<StepActivityResponse>> getTimeline(
+                        @PathVariable Long stepId,
+                        Authentication auth) {
+
+                return ResponseEntity.ok(
+                                stepActivityService.getTimeline(stepId, getCompanyId(auth)));
+        }
 }

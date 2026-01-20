@@ -9,6 +9,7 @@ import com.workflow.dto.workflow.StepActivityResponse;
 import com.workflow.dto.workflow.StepAttachmentResponse;
 import com.workflow.dto.workflow.StepCommentCreateRequest;
 import com.workflow.dto.workflow.StepCommentResponse;
+import com.workflow.dto.workflow.StepTimelineItemResponse;
 
 public interface IJobWorkflowStepActivityService {
 
@@ -52,6 +53,10 @@ public interface IJobWorkflowStepActivityService {
 
         // ===== TIMELINE =====
         List<StepActivityResponse> getTimeline(
+                        Long stepId,
+                        Long companyId);
+
+        List<StepTimelineItemResponse> getCommentsAndAttachmentsTimeline(
                         Long stepId,
                         Long companyId);
 }

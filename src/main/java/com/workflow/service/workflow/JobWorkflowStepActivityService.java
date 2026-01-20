@@ -44,6 +44,7 @@ public class JobWorkflowStepActivityService
         private final JobWorkflowStepAttachmentRepository attachmentRepository;
         private final JobWorkflowStepActivityRepository activityRepository;
         private final CompanyRepository companyRepository;
+        private final IStepActivityService stepActivityService;
         private final S3StorageService s3Service;
 
         /*
@@ -71,20 +72,22 @@ public class JobWorkflowStepActivityService
                 return step;
         }
 
-        private void logActivity(
-                        JobWorkflowStep step,
-                        Company company,
-                        JobWorkflowStepActivityType type,
-                        String message) {
-
-                activityRepository.save(
-                                JobWorkflowStepActivity.builder()
-                                                .step(step)
-                                                .actor(company.getUser())
-                                                .type(type)
-                                                .message(message)
-                                                .build());
-        }
+        /*
+         * private void logActivity(
+         * JobWorkflowStep step,
+         * Company company,
+         * JobWorkflowStepActivityType type,
+         * String message) {
+         * 
+         * activityRepository.save(
+         * JobWorkflowStepActivity.builder()
+         * .step(step)
+         * .actor(company.getUser())
+         * .type(type)
+         * .message(message)
+         * .build());
+         * }
+         */
 
         /*
          * ===========================
@@ -108,7 +111,8 @@ public class JobWorkflowStepActivityService
                                                 .content(request.getContent())
                                                 .build());
 
-                logActivity(step, company, JobWorkflowStepActivityType.COMMENT, request.getContent());
+                stepActivityService.log(step, company.getUser(), JobWorkflowStepActivityType.COMMENT,
+                                request.getContent());
 
                 return map(comment);
         }
@@ -130,9 +134,9 @@ public class JobWorkflowStepActivityService
 
                 comment.setContent(request.getContent());
 
-                logActivity(
+                stepActivityService.log(
                                 comment.getStep(),
-                                company,
+                                company.getUser(),
                                 JobWorkflowStepActivityType.COMMENT,
                                 "Edited a comment");
 
@@ -151,9 +155,9 @@ public class JobWorkflowStepActivityService
                         throw new ForbiddenActionException("Not allowed to delete this comment");
                 }
 
-                logActivity(
+                stepActivityService.log(
                                 comment.getStep(),
-                                company,
+                                company.getUser(),
                                 JobWorkflowStepActivityType.COMMENT,
                                 "Deleted a comment");
 
@@ -213,9 +217,9 @@ public class JobWorkflowStepActivityService
                                                 .fileUrl(url)
                                                 .build());
 
-                logActivity(
+                stepActivityService.log(
                                 step,
-                                company,
+                                company.getUser(),
                                 JobWorkflowStepActivityType.ATTACHMENT_ADDED,
                                 "Uploaded " + file.getOriginalFilename());
 
@@ -239,9 +243,9 @@ public class JobWorkflowStepActivityService
 
                 attachment.setFileName(newFileName);
 
-                logActivity(
+                stepActivityService.log(
                                 attachment.getStep(),
-                                company,
+                                company.getUser(),
                                 JobWorkflowStepActivityType.ATTACHMENT_UPDATED,
                                 "Renamed attachment to " + newFileName);
 
@@ -263,9 +267,9 @@ public class JobWorkflowStepActivityService
                 s3Service.delete(attachment.getFileUrl());
                 attachmentRepository.delete(attachment);
 
-                logActivity(
+                stepActivityService.log(
                                 attachment.getStep(),
-                                company,
+                                company.getUser(),
                                 JobWorkflowStepActivityType.ATTACHMENT_DELETED,
                                 "Deleted " + attachment.getFileName());
         }

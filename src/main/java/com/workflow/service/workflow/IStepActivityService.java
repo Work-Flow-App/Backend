@@ -1,6 +1,9 @@
 package com.workflow.service.workflow;
 
+import java.util.List;
+
 import com.workflow.common.constant.workflow.JobWorkflowStepActivityType;
+import com.workflow.dto.workflow.StepActivityResponse;
 import com.workflow.entity.JobWorkflowStep;
 import com.workflow.entity.User;
 
@@ -11,4 +14,9 @@ public interface IStepActivityService {
             User actor,
             JobWorkflowStepActivityType type,
             String message);
+
+    // ===== TIMELINE =====
+    List<StepActivityResponse> getTimeline(
+            Long stepId,
+            Long companyId);
 }

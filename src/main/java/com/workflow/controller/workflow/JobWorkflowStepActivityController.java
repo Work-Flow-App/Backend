@@ -18,7 +18,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.workflow.dto.workflow.StepActivityResponse;
 import com.workflow.dto.workflow.StepAttachmentResponse;
 import com.workflow.dto.workflow.StepCommentCreateRequest;
 import com.workflow.dto.workflow.StepCommentResponse;
@@ -166,18 +165,4 @@ public class JobWorkflowStepActivityController {
                                                 getCompanyId(auth)));
         }
 
-        /*
-         * ===========================
-         * TIMELINE
-         * ===========================
-         */
-
-        @GetMapping("/{stepId}/timeline")
-        public ResponseEntity<List<StepActivityResponse>> getTimeline(
-                        @PathVariable Long stepId,
-                        Authentication auth) {
-
-                return ResponseEntity.ok(
-                                stepActivityService.getTimeline(stepId, getCompanyId(auth)));
-        }
 }

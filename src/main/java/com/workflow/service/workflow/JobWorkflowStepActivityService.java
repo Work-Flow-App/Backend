@@ -10,7 +10,11 @@ import org.springframework.web.multipart.MultipartFile;
 import com.workflow.common.constant.workflow.JobWorkflowStepActivityType;
 import com.workflow.common.exception.business.AttachmentNotFoundException;
 import com.workflow.common.exception.business.CommentNotFoundException;
+import com.workflow.common.exception.business.CompanyNotFoundException;
+import com.workflow.common.exception.business.EmptyFileException;
+import com.workflow.common.exception.business.FileSizeLimitExceededException;
 import com.workflow.common.exception.business.ForbiddenActionException;
+import com.workflow.common.exception.business.JobWorkflowStepNotFoundException;
 import com.workflow.common.exception.business.UnauthorizedWorkflowAccessException;
 import com.workflow.dto.workflow.StepActivityResponse;
 import com.workflow.dto.workflow.StepAttachmentResponse;
@@ -55,12 +59,12 @@ public class JobWorkflowStepActivityService
 
         private Company getCompany(Long companyId) {
                 return companyRepository.findById(companyId)
-                                .orElseThrow(() -> new IllegalStateException("Company not found"));
+                                .orElseThrow(() -> new CompanyNotFoundException("Company not found"));
         }
 
         private JobWorkflowStep getStep(Long stepId, Long companyId) {
                 JobWorkflowStep step = stepRepository.findById(stepId)
-                                .orElseThrow(() -> new IllegalStateException("Step not found"));
+                                .orElseThrow(() -> new JobWorkflowStepNotFoundException("Step not found"));
 
                 if (!step.getJobWorkflow()
                                 .getJob()
@@ -71,23 +75,6 @@ public class JobWorkflowStepActivityService
                 }
                 return step;
         }
-
-        /*
-         * private void logActivity(
-         * JobWorkflowStep step,
-         * Company company,
-         * JobWorkflowStepActivityType type,
-         * String message) {
-         * 
-         * activityRepository.save(
-         * JobWorkflowStepActivity.builder()
-         * .step(step)
-         * .actor(company.getUser())
-         * .type(type)
-         * .message(message)
-         * .build());
-         * }
-         */
 
         /*
          * ===========================
@@ -188,8 +175,13 @@ public class JobWorkflowStepActivityService
                         MultipartFile file,
                         Long companyId) throws IOException {
 
+                if (file.isEmpty()) {
+                        throw new EmptyFileException("Uploaded file cannot be empty");
+                }
+
                 if (file.getSize() > MAX_FILE_SIZE) {
-                        throw new IllegalArgumentException("File size must not exceed 10 MB");
+                        throw new FileSizeLimitExceededException(
+                                        "Attachment size must not exceed 10 MB");
                 }
 
                 Company company = getCompany(companyId);

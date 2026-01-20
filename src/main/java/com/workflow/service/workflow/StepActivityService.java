@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.workflow.common.constant.workflow.JobWorkflowStepActivityType;
+import com.workflow.common.exception.business.JobWorkflowStepNotFoundException;
 import com.workflow.common.exception.business.UnauthorizedWorkflowAccessException;
 import com.workflow.dto.workflow.StepActivityResponse;
 import com.workflow.entity.JobWorkflowStep;
@@ -26,7 +27,7 @@ public class StepActivityService implements IStepActivityService {
 
     private JobWorkflowStep getStep(Long stepId, Long companyId) {
         JobWorkflowStep step = stepRepository.findById(stepId)
-                .orElseThrow(() -> new IllegalStateException("Step not found"));
+                .orElseThrow(() -> new JobWorkflowStepNotFoundException("Step not found"));
 
         if (!step.getJobWorkflow()
                 .getJob()

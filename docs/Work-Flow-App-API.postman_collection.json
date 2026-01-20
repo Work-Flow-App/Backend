@@ -5111,6 +5111,439 @@
           ]
         }
       ]
+    },
+    {
+      "name": "Job Workflow Step Activity",
+      "item": [
+        {
+          "name": "Add Comment to Step",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"This step looks good to proceed\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/job-workflow-steps/{{stepId}}/comments",
+              "host": ["{{base_url}}"],
+              "path": [
+                "api",
+                "v1",
+                "job-workflow-steps",
+                "{{stepId}}",
+                "comments"
+              ]
+            },
+            "description": "Add a comment to a workflow step.\n\n**Authentication:** Required (COMPANY role)"
+          },
+          "response": [
+            {
+              "name": "Add Comment - Success",
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": 10,\n  \"content\": \"This step looks good to proceed\",\n  \"authorId\": 5,\n  \"createdAt\": \"2025-10-23T12:00:00\",\n  \"updatedAt\": \"2025-10-23T12:00:00\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Update Comment",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"Updated comment content\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/job-workflow-steps/comments/{{commentId}}",
+              "host": ["{{base_url}}"],
+              "path": [
+                "api",
+                "v1",
+                "job-workflow-steps",
+                "comments",
+                "{{commentId}}"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Update Comment - Success",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"id\": 10,\n  \"content\": \"Updated comment content\",\n  \"authorId\": 5,\n  \"createdAt\": \"2025-10-23T12:00:00\",\n  \"updatedAt\": \"2025-10-23T12:15:00\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Delete Comment",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "url": {
+              "raw": "{{base_url}}/api/v1/job-workflow-steps/comments/{{commentId}}",
+              "host": ["{{base_url}}"],
+              "path": [
+                "api",
+                "v1",
+                "job-workflow-steps",
+                "comments",
+                "{{commentId}}"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Delete Comment - Success",
+              "status": "No Content",
+              "code": 204
+            }
+          ]
+        },
+        {
+          "name": "Get Step Comments",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/v1/job-workflow-steps/{{stepId}}/comments",
+              "host": ["{{base_url}}"],
+              "path": [
+                "api",
+                "v1",
+                "job-workflow-steps",
+                "{{stepId}}",
+                "comments"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Get Comments - Success",
+              "status": "OK",
+              "code": 200,
+              "body": "[{\n  \"id\": 10,\n  \"content\": \"This step looks good\",\n  \"authorId\": 5,\n  \"createdAt\": \"2025-10-23T12:00:00\",\n  \"updatedAt\": \"2025-10-23T12:00:00\"\n}]"
+            }
+          ]
+        },
+        {
+          "name": "Upload Attachment",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "multipart/form-data"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "description": "Max size 10MB"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/job-workflow-steps/{{stepId}}/attachments",
+              "host": ["{{base_url}}"],
+              "path": [
+                "api",
+                "v1",
+                "job-workflow-steps",
+                "{{stepId}}",
+                "attachments"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Upload Attachment - Success",
+              "status": "Created",
+              "code": 201,
+              "body": "{\n  \"id\": 7,\n  \"fileName\": \"contract.pdf\",\n  \"fileType\": \"application/pdf\",\n  \"fileUrl\": \"https://s3.amazonaws.com/bucket/contract.pdf\",\n  \"uploadedBy\": 5,\n  \"createdAt\": \"2025-10-23T12:30:00\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Rename Attachment",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "url": {
+              "raw": "{{base_url}}/api/v1/job-workflow-steps/attachments/{{attachmentId}}?fileName=new-name.pdf",
+              "host": ["{{base_url}}"],
+              "path": [
+                "api",
+                "v1",
+                "job-workflow-steps",
+                "attachments",
+                "{{attachmentId}}"
+              ],
+              "query": [
+                {
+                  "key": "fileName",
+                  "value": "new-name.pdf"
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Rename Attachment - Success",
+              "status": "OK",
+              "code": 200
+            }
+          ]
+        },
+        {
+          "name": "Delete Attachment",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "url": {
+              "raw": "{{base_url}}/api/v1/job-workflow-steps/attachments/{{attachmentId}}",
+              "host": ["{{base_url}}"],
+              "path": [
+                "api",
+                "v1",
+                "job-workflow-steps",
+                "attachments",
+                "{{attachmentId}}"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Delete Attachment - Success",
+              "status": "No Content",
+              "code": 204
+            }
+          ]
+        },
+        {
+          "name": "Get Step Attachments",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/v1/job-workflow-steps/{{stepId}}/attachments",
+              "host": ["{{base_url}}"],
+              "path": [
+                "api",
+                "v1",
+                "job-workflow-steps",
+                "{{stepId}}",
+                "attachments"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Get Attachments - Success",
+              "status": "OK",
+              "code": 200
+            }
+          ]
+        },
+        {
+          "name": "Get Step Discussion Timeline",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/v1/job-workflow-steps/{{stepId}}/discussion",
+              "host": ["{{base_url}}"],
+              "path": [
+                "api",
+                "v1",
+                "job-workflow-steps",
+                "{{stepId}}",
+                "discussion"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Get Discussion Timeline - Success",
+              "status": "OK",
+              "code": 200,
+              "body": "[{\n  \"id\": 10,\n  \"itemType\": \"COMMENT\",\n  \"content\": \"Looks good\",\n  \"actorId\": 5,\n  \"createdAt\": \"2025-10-23T12:00:00\"\n}, {\n  \"id\": 7,\n  \"itemType\": \"ATTACHMENT\",\n  \"content\": \"contract.pdf\",\n  \"fileUrl\": \"https://s3.amazonaws.com/bucket/contract.pdf\",\n  \"actorId\": 5,\n  \"createdAt\": \"2025-10-23T12:30:00\"\n}]"
+            }
+          ]
+        }
+      ],
+      "description": "Comments, attachments, and discussion timeline for job workflow steps."
+    },
+    {
+      "name": "Job Workflow Step Timeline",
+      "item": [
+        {
+          "name": "Get Step Activity Timeline",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/job-workflow-steps/{{stepId}}/timeline",
+              "host": ["{{base_url}}"],
+              "path": [
+                "api",
+                "v1",
+                "job-workflow-steps",
+                "{{stepId}}",
+                "timeline"
+              ]
+            },
+            "description": "Retrieve the activity timeline for a specific job workflow step.\n\n**Authentication:** Required (COMPANY role)\n\n**Response:**\n- id (long): Activity ID\n- type (string): Activity type (COMMENT, ATTACHMENT_ADDED, ATTACHMENT_UPDATED, ATTACHMENT_DELETED, etc.)\n- message (string): Activity message\n- actorId (long): User who performed the action\n- createdAt (datetime): Activity timestamp\n\n**Ordering:** Oldest → newest"
+          },
+          "response": [
+            {
+              "name": "Get Step Activity Timeline - Success",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{jwt_token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "http://localhost:8080/api/v1/job-workflow-steps/12/timeline",
+                  "protocol": "http",
+                  "host": ["localhost"],
+                  "port": "8080",
+                  "path": ["api", "v1", "job-workflow-steps", "12", "timeline"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "[\n  {\n    \"id\": 1,\n    \"type\": \"COMMENT\",\n    \"message\": \"This step looks good to proceed\",\n    \"actorId\": 5,\n    \"createdAt\": \"2025-10-23T12:00:00\"\n  },\n  {\n    \"id\": 2,\n    \"type\": \"ATTACHMENT_ADDED\",\n    \"message\": \"Uploaded contract.pdf\",\n    \"actorId\": 5,\n    \"createdAt\": \"2025-10-23T12:30:00\"\n  },\n  {\n    \"id\": 3,\n    \"type\": \"ATTACHMENT_UPDATED\",\n    \"message\": \"Renamed attachment to contract-v2.pdf\",\n    \"actorId\": 5,\n    \"createdAt\": \"2025-10-23T12:45:00\"\n  }\n]"
+            }
+          ]
+        }
+      ],
+      "description": "Activity timeline for job workflow steps including comments and attachment actions."
     }
   ]
 }

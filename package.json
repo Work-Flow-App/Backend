@@ -1,0 +1,11 @@
+{
+  "name": "workflow-app-backend",
+  "version": "1.0.0",
+  "description": "Work-Flow-App Backend - Postman Collection Scripts",
+  "scripts": {
+    "postman:build": "node docs/postman/build.js"
+  },
+  "keywords": ["postman", "api", "documentation"],
+  "author": "",
+  "license": "ISC"
+}

@@ -1,0 +1,417 @@
+{
+  "name": "Assets",
+  "description": "Asset management endpoints for creating, reading, updating, and managing company assets with depreciation tracking.",
+  "item": [
+    {
+      "name": "Create Asset",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"name\": \"Company Van A1\",\n    \"assetTag\": \"VAN-001\",\n    \"serialNumber\": \"SN-2025-AX11\",\n    \"purchasePrice\": 30000.00,\n    \"purchaseDate\": \"2023-01-01\",\n    \"depreciationRate\": 20.00,\n    \"salvageValue\": 5000.00\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/assets",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "assets"
+          ]
+        },
+        "description": "Create a new company asset\n\n```bash\ncurl -X POST \"{{base_url}}/api/v1/assets\" \\\n  -H \"Authorization: Bearer {{jwt_token}}\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n    \"name\": \"Company Van A1\",\n    \"assetTag\": \"VAN-001\",\n    \"serialNumber\": \"SN-2025-AX11\",\n    \"purchasePrice\": 30000.00,\n    \"purchaseDate\": \"2023-01-01\",\n    \"depreciationRate\": 20.00,\n    \"salvageValue\": 5000.00\n  }'\n```"
+      },
+      "response": [
+        {
+          "name": "Create Asset - Success",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Company Van A1\",\n    \"assetTag\": \"VAN-001\",\n    \"serialNumber\": \"SN-2025-AX11\",\n    \"purchasePrice\": 30000.00,\n    \"purchaseDate\": \"2023-01-01\",\n    \"depreciationRate\": 20.00,\n    \"salvageValue\": 5000.00\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/v1/assets",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "assets"
+              ]
+            }
+          },
+          "status": "Created",
+          "code": 201,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n    \"id\": 10,\n    \"companyId\": 1,\n    \"name\": \"Company Van A1\",\n    \"assetTag\": \"VAN-001\",\n    \"serialNumber\": \"SN-2025-AX11\",\n    \"purchasePrice\": 30000.00,\n    \"purchaseDate\": \"2023-01-01\",\n    \"depreciationRate\": 20.00,\n    \"salvageValue\": 5000.00,\n    \"available\": true,\n    \"archived\": false,\n    \"createdAt\": \"2025-11-20T10:00:00\",\n    \"updatedAt\": \"2025-11-20T10:00:00\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Get Asset By ID",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/v1/assets/10",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "assets",
+            "10"
+          ]
+        },
+        "description": "Fetch asset details\n\n```bash\ncurl -X GET \"{{base_url}}/api/v1/assets/10\" \\\n  -H \"Authorization: Bearer {{jwt_token}}\"\n```"
+      },
+      "response": [
+        {
+          "name": "Get Asset - Success",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/v1/assets/10",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "assets",
+                "10"
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n    \"id\": 10,\n    \"name\": \"Company Van A1\",\n    \"purchasePrice\": 30000.00,\n    \"currentValue\": 19200.00,\n    \"totalDepreciation\": 10800.00,\n    \"daysOwned\": 693,\n    \"yearsOwned\": 1.90,\n    \"available\": true\n}"
+        }
+      ]
+    },
+    {
+      "name": "List Assets",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/v1/assets?page=0&size=20&available=true&archived=false",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "assets"
+          ],
+          "query": [
+            {
+              "key": "page",
+              "value": "0"
+            },
+            {
+              "key": "size",
+              "value": "20"
+            },
+            {
+              "key": "available",
+              "value": "true"
+            },
+            {
+              "key": "archived",
+              "value": "false"
+            }
+          ]
+        },
+        "description": "Retrieve paginated list of assets\n\n```bash\ncurl -X GET \"{{base_url}}/api/v1/assets?page=0&size=20&available=true&archived=false\" \\\n  -H \"Authorization: Bearer {{jwt_token}}\"\n```"
+      },
+      "response": [
+        {
+          "name": "List Assets - Success",
+          "originalRequest": {},
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n    \"content\": [\n        {\n            \"id\": 10,\n            \"name\": \"Company Van A1\",\n            \"available\": true,\n            \"archived\": false\n        }\n    ],\n    \"page\": 0,\n    \"size\": 20,\n    \"totalElements\": 1,\n    \"totalPages\": 1\n}"
+        }
+      ]
+    },
+    {
+      "name": "Update Asset",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"name\": \"Company Van A1 (Updated)\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/assets/10",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "assets",
+            "10"
+          ]
+        },
+        "description": "Update non-immutable fields of an asset\n\n```bash\ncurl -X PUT \"{{base_url}}/api/v1/assets/10\" \\\n  -H \"Authorization: Bearer {{jwt_token}}\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{ \"name\": \"Company Van A1 (Updated)\" }'\n```"
+      },
+      "response": [
+        {
+          "name": "Update Asset - Success",
+          "originalRequest": {},
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n    \"id\": 10,\n    \"name\": \"Company Van A1 (Updated)\",\n    \"updatedAt\": \"2025-11-22T10:00:00\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Archive Asset",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/v1/assets/10/archive",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "assets",
+            "10",
+            "archive"
+          ]
+        },
+        "description": "Archive (soft delete) an asset\n\n```bash\ncurl -X POST \"{{base_url}}/api/v1/assets/10/archive\" \\\n  -H \"Authorization: Bearer {{jwt_token}}\"\n```"
+      },
+      "response": [
+        {
+          "name": "Archive Asset - Success",
+          "originalRequest": {},
+          "status": "No Content",
+          "code": 204,
+          "header": []
+        }
+      ]
+    },
+    {
+      "name": "Get Asset Current Value",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/v1/assets/10/value?asOfDate=2025-11-24",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "assets",
+            "10",
+            "value"
+          ],
+          "query": [
+            {
+              "key": "asOfDate",
+              "value": "2025-11-24"
+            }
+          ]
+        },
+        "description": "Get depreciation-based current value\n\n```bash\ncurl -X GET \"{{base_url}}/api/v1/assets/10/value?asOfDate=2025-11-24\" \\\n  -H \"Authorization: Bearer {{jwt_token}}\"\n```"
+      },
+      "response": [
+        {
+          "name": "Get Asset Value - Success",
+          "originalRequest": {},
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n    \"assetId\": 10,\n    \"assetName\": \"Company Van A1\",\n    \"purchasePrice\": 30000.00,\n    \"currentValue\": 19200.00,\n    \"totalDepreciation\": 10800.00,\n    \"depreciationRate\": 20.00,\n    \"salvageValue\": 5000.00,\n    \"purchaseDate\": \"2023-01-01\",\n    \"daysOwned\": 693,\n    \"yearsOwned\": 1.90,\n    \"valueAsOfDate\": \"2025-11-24\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Get Asset Statistics",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/v1/assets/statistics",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "assets",
+            "statistics"
+          ]
+        },
+        "description": "Get asset statistics for the company\n\n**Response:**\n- totalAssets (long): Total number of assets\n- activeAssets (long): Number of active (non-archived) assets\n- archivedAssets (long): Number of archived assets\n- totalValue (BigDecimal): Total purchase value of all assets\n- currentValue (BigDecimal): Current depreciated value of all assets\n- totalDepreciation (BigDecimal): Total depreciation amount\n\n```bash\ncurl -X GET \"{{base_url}}/api/v1/assets/statistics\" \\\n  -H \"Authorization: Bearer {{jwt_token}}\"\n```"
+      },
+      "response": [
+        {
+          "name": "Get Asset Statistics - Success",
+          "originalRequest": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/assets/statistics",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "assets",
+                "statistics"
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n    \"totalAssets\": 15,\n    \"activeAssets\": 12,\n    \"archivedAssets\": 3,\n    \"totalValue\": 250000.00,\n    \"currentValue\": 180000.00,\n    \"totalDepreciation\": 70000.00\n}"
+        }
+      ]
+    }
+  ]
+}

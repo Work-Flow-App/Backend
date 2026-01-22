@@ -1,0 +1,57 @@
+{
+  "info": {
+    "_postman_id": "workflow-app-api-collection",
+    "name": "Work-Flow-App API",
+    "description": "Complete API collection for Work-Flow-App Backend\n\n**Base URL:** https://api.dev.workfloow.app (Dev Environment)\n\n**Local Development:** http://localhost:8080\n\n**Authentication:** JWT Bearer Token (obtained from /auth/login or /auth/signup)\n\n**Available Roles:**\n- COMPANY: Company owner/manager\n- WORKER: Worker/employee\n- ADMIN: System administrator",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{jwt_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// This script runs before every request",
+          "// You can add global pre-request logic here"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// This script runs after every request",
+          "// You can add global test logic here"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "jwt_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refresh_token",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}

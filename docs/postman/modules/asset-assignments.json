@@ -1,0 +1,210 @@
+{
+  "name": "Asset Assignments",
+  "description": "Asset assignment endpoints for assigning assets to jobs, returning assets, and tracking assignment history.",
+  "item": [
+    {
+      "name": "Assign Asset to Job",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"assetId\": 10,\n    \"jobId\": 3,\n    \"notes\": \"Used for transport to client site\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/asset-assignments/assign",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "asset-assignments",
+            "assign"
+          ]
+        },
+        "description": "Assign an asset to a job (sets asset.available=false)\n\n```bash\ncurl -X POST \"{{base_url}}/api/v1/asset-assignments/assign\" \\\n  -H \"Authorization: Bearer {{jwt_token}}\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{ \"assetId\": 10, \"jobId\": 3, \"notes\": \"Used for transport to client site\" }'\n```"
+      },
+      "response": [
+        {
+          "name": "Assign Asset - Success",
+          "originalRequest": {},
+          "status": "Created",
+          "code": 201,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n    \"assignmentId\": 200,\n    \"assetId\": 10,\n    \"jobId\": 3,\n    \"assignedAt\": \"2025-11-21T09:00:00\",\n    \"notes\": \"Used for transport to client site\",\n    \"status\": \"ACTIVE\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Return Asset From Job",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"assetId\": 10,\n    \"jobId\": 3,\n    \"notes\": \"Returned after completion\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/asset-assignments/return",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "asset-assignments",
+            "return"
+          ]
+        },
+        "description": "Return an asset from a job (sets returnedAt and asset.available=true)\n\n```bash\ncurl -X POST \"{{base_url}}/api/v1/asset-assignments/return\" \\\n  -H \"Authorization: Bearer {{jwt_token}}\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{ \"assetId\": 10, \"jobId\": 3, \"notes\": \"Returned after completion\" }'\n```"
+      },
+      "response": [
+        {
+          "name": "Return Asset - Success",
+          "originalRequest": {},
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n    \"assignmentId\": 200,\n    \"assetId\": 10,\n    \"jobId\": 3,\n    \"returnedAt\": \"2025-11-23T17:00:00\",\n    \"notes\": \"Returned after completion\",\n    \"status\": \"COMPLETED\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Asset Assignment History",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/v1/asset-assignments/asset/10/history",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "asset-assignments",
+            "asset",
+            "10",
+            "history"
+          ]
+        },
+        "description": "Get the assignment history for an asset (latest first)\n\n```bash\ncurl -X GET \"{{base_url}}/api/v1/asset-assignments/asset/10/history\" \\\n  -H \"Authorization: Bearer {{jwt_token}}\"\n```"
+      },
+      "response": [
+        {
+          "name": "Asset Assignment History - Success",
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "[\n    {\n        \"assignmentId\": 200,\n        \"jobId\": 3,\n        \"jobTitle\": \"Office Installation\",\n        \"assignedAt\": \"2025-11-21T09:00:00\",\n        \"returnedAt\": \"2025-11-23T17:00:00\",\n        \"durationDays\": 2,\n        \"notes\": \"Used for transport to client site\",\n        \"status\": \"COMPLETED\"\n    }\n]"
+        }
+      ]
+    },
+    {
+      "name": "Get Assets Assigned To Job",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "url": {
+          "raw": "{{base_url}}/api/v1/asset-assignments/job/3?onlyActive=true",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "asset-assignments",
+            "job",
+            "3"
+          ],
+          "query": [
+            {
+              "key": "onlyActive",
+              "value": "true",
+              "description": "If true, returns only active assignments. If false, returns all assignments including returned assets."
+            }
+          ]
+        },
+        "description": "Get assets assigned to a specific job\n\n**Query Parameters:**\n- onlyActive (boolean, optional): Filter for active assignments only (default: false)\n  - true: Only currently assigned assets\n  - false: All assignments including historical/returned assets\n\n```bash\ncurl -X GET \"{{base_url}}/api/v1/asset-assignments/job/3?onlyActive=true\" \\\n  -H \"Authorization: Bearer {{jwt_token}}\"\n```"
+      },
+      "response": [
+        {
+          "name": "Job Assigned Assets - Success",
+          "status": "OK",
+          "code": 200,
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "[\n    {\n        \"assetId\": 10,\n        \"name\": \"Company Van A1\",\n        \"currentValue\": 19200.00,\n        \"assignedAt\": \"2025-11-21T09:00:00\",\n        \"status\": \"ACTIVE\"\n    }\n]"
+        }
+      ]
+    }
+  ]
+}

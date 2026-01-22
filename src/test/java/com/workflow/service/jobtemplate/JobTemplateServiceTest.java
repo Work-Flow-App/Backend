@@ -2,7 +2,9 @@ package com.workflow.service.jobtemplate;
 
 import com.workflow.common.constant.job.JobFieldType;
 import com.workflow.common.exception.business.CompanyNotFoundException;
+import com.workflow.common.exception.business.DefaultTemplateDeletionException;
 import com.workflow.common.exception.business.DuplicateNameException;
+import com.workflow.common.exception.business.FieldNotFoundException;
 import com.workflow.common.exception.business.TemplateNotFoundException;
 import com.workflow.dto.jobtemplate.*;
 import com.workflow.entity.Company;
@@ -428,7 +430,7 @@ class JobTemplateServiceTest {
 
         // Act & Assert
         assertThatThrownBy(() -> jobTemplateService.getField(999L, 1L))
-                .isInstanceOf(TemplateNotFoundException.class)
+                .isInstanceOf(FieldNotFoundException.class)
                 .hasMessageContaining("Field not found");
 
         verify(fieldRepository).findById(999L);
@@ -469,7 +471,7 @@ class JobTemplateServiceTest {
 
         // Act & Assert
         assertThatThrownBy(() -> jobTemplateService.updateField(999L, createFieldRequest, 1L))
-                .isInstanceOf(TemplateNotFoundException.class)
+                .isInstanceOf(FieldNotFoundException.class)
                 .hasMessageContaining("Field not found");
 
         verify(fieldRepository).findById(999L);
@@ -500,7 +502,7 @@ class JobTemplateServiceTest {
 
         // Act & Assert
         assertThatThrownBy(() -> jobTemplateService.deleteField(999L, 1L))
-                .isInstanceOf(TemplateNotFoundException.class)
+                .isInstanceOf(FieldNotFoundException.class)
                 .hasMessageContaining("Field not found");
 
         verify(fieldRepository).findById(999L);
@@ -776,7 +778,7 @@ class JobTemplateServiceTest {
 
         // Act & Assert
         assertThatThrownBy(() -> jobTemplateService.deleteTemplate(1L, 1L))
-                .isInstanceOf(IllegalStateException.class)
+                .isInstanceOf(DefaultTemplateDeletionException.class)
                 .hasMessageContaining("Cannot delete the default template");
 
         verify(templateRepository).findById(1L);

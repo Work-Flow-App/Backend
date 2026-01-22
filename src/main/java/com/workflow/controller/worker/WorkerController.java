@@ -7,6 +7,7 @@ import com.workflow.entity.User;
 import com.workflow.service.worker.IWorkerService;
 import com.workflow.service.worker.WorkerInvitationService;
 import jakarta.validation.Valid;
+import jakarta.validation.groups.Default;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -54,7 +55,7 @@ public class WorkerController {
     @PutMapping("/{id}")
     public ResponseEntity<WorkerResponse> updateWorker(
             @PathVariable Long id,
-            @Validated(PutValidation.class) @RequestBody WorkerUpdateRequest request,
+            @Validated({PutValidation.class, Default.class}) @RequestBody WorkerUpdateRequest request,
             Authentication authentication
     ) {
         User user = (User) authentication.getPrincipal();
@@ -65,7 +66,7 @@ public class WorkerController {
     @PatchMapping("/{id}")
     public ResponseEntity<WorkerResponse> patchWorker(
             @PathVariable Long id,
-            @Validated(PatchValidation.class) @RequestBody WorkerUpdateRequest request,
+            @Validated({PatchValidation.class, Default.class}) @RequestBody WorkerUpdateRequest request,
             Authentication authentication
     ) {
         User user = (User) authentication.getPrincipal();

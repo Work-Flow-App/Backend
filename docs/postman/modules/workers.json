@@ -1,0 +1,760 @@
+{
+  "name": "Workers",
+  "item": [
+    {
+      "name": "Create Worker",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"name\": \"John Doe\",\n    \"initials\": \"JD\",\n    \"telephone\": \"1234567890\",\n    \"mobile\": \"0987654321\",\n    \"email\": \"john.doe@example.com\",\n    \"username\": \"johndoe\",\n    \"password\": \"password123\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/workers",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "workers"
+          ]
+        },
+        "description": "Create a new worker with user account.\n\n**Authentication:** Required (COMPANY role)\n\n**Request Body:**\n- name (string, required): 2-100 characters\n- initials (string, optional): Max 10 characters\n- telephone (string, optional): Max 20 characters\n- mobile (string, optional): Max 20 characters\n- email (string, optional): Valid email format, max 100 characters\n- username (string, required): 3-20 characters (for worker login)\n- password (string, required): Minimum 8 characters\n\n**Business Logic:**\n- Creates both Worker entity and User account with ROLE_WORKER\n- Worker is associated with the company of the authenticated user\n- Username must be unique across all users\n- Email must be unique if provided\n\n**Response:**\n- id (long): Worker ID\n- name (string): Worker name\n- initials (string): Initials\n- telephone (string): Telephone number\n- mobile (string): Mobile number\n- email (string): Email address\n- username (string): Login username\n- loginLocked (boolean): Account lock status\n- archived (boolean): Archive status\n- createdAt (datetime): Creation timestamp\n- updatedAt (datetime): Last update timestamp"
+      },
+      "response": [
+        {
+          "name": "Create Worker - Success",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"John Doe\",\n    \"initials\": \"JD\",\n    \"telephone\": \"1234567890\",\n    \"mobile\": \"0987654321\",\n    \"email\": \"john.doe@example.com\",\n    \"username\": \"johndoe\",\n    \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/v1/workers",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "workers"
+              ]
+            }
+          },
+          "status": "Created",
+          "code": 201,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n    \"id\": 1,\n    \"name\": \"John Doe\",\n    \"initials\": \"JD\",\n    \"telephone\": \"1234567890\",\n    \"mobile\": \"0987654321\",\n    \"email\": \"john.doe@example.com\",\n    \"username\": \"johndoe\",\n    \"loginLocked\": false,\n    \"archived\": false,\n    \"createdAt\": \"2025-10-23T12:00:00\",\n    \"updatedAt\": \"2025-10-23T12:00:00\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Get All Workers",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/v1/workers",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "workers"
+          ]
+        },
+        "description": "Retrieve all workers for the authenticated company.\n\n**Authentication:** Required (COMPANY role)\n\n**Response:** Array of worker objects (same format as Create Worker response)\n\n**Note:** Returns all workers (including archived) belonging to the company."
+      },
+      "response": [
+        {
+          "name": "Get All Workers - Success",
+          "originalRequest": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8080/api/v1/workers",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "workers"
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "[\n    {\n        \"id\": 1,\n        \"name\": \"John Doe\",\n        \"initials\": \"JD\",\n        \"telephone\": \"1234567890\",\n        \"mobile\": \"0987654321\",\n        \"email\": \"john.doe@example.com\",\n        \"username\": \"johndoe\",\n        \"loginLocked\": false,\n        \"archived\": false,\n        \"createdAt\": \"2025-10-23T12:00:00\",\n        \"updatedAt\": \"2025-10-23T12:00:00\"\n    },\n    {\n        \"id\": 2,\n        \"name\": \"Jane Smith\",\n        \"initials\": \"JS\",\n        \"telephone\": \"1111111111\",\n        \"mobile\": \"2222222222\",\n        \"email\": \"jane.smith@example.com\",\n        \"username\": \"janesmith\",\n        \"loginLocked\": false,\n        \"archived\": false,\n        \"createdAt\": \"2025-10-23T13:00:00\",\n        \"updatedAt\": \"2025-10-23T13:00:00\"\n    }\n]"
+        }
+      ]
+    },
+    {
+      "name": "Get Worker by ID",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/v1/workers/1",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "workers",
+            "1"
+          ]
+        },
+        "description": "Retrieve a specific worker by ID.\n\n**Authentication:** Required (COMPANY role)\n\n**Path Parameter:**\n- id (long): Worker ID\n\n**Response:** Worker object (same format as Create Worker response)\n\n**Authorization:** Only workers belonging to the authenticated company can be accessed."
+      },
+      "response": [
+        {
+          "name": "Get Worker by ID - Success",
+          "originalRequest": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8080/api/v1/workers/1",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "workers",
+                "1"
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n    \"id\": 1,\n    \"name\": \"John Doe\",\n    \"initials\": \"JD\",\n    \"telephone\": \"1234567890\",\n    \"mobile\": \"0987654321\",\n    \"email\": \"john.doe@example.com\",\n    \"username\": \"johndoe\",\n    \"loginLocked\": false,\n    \"archived\": false,\n    \"createdAt\": \"2025-10-23T12:00:00\",\n    \"updatedAt\": \"2025-10-23T12:00:00\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Update Worker",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"name\": \"John Doe Updated\",\n    \"initials\": \"JDU\",\n    \"telephone\": \"9999999999\",\n    \"mobile\": \"8888888888\",\n    \"email\": \"john.updated@example.com\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/workers/1",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "workers",
+            "1"
+          ]
+        },
+        "description": "Update an existing worker's details.\n\n**Authentication:** Required (COMPANY role)\n\n**Path Parameter:**\n- id (long): Worker ID\n\n**Request Body:**\n- name (string, required): 2-100 characters\n- initials (string, optional): Max 10 characters\n- telephone (string, optional): Max 20 characters\n- mobile (string, optional): Max 20 characters\n- email (string, optional): Valid email format, max 100 characters\n\n**Note:** Username and password cannot be updated through this endpoint.\n\n**Response:** Updated worker object (same format as Create Worker response)\n\n**Authorization:** Only workers belonging to the authenticated company can be updated."
+      },
+      "response": [
+        {
+          "name": "Update Worker - Success",
+          "originalRequest": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"John Doe Updated\",\n    \"initials\": \"JDU\",\n    \"telephone\": \"9999999999\",\n    \"mobile\": \"8888888888\",\n    \"email\": \"john.updated@example.com\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/v1/workers/1",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "workers",
+                "1"
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n    \"id\": 1,\n    \"name\": \"John Doe Updated\",\n    \"initials\": \"JDU\",\n    \"telephone\": \"9999999999\",\n    \"mobile\": \"8888888888\",\n    \"email\": \"john.updated@example.com\",\n    \"username\": \"johndoe\",\n    \"loginLocked\": false,\n    \"archived\": false,\n    \"createdAt\": \"2025-10-23T12:00:00\",\n    \"updatedAt\": \"2025-10-23T14:30:00\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Delete Worker (Soft Delete)",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/v1/workers/1",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "workers",
+            "1"
+          ]
+        },
+        "description": "Soft delete a worker (archive).\n\n**Authentication:** Required (COMPANY role)\n\n**Path Parameter:**\n- id (long): Worker ID\n\n**Response:** 204 No Content\n\n**Business Logic:**\n- Sets worker.archived = true\n- Worker remains in database but is marked as archived\n- Archived workers still appear in getAllWorkers() but are counted separately in dashboard\n\n**Authorization:** Only workers belonging to the authenticated company can be deleted."
+      },
+      "response": [
+        {
+          "name": "Delete Worker - Success",
+          "originalRequest": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8080/api/v1/workers/1",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "workers",
+                "1"
+              ]
+            }
+          },
+          "status": "No Content",
+          "code": 204,
+          "_postman_previewlanguage": null,
+          "header": [],
+          "body": null
+        }
+      ]
+    },
+    {
+      "name": "Invite Worker by Email",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"email\": \"newworker@example.com\",\n    \"firstName\": \"Jane\",\n    \"lastName\": \"Smith\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/workers/invite",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "workers",
+            "invite"
+          ]
+        },
+        "description": "Invite a new worker by email. Creates an invitation record and sends an email with a unique verification token.\n\n**Authentication:** Required (COMPANY role)\n\n**Request Body:**\n- email (string, required): Worker's email address\n- firstName (string, required): Worker's first name\n- lastName (string, required): Worker's last name\n\n**Response:**\n- id (long): Invitation ID\n- companyId (long): Company ID\n- email (string): Worker's email\n- firstName (string): Worker's first name\n- lastName (string): Worker's last name\n- status (string): Invitation status (PENDING)\n- token (string): Unique verification token (for testing only, not sent in production)\n- expiresAt (datetime): Token expiration timestamp (7 days from creation)\n- createdAt (datetime): Invitation creation timestamp\n\n**Business Logic:**\n- Generates unique verification token valid for 7 days\n- Sends invitation email with signup link containing token\n- Token can be used for worker signup\n- Only one pending invitation per email allowed\n\n**Status Code:** 201 Created\n\n**Error Responses:**\n- 400 Bad Request: Invalid email or missing required fields\n- 409 Conflict: Active invitation already exists for this email"
+      },
+      "response": [
+        {
+          "name": "Invite Worker by Email - Success",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"newworker@example.com\",\n    \"firstName\": \"Jane\",\n    \"lastName\": \"Smith\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/v1/workers/invite",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "workers",
+                "invite"
+              ]
+            }
+          },
+          "status": "Created",
+          "code": 201,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n    \"id\": 1,\n    \"companyId\": 1,\n    \"email\": \"newworker@example.com\",\n    \"firstName\": \"Jane\",\n    \"lastName\": \"Smith\",\n    \"status\": \"PENDING\",\n    \"token\": \"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJuZXd3b3JrZXJAZXhhbXBsZS5jb20iLCJpbnZpdGF0aW9uSWQiOjEsImV4cCI6MTczMjI3MjAwMH0.abcdef123456\",\n    \"expiresAt\": \"2025-11-21T10:00:00\",\n    \"createdAt\": \"2025-11-14T10:00:00\"\n}"
+        },
+        {
+          "name": "Invite Worker by Email - Conflict",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"existing@example.com\",\n    \"firstName\": \"Jane\",\n    \"lastName\": \"Smith\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/v1/workers/invite",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "workers",
+                "invite"
+              ]
+            }
+          },
+          "status": "Conflict",
+          "code": 409,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n    \"timestamp\": \"2025-11-14T10:30:00\",\n    \"status\": 409,\n    \"error\": \"Conflict\",\n    \"message\": \"Active invitation already exists for this email\",\n    \"path\": \"/api/v1/workers/invite\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Get Worker Invitations",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/v1/workers/invites",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "workers",
+            "invites"
+          ]
+        },
+        "description": "Get all worker invitations for the authenticated company.\n\n**Authentication:** Required (COMPANY role)\n\n**Response:** Array of invitation objects\n- id (long): Invitation ID\n- companyId (long): Company ID\n- email (string): Worker's email\n- firstName (string): Worker's first name\n- lastName (string): Worker's last name\n- status (string): Invitation status (PENDING, ACCEPTED, EXPIRED, CANCELLED)\n- expiresAt (datetime): Token expiration timestamp\n- createdAt (datetime): Invitation creation timestamp\n- acceptedAt (datetime, optional): When invitation was accepted\n\n**Business Logic:**\n- Returns all invitations for the authenticated company\n- Invitations are ordered by creation date (newest first)\n- Expired invitations are automatically marked as EXPIRED\n\n**Authorization:** Only invitations belonging to the authenticated company are returned.\n\n**Status Code:** 200 OK"
+      },
+      "response": [
+        {
+          "name": "Get Worker Invitations - Success",
+          "originalRequest": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8080/api/v1/workers/invites",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "workers",
+                "invites"
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "[\n    {\n        \"id\": 1,\n        \"companyId\": 1,\n        \"email\": \"newworker@example.com\",\n        \"firstName\": \"Jane\",\n        \"lastName\": \"Smith\",\n        \"status\": \"PENDING\",\n        \"expiresAt\": \"2025-11-21T10:00:00\",\n        \"createdAt\": \"2025-11-14T10:00:00\",\n        \"acceptedAt\": null\n    },\n    {\n        \"id\": 2,\n        \"companyId\": 1,\n        \"email\": \"anotherworker@example.com\",\n        \"firstName\": \"Bob\",\n        \"lastName\": \"Johnson\",\n        \"status\": \"ACCEPTED\",\n        \"expiresAt\": \"2025-11-20T09:00:00\",\n        \"createdAt\": \"2025-11-13T09:00:00\",\n        \"acceptedAt\": \"2025-11-13T15:30:00\"\n    },\n    {\n        \"id\": 3,\n        \"companyId\": 1,\n        \"email\": \"expired@example.com\",\n        \"firstName\": \"Alice\",\n        \"lastName\": \"Williams\",\n        \"status\": \"EXPIRED\",\n        \"expiresAt\": \"2025-11-10T08:00:00\",\n        \"createdAt\": \"2025-11-03T08:00:00\",\n        \"acceptedAt\": null\n    }\n]"
+        },
+        {
+          "name": "Get Worker Invitations - Empty",
+          "originalRequest": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8080/api/v1/workers/invites",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "workers",
+                "invites"
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "[]"
+        }
+      ]
+    },
+    {
+      "name": "Check Invitation Token",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/v1/workers/invites/check/{{invitation_token}}",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "workers",
+            "invites",
+            "check",
+            "{{invitation_token}}"
+          ]
+        },
+        "description": "Check invitation token validity and retrieve invitation details.\n\n**Authentication:** NOT REQUIRED (Public endpoint)\n\n**Path Parameter:**\n- token (string): Invitation token from email URL\n\n**Response:**\n- valid (boolean): Whether the invitation is still valid (not used, not expired)\n- email (string): Email address of the invitee\n- companyName (string): Name of the company sending the invitation\n- status (string): PENDING, ACCEPTED, or EXPIRED\n- expiresAt (datetime): Expiration timestamp\n\n**Use Case:**\n- Frontend calls this endpoint when user clicks invitation link\n- Pre-fills and disables email field on signup form\n- Shows company name and validates token before user fills form\n\n**Status Code:** 200 OK"
+      },
+      "response": [
+        {
+          "name": "Check Invitation - Valid (Pending)",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/v1/workers/invites/check/a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "workers",
+                "invites",
+                "check",
+                "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n    \"valid\": true,\n    \"email\": \"newworker@example.com\",\n    \"companyName\": \"Tech Solutions Inc\",\n    \"status\": \"PENDING\",\n    \"expiresAt\": \"2025-11-30T10:00:00\"\n}"
+        },
+        {
+          "name": "Check Invitation - Already Used",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/v1/workers/invites/check/used-token-123",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "workers",
+                "invites",
+                "check",
+                "used-token-123"
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n    \"valid\": false,\n    \"email\": \"existingworker@example.com\",\n    \"companyName\": \"Tech Solutions Inc\",\n    \"status\": \"ACCEPTED\",\n    \"expiresAt\": \"2025-11-25T10:00:00\"\n}"
+        },
+        {
+          "name": "Check Invitation - Expired",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/v1/workers/invites/check/expired-token-456",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "workers",
+                "invites",
+                "check",
+                "expired-token-456"
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n    \"valid\": false,\n    \"email\": \"oldworker@example.com\",\n    \"companyName\": \"Tech Solutions Inc\",\n    \"status\": \"EXPIRED\",\n    \"expiresAt\": \"2025-11-15T10:00:00\"\n}"
+        },
+        {
+          "name": "Check Invitation - Invalid Token",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/v1/workers/invites/check/invalid-token",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "workers",
+                "invites",
+                "check",
+                "invalid-token"
+              ]
+            }
+          },
+          "status": "Bad Request",
+          "code": 400,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n    \"status\": 400,\n    \"error\": \"Bad Request\",\n    \"message\": \"Invalid invitation token\",\n    \"path\": \"/api/v1/workers/invites/check/invalid-token\"\n}"
+        }
+      ]
+    }
+  ],
+  "description": "Worker management endpoints for creating, reading, updating, and deleting workers."
+}

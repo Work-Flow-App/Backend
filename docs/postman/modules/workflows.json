@@ -1,0 +1,252 @@
+{
+  "name": "Workflows",
+  "description": "Workflow and workflow step management endpoints.",
+  "item": [
+    {
+      "name": "Create Workflow",
+      "request": {
+        "auth": {
+          "type": "bearer"
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Repair Workflow\",\n  \"description\": \"Standard repair process\"\n}"
+        },
+        "url": "{{base_url}}/api/v1/workflows"
+      },
+      "response": [
+        {
+          "name": "201 Created",
+          "status": "Created",
+          "code": 201,
+          "body": "{\n  \"id\": 1,\n  \"companyId\": 1,\n  \"name\": \"Repair Workflow\",\n  \"description\": \"Standard repair process\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Update Workflow",
+      "request": {
+        "auth": {
+          "type": "bearer"
+        },
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Updated Workflow\",\n  \"description\": \"Updated description\"\n}"
+        },
+        "url": "{{base_url}}/api/v1/workflows/1"
+      },
+      "response": [
+        {
+          "name": "200 OK",
+          "status": "OK",
+          "code": 200,
+          "body": "{\n  \"id\": 1,\n  \"companyId\": 1,\n  \"name\": \"Updated Workflow\",\n  \"description\": \"Updated description\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Delete Workflow",
+      "request": {
+        "auth": {
+          "type": "bearer"
+        },
+        "method": "DELETE",
+        "url": "{{base_url}}/api/v1/workflows/1"
+      },
+      "response": [
+        {
+          "name": "204 No Content",
+          "status": "No Content",
+          "code": 204
+        }
+      ]
+    },
+    {
+      "name": "Get All Workflows",
+      "request": {
+        "auth": {
+          "type": "bearer"
+        },
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/workflows"
+      },
+      "response": [
+        {
+          "name": "200 OK",
+          "status": "OK",
+          "code": 200,
+          "body": "[{\n  \"id\": 1,\n  \"companyId\": 1,\n  \"name\": \"Repair Workflow\",\n  \"description\": \"Standard repair process\"\n}]"
+        }
+      ]
+    },
+    {
+      "name": "Get Workflow by ID",
+      "request": {
+        "auth": {
+          "type": "bearer"
+        },
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/workflows/1"
+      },
+      "response": [
+        {
+          "name": "200 OK",
+          "status": "OK",
+          "code": 200,
+          "body": "{\n  \"id\": 1,\n  \"companyId\": 1,\n  \"name\": \"Repair Workflow\",\n  \"description\": \"Standard repair process\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Create Workflow Step",
+      "request": {
+        "auth": {
+          "type": "bearer"
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"workflowId\": 1,\n  \"name\": \"Inspection\",\n  \"description\": \"Initial inspection\",\n  \"orderIndex\": 1,\n  \"optional\": false\n}"
+        },
+        "url": "{{base_url}}/api/v1/workflows/steps"
+      },
+      "response": [
+        {
+          "name": "200 OK",
+          "status": "OK",
+          "code": 200,
+          "body": "{\n  \"id\": 10,\n  \"workflowId\": 1,\n  \"name\": \"Inspection\",\n  \"description\": \"Initial inspection\",\n  \"orderIndex\": 1,\n  \"optional\": false\n}"
+        }
+      ]
+    },
+    {
+      "name": "Get Steps by Workflow",
+      "request": {
+        "auth": {
+          "type": "bearer"
+        },
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/workflows/1/steps"
+      },
+      "response": [
+        {
+          "name": "200 OK",
+          "status": "OK",
+          "code": 200,
+          "body": "[{\n  \"id\": 10,\n  \"workflowId\": 1,\n  \"name\": \"Inspection\",\n  \"description\": \"Initial inspection\",\n  \"orderIndex\": 1,\n  \"optional\": false\n}]"
+        }
+      ]
+    },
+    {
+      "name": "Update Workflow Step",
+      "request": {
+        "auth": {
+          "type": "bearer"
+        },
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"workflowId\": 1,\n  \"name\": \"Updated Inspection\",\n  \"description\": \"Updated desc\",\n  \"orderIndex\": 2,\n  \"optional\": true\n}"
+        },
+        "url": "{{base_url}}/api/v1/workflows/steps/10"
+      },
+      "response": [
+        {
+          "name": "200 OK",
+          "status": "OK",
+          "code": 200,
+          "body": "{\n  \"id\": 10,\n  \"workflowId\": 1,\n  \"name\": \"Updated Inspection\",\n  \"description\": \"Updated desc\",\n  \"orderIndex\": 2,\n  \"optional\": true\n}"
+        }
+      ]
+    },
+    {
+      "name": "Delete Workflow Step",
+      "request": {
+        "auth": {
+          "type": "bearer"
+        },
+        "method": "DELETE",
+        "url": "{{base_url}}/api/v1/workflows/steps/10"
+      },
+      "response": [
+        {
+          "name": "204 No Content",
+          "status": "No Content",
+          "code": 204
+        }
+      ]
+    },
+    {
+      "name": "Bulk Update Workflow",
+      "request": {
+        "auth": {
+          "type": "bearer"
+        },
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Repair Workflow v2\",\n  \"description\": \"Updated bulk workflow\",\n  \"steps\": [\n    {\n      \"id\": 10,\n      \"name\": \"Inspection\",\n      \"description\": \"Updated\",\n      \"orderIndex\": 1,\n      \"optional\": false\n    },\n    {\n      \"name\": \"Final Check\",\n      \"description\": \"New step\",\n      \"orderIndex\": 2,\n      \"optional\": true\n    }\n  ]\n}"
+        },
+        "url": "{{base_url}}/api/v1/workflows/1/bulk"
+      },
+      "response": [
+        {
+          "name": "200 OK",
+          "status": "OK",
+          "code": 200,
+          "body": "{\n  \"id\": 1,\n  \"companyId\": 1,\n  \"name\": \"Repair Workflow v2\",\n  \"description\": \"Updated bulk workflow\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Get Workflow with Steps",
+      "request": {
+        "auth": {
+          "type": "bearer"
+        },
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/workflows/1/with-steps"
+      },
+      "response": [
+        {
+          "name": "200 OK",
+          "status": "OK",
+          "code": 200,
+          "body": "{\n  \"id\": 1,\n  \"companyId\": 1,\n  \"name\": \"Repair Workflow\",\n  \"description\": \"Standard repair process\",\n  \"steps\": [\n    {\n      \"id\": 10,\n      \"workflowId\": 1,\n      \"name\": \"Inspection\",\n      \"description\": \"Initial inspection\",\n      \"orderIndex\": 1,\n      \"optional\": false\n    },\n    {\n      \"id\": 11,\n      \"workflowId\": 1,\n      \"name\": \"Final Check\",\n      \"description\": \"Quality assurance\",\n      \"orderIndex\": 2,\n      \"optional\": true\n    }\n  ]\n}"
+        }
+      ]
+    }
+  ]
+}

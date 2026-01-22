@@ -170,25 +170,26 @@
         },
         "method": "GET",
         "url": {
-          "raw": "{{base_url}}/api/v1/jobs/3/assets?history=false",
+          "raw": "{{base_url}}/api/v1/asset-assignments/job/3?onlyActive=true",
           "host": [
             "{{base_url}}"
           ],
           "path": [
             "api",
             "v1",
-            "jobs",
-            "3",
-            "assets"
+            "asset-assignments",
+            "job",
+            "3"
           ],
           "query": [
             {
-              "key": "history",
-              "value": "false"
+              "key": "onlyActive",
+              "value": "true",
+              "description": "If true, returns only active assignments. If false, returns all assignments including returned assets."
             }
           ]
         },
-        "description": "Get active (or historical) assets assigned to a job\n\n```bash\ncurl -X GET \"{{base_url}}/api/v1/jobs/3/assets?history=false\" \\\n  -H \"Authorization: Bearer {{jwt_token}}\"\n```"
+        "description": "Get assets assigned to a specific job\n\n**Query Parameters:**\n- onlyActive (boolean, optional): Filter for active assignments only (default: false)\n  - true: Only currently assigned assets\n  - false: All assignments including historical/returned assets\n\n```bash\ncurl -X GET \"{{base_url}}/api/v1/asset-assignments/job/3?onlyActive=true\" \\\n  -H \"Authorization: Bearer {{jwt_token}}\"\n```"
       },
       "response": [
         {

@@ -4032,9 +4032,10 @@
                 }
               ]
             },
-            "method": "DELETE",
+            "method": "POST",
+            "header": [],
             "url": {
-              "raw": "{{base_url}}/api/v1/assets/10",
+              "raw": "{{base_url}}/api/v1/assets/10/archive",
               "host": [
                 "{{base_url}}"
               ],
@@ -4042,10 +4043,11 @@
                 "api",
                 "v1",
                 "assets",
-                "10"
+                "10",
+                "archive"
               ]
             },
-            "description": "Archive (soft delete) an asset\n\n```bash\ncurl -X DELETE \"{{base_url}}/api/v1/assets/10\" \\\n  -H \"Authorization: Bearer {{jwt_token}}\"\n```"
+            "description": "Archive (soft delete) an asset\n\n```bash\ncurl -X POST \"{{base_url}}/api/v1/assets/10/archive\" \\\n  -H \"Authorization: Bearer {{jwt_token}}\"\n```"
           },
           "response": [
             {
@@ -4105,6 +4107,71 @@
                 }
               ],
               "body": "{\n    \"assetId\": 10,\n    \"assetName\": \"Company Van A1\",\n    \"purchasePrice\": 30000.00,\n    \"currentValue\": 19200.00,\n    \"totalDepreciation\": 10800.00,\n    \"depreciationRate\": 20.00,\n    \"salvageValue\": 5000.00,\n    \"purchaseDate\": \"2023-01-01\",\n    \"daysOwned\": 693,\n    \"yearsOwned\": 1.90,\n    \"valueAsOfDate\": \"2025-11-24\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Asset Statistics",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/assets/statistics",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "assets",
+                "statistics"
+              ]
+            },
+            "description": "Get asset statistics for the company\n\n**Response:**\n- totalAssets (long): Total number of assets\n- activeAssets (long): Number of active (non-archived) assets\n- archivedAssets (long): Number of archived assets\n- totalValue (BigDecimal): Total purchase value of all assets\n- currentValue (BigDecimal): Current depreciated value of all assets\n- totalDepreciation (BigDecimal): Total depreciation amount\n\n```bash\ncurl -X GET \"{{base_url}}/api/v1/assets/statistics\" \\\n  -H \"Authorization: Bearer {{jwt_token}}\"\n```"
+          },
+          "response": [
+            {
+              "name": "Get Asset Statistics - Success",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{jwt_token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/assets/statistics",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "assets",
+                    "statistics"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n    \"totalAssets\": 15,\n    \"activeAssets\": 12,\n    \"archivedAssets\": 3,\n    \"totalValue\": 250000.00,\n    \"currentValue\": 180000.00,\n    \"totalDepreciation\": 70000.00\n}"
             }
           ]
         }
@@ -4282,25 +4349,26 @@
             },
             "method": "GET",
             "url": {
-              "raw": "{{base_url}}/api/v1/jobs/3/assets?history=false",
+              "raw": "{{base_url}}/api/v1/asset-assignments/job/3?onlyActive=true",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "api",
                 "v1",
-                "jobs",
-                "3",
-                "assets"
+                "asset-assignments",
+                "job",
+                "3"
               ],
               "query": [
                 {
-                  "key": "history",
-                  "value": "false"
+                  "key": "onlyActive",
+                  "value": "true",
+                  "description": "If true, returns only active assignments. If false, returns all assignments including returned assets."
                 }
               ]
             },
-            "description": "Get active (or historical) assets assigned to a job\n\n```bash\ncurl -X GET \"{{base_url}}/api/v1/jobs/3/assets?history=false\" \\\n  -H \"Authorization: Bearer {{jwt_token}}\"\n```"
+            "description": "Get assets assigned to a specific job\n\n**Query Parameters:**\n- onlyActive (boolean, optional): Filter for active assignments only (default: false)\n  - true: Only currently assigned assets\n  - false: All assignments including historical/returned assets\n\n```bash\ncurl -X GET \"{{base_url}}/api/v1/asset-assignments/job/3?onlyActive=true\" \\\n  -H \"Authorization: Bearer {{jwt_token}}\"\n```"
           },
           "response": [
             {

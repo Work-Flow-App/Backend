@@ -11,5 +11,6 @@ public interface IWorkerService {
     List<WorkerResponse> getAllWorkers(Long companyUserId);
     WorkerResponse getWorkerById(Long workerId, Long companyUserId);
     WorkerResponse updateWorker(Long workerId, WorkerUpdateRequest request, Long companyUserId);
+    WorkerResponse patchWorker(Long workerId, WorkerUpdateRequest request, Long companyUserId);
     void deleteWorker(Long workerId, Long companyUserId);
 }

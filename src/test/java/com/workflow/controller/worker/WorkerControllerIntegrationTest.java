@@ -340,7 +340,7 @@ class WorkerControllerIntegrationTest {
     @Test
     void shouldReturn404WhenUpdatingNonExistentWorker() throws Exception {
         WorkerUpdateRequest request = new WorkerUpdateRequest(
-                "Worker", "W", null, null, null
+                "Worker", "W", null, null, "valid@example.com"
         );
 
         mockMvc.perform(put("/api/v1/workers/99999")

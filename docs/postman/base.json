@@ -52,6 +52,11 @@
       "key": "refresh_token",
       "value": "",
       "type": "string"
+    },
+    {
+      "key": "invitation_token",
+      "value": "",
+      "type": "string"
     }
   ]
 }

@@ -112,11 +112,16 @@ public class WorkerService implements IWorkerService {
         Worker worker = workerRepository.findByIdAndCompanyIdAndNotArchived(workerId, company.getId())
                 .orElseThrow(() -> new WorkerNotFoundException("Worker not found with ID: " + workerId));
 
-        // Check if email is being changed and already exists
+        // Check if email is being changed and already exists in workers table
         if (request.email() != null && !request.email().isBlank() &&
-                !request.email().equalsIgnoreCase(worker.getEmail()) &&
-                workerRepository.existsByEmailIgnoreCaseAndArchivedFalse(request.email())) {
-            throw new WorkerAlreadyExistsException("Worker with email '" + request.email() + "' already exists");
+                !request.email().equalsIgnoreCase(worker.getEmail())) {
+            if (workerRepository.existsByEmailIgnoreCaseAndArchivedFalse(request.email())) {
+                throw new WorkerAlreadyExistsException("Worker with email '" + request.email() + "' already exists");
+            }
+            // Check if email exists in users table (excluding current worker's user)
+            if (userRepository.existsByEmailIgnoreCaseAndIdNot(request.email(), worker.getUser().getId())) {
+                throw new UserAlreadyExistsException("Email '" + request.email() + "' is already in use");
+            }
         }
 
         // Update worker fields
@@ -125,9 +130,58 @@ public class WorkerService implements IWorkerService {
         worker.setTelephone(request.telephone());
         worker.setMobile(request.mobile());
         worker.setEmail(request.email());
+        // Sync email with User entity and persist
+        worker.getUser().setEmail(request.email());
+        userRepository.save(worker.getUser());
 
         Worker updatedWorker = workerRepository.save(worker);
         log.info("Updated worker with ID: {}", workerId);
+
+        return WorkerResponse.fromEntity(updatedWorker);
+    }
+
+    @Override
+    @Transactional
+    public WorkerResponse patchWorker(Long workerId, WorkerUpdateRequest request, Long companyUserId) {
+        Company company = companyService.findCompanyByUserId(companyUserId);
+
+        Worker worker = workerRepository.findByIdAndCompanyIdAndNotArchived(workerId, company.getId())
+                .orElseThrow(() -> new WorkerNotFoundException("Worker not found with ID: " + workerId));
+
+        // Check if email is being changed and already exists in workers table
+        if (request.email() != null && !request.email().isBlank() &&
+                !request.email().equalsIgnoreCase(worker.getEmail())) {
+            if (workerRepository.existsByEmailIgnoreCaseAndArchivedFalse(request.email())) {
+                throw new WorkerAlreadyExistsException("Worker with email '" + request.email() + "' already exists");
+            }
+            // Check if email exists in users table (excluding current worker's user)
+            if (userRepository.existsByEmailIgnoreCaseAndIdNot(request.email(), worker.getUser().getId())) {
+                throw new UserAlreadyExistsException("Email '" + request.email() + "' is already in use");
+            }
+        }
+
+        // Patch only non-null fields
+        if (request.name() != null) {
+            worker.setName(request.name());
+        }
+        if (request.initials() != null) {
+            worker.setInitials(request.initials());
+        }
+        if (request.telephone() != null) {
+            worker.setTelephone(request.telephone());
+        }
+        if (request.mobile() != null) {
+            worker.setMobile(request.mobile());
+        }
+        if (request.email() != null) {
+            worker.setEmail(request.email());
+            // Sync email with User entity and persist
+            worker.getUser().setEmail(request.email());
+            userRepository.save(worker.getUser());
+        }
+
+        Worker updatedWorker = workerRepository.save(worker);
+        log.info("Patched worker with ID: {}", workerId);
 
         return WorkerResponse.fromEntity(updatedWorker);
     }

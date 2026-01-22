@@ -219,7 +219,7 @@
       ]
     },
     {
-      "name": "Update Worker",
+      "name": "Update Worker (Full Replace)",
       "request": {
         "auth": {
           "type": "bearer",
@@ -254,7 +254,7 @@
             "1"
           ]
         },
-        "description": "Update an existing worker's details.\n\n**Authentication:** Required (COMPANY role)\n\n**Path Parameter:**\n- id (long): Worker ID\n\n**Request Body:**\n- name (string, required): 2-100 characters\n- initials (string, optional): Max 10 characters\n- telephone (string, optional): Max 20 characters\n- mobile (string, optional): Max 20 characters\n- email (string, optional): Valid email format, max 100 characters\n\n**Note:** Username and password cannot be updated through this endpoint.\n\n**Response:** Updated worker object (same format as Create Worker response)\n\n**Authorization:** Only workers belonging to the authenticated company can be updated."
+        "description": "Full replacement update of an existing worker's details.\n\n**Authentication:** Required (COMPANY role)\n\n**Path Parameter:**\n- id (long): Worker ID\n\n**Request Body:**\n- name (string, required): 2-100 characters\n- initials (string, optional): Max 10 characters\n- telephone (string, optional): Max 20 characters\n- mobile (string, optional): Max 20 characters\n- email (string, required): Valid email format, max 100 characters\n\n**REST Semantics:** PUT performs full resource replacement. All fields are sent (required fields must be provided).\n\n**Note:** \n- Username and password cannot be updated through this endpoint\n- Email is synced with the associated User entity\n\n**Response:** Updated worker object (same format as Create Worker response)\n\n**Authorization:** Only workers belonging to the authenticated company can be updated."
       },
       "response": [
         {
@@ -300,6 +300,135 @@
             }
           ],
           "body": "{\n    \"id\": 1,\n    \"name\": \"John Doe Updated\",\n    \"initials\": \"JDU\",\n    \"telephone\": \"9999999999\",\n    \"mobile\": \"8888888888\",\n    \"email\": \"john.updated@example.com\",\n    \"username\": \"johndoe\",\n    \"loginLocked\": false,\n    \"archived\": false,\n    \"createdAt\": \"2025-10-23T12:00:00\",\n    \"updatedAt\": \"2025-10-23T14:30:00\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Patch Worker (Partial Update)",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"telephone\": \"5555555555\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/workers/1",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "workers",
+            "1"
+          ]
+        },
+        "description": "Partial update of an existing worker's details.\n\n**Authentication:** Required (COMPANY role)\n\n**Path Parameter:**\n- id (long): Worker ID\n\n**Request Body (all fields optional - only send fields to update):**\n- name (string): 2-100 characters\n- initials (string): Max 10 characters\n- telephone (string): Max 20 characters\n- mobile (string): Max 20 characters\n- email (string): Valid email format, max 100 characters\n\n**REST Semantics:** PATCH performs partial update. Only non-null fields in the request body are updated.\n\n**Note:** \n- Username and password cannot be updated through this endpoint\n- If email is updated, it is synced with the associated User entity\n\n**Response:** Updated worker object (same format as Create Worker response)\n\n**Authorization:** Only workers belonging to the authenticated company can be updated."
+      },
+      "response": [
+        {
+          "name": "Patch Worker - Update Single Field",
+          "originalRequest": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"telephone\": \"5555555555\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/v1/workers/1",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "workers",
+                "1"
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n    \"id\": 1,\n    \"name\": \"John Doe\",\n    \"initials\": \"JD\",\n    \"telephone\": \"5555555555\",\n    \"mobile\": \"0987654321\",\n    \"email\": \"john.doe@example.com\",\n    \"username\": \"johndoe\",\n    \"loginLocked\": false,\n    \"archived\": false,\n    \"createdAt\": \"2025-10-23T12:00:00\",\n    \"updatedAt\": \"2025-10-23T15:00:00\"\n}"
+        },
+        {
+          "name": "Patch Worker - Update Multiple Fields",
+          "originalRequest": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"John D. Smith\",\n    \"email\": \"john.smith@example.com\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/v1/workers/1",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "workers",
+                "1"
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n    \"id\": 1,\n    \"name\": \"John D. Smith\",\n    \"initials\": \"JD\",\n    \"telephone\": \"1234567890\",\n    \"mobile\": \"0987654321\",\n    \"email\": \"john.smith@example.com\",\n    \"username\": \"johndoe\",\n    \"loginLocked\": false,\n    \"archived\": false,\n    \"createdAt\": \"2025-10-23T12:00:00\",\n    \"updatedAt\": \"2025-10-23T15:30:00\"\n}"
         }
       ]
     },
@@ -368,6 +497,23 @@
     },
     {
       "name": "Invite Worker by Email",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (pm.response.code === 200 || pm.response.code === 201) {",
+              "    var jsonData = pm.response.json();",
+              "    if (jsonData.token) {",
+              "        pm.collectionVariables.set(\"invitation_token\", jsonData.token);",
+              "        console.log(\"invitation_token set to: \" + jsonData.token);",
+              "    }",
+              "}"
+            ]
+          }
+        }
+      ],
       "request": {
         "auth": {
           "type": "bearer",
@@ -402,7 +548,7 @@
             "invite"
           ]
         },
-        "description": "Invite a new worker by email. Creates an invitation record and sends an email with a unique verification token.\n\n**Authentication:** Required (COMPANY role)\n\n**Request Body:**\n- email (string, required): Worker's email address\n- firstName (string, required): Worker's first name\n- lastName (string, required): Worker's last name\n\n**Response:**\n- id (long): Invitation ID\n- companyId (long): Company ID\n- email (string): Worker's email\n- firstName (string): Worker's first name\n- lastName (string): Worker's last name\n- status (string): Invitation status (PENDING)\n- token (string): Unique verification token (for testing only, not sent in production)\n- expiresAt (datetime): Token expiration timestamp (7 days from creation)\n- createdAt (datetime): Invitation creation timestamp\n\n**Business Logic:**\n- Generates unique verification token valid for 7 days\n- Sends invitation email with signup link containing token\n- Token can be used for worker signup\n- Only one pending invitation per email allowed\n\n**Status Code:** 201 Created\n\n**Error Responses:**\n- 400 Bad Request: Invalid email or missing required fields\n- 409 Conflict: Active invitation already exists for this email"
+        "description": "Invite a new worker by email. Creates an invitation record and sends an email with a unique verification token.\n\n**Authentication:** Required (COMPANY role)\n\n**Request Body:**\n- email (string, required): Worker's email address\n- firstName (string, required): Worker's first name\n- lastName (string, required): Worker's last name\n\n**Response:**\n- id (long): Invitation ID\n- companyId (long): Company ID\n- email (string): Worker's email\n- firstName (string): Worker's first name\n- lastName (string): Worker's last name\n- status (string): Invitation status (PENDING)\n- token (string): Unique verification token (for testing only, not sent in production)\n- expiresAt (datetime): Token expiration timestamp (7 days from creation)\n- createdAt (datetime): Invitation creation timestamp\n\n**Business Logic:**\n- Generates unique verification token valid for 7 days\n- Sends invitation email with signup link containing token\n- Token can be used for worker signup\n- Only one pending invitation per email allowed\n\n**Status Code:** 201 Created\n\n**Error Responses:**\n- 400 Bad Request: Invalid email or missing required fields\n- 409 Conflict: Active invitation already exists for this email\n\n**Post-request Script:** Automatically sets {{invitation_token}} variable on success"
       },
       "response": [
         {

@@ -1,7 +1,9 @@
 package com.workflow.service.jobtemplate;
 
 import com.workflow.common.exception.business.CompanyNotFoundException;
+import com.workflow.common.exception.business.DefaultTemplateDeletionException;
 import com.workflow.common.exception.business.DuplicateNameException;
+import com.workflow.common.exception.business.FieldNotFoundException;
 import com.workflow.common.exception.business.TemplateNotFoundException;
 import com.workflow.dto.jobtemplate.*;
 import com.workflow.entity.Company;
@@ -120,7 +122,7 @@ public class JobTemplateService implements IJobTemplateService {
 
         // Prevent deletion of default template
         if (template.isDefault()) {
-            throw new IllegalStateException("Cannot delete the default template. Please set another template as default first.");
+            throw new DefaultTemplateDeletionException("Cannot delete the default template. Please set another template as default first.");
         }
 
         // Delete associated fields
@@ -170,7 +172,7 @@ public class JobTemplateService implements IJobTemplateService {
     public JobTemplateFieldResponse getField(Long fieldId, Long companyId) {
         JobTemplateField field = fieldRepository.findById(fieldId)
                 .filter(f -> f.getTemplate().getCompany().getId().equals(companyId))
-                .orElseThrow(() -> new TemplateNotFoundException("Field not found"));
+                .orElseThrow(() -> new FieldNotFoundException("Field not found with ID: " + fieldId));
 
         return mapToFieldResponse(field);
     }
@@ -179,7 +181,7 @@ public class JobTemplateService implements IJobTemplateService {
     public JobTemplateFieldResponse updateField(Long fieldId, JobTemplateFieldCreateRequest request, Long companyId) {
         JobTemplateField field = fieldRepository.findById(fieldId)
                 .filter(f -> f.getTemplate().getCompany().getId().equals(companyId))
-                .orElseThrow(() -> new TemplateNotFoundException("Field not found"));
+                .orElseThrow(() -> new FieldNotFoundException("Field not found with ID: " + fieldId));
 
         field.setName(request.getName());
         field.setLabel(request.getLabel());
@@ -197,7 +199,7 @@ public class JobTemplateService implements IJobTemplateService {
     public void deleteField(Long fieldId, Long companyId) {
         JobTemplateField field = fieldRepository.findById(fieldId)
                 .filter(f -> f.getTemplate().getCompany().getId().equals(companyId))
-                .orElseThrow(() -> new TemplateNotFoundException("Field not found"));
+                .orElseThrow(() -> new FieldNotFoundException("Field not found with ID: " + fieldId));
 
         fieldRepository.delete(field);
     }

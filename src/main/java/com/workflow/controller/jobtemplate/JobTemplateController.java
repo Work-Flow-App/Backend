@@ -5,6 +5,7 @@ import com.workflow.entity.Company;
 import com.workflow.entity.User;
 import com.workflow.service.company.ICompanyService;
 import com.workflow.service.jobtemplate.IJobTemplateService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.*;
 import org.springframework.security.core.Authentication;
@@ -72,7 +73,7 @@ public class JobTemplateController {
 
     @PostMapping("/fields")
     public ResponseEntity<JobTemplateFieldResponse> createTemplateField(
-            @RequestBody JobTemplateFieldCreateRequest request,
+            @Valid @RequestBody JobTemplateFieldCreateRequest request,
             Authentication auth) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(service.createTemplateField(request, getCompanyId(auth)));
@@ -93,7 +94,7 @@ public class JobTemplateController {
     @PutMapping("/fields/{fieldId}")
     public ResponseEntity<JobTemplateFieldResponse> updateTemplateField(
             @PathVariable Long fieldId,
-            @RequestBody JobTemplateFieldCreateRequest request,
+            @Valid @RequestBody JobTemplateFieldCreateRequest request,
             Authentication auth) {
         return ResponseEntity.ok(service.updateField(fieldId, request, getCompanyId(auth)));
     }

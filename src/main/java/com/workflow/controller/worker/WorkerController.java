@@ -1,6 +1,8 @@
 package com.workflow.controller.worker;
 
 import com.workflow.dto.worker.*;
+import com.workflow.dto.worker.validators.PatchValidation;
+import com.workflow.dto.worker.validators.PutValidation;
 import com.workflow.entity.User;
 import com.workflow.service.worker.IWorkerService;
 import com.workflow.service.worker.WorkerInvitationService;
@@ -9,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -51,11 +54,22 @@ public class WorkerController {
     @PutMapping("/{id}")
     public ResponseEntity<WorkerResponse> updateWorker(
             @PathVariable Long id,
-            @Valid @RequestBody WorkerUpdateRequest request,
+            @Validated(PutValidation.class) @RequestBody WorkerUpdateRequest request,
             Authentication authentication
     ) {
         User user = (User) authentication.getPrincipal();
         WorkerResponse response = workerService.updateWorker(id, request, user.getId());
+        return ResponseEntity.ok(response);
+    }
+
+    @PatchMapping("/{id}")
+    public ResponseEntity<WorkerResponse> patchWorker(
+            @PathVariable Long id,
+            @Validated(PatchValidation.class) @RequestBody WorkerUpdateRequest request,
+            Authentication authentication
+    ) {
+        User user = (User) authentication.getPrincipal();
+        WorkerResponse response = workerService.patchWorker(id, request, user.getId());
         return ResponseEntity.ok(response);
     }
 

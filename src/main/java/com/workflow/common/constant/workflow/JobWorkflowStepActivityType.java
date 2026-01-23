@@ -8,6 +8,8 @@ public enum JobWorkflowStepActivityType {
     STATUS_CHANGED,
     WORKER_ASSIGNED,
     WORKER_REMOVED,
+    STEP_CREATED,
     STEP_REORDERED,
+    STEP_DATA_UPDATED,
     STEP_UPDATED
 }

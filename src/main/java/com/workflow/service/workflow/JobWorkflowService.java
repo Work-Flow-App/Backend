@@ -6,10 +6,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.workflow.common.constant.workflow.JobWorkflowStepActivityType;
 import com.workflow.common.constant.workflow.WorkflowStepStatus;
 import com.workflow.common.exception.business.JobWorkflowNotFoundException;
 import com.workflow.common.exception.business.JobWorkflowStepNotFoundException;
@@ -23,6 +23,7 @@ import com.workflow.dto.workflow.JobWorkflowUpdateRequest;
 import com.workflow.entity.Job;
 import com.workflow.entity.JobWorkflow;
 import com.workflow.entity.JobWorkflowStep;
+import com.workflow.entity.User;
 import com.workflow.entity.Worker;
 import com.workflow.entity.Workflow;
 import com.workflow.entity.WorkflowStep;
@@ -30,52 +31,53 @@ import com.workflow.repository.JobWorkflowRepository;
 import com.workflow.repository.JobWorkflowStepRepository;
 import com.workflow.repository.WorkerRepository;
 import com.workflow.repository.WorkflowStepRepository;
-
 import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
 @Transactional
 public class JobWorkflowService implements IJobWorkflowService {
-
         private final JobWorkflowRepository jobWorkflowRepository;
         private final JobWorkflowStepRepository jobWorkflowStepRepository;
         private final WorkflowStepRepository workflowStepRepository;
         private final WorkerRepository workerRepository;
+        private final IStepActivityService stepActivityService;
 
         /*
          * =======================
          * INTERNAL HELPERS
          * =======================
          */
-
         private void updateJobWorkflowStatus(JobWorkflow jobWorkflow) {
-
                 List<JobWorkflowStep> steps = jobWorkflowStepRepository
                                 .findByJobWorkflowIdOrderByOrderIndexAsc(jobWorkflow.getId());
-
                 if (steps.isEmpty()) {
                         jobWorkflow.setStatus(WorkflowStepStatus.NOT_STARTED);
                         return;
                 }
-
                 if (steps.stream().allMatch(s -> s.getStatus() == WorkflowStepStatus.COMPLETED)) {
                         jobWorkflow.setStatus(WorkflowStepStatus.COMPLETED);
                         jobWorkflow.setCompletedAt(LocalDateTime.now());
                         return;
                 }
-
                 if (steps.stream().anyMatch(
                                 s -> s.getStatus() == WorkflowStepStatus.STARTED
                                                 || s.getStatus() == WorkflowStepStatus.ONGOING)) {
-
                         jobWorkflow.setStatus(WorkflowStepStatus.ONGOING);
                         jobWorkflow.setCompletedAt(null);
                         return;
                 }
-
                 jobWorkflow.setStatus(WorkflowStepStatus.NOT_STARTED);
                 jobWorkflow.setCompletedAt(null);
+        }
+
+        private void logStep(
+                        JobWorkflowStep step,
+                        User actor,
+                        JobWorkflowStepActivityType type,
+                        String message) {
+
+                stepActivityService.log(step, actor, type, message);
         }
 
         /*
@@ -83,42 +85,83 @@ public class JobWorkflowService implements IJobWorkflowService {
          * REORDER (1-BASED)
          * =======================
          */
-
+        @Transactional
         private void reorderStep1Based(JobWorkflowStep step, int requestedIndex) {
 
                 List<JobWorkflowStep> steps = jobWorkflowStepRepository
                                 .findByJobWorkflowIdOrderByOrderIndexAsc(
                                                 step.getJobWorkflow().getId());
 
+                int oldIndex = step.getOrderIndex();
+
                 // Convert 1-based → 0-based
                 int newIndex = requestedIndex - 1;
 
                 steps.remove(step);
-
                 // Clamp index
                 newIndex = Math.max(0, Math.min(newIndex, steps.size()));
                 steps.add(newIndex, step);
-
                 // Reindex back to 1-based
                 for (int i = 0; i < steps.size(); i++) {
                         steps.get(i).setOrderIndex(i + 1);
                 }
 
                 jobWorkflowStepRepository.saveAll(steps);
+                logStep(
+                                step,
+                                step.getJobWorkflow().getJob().getCompany().getUser(),
+                                JobWorkflowStepActivityType.STEP_REORDERED,
+                                "Reordered step from position " + oldIndex + " to " + requestedIndex);
         }
 
+        /**
+         * ⚠️ DANGER — Hibernate flush-order / deleted-entity reference risk
+         *
+         * This method is SAFE *only because* it:
+         * - Reloads steps from the database
+         * - Operates exclusively on MANAGED, NON-DELETED JobWorkflowStep entities
+         * - Logs activity BEFORE any delete occurs
+         *
+         * ❌ DO NOT:
+         * - Call this method after deleting a JobWorkflowStep and before flush
+         * - Log activity for a step that has been marked REMOVED
+         * - Pass or reuse a collection that may contain deleted steps
+         *
+         * ❗ Hibernate will throw ObjectDeletedException / TransientObjectException
+         * if a new entity (StepActivity) references a deleted JobWorkflowStep
+         * in the same persistence context.
+         *
+         * Rule of thumb:
+         * NEVER persist/log a new entity that references an entity
+         * scheduled for deletion in the same transaction.
+         */
+
+        @Transactional
         private void normalizeOrderIndexes(Long jobWorkflowId) {
 
                 List<JobWorkflowStep> steps = jobWorkflowStepRepository
                                 .findByJobWorkflowIdOrderByOrderIndexAsc(jobWorkflowId);
 
                 for (int i = 0; i < steps.size(); i++) {
-                        steps.get(i).setOrderIndex(i + 1);
+
+                        JobWorkflowStep step = steps.get(i);
+                        int newIndex = i + 1;
+
+                        if (!Integer.valueOf(newIndex).equals(step.getOrderIndex())) {
+
+                                int oldIndex = step.getOrderIndex();
+                                step.setOrderIndex(newIndex);
+
+                                logStep(
+                                                step,
+                                                step.getJobWorkflow().getJob().getCompany().getUser(),
+                                                JobWorkflowStepActivityType.STEP_REORDERED,
+                                                "Normalized step order from " + oldIndex + " to " + newIndex);
+                        }
                 }
 
                 jobWorkflowStepRepository.saveAll(steps);
         }
-
         /*
          * =======================
          * START WORKFLOW
@@ -126,29 +169,27 @@ public class JobWorkflowService implements IJobWorkflowService {
          */
 
         @Override
+        @Transactional
         public JobWorkflowResponse startWorkflow(Job job, Workflow workflow, Long companyId) {
 
                 if (!job.getCompany().getId().equals(companyId)) {
                         throw new UnauthorizedWorkflowAccessException("Job does not belong to company");
                 }
-
                 if (!workflow.getCompany().getId().equals(companyId)) {
                         throw new UnauthorizedWorkflowAccessException(
                                         "Workflow does not belong to company");
                 }
-
                 JobWorkflow jw = jobWorkflowRepository.save(
                                 JobWorkflow.builder()
                                                 .job(job)
                                                 .status(WorkflowStepStatus.NOT_STARTED)
                                                 .build());
-
                 List<WorkflowStep> templateSteps = workflowStepRepository
                                 .findByWorkflowIdOrderByOrderIndexAsc(workflow.getId());
 
                 int index = 1; // ✅ 1-based
                 for (WorkflowStep ts : templateSteps) {
-                        jobWorkflowStepRepository.save(
+                        JobWorkflowStep step = jobWorkflowStepRepository.save(
                                         JobWorkflowStep.builder()
                                                         .jobWorkflow(jw)
                                                         .name(ts.getName())
@@ -156,6 +197,12 @@ public class JobWorkflowService implements IJobWorkflowService {
                                                         .orderIndex(index++)
                                                         .status(WorkflowStepStatus.NOT_STARTED)
                                                         .build());
+
+                        logStep(
+                                        step,
+                                        job.getCompany().getUser(),
+                                        JobWorkflowStepActivityType.STEP_CREATED,
+                                        "Created workflow step");
                 }
 
                 return buildResponse(jw);
@@ -166,13 +213,11 @@ public class JobWorkflowService implements IJobWorkflowService {
          * READ OPERATIONS
          * =======================
          */
-
         @Override
         public JobWorkflowResponse getJobWorkflowById(Long jobWorkflowId, Long companyId) {
                 JobWorkflow jobWorkflow = jobWorkflowRepository.findById(jobWorkflowId)
                                 .filter(jw -> jw.getJob().getCompany().getId().equals(companyId))
                                 .orElseThrow(() -> new JobWorkflowNotFoundException("Job workflow not found"));
-
                 return buildResponse(jobWorkflow);
         }
 
@@ -186,19 +231,15 @@ public class JobWorkflowService implements IJobWorkflowService {
 
         @Override
         public JobWorkflowResponse getJobWorkflow(Job job, Long companyId) {
-
                 if (!job.getCompany().getId().equals(companyId)) {
                         throw new UnauthorizedWorkflowAccessException("Job does not belong to company");
                 }
-
                 JobWorkflow jobWorkflow = jobWorkflowRepository.findByJobId(job.getId())
                                 .orElseThrow(
                                                 () -> new WorkflowNotStartedException(
                                                                 "Workflow not started for this job"));
-
                 return buildResponse(jobWorkflow);
         }
-
         /*
          * =======================
          * UPDATE SINGLE STEP
@@ -206,49 +247,65 @@ public class JobWorkflowService implements IJobWorkflowService {
          */
 
         @Override
+        @Transactional
         public JobWorkflowStepResponse updateStep(
                         Long jobId,
                         Long stepId,
                         JobWorkflowStepUpdateRequest request,
                         Long companyId) {
-
                 JobWorkflowStep step = jobWorkflowStepRepository.findById(stepId)
                                 .orElseThrow(() -> new JobWorkflowStepNotFoundException("Workflow step not found"));
 
                 JobWorkflow jw = step.getJobWorkflow();
+                User actor = jw.getJob().getCompany().getUser();
 
                 if (!jw.getJob().getCompany().getId().equals(companyId)) {
                         throw new UnauthorizedWorkflowAccessException("Job does not belong to company");
                 }
 
-                // 🔹 Name / description
-                if (request.getName() != null)
+                // 🔹 Name
+                if (request.getName() != null) {
                         step.setName(request.getName());
-                if (request.getDescription() != null)
-                        step.setDescription(request.getDescription());
+                        logStep(step, actor, JobWorkflowStepActivityType.STEP_UPDATED, "Updated step name");
 
-                // 🔹 Reorder (1-based)
+                }
+
+                // 🔹 Description
+                if (request.getDescription() != null) {
+                        step.setDescription(request.getDescription());
+                        logStep(step, actor, JobWorkflowStepActivityType.STEP_UPDATED, "Updated step description");
+
+                }
+
                 if (request.getOrderIndex() != null &&
                                 !request.getOrderIndex().equals(step.getOrderIndex())) {
-
                         reorderStep1Based(step, request.getOrderIndex());
                 }
 
-                // 🔹 Status
-                if (request.getStatus() != null) {
+                if (request.getStatus() != null &&
+                                request.getStatus() != step.getStatus()) {
+
+                        WorkflowStepStatus oldStatus = step.getStatus();
                         step.setStatus(request.getStatus());
 
                         if (request.getStatus() == WorkflowStepStatus.STARTED) {
                                 step.setStartedAt(LocalDateTime.now());
                         }
-
                         if (request.getStatus() == WorkflowStepStatus.COMPLETED) {
                                 step.setCompletedAt(LocalDateTime.now());
                         }
+
+                        logStep(
+                                        step,
+                                        actor,
+                                        JobWorkflowStepActivityType.STATUS_CHANGED,
+                                        "Status changed from " + oldStatus + " to " + request.getStatus());
                 }
 
-                // 🔹 Workers
                 if (request.getAssignedWorkerIds() != null) {
+
+                        Set<Long> previous = step.getAssignedWorkers().stream().map(Worker::getId)
+                                        .collect(Collectors.toSet());
 
                         Set<Worker> workers = request.getAssignedWorkerIds().stream()
                                         .map(id -> workerRepository.findById(id)
@@ -264,12 +321,31 @@ public class JobWorkflowService implements IJobWorkflowService {
 
                         step.getAssignedWorkers().clear();
                         step.getAssignedWorkers().addAll(workers);
+
+                        for (Worker w : workers) {
+                                if (!previous.contains(w.getId())) {
+                                        logStep(
+                                                        step,
+                                                        actor,
+                                                        JobWorkflowStepActivityType.WORKER_ASSIGNED,
+                                                        "Assigned worker ID " + w.getId());
+                                }
+                        }
+
+                        for (Long oldId : previous) {
+                                if (workers.stream().noneMatch(w -> w.getId().equals(oldId))) {
+                                        logStep(
+                                                        step,
+                                                        actor,
+                                                        JobWorkflowStepActivityType.WORKER_REMOVED,
+                                                        "Removed worker ID " + oldId);
+                                }
+                        }
                 }
 
                 updateJobWorkflowStatus(jw);
                 return mapStep(step);
         }
-
         /*
          * =======================
          * UPDATE WORKFLOW (BULK)
@@ -277,18 +353,19 @@ public class JobWorkflowService implements IJobWorkflowService {
          */
 
         @Override
+        @Transactional
         public JobWorkflowResponse updateJobWorkflowById(
                         Long jobWorkflowId,
                         JobWorkflowUpdateRequest request,
                         Long companyId) {
-
                 JobWorkflow jw = jobWorkflowRepository.findById(jobWorkflowId)
                                 .orElseThrow(() -> new JobWorkflowNotFoundException("Job workflow not found"));
 
                 if (!jw.getJob().getCompany().getId().equals(companyId)) {
-                        throw new UnauthorizedWorkflowAccessException(
-                                        "Unauthorized access");
+                        throw new UnauthorizedWorkflowAccessException("Unauthorized access");
                 }
+
+                User actor = jw.getJob().getCompany().getUser();
 
                 List<JobWorkflowStep> existingSteps = jobWorkflowStepRepository
                                 .findByJobWorkflowIdOrderByOrderIndexAsc(jw.getId());
@@ -298,56 +375,111 @@ public class JobWorkflowService implements IJobWorkflowService {
 
                 Set<Long> incomingIds = new HashSet<>();
 
-                // ============================
-                // CREATE / UPDATE STEPS
-                // ============================
+                /*
+                 * ============================
+                 * CREATE / UPDATE STEPS
+                 * ============================
+                 */
                 if (request.getSteps() != null) {
                         for (JobWorkflowStepUpdateRequest sr : request.getSteps()) {
 
                                 WorkflowStepStatus status = sr.getStatus() != null ? sr.getStatus()
                                                 : WorkflowStepStatus.NOT_STARTED;
-
                                 LocalDateTime startedAt = null;
                                 LocalDateTime completedAt = null;
-
                                 if (status == WorkflowStepStatus.STARTED) {
                                         startedAt = LocalDateTime.now();
                                 }
-
                                 if (status == WorkflowStepStatus.COMPLETED) {
                                         completedAt = LocalDateTime.now();
                                 }
 
-                                // 🔹 UPDATE
+                                /*
+                                 * ============================
+                                 * UPDATE EXISTING STEP
+                                 * ============================
+                                 */
                                 if (sr.getId() != null) {
 
                                         JobWorkflowStep step = existingMap.get(sr.getId());
                                         if (step == null) {
                                                 throw new JobWorkflowStepNotFoundException(
                                                                 "Invalid workflow step id: " + sr.getId());
-
                                         }
 
                                         if (sr.getName() != null) {
                                                 step.setName(sr.getName());
+                                                stepActivityService.log(
+                                                                step,
+                                                                actor,
+                                                                JobWorkflowStepActivityType.STEP_UPDATED,
+                                                                "Updated step name");
                                         }
 
                                         if (sr.getDescription() != null) {
                                                 step.setDescription(sr.getDescription());
+                                                stepActivityService.log(
+                                                                step,
+                                                                actor,
+                                                                JobWorkflowStepActivityType.STEP_UPDATED,
+                                                                "Updated step description");
                                         }
 
-                                        if (sr.getOrderIndex() != null) {
+                                        // 🔹 Order
+                                        if (sr.getOrderIndex() != null &&
+                                                        !sr.getOrderIndex().equals(step.getOrderIndex())) {
+
+                                                int oldIndex = step.getOrderIndex();
                                                 step.setOrderIndex(sr.getOrderIndex());
+
+                                                stepActivityService.log(
+                                                                step,
+                                                                actor,
+                                                                JobWorkflowStepActivityType.STEP_REORDERED,
+                                                                "Reordered step from " + oldIndex + " to "
+                                                                                + sr.getOrderIndex());
                                         }
 
-                                        if (sr.getStatus() != null) {
+                                        // 🔹 Status
+                                        if (sr.getStatus() != null &&
+                                                        sr.getStatus() != step.getStatus()) {
+
+                                                WorkflowStepStatus oldStatus = step.getStatus();
+                                                LocalDateTime oldStartedAt = step.getStartedAt();
+                                                LocalDateTime oldCompletedAt = step.getCompletedAt();
+
                                                 step.setStatus(status);
                                                 step.setStartedAt(startedAt);
                                                 step.setCompletedAt(completedAt);
+
+                                                stepActivityService.log(
+                                                                step,
+                                                                actor,
+                                                                JobWorkflowStepActivityType.STATUS_CHANGED,
+                                                                "Status changed from " + oldStatus + " to " + status);
+                                                if (oldStartedAt == null && startedAt != null) {
+                                                        stepActivityService.log(
+                                                                        step,
+                                                                        actor,
+                                                                        JobWorkflowStepActivityType.STEP_DATA_UPDATED,
+                                                                        "Step started");
+                                                }
+
+                                                if (oldCompletedAt == null && completedAt != null) {
+                                                        stepActivityService.log(
+                                                                        step,
+                                                                        actor,
+                                                                        JobWorkflowStepActivityType.STEP_DATA_UPDATED,
+                                                                        "Step completed");
+                                                }
                                         }
 
-                                        // 🔹 WORKERS (UPDATE)
+                                        // 🔹 Workers
                                         if (sr.getAssignedWorkerIds() != null) {
+
+                                                Set<Long> previous = step.getAssignedWorkers().stream()
+                                                                .map(Worker::getId)
+                                                                .collect(Collectors.toSet());
 
                                                 Set<Worker> workers = sr.getAssignedWorkerIds().stream()
                                                                 .map(id -> workerRepository.findById(id)
@@ -358,19 +490,42 @@ public class JobWorkflowService implements IJobWorkflowService {
                                                                         if (!w.getCompany().getId().equals(companyId)) {
                                                                                 throw new UnauthorizedWorkflowAccessException(
                                                                                                 "Worker does not belong to company");
-
                                                                         }
                                                                 })
                                                                 .collect(Collectors.toSet());
 
                                                 step.getAssignedWorkers().clear();
                                                 step.getAssignedWorkers().addAll(workers);
+
+                                                for (Worker w : workers) {
+                                                        if (!previous.contains(w.getId())) {
+                                                                stepActivityService.log(
+                                                                                step,
+                                                                                actor,
+                                                                                JobWorkflowStepActivityType.WORKER_ASSIGNED,
+                                                                                "Assigned worker ID " + w.getId());
+                                                        }
+                                                }
+
+                                                for (Long oldId : previous) {
+                                                        if (workers.stream().noneMatch(w -> w.getId().equals(oldId))) {
+                                                                stepActivityService.log(
+                                                                                step,
+                                                                                actor,
+                                                                                JobWorkflowStepActivityType.WORKER_REMOVED,
+                                                                                "Removed worker ID " + oldId);
+                                                        }
+                                                }
                                         }
 
                                         incomingIds.add(step.getId());
                                 }
 
-                                // 🔹 CREATE
+                                /*
+                                 * ============================
+                                 * CREATE NEW STEP
+                                 * ============================
+                                 */
                                 else {
 
                                         JobWorkflowStep newStep = JobWorkflowStep.builder()
@@ -383,9 +538,7 @@ public class JobWorkflowService implements IJobWorkflowService {
                                                         .completedAt(completedAt)
                                                         .build();
 
-                                        // 🔹 WORKERS (CREATE)
                                         if (sr.getAssignedWorkerIds() != null) {
-
                                                 Set<Worker> workers = sr.getAssignedWorkerIds().stream()
                                                                 .map(id -> workerRepository.findById(id)
                                                                                 .orElseThrow(() -> new WorkerNotFoundException(
@@ -395,41 +548,63 @@ public class JobWorkflowService implements IJobWorkflowService {
                                                                         if (!w.getCompany().getId().equals(companyId)) {
                                                                                 throw new UnauthorizedWorkflowAccessException(
                                                                                                 "Worker does not belong to company");
-
                                                                         }
                                                                 })
                                                                 .collect(Collectors.toSet());
-
                                                 newStep.getAssignedWorkers().addAll(workers);
                                         }
 
                                         jobWorkflowStepRepository.save(newStep);
+
+                                        stepActivityService.log(
+                                                        newStep,
+                                                        actor,
+                                                        JobWorkflowStepActivityType.STEP_CREATED,
+                                                        "Created workflow step");
                                 }
                         }
                 }
 
-                // ============================
-                // DELETE REMOVED STEPS
-                // ============================
-                for (JobWorkflowStep step : existingSteps) {
+                /*
+                 * ============================
+                 * DELETE REMOVED STEPS
+                 * ============================
+                 */
+                for (
+
+                JobWorkflowStep step : existingSteps) {
                         if (!incomingIds.contains(step.getId())) {
+
+                                /*
+                                 * classic Hibernate flush-order /
+                                 * transient reference problem
+                                 * stepActivityService.log(
+                                 * step,
+                                 * actor,
+                                 * JobWorkflowStepActivityType.STEP_UPDATED,
+                                 * "Deleted workflow step");
+                                 */
+
                                 jobWorkflowStepRepository.delete(step);
                         }
                 }
 
-                // ============================
-                // NORMALIZE ORDER (1-BASED)
-                // ============================
+                /*
+                 * ============================
+                 * NORMALIZE ORDER (1-BASED)
+                 * ============================
+                 */
                 normalizeOrderIndexes(jw.getId());
 
-                // ============================
-                // UPDATE WORKFLOW STATUS
-                // ============================
+                /*
+                 * ============================
+                 * UPDATE WORKFLOW STATUS
+                 * ============================
+                 */
                 updateJobWorkflowStatus(jw);
 
                 return buildResponse(jw);
         }
-
         /*
          * =======================
          * ASSIGN WORKER TO ALL STEPS
@@ -437,35 +612,35 @@ public class JobWorkflowService implements IJobWorkflowService {
          */
 
         @Override
+        @Transactional
         public JobWorkflowResponse assignAWorkerToAllSteps(
                         Long jobWorkflowId, Long workerId, Long companyId) {
 
                 JobWorkflow jobWorkflow = jobWorkflowRepository.findById(jobWorkflowId)
                                 .orElseThrow(() -> new JobWorkflowNotFoundException("Job workflow not found"));
-
                 if (!jobWorkflow.getJob().getCompany().getId().equals(companyId)) {
                         throw new UnauthorizedWorkflowAccessException(
                                         "Unauthorized access");
                 }
-
                 Worker worker = workerRepository.findById(workerId)
                                 .orElseThrow(() -> new WorkerNotFoundException("Worker not found"));
-
                 if (!worker.getCompany().getId().equals(companyId)) {
                         throw new UnauthorizedWorkflowAccessException(
                                         "Worker does not belong to company");
-
                 }
-
                 List<JobWorkflowStep> steps = jobWorkflowStepRepository.findByJobWorkflowIdOrderByOrderIndexAsc(
                                 jobWorkflow.getId());
 
                 for (JobWorkflowStep step : steps) {
                         step.getAssignedWorkers().add(worker);
+                        logStep(
+                                        step,
+                                        jobWorkflow.getJob().getCompany().getUser(),
+                                        JobWorkflowStepActivityType.WORKER_ASSIGNED,
+                                        "Assigned worker ID " + worker.getId());
                 }
 
                 updateJobWorkflowStatus(jobWorkflow);
-
                 return buildResponse(jobWorkflow);
         }
 
@@ -474,18 +649,13 @@ public class JobWorkflowService implements IJobWorkflowService {
          * DELETE
          * =======================
          */
-
         @Override
         public void deleteByJobId(Long jobId, Long companyId) {
-
                 JobWorkflow jobWorkflow = jobWorkflowRepository.findByJobId(jobId)
                                 .orElseThrow(() -> new JobWorkflowNotFoundException("Job workflow not found"));
-
                 if (!jobWorkflow.getJob().getCompany().getId().equals(companyId)) {
                         throw new UnauthorizedWorkflowAccessException("Job does not belong to company");
-
                 }
-
                 jobWorkflowStepRepository.deleteByJobWorkflowId(jobWorkflow.getId());
                 jobWorkflowRepository.delete(jobWorkflow);
         }
@@ -508,7 +678,6 @@ public class JobWorkflowService implements IJobWorkflowService {
          * .build());
          * }
          */
-
         /*
          * =======================
          * MAPPERS
@@ -532,13 +701,11 @@ public class JobWorkflowService implements IJobWorkflowService {
         }
 
         private JobWorkflowResponse buildResponse(JobWorkflow jw) {
-
                 List<JobWorkflowStepResponse> steps = jobWorkflowStepRepository
                                 .findByJobWorkflowIdOrderByOrderIndexAsc(jw.getId())
                                 .stream()
                                 .map(this::mapStep)
                                 .toList();
-
                 return JobWorkflowResponse.builder()
                                 .id(jw.getId())
                                 .jobId(jw.getJob().getId())

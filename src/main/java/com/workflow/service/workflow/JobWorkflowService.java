@@ -11,10 +11,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.workflow.common.constant.workflow.JobWorkflowStepActivityType;
 import com.workflow.common.constant.workflow.WorkflowStepStatus;
+import com.workflow.common.exception.business.JobNotFoundException;
 import com.workflow.common.exception.business.JobWorkflowNotFoundException;
 import com.workflow.common.exception.business.JobWorkflowStepNotFoundException;
 import com.workflow.common.exception.business.UnauthorizedWorkflowAccessException;
 import com.workflow.common.exception.business.WorkerNotFoundException;
+import com.workflow.common.exception.business.WorkflowNotFoundException;
 import com.workflow.common.exception.business.WorkflowNotStartedException;
 import com.workflow.dto.workflow.JobWorkflowResponse;
 import com.workflow.dto.workflow.JobWorkflowStepResponse;
@@ -27,9 +29,11 @@ import com.workflow.entity.User;
 import com.workflow.entity.Worker;
 import com.workflow.entity.Workflow;
 import com.workflow.entity.WorkflowStep;
+import com.workflow.repository.JobRepository;
 import com.workflow.repository.JobWorkflowRepository;
 import com.workflow.repository.JobWorkflowStepRepository;
 import com.workflow.repository.WorkerRepository;
+import com.workflow.repository.WorkflowRepository;
 import com.workflow.repository.WorkflowStepRepository;
 import lombok.RequiredArgsConstructor;
 
@@ -41,6 +45,8 @@ public class JobWorkflowService implements IJobWorkflowService {
         private final JobWorkflowStepRepository jobWorkflowStepRepository;
         private final WorkflowStepRepository workflowStepRepository;
         private final WorkerRepository workerRepository;
+        private final JobRepository jobRepository;
+        private final WorkflowRepository workflowRepository;
         private final IStepActivityService stepActivityService;
 
         /*
@@ -208,6 +214,20 @@ public class JobWorkflowService implements IJobWorkflowService {
                 return buildResponse(jw);
         }
 
+        @Override
+        @Transactional
+        public JobWorkflowResponse startWorkflowForJob(Long jobId, Long workflowId, Long companyId) {
+                Job job = jobRepository.findById(jobId)
+                                .filter(j -> j.getCompany().getId().equals(companyId))
+                                .orElseThrow(() -> new JobNotFoundException("Job not found"));
+
+                Workflow workflow = workflowRepository.findById(workflowId)
+                                .filter(w -> w.getCompany().getId().equals(companyId))
+                                .orElseThrow(() -> new WorkflowNotFoundException("Workflow not found"));
+
+                return startWorkflow(job, workflow, companyId);
+        }
+
         /*
          * =======================
          * READ OPERATIONS
@@ -218,6 +238,18 @@ public class JobWorkflowService implements IJobWorkflowService {
                 JobWorkflow jobWorkflow = jobWorkflowRepository.findById(jobWorkflowId)
                                 .filter(jw -> jw.getJob().getCompany().getId().equals(companyId))
                                 .orElseThrow(() -> new JobWorkflowNotFoundException("Job workflow not found"));
+                return buildResponse(jobWorkflow);
+        }
+
+        @Override
+        public JobWorkflowResponse getJobWorkflowByJobId(Long jobId, Long companyId) {
+                Job job = jobRepository.findById(jobId)
+                                .filter(j -> j.getCompany().getId().equals(companyId))
+                                .orElseThrow(() -> new JobNotFoundException("Job not found"));
+
+                JobWorkflow jobWorkflow = jobWorkflowRepository.findByJobId(job.getId())
+                                .orElseThrow(() -> new WorkflowNotStartedException("Workflow not started for this job"));
+
                 return buildResponse(jobWorkflow);
         }
 

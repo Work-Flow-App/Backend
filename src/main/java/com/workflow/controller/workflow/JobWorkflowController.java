@@ -19,11 +19,7 @@ import com.workflow.dto.workflow.JobWorkflowStepResponse;
 import com.workflow.dto.workflow.JobWorkflowStepUpdateRequest;
 import com.workflow.dto.workflow.JobWorkflowUpdateRequest;
 import com.workflow.entity.Company;
-import com.workflow.entity.Job;
 import com.workflow.entity.User;
-import com.workflow.entity.Workflow;
-import com.workflow.repository.JobRepository;
-import com.workflow.repository.WorkflowRepository;
 import com.workflow.service.company.ICompanyService;
 import com.workflow.service.workflow.IJobWorkflowService;
 
@@ -35,8 +31,6 @@ import lombok.RequiredArgsConstructor;
 public class JobWorkflowController {
 
         private final IJobWorkflowService jobWorkflowService;
-        private final JobRepository jobRepository;
-        private final WorkflowRepository workflowRepository;
         private final ICompanyService companyService;
 
         private Long getCompanyId(Authentication auth) {
@@ -51,17 +45,8 @@ public class JobWorkflowController {
                         @PathVariable Long workflowId,
                         Authentication auth) {
                 Long companyId = getCompanyId(auth);
-
-                Job job = jobRepository.findById(jobId)
-                                .filter(j -> j.getCompany().getId().equals(companyId))
-                                .orElseThrow(() -> new IllegalStateException("Job not found"));
-
-                Workflow workflow = workflowRepository.findById(workflowId)
-                                .filter(w -> w.getCompany().getId().equals(companyId))
-                                .orElseThrow(() -> new IllegalStateException("Workflow not found"));
-
                 return ResponseEntity.status(HttpStatus.CREATED)
-                                .body(jobWorkflowService.startWorkflow(job, workflow, companyId));
+                                .body(jobWorkflowService.startWorkflowForJob(jobId, workflowId, companyId));
         }
 
         @PutMapping("/{jobWorkflowId}")
@@ -82,13 +67,7 @@ public class JobWorkflowController {
                         @PathVariable Long jobId,
                         Authentication auth) {
                 Long companyId = getCompanyId(auth);
-
-                Job job = jobRepository.findById(jobId)
-                                .filter(j -> j.getCompany().getId().equals(companyId))
-                                .orElseThrow(() -> new IllegalStateException("Job not found"));
-
-                JobWorkflowResponse response = jobWorkflowService.getJobWorkflow(job, companyId);
-                return ResponseEntity.ok(response);
+                return ResponseEntity.ok(jobWorkflowService.getJobWorkflowByJobId(jobId, companyId));
         }
 
         @PutMapping("/{jobId}/steps/{stepId}")

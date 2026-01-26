@@ -5140,7 +5140,7 @@
               "raw": "{\n  \"status\": \"COMPLETED\",\n  \"orderIndex\": 1,\n  \"assignedWorkerIds\": [5,6]\n}"
             },
             "url": {
-              "raw": "{{base_url}}/api/v1/job-workflows/1/steps/101",
+              "raw": "{{base_url}}/api/v1/job-workflows/10/steps/101",
               "host": [
                 "{{base_url}}"
               ],
@@ -5148,7 +5148,7 @@
                 "api",
                 "v1",
                 "job-workflows",
-                "1",
+                "10",
                 "steps",
                 "101"
               ]
@@ -5178,7 +5178,7 @@
             },
             "method": "PUT",
             "url": {
-              "raw": "{{base_url}}/api/v1/job-workflows/10/assign-a-worker/7",
+              "raw": "{{base_url}}/api/v1/job-workflows/10/assign-worker/7",
               "host": [
                 "{{base_url}}"
               ],
@@ -5187,7 +5187,7 @@
                 "v1",
                 "job-workflows",
                 "10",
-                "assign-a-worker",
+                "assign-worker",
                 "7"
               ]
             }
@@ -5216,7 +5216,7 @@
             },
             "method": "DELETE",
             "url": {
-              "raw": "{{base_url}}/api/v1/job-workflows/job/1",
+              "raw": "{{base_url}}/api/v1/job-workflows/jobs/1",
               "host": [
                 "{{base_url}}"
               ],
@@ -5224,7 +5224,7 @@
                 "api",
                 "v1",
                 "job-workflows",
-                "job",
+                "jobs",
                 "1"
               ]
             }

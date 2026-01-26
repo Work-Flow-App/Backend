@@ -8,6 +8,7 @@ import com.workflow.dto.job.JobResponse;
 import com.workflow.dto.job.JobUpdateRequest;
 import com.workflow.entity.*;
 import com.workflow.repository.*;
+import com.workflow.service.workflow.IJobWorkflowService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -52,6 +53,12 @@ class JobServiceTest {
 
     @Mock
     private AssetJobAssignmentRepository assetJobAssignmentRepository;
+
+    @Mock
+    private WorkflowRepository workflowRepository;
+
+    @Mock
+    private IJobWorkflowService jobWorkflowService;
 
     @InjectMocks
     private JobService jobService;

@@ -17,6 +17,7 @@ public class JobResponse {
     private Long templateId;
     private Long clientId;
     private Long assignedWorkerId;
+    private Long workflowId;
     private JobStatus status;
     private boolean archived;
     private LocalDateTime createdAt;

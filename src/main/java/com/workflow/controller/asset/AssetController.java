@@ -11,8 +11,11 @@ import org.springframework.http.*;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import java.time.LocalDate;
 
+@Tag(name = "Assets")
 @RestController
 @RequestMapping("/api/v1/assets")
 @RequiredArgsConstructor

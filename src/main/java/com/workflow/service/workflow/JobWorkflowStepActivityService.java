@@ -1,0 +1,373 @@
+package com.workflow.service.workflow;
+
+import java.io.IOException;
+import java.util.List;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+
+import com.workflow.common.constant.workflow.JobWorkflowStepActivityType;
+import com.workflow.common.exception.business.AttachmentNotFoundException;
+import com.workflow.common.exception.business.CommentNotFoundException;
+import com.workflow.common.exception.business.CompanyNotFoundException;
+import com.workflow.common.exception.business.EmptyFileException;
+import com.workflow.common.exception.business.FileSizeLimitExceededException;
+import com.workflow.common.exception.business.ForbiddenActionException;
+import com.workflow.common.exception.business.JobWorkflowStepNotFoundException;
+import com.workflow.common.exception.business.UnauthorizedWorkflowAccessException;
+import com.workflow.dto.workflow.StepActivityResponse;
+import com.workflow.dto.workflow.StepAttachmentResponse;
+import com.workflow.dto.workflow.StepCommentCreateRequest;
+import com.workflow.dto.workflow.StepCommentResponse;
+import com.workflow.dto.workflow.StepTimelineItemResponse;
+import com.workflow.entity.Company;
+import com.workflow.entity.JobWorkflowStep;
+import com.workflow.entity.JobWorkflowStepActivity;
+import com.workflow.entity.JobWorkflowStepAttachment;
+import com.workflow.entity.JobWorkflowStepComment;
+import com.workflow.repository.CompanyRepository;
+import com.workflow.repository.JobWorkflowStepActivityRepository;
+import com.workflow.repository.JobWorkflowStepAttachmentRepository;
+import com.workflow.repository.JobWorkflowStepCommentRepository;
+import com.workflow.repository.JobWorkflowStepRepository;
+import com.workflow.service.storage.S3StorageService;
+
+import lombok.RequiredArgsConstructor;
+
+@Service
+@RequiredArgsConstructor
+@Transactional
+public class JobWorkflowStepActivityService
+                implements IJobWorkflowStepActivityService {
+
+        private static final long MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
+
+        private final JobWorkflowStepRepository stepRepository;
+        private final JobWorkflowStepCommentRepository commentRepository;
+        private final JobWorkflowStepAttachmentRepository attachmentRepository;
+        private final JobWorkflowStepActivityRepository activityRepository;
+        private final CompanyRepository companyRepository;
+        private final IStepActivityService stepActivityService;
+        private final S3StorageService s3Service;
+
+        /*
+         * ===========================
+         * INTERNAL HELPERS
+         * ===========================
+         */
+
+        private Company getCompany(Long companyId) {
+                return companyRepository.findById(companyId)
+                                .orElseThrow(() -> new CompanyNotFoundException("Company not found"));
+        }
+
+        private JobWorkflowStep getStep(Long stepId, Long companyId) {
+                JobWorkflowStep step = stepRepository.findById(stepId)
+                                .orElseThrow(() -> new JobWorkflowStepNotFoundException("Step not found"));
+
+                if (!step.getJobWorkflow()
+                                .getJob()
+                                .getCompany()
+                                .getId()
+                                .equals(companyId)) {
+                        throw new UnauthorizedWorkflowAccessException("Unauthorized access");
+                }
+                return step;
+        }
+
+        /*
+         * ===========================
+         * COMMENTS
+         * ===========================
+         */
+
+        @Override
+        public StepCommentResponse addComment(
+                        Long stepId,
+                        StepCommentCreateRequest request,
+                        Long companyId) {
+
+                Company company = getCompany(companyId);
+                JobWorkflowStep step = getStep(stepId, companyId);
+
+                JobWorkflowStepComment comment = commentRepository.save(
+                                JobWorkflowStepComment.builder()
+                                                .step(step)
+                                                .author(company.getUser())
+                                                .content(request.getContent())
+                                                .build());
+
+                stepActivityService.log(step, company.getUser(), JobWorkflowStepActivityType.COMMENT,
+                                request.getContent());
+
+                return map(comment);
+        }
+
+        @Override
+        public StepCommentResponse updateComment(
+                        Long commentId,
+                        StepCommentCreateRequest request,
+                        Long companyId) {
+
+                Company company = getCompany(companyId);
+
+                JobWorkflowStepComment comment = commentRepository.findById(commentId)
+                                .orElseThrow(() -> new CommentNotFoundException("Comment not found"));
+
+                if (!comment.getAuthor().getId().equals(company.getUser().getId())) {
+                        throw new ForbiddenActionException("Not allowed to edit this comment");
+                }
+
+                comment.setContent(request.getContent());
+
+                stepActivityService.log(
+                                comment.getStep(),
+                                company.getUser(),
+                                JobWorkflowStepActivityType.COMMENT,
+                                "Edited a comment");
+
+                return map(comment);
+        }
+
+        @Override
+        public void deleteComment(Long commentId, Long companyId) {
+
+                Company company = getCompany(companyId);
+
+                JobWorkflowStepComment comment = commentRepository.findById(commentId)
+                                .orElseThrow(() -> new CommentNotFoundException("Comment not found"));
+
+                if (!comment.getAuthor().getId().equals(company.getUser().getId())) {
+                        throw new ForbiddenActionException("Not allowed to delete this comment");
+                }
+
+                stepActivityService.log(
+                                comment.getStep(),
+                                company.getUser(),
+                                JobWorkflowStepActivityType.COMMENT,
+                                "Deleted a comment");
+
+                commentRepository.delete(comment);
+        }
+
+        @Override
+        @Transactional(readOnly = true)
+        public List<StepCommentResponse> getComments(Long stepId, Long companyId) {
+
+                getStep(stepId, companyId);
+
+                return commentRepository.findByStepIdOrderByCreatedAtAsc(stepId)
+                                .stream()
+                                .map(this::map)
+                                .toList();
+        }
+
+        /*
+         * ===========================
+         * ATTACHMENTS
+         * ===========================
+         */
+
+        @Override
+        public StepAttachmentResponse uploadAttachment(
+                        Long stepId,
+                        MultipartFile file,
+                        Long companyId) throws IOException {
+
+                if (file.isEmpty()) {
+                        throw new EmptyFileException("Uploaded file cannot be empty");
+                }
+
+                if (file.getSize() > MAX_FILE_SIZE) {
+                        throw new FileSizeLimitExceededException(
+                                        "Attachment size must not exceed 10 MB");
+                }
+
+                Company company = getCompany(companyId);
+                JobWorkflowStep step = getStep(stepId, companyId);
+
+                // Build S3 key (you can adjust the structure)
+                String key = String.format(
+                                "companies/%d/steps/%d/%s",
+                                companyId,
+                                stepId,
+                                file.getOriginalFilename());
+
+                String url = s3Service.upload(
+                                key,
+                                file.getInputStream(),
+                                file.getSize(),
+                                file.getContentType());
+
+                JobWorkflowStepAttachment attachment = attachmentRepository.save(
+                                JobWorkflowStepAttachment.builder()
+                                                .step(step)
+                                                .uploadedBy(company.getUser())
+                                                .fileName(file.getOriginalFilename())
+                                                .fileType(file.getContentType())
+                                                .fileUrl(url)
+                                                .build());
+
+                stepActivityService.log(
+                                step,
+                                company.getUser(),
+                                JobWorkflowStepActivityType.ATTACHMENT_ADDED,
+                                "Uploaded " + file.getOriginalFilename());
+
+                return map(attachment);
+        }
+
+        @Override
+        public StepAttachmentResponse updateAttachmentName(
+                        Long attachmentId,
+                        String newFileName,
+                        Long companyId) {
+
+                Company company = getCompany(companyId);
+
+                JobWorkflowStepAttachment attachment = attachmentRepository.findById(attachmentId)
+                                .orElseThrow(() -> new AttachmentNotFoundException("Attachment not found"));
+
+                if (!attachment.getUploadedBy().getId().equals(company.getUser().getId())) {
+                        throw new ForbiddenActionException("Not allowed to rename this attachment");
+                }
+
+                attachment.setFileName(newFileName);
+
+                stepActivityService.log(
+                                attachment.getStep(),
+                                company.getUser(),
+                                JobWorkflowStepActivityType.ATTACHMENT_UPDATED,
+                                "Renamed attachment to " + newFileName);
+
+                return map(attachment);
+        }
+
+        @Override
+        public void deleteAttachment(Long attachmentId, Long companyId) {
+
+                Company company = getCompany(companyId);
+
+                JobWorkflowStepAttachment attachment = attachmentRepository.findById(attachmentId)
+                                .orElseThrow(() -> new AttachmentNotFoundException("Attachment not found"));
+
+                if (!attachment.getUploadedBy().getId().equals(company.getUser().getId())) {
+                        throw new ForbiddenActionException("Not allowed to delete this attachment");
+                }
+
+                s3Service.delete(attachment.getFileUrl());
+                attachmentRepository.delete(attachment);
+
+                stepActivityService.log(
+                                attachment.getStep(),
+                                company.getUser(),
+                                JobWorkflowStepActivityType.ATTACHMENT_DELETED,
+                                "Deleted " + attachment.getFileName());
+        }
+
+        @Override
+        @Transactional(readOnly = true)
+        public List<StepAttachmentResponse> getAttachments(Long stepId, Long companyId) {
+
+                getStep(stepId, companyId);
+
+                return attachmentRepository.findByStepIdOrderByCreatedAtAsc(stepId)
+                                .stream()
+                                .map(this::map)
+                                .toList();
+        }
+
+        @Override
+        @Transactional(readOnly = true)
+        public List<StepTimelineItemResponse> getCommentsAndAttachmentsTimeline(
+                        Long stepId,
+                        Long companyId) {
+
+                getStep(stepId, companyId);
+
+                List<StepTimelineItemResponse> comments = commentRepository.findByStepIdOrderByCreatedAtAsc(stepId)
+                                .stream()
+                                .map(c -> StepTimelineItemResponse.builder()
+                                                .id(c.getId())
+                                                .itemType("COMMENT")
+                                                .content(c.getContent())
+                                                .actorId(c.getAuthor().getId())
+                                                .createdAt(c.getCreatedAt())
+                                                .build())
+                                .toList();
+
+                List<StepTimelineItemResponse> attachments = attachmentRepository
+                                .findByStepIdOrderByCreatedAtAsc(stepId)
+                                .stream()
+                                .map(a -> StepTimelineItemResponse.builder()
+                                                .id(a.getId())
+                                                .itemType("ATTACHMENT")
+                                                .content(a.getFileName())
+                                                .fileUrl(a.getFileUrl())
+                                                .actorId(a.getUploadedBy().getId())
+                                                .createdAt(a.getCreatedAt())
+                                                .build())
+                                .toList();
+
+                return java.util.stream.Stream
+                                .concat(comments.stream(), attachments.stream())
+                                .sorted(java.util.Comparator.comparing(StepTimelineItemResponse::getCreatedAt))
+                                .toList();
+        }
+
+        /*
+         * ===========================
+         * TIMELINE
+         * ===========================
+         */
+
+        @Override
+        @Transactional(readOnly = true)
+        public List<StepActivityResponse> getTimeline(Long stepId, Long companyId) {
+
+                getStep(stepId, companyId);
+
+                return activityRepository.findByStepIdOrderByCreatedAtAsc(stepId)
+                                .stream()
+                                .map(this::map)
+                                .toList();
+        }
+
+        /*
+         * ===========================
+         * MAPPERS
+         * ===========================
+         */
+
+        private StepCommentResponse map(JobWorkflowStepComment c) {
+                return StepCommentResponse.builder()
+                                .id(c.getId())
+                                .content(c.getContent())
+                                .authorId(c.getAuthor().getId())
+                                .createdAt(c.getCreatedAt())
+                                .updatedAt(c.getUpdatedAt())
+                                .build();
+        }
+
+        private StepAttachmentResponse map(JobWorkflowStepAttachment a) {
+                return StepAttachmentResponse.builder()
+                                .id(a.getId())
+                                .fileName(a.getFileName())
+                                .fileType(a.getFileType())
+                                .fileUrl(a.getFileUrl())
+                                .uploadedBy(a.getUploadedBy().getId())
+                                .createdAt(a.getCreatedAt())
+                                .build();
+        }
+
+        private StepActivityResponse map(JobWorkflowStepActivity a) {
+                return StepActivityResponse.builder()
+                                .id(a.getId())
+                                .type(a.getType().name())
+                                .message(a.getMessage())
+                                .actorId(a.getActor().getId())
+                                .createdAt(a.getCreatedAt())
+                                .build();
+        }
+}

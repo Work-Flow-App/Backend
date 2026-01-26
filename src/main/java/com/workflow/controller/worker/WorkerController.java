@@ -15,8 +15,11 @@ import org.springframework.security.core.Authentication;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import java.util.List;
 
+@Tag(name = "Workers")
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/v1/workers")

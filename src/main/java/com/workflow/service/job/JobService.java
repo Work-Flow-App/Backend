@@ -18,6 +18,7 @@ import com.workflow.common.exception.business.CompanyNotFoundException;
 import com.workflow.common.exception.business.JobNotFoundException;
 import com.workflow.common.exception.business.TemplateNotFoundException;
 import com.workflow.common.exception.business.WorkerNotFoundException;
+import com.workflow.common.exception.business.WorkflowNotFoundException;
 import com.workflow.dto.job.FieldValueResponse;
 import com.workflow.dto.job.JobCreateRequest;
 import com.workflow.dto.job.JobResponse;
@@ -31,6 +32,7 @@ import com.workflow.entity.JobFieldValue;
 import com.workflow.entity.JobTemplate;
 import com.workflow.entity.JobTemplateField;
 import com.workflow.entity.Worker;
+import com.workflow.entity.Workflow;
 import com.workflow.repository.AssetJobAssignmentRepository;
 import com.workflow.repository.AssetRepository;
 import com.workflow.repository.ClientRepository;
@@ -40,6 +42,8 @@ import com.workflow.repository.JobRepository;
 import com.workflow.repository.JobTemplateFieldRepository;
 import com.workflow.repository.JobTemplateRepository;
 import com.workflow.repository.WorkerRepository;
+import com.workflow.repository.WorkflowRepository;
+import com.workflow.service.workflow.IJobWorkflowService;
 import com.workflow.util.JsonUtil;
 
 import lombok.RequiredArgsConstructor;
@@ -58,6 +62,8 @@ public class JobService implements IJobService {
         private final WorkerRepository workerRepository;
         private final AssetRepository assetRepository;
         private final AssetJobAssignmentRepository assetJobAssignmentRepository;
+        private final WorkflowRepository workflowRepository;
+        private final IJobWorkflowService jobWorkflowService;
 
         @Override
         public JobResponse createJob(JobCreateRequest request, Long companyId) {
@@ -78,11 +84,17 @@ public class JobService implements IJobService {
                                                 .filter(w -> w.getCompany().getId().equals(companyId))
                                                 .orElseThrow(() -> new WorkerNotFoundException("Worker not found"));
 
+                Workflow workflow = request.getWorkflowId() == null ? null
+                                : workflowRepository.findById(request.getWorkflowId())
+                                                .filter(w -> w.getCompany().getId().equals(companyId))
+                                                .orElseThrow(() -> new WorkflowNotFoundException("Workflow not found"));
+
                 Job job = Job.builder()
                                 .company(company)
                                 .template(template)
                                 .client(client)
                                 .assignedWorker(worker)
+                                .workflow(workflow)
                                 .status(request.getStatus() != null ? request.getStatus() : JobStatus.NEW)
                                 .archived(false)
                                 .build();
@@ -90,6 +102,11 @@ public class JobService implements IJobService {
 
                 saveJobFieldValues(job, request.getFieldValues());
                 assignAssetsToJob(job, request.getAssetIds(), companyId);
+
+                // Start the workflow if one is associated with the job
+                if (workflow != null) {
+                        jobWorkflowService.startWorkflow(job, workflow, companyId);
+                }
 
                 return mapToResponse(job);
         }
@@ -362,6 +379,7 @@ public class JobService implements IJobService {
                                 .clientId(job.getClient() != null ? job.getClient().getId() : null)
                                 .assignedWorkerId(job.getAssignedWorker() != null ? job.getAssignedWorker().getId()
                                                 : null)
+                                .workflowId(job.getWorkflow() != null ? job.getWorkflow().getId() : null)
                                 .status(job.getStatus())
                                 .archived(job.isArchived())
                                 .createdAt(job.getCreatedAt())

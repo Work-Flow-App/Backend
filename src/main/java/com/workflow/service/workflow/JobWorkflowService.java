@@ -281,7 +281,7 @@ public class JobWorkflowService implements IJobWorkflowService {
         @Override
         @Transactional
         public JobWorkflowStepResponse updateStep(
-                        Long jobId,
+                        Long jobWorkflowId,
                         Long stepId,
                         JobWorkflowStepUpdateRequest request,
                         Long companyId) {
@@ -289,11 +289,16 @@ public class JobWorkflowService implements IJobWorkflowService {
                                 .orElseThrow(() -> new JobWorkflowStepNotFoundException("Workflow step not found"));
 
                 JobWorkflow jw = step.getJobWorkflow();
-                User actor = jw.getJob().getCompany().getUser();
+
+                if (!jw.getId().equals(jobWorkflowId)) {
+                        throw new JobWorkflowStepNotFoundException("Step does not belong to this workflow");
+                }
 
                 if (!jw.getJob().getCompany().getId().equals(companyId)) {
                         throw new UnauthorizedWorkflowAccessException("Job does not belong to company");
                 }
+
+                User actor = jw.getJob().getCompany().getUser();
 
                 // 🔹 Name
                 if (request.getName() != null) {

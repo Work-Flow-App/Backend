@@ -14,6 +14,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import jakarta.validation.Valid;
+
 import com.workflow.dto.workflow.JobWorkflowResponse;
 import com.workflow.dto.workflow.JobWorkflowStepResponse;
 import com.workflow.dto.workflow.JobWorkflowStepUpdateRequest;
@@ -52,14 +54,10 @@ public class JobWorkflowController {
         @PutMapping("/{jobWorkflowId}")
         public ResponseEntity<JobWorkflowResponse> updateJobWorkflow(
                         @PathVariable Long jobWorkflowId,
-                        @RequestBody JobWorkflowUpdateRequest request,
+                        @Valid @RequestBody JobWorkflowUpdateRequest request,
                         Authentication auth) {
-
-                Long companyId = getCompanyId(auth);
-                JobWorkflowResponse response = jobWorkflowService.updateJobWorkflowById(
-                                jobWorkflowId, request, companyId);
-
-                return ResponseEntity.ok(response);
+                return ResponseEntity.ok(jobWorkflowService.updateJobWorkflowById(
+                                jobWorkflowId, request, getCompanyId(auth)));
         }
 
         @GetMapping("/jobs/{jobId}")
@@ -70,15 +68,14 @@ public class JobWorkflowController {
                 return ResponseEntity.ok(jobWorkflowService.getJobWorkflowByJobId(jobId, companyId));
         }
 
-        @PutMapping("/{jobId}/steps/{stepId}")
-        public JobWorkflowStepResponse updateStep(
-                        @PathVariable Long jobId,
+        @PutMapping("/{jobWorkflowId}/steps/{stepId}")
+        public ResponseEntity<JobWorkflowStepResponse> updateStep(
+                        @PathVariable Long jobWorkflowId,
                         @PathVariable Long stepId,
-                        @RequestBody JobWorkflowStepUpdateRequest request,
+                        @Valid @RequestBody JobWorkflowStepUpdateRequest request,
                         Authentication auth) {
-
-                return jobWorkflowService.updateStep(
-                                jobId, stepId, request, getCompanyId(auth));
+                return ResponseEntity.ok(jobWorkflowService.updateStep(
+                                jobWorkflowId, stepId, request, getCompanyId(auth)));
         }
 
         @GetMapping("/{jobWorkflowId}")
@@ -97,27 +94,21 @@ public class JobWorkflowController {
                 return ResponseEntity.ok(jobWorkflowService.getAllJobWorkflows(companyId));
         }
 
-        @DeleteMapping("/job/{jobId}")
-        public void deleteByJobId(
+        @DeleteMapping("/jobs/{jobId}")
+        public ResponseEntity<Void> deleteByJobId(
                         @PathVariable Long jobId,
                         Authentication auth) {
-
                 jobWorkflowService.deleteByJobId(jobId, getCompanyId(auth));
+                return ResponseEntity.noContent().build();
         }
 
-        @PutMapping("/{jobWorkflowId}/assign-a-worker/{workerId}")
+        @PutMapping("/{jobWorkflowId}/assign-worker/{workerId}")
         public ResponseEntity<JobWorkflowResponse> assignWorkerToAllSteps(
                         @PathVariable Long jobWorkflowId,
                         @PathVariable Long workerId,
                         Authentication auth) {
-
-                Long companyId = getCompanyId(auth);
-
-                // Service now returns JobWorkflowResponse DTO
-                JobWorkflowResponse response = jobWorkflowService.assignAWorkerToAllSteps(
-                                jobWorkflowId, workerId, companyId);
-
-                return ResponseEntity.ok(response);
+                return ResponseEntity.ok(jobWorkflowService.assignAWorkerToAllSteps(
+                                jobWorkflowId, workerId, getCompanyId(auth)));
         }
 
 }

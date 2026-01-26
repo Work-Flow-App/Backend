@@ -19,7 +19,7 @@ public interface IJobWorkflowService {
     JobWorkflowResponse getJobWorkflowByJobId(Long jobId, Long companyId);
 
     JobWorkflowStepResponse updateStep(
-            Long jobId,
+            Long jobWorkflowId,
             Long stepId,
             JobWorkflowStepUpdateRequest request,
             Long companyId);

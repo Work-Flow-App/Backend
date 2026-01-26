@@ -28,7 +28,8 @@ const MODULE_ORDER = [
   'assets',
   'asset-assignments',
   'workflows',
-  'job-workflows'
+  'job-workflows',
+  'job-workflow-step-activities'
 ];
 
 /**

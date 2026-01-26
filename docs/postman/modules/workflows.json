@@ -6,7 +6,14 @@
       "name": "Create Workflow",
       "request": {
         "auth": {
-          "type": "bearer"
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt_token}}",
+              "type": "string"
+            }
+          ]
         },
         "method": "POST",
         "header": [
@@ -34,7 +41,14 @@
       "name": "Update Workflow",
       "request": {
         "auth": {
-          "type": "bearer"
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt_token}}",
+              "type": "string"
+            }
+          ]
         },
         "method": "PUT",
         "header": [
@@ -62,7 +76,14 @@
       "name": "Delete Workflow",
       "request": {
         "auth": {
-          "type": "bearer"
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt_token}}",
+              "type": "string"
+            }
+          ]
         },
         "method": "DELETE",
         "url": "{{base_url}}/api/v1/workflows/1"
@@ -79,7 +100,14 @@
       "name": "Get All Workflows",
       "request": {
         "auth": {
-          "type": "bearer"
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt_token}}",
+              "type": "string"
+            }
+          ]
         },
         "method": "GET",
         "url": "{{base_url}}/api/v1/workflows"
@@ -97,7 +125,14 @@
       "name": "Get Workflow by ID",
       "request": {
         "auth": {
-          "type": "bearer"
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt_token}}",
+              "type": "string"
+            }
+          ]
         },
         "method": "GET",
         "url": "{{base_url}}/api/v1/workflows/1"
@@ -115,7 +150,14 @@
       "name": "Create Workflow Step",
       "request": {
         "auth": {
-          "type": "bearer"
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt_token}}",
+              "type": "string"
+            }
+          ]
         },
         "method": "POST",
         "header": [
@@ -143,7 +185,14 @@
       "name": "Get Steps by Workflow",
       "request": {
         "auth": {
-          "type": "bearer"
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt_token}}",
+              "type": "string"
+            }
+          ]
         },
         "method": "GET",
         "url": "{{base_url}}/api/v1/workflows/1/steps"
@@ -158,10 +207,67 @@
       ]
     },
     {
+      "name": "Get Step by ID",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/workflows/steps/10"
+      },
+      "response": [
+        {
+          "name": "200 OK",
+          "status": "OK",
+          "code": 200,
+          "body": "{\n  \"id\": 10,\n  \"workflowId\": 1,\n  \"name\": \"Inspection\",\n  \"description\": \"Initial inspection\",\n  \"orderIndex\": 1,\n  \"optional\": false\n}"
+        }
+      ]
+    },
+    {
+      "name": "Get All Steps",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "url": "{{base_url}}/api/v1/workflows/steps"
+      },
+      "response": [
+        {
+          "name": "200 OK",
+          "status": "OK",
+          "code": 200,
+          "body": "[{\n  \"id\": 10,\n  \"workflowId\": 1,\n  \"name\": \"Inspection\",\n  \"description\": \"Initial inspection\",\n  \"orderIndex\": 1,\n  \"optional\": false\n},{\n  \"id\": 11,\n  \"workflowId\": 2,\n  \"name\": \"Quality Check\",\n  \"description\": \"Final quality check\",\n  \"orderIndex\": 1,\n  \"optional\": true\n}]"
+        }
+      ]
+    },
+    {
       "name": "Update Workflow Step",
       "request": {
         "auth": {
-          "type": "bearer"
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt_token}}",
+              "type": "string"
+            }
+          ]
         },
         "method": "PUT",
         "header": [
@@ -189,7 +295,14 @@
       "name": "Delete Workflow Step",
       "request": {
         "auth": {
-          "type": "bearer"
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt_token}}",
+              "type": "string"
+            }
+          ]
         },
         "method": "DELETE",
         "url": "{{base_url}}/api/v1/workflows/steps/10"
@@ -206,7 +319,14 @@
       "name": "Bulk Update Workflow",
       "request": {
         "auth": {
-          "type": "bearer"
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt_token}}",
+              "type": "string"
+            }
+          ]
         },
         "method": "PUT",
         "header": [
@@ -234,7 +354,14 @@
       "name": "Get Workflow with Steps",
       "request": {
         "auth": {
-          "type": "bearer"
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt_token}}",
+              "type": "string"
+            }
+          ]
         },
         "method": "GET",
         "url": "{{base_url}}/api/v1/workflows/1/with-steps"

@@ -1,0 +1,364 @@
+{
+  "name": "Job Workflow Step Activities",
+  "description": "Comments, attachments, and timeline for job workflow steps.",
+  "item": [
+    {
+      "name": "Comments",
+      "item": [
+        {
+          "name": "Add Comment to Step",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"This step needs additional review before proceeding.\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/job-workflow-steps/101/comments",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "job-workflow-steps", "101", "comments"]
+            },
+            "description": "Add a comment to a job workflow step.\n\n**Authentication:** Required (COMPANY role)\n\n**Path Parameter:**\n- stepId (long): Job workflow step ID\n\n**Request Body:**\n- content (string): Comment text"
+          },
+          "response": [
+            {
+              "name": "Add Comment - Success",
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"id\": 1,\n  \"stepId\": 101,\n  \"content\": \"This step needs additional review before proceeding.\",\n  \"createdAt\": \"2026-01-22T10:00:00\",\n  \"updatedAt\": \"2026-01-22T10:00:00\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Update Comment",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"Updated comment content with more details.\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/job-workflow-steps/comments/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "job-workflow-steps", "comments", "1"]
+            },
+            "description": "Update an existing comment.\n\n**Authentication:** Required (COMPANY role)\n\n**Path Parameter:**\n- commentId (long): Comment ID"
+          },
+          "response": [
+            {
+              "name": "Update Comment - Success",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"id\": 1,\n  \"stepId\": 101,\n  \"content\": \"Updated comment content with more details.\",\n  \"createdAt\": \"2026-01-22T10:00:00\",\n  \"updatedAt\": \"2026-01-22T10:30:00\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Delete Comment",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "url": {
+              "raw": "{{base_url}}/api/v1/job-workflow-steps/comments/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "job-workflow-steps", "comments", "1"]
+            },
+            "description": "Delete a comment.\n\n**Authentication:** Required (COMPANY role)\n\n**Path Parameter:**\n- commentId (long): Comment ID"
+          },
+          "response": [
+            {
+              "name": "Delete Comment - Success",
+              "status": "No Content",
+              "code": 204
+            }
+          ]
+        },
+        {
+          "name": "Get Step Comments",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/v1/job-workflow-steps/101/comments",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "job-workflow-steps", "101", "comments"]
+            },
+            "description": "Get all comments for a job workflow step.\n\n**Authentication:** Required (COMPANY role)\n\n**Path Parameter:**\n- stepId (long): Job workflow step ID"
+          },
+          "response": [
+            {
+              "name": "Get Comments - Success",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "body": "[\n  {\n    \"id\": 1,\n    \"stepId\": 101,\n    \"content\": \"This step needs additional review.\",\n    \"createdAt\": \"2026-01-22T10:00:00\",\n    \"updatedAt\": \"2026-01-22T10:00:00\"\n  },\n  {\n    \"id\": 2,\n    \"stepId\": 101,\n    \"content\": \"Review completed, approved to proceed.\",\n    \"createdAt\": \"2026-01-22T11:00:00\",\n    \"updatedAt\": \"2026-01-22T11:00:00\"\n  }\n]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Attachments",
+      "item": [
+        {
+          "name": "Upload Attachment",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": ""
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/job-workflow-steps/101/attachments",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "job-workflow-steps", "101", "attachments"]
+            },
+            "description": "Upload a file attachment to a job workflow step.\n\n**Authentication:** Required (COMPANY role)\n\n**Path Parameter:**\n- stepId (long): Job workflow step ID\n\n**Request Body:** multipart/form-data\n- file: File to upload\n\n**Note:** Files are stored in AWS S3."
+          },
+          "response": [
+            {
+              "name": "Upload Attachment - Success",
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"id\": 1,\n  \"stepId\": 101,\n  \"fileName\": \"inspection-report.pdf\",\n  \"fileUrl\": \"https://s3.amazonaws.com/bucket/attachments/123-inspection-report.pdf\",\n  \"fileSize\": 245678,\n  \"contentType\": \"application/pdf\",\n  \"createdAt\": \"2026-01-22T10:00:00\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Rename Attachment",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "url": {
+              "raw": "{{base_url}}/api/v1/job-workflow-steps/attachments/1?fileName=updated-report.pdf",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "job-workflow-steps", "attachments", "1"],
+              "query": [
+                {
+                  "key": "fileName",
+                  "value": "updated-report.pdf"
+                }
+              ]
+            },
+            "description": "Rename an attachment file.\n\n**Authentication:** Required (COMPANY role)\n\n**Path Parameter:**\n- attachmentId (long): Attachment ID\n\n**Query Parameter:**\n- fileName (string): New file name"
+          },
+          "response": [
+            {
+              "name": "Rename Attachment - Success",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"id\": 1,\n  \"stepId\": 101,\n  \"fileName\": \"updated-report.pdf\",\n  \"fileUrl\": \"https://s3.amazonaws.com/bucket/attachments/123-inspection-report.pdf\",\n  \"fileSize\": 245678,\n  \"contentType\": \"application/pdf\",\n  \"createdAt\": \"2026-01-22T10:00:00\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Delete Attachment",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "url": {
+              "raw": "{{base_url}}/api/v1/job-workflow-steps/attachments/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "job-workflow-steps", "attachments", "1"]
+            },
+            "description": "Delete an attachment. Also removes the file from S3.\n\n**Authentication:** Required (COMPANY role)\n\n**Path Parameter:**\n- attachmentId (long): Attachment ID"
+          },
+          "response": [
+            {
+              "name": "Delete Attachment - Success",
+              "status": "No Content",
+              "code": 204
+            }
+          ]
+        },
+        {
+          "name": "Get Step Attachments",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/v1/job-workflow-steps/101/attachments",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "job-workflow-steps", "101", "attachments"]
+            },
+            "description": "Get all attachments for a job workflow step.\n\n**Authentication:** Required (COMPANY role)\n\n**Path Parameter:**\n- stepId (long): Job workflow step ID"
+          },
+          "response": [
+            {
+              "name": "Get Attachments - Success",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "body": "[\n  {\n    \"id\": 1,\n    \"stepId\": 101,\n    \"fileName\": \"inspection-report.pdf\",\n    \"fileUrl\": \"https://s3.amazonaws.com/bucket/attachments/123-inspection-report.pdf\",\n    \"fileSize\": 245678,\n    \"contentType\": \"application/pdf\",\n    \"createdAt\": \"2026-01-22T10:00:00\"\n  },\n  {\n    \"id\": 2,\n    \"stepId\": 101,\n    \"fileName\": \"photo-evidence.jpg\",\n    \"fileUrl\": \"https://s3.amazonaws.com/bucket/attachments/124-photo-evidence.jpg\",\n    \"fileSize\": 1024000,\n    \"contentType\": \"image/jpeg\",\n    \"createdAt\": \"2026-01-22T10:15:00\"\n  }\n]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Timeline",
+      "item": [
+        {
+          "name": "Get Discussion Timeline",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/v1/job-workflow-steps/101/discussion",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "job-workflow-steps", "101", "discussion"]
+            },
+            "description": "Get combined timeline of comments and attachments for a step, sorted by creation time.\n\n**Authentication:** Required (COMPANY role)\n\n**Path Parameter:**\n- stepId (long): Job workflow step ID"
+          },
+          "response": [
+            {
+              "name": "Get Discussion Timeline - Success",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "body": "[\n  {\n    \"id\": 1,\n    \"type\": \"COMMENT\",\n    \"content\": \"Starting inspection process.\",\n    \"createdAt\": \"2026-01-22T10:00:00\"\n  },\n  {\n    \"id\": 1,\n    \"type\": \"ATTACHMENT\",\n    \"fileName\": \"inspection-report.pdf\",\n    \"fileUrl\": \"https://s3.amazonaws.com/bucket/...\",\n    \"createdAt\": \"2026-01-22T10:15:00\"\n  },\n  {\n    \"id\": 2,\n    \"type\": \"COMMENT\",\n    \"content\": \"Inspection completed successfully.\",\n    \"createdAt\": \"2026-01-22T11:00:00\"\n  }\n]"
+            }
+          ]
+        },
+        {
+          "name": "Get Activity Timeline",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/v1/job-workflow-steps/101/timeline",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "job-workflow-steps", "101", "timeline"]
+            },
+            "description": "Get activity/event timeline for a step (status changes, assignments, etc.).\n\n**Authentication:** Required (COMPANY role)\n\n**Path Parameter:**\n- stepId (long): Job workflow step ID"
+          },
+          "response": [
+            {
+              "name": "Get Activity Timeline - Success",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "body": "[\n  {\n    \"id\": 1,\n    \"type\": \"STATUS_CHANGED\",\n    \"description\": \"Status changed from NOT_STARTED to STARTED\",\n    \"createdAt\": \"2026-01-22T09:00:00\"\n  },\n  {\n    \"id\": 2,\n    \"type\": \"WORKER_ASSIGNED\",\n    \"description\": \"Worker John Doe assigned to step\",\n    \"createdAt\": \"2026-01-22T09:05:00\"\n  },\n  {\n    \"id\": 3,\n    \"type\": \"STATUS_CHANGED\",\n    \"description\": \"Status changed from STARTED to COMPLETED\",\n    \"createdAt\": \"2026-01-22T11:30:00\"\n  }\n]"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

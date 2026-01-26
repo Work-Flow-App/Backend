@@ -12,10 +12,14 @@ import com.workflow.entity.Workflow;
 public interface IJobWorkflowService {
     JobWorkflowResponse startWorkflow(Job job, Workflow workflow, Long companyId);
 
+    JobWorkflowResponse startWorkflowForJob(Long jobId, Long workflowId, Long companyId);
+
     JobWorkflowResponse getJobWorkflow(Job job, Long companyId);
 
+    JobWorkflowResponse getJobWorkflowByJobId(Long jobId, Long companyId);
+
     JobWorkflowStepResponse updateStep(
-            Long jobId,
+            Long jobWorkflowId,
             Long stepId,
             JobWorkflowStepUpdateRequest request,
             Long companyId);

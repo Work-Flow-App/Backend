@@ -18,6 +18,7 @@ public class JobCreateRequest {
     private Long templateId;
     private Long clientId;
     private Long assignedWorkerId;
+    private Long workflowId;
     private JobStatus status;
     // key = fieldId, value = actual object (String, Number, Boolean, Date, Map,
     // Reference)

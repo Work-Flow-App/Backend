@@ -133,6 +133,21 @@
 			<artifactId>spring-boot-starter-thymeleaf</artifactId>
 		</dependency>
 
+		<!-- AWS SDK v2 -->
+		<dependency>
+			<groupId>software.amazon.awssdk</groupId>
+			<artifactId>s3</artifactId>
+			<version>2.29.33</version>
+		</dependency>
+
+		<!-- Spring Cloud AWS (property binding) -->
+		<dependency>
+			<groupId>io.awspring.cloud</groupId>
+			<artifactId>spring-cloud-aws-starter</artifactId>
+			<version>3.0.0</version>
+		</dependency>
+
+
 	</dependencies>
 
 	<build>

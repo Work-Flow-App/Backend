@@ -27,8 +27,10 @@ import com.workflow.entity.User;
 import com.workflow.service.company.ICompanyService;
 import com.workflow.service.workflow.IJobWorkflowStepActivityService;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 
+@Tag(name = "Workflow Step Activities")
 @RestController
 @RequestMapping("/api/v1/job-workflow-steps")
 @RequiredArgsConstructor

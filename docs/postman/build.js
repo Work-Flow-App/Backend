@@ -15,7 +15,11 @@ const path = require('path');
 // Paths
 const MODULES_DIR = path.join(__dirname, 'modules');
 const BASE_FILE = path.join(__dirname, 'base.json');
-const OUTPUT_FILE = path.join(__dirname, '..', 'Work-Flow-App-API.postman_collection.json');
+const OUTPUT_FILE = path.join(
+  __dirname,
+  '..',
+  'Work-Flow-App-API.postman_collection.json',
+);
 
 // Module order (determines folder order in Postman)
 const MODULE_ORDER = [
@@ -29,7 +33,8 @@ const MODULE_ORDER = [
   'asset-assignments',
   'workflows',
   'job-workflows',
-  'job-workflow-step-activities'
+  'job-workflow-step-activities',
+  'worker-job-workflow',
 ];
 
 /**
@@ -95,17 +100,23 @@ function buildCollection() {
     }
 
     collection.item.push(module);
-    console.log(`✅ Loaded: ${moduleName}.json (${module.item.length} endpoints)`);
+    console.log(
+      `✅ Loaded: ${moduleName}.json (${module.item.length} endpoints)`,
+    );
     loadedCount++;
   }
 
   // Check for extra modules not in MODULE_ORDER
-  const allFiles = fs.readdirSync(MODULES_DIR).filter(f => f.endsWith('.json'));
-  const extraModules = allFiles.filter(f => !MODULE_ORDER.includes(f.replace('.json', '')));
+  const allFiles = fs
+    .readdirSync(MODULES_DIR)
+    .filter((f) => f.endsWith('.json'));
+  const extraModules = allFiles.filter(
+    (f) => !MODULE_ORDER.includes(f.replace('.json', '')),
+  );
 
   if (extraModules.length > 0) {
     console.log(`\n⚠️  Warning: Found modules not in MODULE_ORDER:`);
-    extraModules.forEach(m => console.log(`   - ${m}`));
+    extraModules.forEach((m) => console.log(`   - ${m}`));
     console.log('   Add them to MODULE_ORDER in build.js to include them.\n');
   }
 
@@ -116,9 +127,13 @@ function buildCollection() {
   console.log(`\n📊 Summary:`);
   console.log(`   Modules loaded: ${loadedCount}`);
   console.log(`   Modules skipped: ${skippedCount}`);
-  console.log(`   Total endpoints: ${collection.item.reduce((sum, module) => sum + module.item.length, 0)}`);
+  console.log(
+    `   Total endpoints: ${collection.item.reduce((sum, module) => sum + module.item.length, 0)}`,
+  );
   console.log(`\n✨ Collection built successfully!`);
-  console.log(`   Import to Postman: ${path.relative(process.cwd(), OUTPUT_FILE)}\n`);
+  console.log(
+    `   Import to Postman: ${path.relative(process.cwd(), OUTPUT_FILE)}\n`,
+  );
 }
 
 // Run the build

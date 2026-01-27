@@ -94,7 +94,7 @@ jobs:
              AWS_S3_REGION=${{ secrets.AWS_S3_REGION }}
              AWS_S3_BUCKET_NAME=${{ secrets.AWS_S3_BUCKET_NAME }}
              SPRING_PROFILES_ACTIVE=dev
-             HIBERNATE_DDL_AUTO=create-drop
+             HIBERNATE_DDL_AUTO=create
              FLYWAY_ENABLED=false
              EOL
              echo "✅ .env.dev file created successfully!"

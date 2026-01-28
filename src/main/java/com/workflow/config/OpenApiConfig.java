@@ -1,14 +1,15 @@
 package com.workflow.config;
 
+import java.util.List;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.tags.Tag;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-
-import java.util.List;
 
 @Configuration
 public class OpenApiConfig {
@@ -40,6 +41,7 @@ public class OpenApiConfig {
                         new Tag().name("Workflows").description("Workflow templates"),
                         new Tag().name("Job Workflows").description("Workflow instances for jobs"),
                         new Tag().name("Workflow Step Activities").description("Activity logs for workflow steps"),
+                        new Tag().name("Worker Job Workflows").description("Endpoints for workers to manage their assigned workflows and steps"),
                         new Tag().name("Assets").description("Asset management"),
                         new Tag().name("Asset Assignments").description("Asset job assignments")
                 ));

@@ -1,0 +1,524 @@
+{
+  "name": "Worker Job Workflows",
+  "item": [
+    {
+      "name": "Get Assigned Job Workflows",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/v1/worker/job-workflows",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "worker", "job-workflows"]
+        },
+        "description": "Get all job workflows assigned to the current worker.\n\n**Authentication:** Required (WORKER role)\n\n**Response:** Array of JobWorkflowResponse objects containing workflow details and steps."
+      },
+      "response": [
+        {
+          "name": "Get Assigned Job Workflows - Success",
+          "originalRequest": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8080/api/v1/worker/job-workflows",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "v1", "worker", "job-workflows"]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "[\n    {\n        \"id\": 101,\n        \"jobId\": 50,\n        \"status\": \"ONGOING\",\n        \"steps\": [\n            {\n                \"id\": 1,\n                \"name\": \"Site Preparation\",\n                \"description\": \"Clear the area\",\n                \"orderIndex\": 1,\n                \"status\": \"COMPLETED\",\n                \"assignedWorkerIds\": [5]\n            },\n            {\n                \"id\": 2,\n                \"name\": \"Installation\",\n                \"description\": \"Install the unit\",\n                \"orderIndex\": 2,\n                \"status\": \"STARTED\",\n                \"assignedWorkerIds\": [5]\n            }\n        ]\n    }\n]"
+        }
+      ]
+    },
+    {
+      "name": "Get Specific Job Workflow",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/v1/worker/job-workflows/101",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "worker", "job-workflows", "101"]
+        },
+        "description": "Get specific job workflow details if assigned to the worker.\n\n**Authentication:** Required (WORKER role)\n\n**Path Parameter:**\n- jobWorkflowId (long): ID of the job workflow\n\n**Authorization:** The worker must be assigned to at least one step in this workflow."
+      },
+      "response": [
+        {
+          "name": "Get Specific Job Workflow - Success",
+          "originalRequest": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8080/api/v1/worker/job-workflows/101",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "v1", "worker", "job-workflows", "101"]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n    \"id\": 101,\n    \"jobId\": 50,\n    \"status\": \"ONGOING\",\n    \"steps\": [\n        {\n            \"id\": 2,\n            \"name\": \"Installation\",\n            \"description\": \"Install the unit\",\n            \"orderIndex\": 2,\n            \"status\": \"STARTED\",\n            \"startedAt\": \"2025-10-24T09:00:00\",\n            \"assignedWorkerIds\": [5]\n        }\n    ]\n}"
+        }
+      ]
+    },
+    {
+      "name": "Get Step Details",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/v1/worker/job-workflow-steps/2",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "worker", "job-workflow-steps", "2"]
+        },
+        "description": "Get details of a specific step.\n\n**Authentication:** Required (WORKER role)\n\n**Path Parameter:**\n- stepId (long): ID of the step\n\n**Authorization:** Worker must be assigned to this specific step."
+      },
+      "response": [
+        {
+          "name": "Get Step Details - Success",
+          "originalRequest": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8080/api/v1/worker/job-workflow-steps/2",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["api", "v1", "worker", "job-workflow-steps", "2"]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n    \"id\": 2,\n    \"name\": \"Installation\",\n    \"description\": \"Install the unit\",\n    \"orderIndex\": 2,\n    \"status\": \"STARTED\",\n    \"startedAt\": \"2025-10-24T09:00:00\",\n    \"assignedWorkerIds\": [5]\n}"
+        }
+      ]
+    },
+    {
+      "name": "Start Step",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/v1/worker/job-workflow-steps/2/start",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "worker", "job-workflow-steps", "2", "start"]
+        },
+        "description": "Change step status from NOT_STARTED to STARTED.\n\n**Authentication:** Required (WORKER role)\n\n**Path Parameter:**\n- stepId (long): ID of the step\n\n**Authorization:** Worker must be assigned to the step."
+      },
+      "response": [
+        {
+          "name": "Start Step - Success",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8080/api/v1/worker/job-workflow-steps/2/start",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "worker",
+                "job-workflow-steps",
+                "2",
+                "start"
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n    \"id\": 2,\n    \"name\": \"Installation\",\n    \"status\": \"STARTED\",\n    \"startedAt\": \"2025-10-24T09:00:00\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Complete Step",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/v1/worker/job-workflow-steps/2/complete",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "worker", "job-workflow-steps", "2", "complete"]
+        },
+        "description": "Change step status from STARTED to COMPLETED.\n\n**Authentication:** Required (WORKER role)\n\n**Path Parameter:**\n- stepId (long): ID of the step\n\n**Authorization:** Worker must be assigned to the step."
+      },
+      "response": [
+        {
+          "name": "Complete Step - Success",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8080/api/v1/worker/job-workflow-steps/2/complete",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "worker",
+                "job-workflow-steps",
+                "2",
+                "complete"
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n    \"id\": 2,\n    \"name\": \"Installation\",\n    \"status\": \"COMPLETED\",\n    \"completedAt\": \"2025-10-24T14:30:00\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Get Step Discussion",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/v1/worker/job-workflow-steps/2/discussion",
+          "host": ["{{base_url}}"],
+          "path": [
+            "api",
+            "v1",
+            "worker",
+            "job-workflow-steps",
+            "2",
+            "discussion"
+          ]
+        },
+        "description": "Get discussion timeline (Comments & Attachments) for a step.\n\n**Authentication:** Required (WORKER role)\n\n**Path Parameter:**\n- stepId (long): ID of the step"
+      },
+      "response": [
+        {
+          "name": "Get Step Discussion - Success",
+          "originalRequest": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8080/api/v1/worker/job-workflow-steps/2/discussion",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "worker",
+                "job-workflow-steps",
+                "2",
+                "discussion"
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "[\n    {\n        \"id\": 10,\n        \"itemType\": \"COMMENT\",\n        \"content\": \"Arrived at location.\",\n        \"actorId\": 5,\n        \"createdAt\": \"2025-10-24T09:05:00\"\n    },\n    {\n        \"id\": 11,\n        \"itemType\": \"ATTACHMENT\",\n        \"content\": \"before_work.jpg\",\n        \"fileUrl\": \"https://s3.bucket/path/img.jpg\",\n        \"actorId\": 5,\n        \"createdAt\": \"2025-10-24T09:10:00\"\n    }\n]"
+        }
+      ]
+    },
+    {
+      "name": "Add Step Comment",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"content\": \"Work in progress, waiting for materials.\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/worker/job-workflow-steps/2/comments",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "worker", "job-workflow-steps", "2", "comments"]
+        },
+        "description": "Add a comment to a step.\n\n**Authentication:** Required (WORKER role)\n\n**Request Body:**\n- content (string, required): The comment text\n\n**Path Parameter:**\n- stepId (long): ID of the step"
+      },
+      "response": [
+        {
+          "name": "Add Step Comment - Success",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"content\": \"Work in progress, waiting for materials.\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/v1/worker/job-workflow-steps/2/comments",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "worker",
+                "job-workflow-steps",
+                "2",
+                "comments"
+              ]
+            }
+          },
+          "status": "Created",
+          "code": 201,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n    \"id\": 12,\n    \"content\": \"Work in progress, waiting for materials.\",\n    \"authorId\": 5,\n    \"createdAt\": \"2025-10-24T10:00:00\",\n    \"updatedAt\": \"2025-10-24T10:00:00\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Upload Step Attachment",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "file",
+              "type": "file",
+              "src": []
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/worker/job-workflow-steps/2/attachments",
+          "host": ["{{base_url}}"],
+          "path": [
+            "api",
+            "v1",
+            "worker",
+            "job-workflow-steps",
+            "2",
+            "attachments"
+          ]
+        },
+        "description": "Upload an attachment to a step.\n\n**Authentication:** Required (WORKER role)\n\n**Body (form-data):**\n- file (file, required): The file to upload\n\n**Path Parameter:**\n- stepId (long): ID of the step"
+      },
+      "response": [
+        {
+          "name": "Upload Step Attachment - Success",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "path/to/file.jpg"
+                }
+              ]
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/v1/worker/job-workflow-steps/2/attachments",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "worker",
+                "job-workflow-steps",
+                "2",
+                "attachments"
+              ]
+            }
+          },
+          "status": "Created",
+          "code": 201,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n    \"id\": 13,\n    \"fileName\": \"site_photo.jpg\",\n    \"fileType\": \"image/jpeg\",\n    \"fileUrl\": \"https://s3.bucket/path/site_photo.jpg\",\n    \"uploadedBy\": 5,\n    \"createdAt\": \"2025-10-24T10:05:00\"\n}"
+        }
+      ]
+    }
+  ],
+  "description": "Endpoints for workers to manage their assigned workflows and steps."
+}

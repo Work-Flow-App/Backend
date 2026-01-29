@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 import jakarta.validation.Valid;
 
 import com.workflow.dto.workflow.JobWorkflowResponse;
+import com.workflow.dto.workflow.JobWorkflowStepCreateRequest;
 import com.workflow.dto.workflow.JobWorkflowStepResponse;
 import com.workflow.dto.workflow.JobWorkflowStepUpdateRequest;
 import com.workflow.dto.workflow.JobWorkflowUpdateRequest;
@@ -111,6 +112,19 @@ public class JobWorkflowController {
                         Authentication auth) {
                 return ResponseEntity.ok(jobWorkflowService.assignAWorkerToAllSteps(
                                 jobWorkflowId, workerId, getCompanyId(auth)));
+        }
+
+        @PostMapping("/{jobWorkflowId}/steps")
+        public ResponseEntity<JobWorkflowStepResponse> addStep(
+                        @PathVariable Long jobWorkflowId,
+                        @Valid @RequestBody JobWorkflowStepCreateRequest request,
+                        Authentication auth) {
+
+                return ResponseEntity.status(HttpStatus.CREATED)
+                                .body(jobWorkflowService.addStep(
+                                                jobWorkflowId,
+                                                request,
+                                                getCompanyId(auth)));
         }
 
 }

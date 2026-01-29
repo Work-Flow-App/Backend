@@ -3,6 +3,7 @@ package com.workflow.service.workflow;
 import java.util.List;
 
 import com.workflow.dto.workflow.JobWorkflowResponse;
+import com.workflow.dto.workflow.JobWorkflowStepCreateRequest;
 import com.workflow.dto.workflow.JobWorkflowStepResponse;
 import com.workflow.dto.workflow.JobWorkflowStepUpdateRequest;
 import com.workflow.dto.workflow.JobWorkflowUpdateRequest;
@@ -34,6 +35,9 @@ public interface IJobWorkflowService {
 
     JobWorkflowResponse updateJobWorkflowById(Long jobWorkflowId, JobWorkflowUpdateRequest request, Long companyId);
 
-    /* JobWorkflowStep addStep(Long jobWorkflowId, JobWorkflowStepCreateRequest request); */
+    JobWorkflowStepResponse addStep(
+            Long jobWorkflowId,
+            JobWorkflowStepCreateRequest request,
+            Long companyId);
 
 }

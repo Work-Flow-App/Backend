@@ -18,9 +18,7 @@
         "method": "POST",
         "url": {
           "raw": "{{base_url}}/api/v1/job-workflows/jobs/1/workflows/2/start",
-          "host": [
-            "{{base_url}}"
-          ],
+          "host": ["{{base_url}}"],
           "path": [
             "api",
             "v1",
@@ -58,16 +56,8 @@
         "method": "GET",
         "url": {
           "raw": "{{base_url}}/api/v1/job-workflows/jobs/1",
-          "host": [
-            "{{base_url}}"
-          ],
-          "path": [
-            "api",
-            "v1",
-            "job-workflows",
-            "jobs",
-            "1"
-          ]
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "job-workflows", "jobs", "1"]
         }
       },
       "response": [
@@ -95,15 +85,8 @@
         "method": "GET",
         "url": {
           "raw": "{{base_url}}/api/v1/job-workflows/10",
-          "host": [
-            "{{base_url}}"
-          ],
-          "path": [
-            "api",
-            "v1",
-            "job-workflows",
-            "10"
-          ]
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "job-workflows", "10"]
         }
       },
       "response": [
@@ -131,14 +114,8 @@
         "method": "GET",
         "url": {
           "raw": "{{base_url}}/api/v1/job-workflows",
-          "host": [
-            "{{base_url}}"
-          ],
-          "path": [
-            "api",
-            "v1",
-            "job-workflows"
-          ]
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "job-workflows"]
         }
       },
       "response": [
@@ -176,15 +153,8 @@
         },
         "url": {
           "raw": "{{base_url}}/api/v1/job-workflows/10",
-          "host": [
-            "{{base_url}}"
-          ],
-          "path": [
-            "api",
-            "v1",
-            "job-workflows",
-            "10"
-          ]
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "job-workflows", "10"]
         }
       },
       "response": [
@@ -222,17 +192,8 @@
         },
         "url": {
           "raw": "{{base_url}}/api/v1/job-workflows/10/steps/101",
-          "host": [
-            "{{base_url}}"
-          ],
-          "path": [
-            "api",
-            "v1",
-            "job-workflows",
-            "10",
-            "steps",
-            "101"
-          ]
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "job-workflows", "10", "steps", "101"]
         }
       },
       "response": [
@@ -260,17 +221,8 @@
         "method": "PUT",
         "url": {
           "raw": "{{base_url}}/api/v1/job-workflows/10/assign-worker/7",
-          "host": [
-            "{{base_url}}"
-          ],
-          "path": [
-            "api",
-            "v1",
-            "job-workflows",
-            "10",
-            "assign-worker",
-            "7"
-          ]
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "job-workflows", "10", "assign-worker", "7"]
         }
       },
       "response": [
@@ -298,16 +250,8 @@
         "method": "DELETE",
         "url": {
           "raw": "{{base_url}}/api/v1/job-workflows/jobs/1",
-          "host": [
-            "{{base_url}}"
-          ],
-          "path": [
-            "api",
-            "v1",
-            "job-workflows",
-            "jobs",
-            "1"
-          ]
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "job-workflows", "jobs", "1"]
         }
       },
       "response": [
@@ -315,6 +259,45 @@
           "name": "Delete Job Workflow - Success",
           "status": "No Content",
           "code": 204
+        }
+      ]
+    },
+    {
+      "name": "Add Job Workflow Step",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Final Review\",\n  \"description\": \"Supervisor final check\",\n  \"orderIndex\": 2,\n  \"assignedWorkerIds\": [5, 6]\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/job-workflows/10/steps",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "job-workflows", "10", "steps"]
+        }
+      },
+      "response": [
+        {
+          "name": "Add Step - Created",
+          "status": "Created",
+          "code": 201,
+          "body": "{\n  \"id\": 103,\n  \"name\": \"Final Review\",\n  \"description\": \"Supervisor final check\",\n  \"orderIndex\": 2,\n  \"status\": \"NOT_STARTED\",\n  \"startedAt\": null,\n  \"completedAt\": null,\n  \"assignedWorkerIds\": [5, 6]\n}"
         }
       ]
     }

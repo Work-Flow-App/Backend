@@ -4,11 +4,13 @@ import java.io.InputStream;
 
 public interface IStorageService {
 
-    String upload(
+    void upload(
             String key,
             InputStream inputStream,
             long contentLength,
             String contentType);
+
+    String generatePresignedUrl(String key);
 
     void delete(String key);
 }

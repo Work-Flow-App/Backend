@@ -11,6 +11,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.workflow.common.constant.workflow.JobWorkflowStepActivityType;
 import com.workflow.common.constant.workflow.WorkflowStepStatus;
+import com.workflow.common.exception.business.EmptyFileException;
+import com.workflow.common.exception.business.FileSizeLimitExceededException;
 import com.workflow.common.exception.business.ForbiddenActionException;
 import com.workflow.common.exception.business.JobWorkflowNotFoundException;
 import com.workflow.common.exception.business.WorkerNotFoundException;
@@ -38,6 +40,8 @@ import lombok.RequiredArgsConstructor;
 @Transactional
 public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
 
+        private static final long MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
+
         private final WorkerRepository workerRepository;
         private final JobWorkflowStepRepository stepRepository;
         private final JobWorkflowStepCommentRepository commentRepository;
@@ -52,6 +56,10 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
         // ==========================================
         // INTERNAL HELPERS
         // ==========================================
+
+        private String resolveFileUrl(String key) {
+                return key == null ? null : s3Service.generatePresignedUrl(key);
+        }
 
         private Worker getWorker(Long userId) {
                 return workerRepository.findByUserId(userId)
@@ -161,7 +169,7 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
                                                 .id(a.getId())
                                                 .itemType("ATTACHMENT")
                                                 .content(a.getFileName())
-                                                .fileUrl(a.getFileUrl())
+                                                .fileUrl(resolveFileUrl(a.getFileUrl()))
                                                 .actorId(a.getUploadedBy().getId())
                                                 .createdAt(a.getCreatedAt())
                                                 .build())
@@ -286,17 +294,32 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
         @Override
         public StepAttachmentResponse uploadAttachment(Long stepId, MultipartFile file, Long workerUserId)
                         throws IOException {
+
+                if (file.isEmpty()) {
+                        throw new EmptyFileException("Uploaded file cannot be empty");
+                }
+
+                if (file.getSize() > MAX_FILE_SIZE) {
+                        throw new FileSizeLimitExceededException(
+                                        "Attachment size must not exceed 10 MB");
+                }
+
                 Worker worker = getWorker(workerUserId);
                 JobWorkflowStep step = getAssignedStep(stepId, worker.getId());
 
-                String key = String.format("companies/%d/jobs/%d/steps/%d/workers/%d/%s",
+                String key = String.format(
+                                "companies/%d/jobs/%d/steps/%d/workers/%d/%s",
                                 step.getJobWorkflow().getJob().getCompany().getId(),
                                 step.getJobWorkflow().getJob().getId(),
                                 step.getId(),
                                 worker.getId(),
                                 file.getOriginalFilename());
 
-                String url = s3Service.upload(key, file.getInputStream(), file.getSize(), file.getContentType());
+                s3Service.upload(
+                                key,
+                                file.getInputStream(),
+                                file.getSize(),
+                                file.getContentType());
 
                 JobWorkflowStepAttachment attachment = attachmentRepository.save(
                                 JobWorkflowStepAttachment.builder()
@@ -304,7 +327,7 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
                                                 .uploadedBy(worker.getUser())
                                                 .fileName(file.getOriginalFilename())
                                                 .fileType(file.getContentType())
-                                                .fileUrl(url)
+                                                .fileUrl(key) // ✅ KEY
                                                 .build());
 
                 stepActivityService.log(step, worker.getUser(), JobWorkflowStepActivityType.ATTACHMENT_ADDED,
@@ -314,7 +337,7 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
                                 .id(attachment.getId())
                                 .fileName(attachment.getFileName())
                                 .fileType(attachment.getFileType())
-                                .fileUrl(attachment.getFileUrl())
+                                .fileUrl(resolveFileUrl(attachment.getFileUrl()))
                                 .uploadedBy(attachment.getUploadedBy().getId())
                                 .createdAt(attachment.getCreatedAt())
                                 .build();

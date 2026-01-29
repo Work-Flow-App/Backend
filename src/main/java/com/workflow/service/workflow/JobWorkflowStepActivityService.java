@@ -76,6 +76,10 @@ public class JobWorkflowStepActivityService
                 return step;
         }
 
+        private String resolveFileUrl(String key) {
+                return key == null ? null : s3Service.generatePresignedUrl(key);
+        }
+
         /*
          * ===========================
          * COMMENTS
@@ -194,7 +198,7 @@ public class JobWorkflowStepActivityService
                                 stepId,
                                 file.getOriginalFilename());
 
-                String url = s3Service.upload(
+                s3Service.upload(
                                 key,
                                 file.getInputStream(),
                                 file.getSize(),
@@ -206,7 +210,7 @@ public class JobWorkflowStepActivityService
                                                 .uploadedBy(company.getUser())
                                                 .fileName(file.getOriginalFilename())
                                                 .fileType(file.getContentType())
-                                                .fileUrl(url)
+                                                .fileUrl(key) // ✅ STORE KEY
                                                 .build());
 
                 stepActivityService.log(
@@ -304,7 +308,7 @@ public class JobWorkflowStepActivityService
                                                 .id(a.getId())
                                                 .itemType("ATTACHMENT")
                                                 .content(a.getFileName())
-                                                .fileUrl(a.getFileUrl())
+                                                .fileUrl(resolveFileUrl(a.getFileUrl()))
                                                 .actorId(a.getUploadedBy().getId())
                                                 .createdAt(a.getCreatedAt())
                                                 .build())
@@ -351,11 +355,12 @@ public class JobWorkflowStepActivityService
         }
 
         private StepAttachmentResponse map(JobWorkflowStepAttachment a) {
+
                 return StepAttachmentResponse.builder()
                                 .id(a.getId())
                                 .fileName(a.getFileName())
                                 .fileType(a.getFileType())
-                                .fileUrl(a.getFileUrl())
+                                .fileUrl(resolveFileUrl(a.getFileUrl()))
                                 .uploadedBy(a.getUploadedBy().getId())
                                 .createdAt(a.getCreatedAt())
                                 .build();

@@ -19,6 +19,7 @@ import com.workflow.common.exception.business.WorkerNotFoundException;
 import com.workflow.common.exception.business.WorkflowNotFoundException;
 import com.workflow.common.exception.business.WorkflowNotStartedException;
 import com.workflow.dto.workflow.JobWorkflowResponse;
+import com.workflow.dto.workflow.JobWorkflowStepCreateRequest;
 import com.workflow.dto.workflow.JobWorkflowStepResponse;
 import com.workflow.dto.workflow.JobWorkflowStepUpdateRequest;
 import com.workflow.dto.workflow.JobWorkflowUpdateRequest;
@@ -248,7 +249,8 @@ public class JobWorkflowService implements IJobWorkflowService {
                                 .orElseThrow(() -> new JobNotFoundException("Job not found"));
 
                 JobWorkflow jobWorkflow = jobWorkflowRepository.findByJobId(job.getId())
-                                .orElseThrow(() -> new WorkflowNotStartedException("Workflow not started for this job"));
+                                .orElseThrow(() -> new WorkflowNotStartedException(
+                                                "Workflow not started for this job"));
 
                 return buildResponse(jobWorkflow);
         }
@@ -697,24 +699,84 @@ public class JobWorkflowService implements IJobWorkflowService {
                 jobWorkflowRepository.delete(jobWorkflow);
         }
 
-        /*
-         * @Transactional
-         * public JobWorkflowStep addStep(Long jobWorkflowId,
-         * JobWorkflowStepCreateRequest req) {
-         * 
-         * JobWorkflow jw = jobWorkflowRepository.findById(jobWorkflowId)
-         * .orElseThrow();
-         * 
-         * return jobWorkflowStepRepository.save(
-         * JobWorkflowStep.builder()
-         * .jobWorkflow(jw)
-         * .name(req.getName())
-         * .description(req.getDescription())
-         * .orderIndex(req.getOrderIndex())
-         * .status(WorkflowStepStatus.NOT_STARTED)
-         * .build());
-         * }
-         */
+        @Override
+        @Transactional
+        public JobWorkflowStepResponse addStep(
+                        Long jobWorkflowId,
+                        JobWorkflowStepCreateRequest request,
+                        Long companyId) {
+
+                JobWorkflow jw = jobWorkflowRepository.findById(jobWorkflowId)
+                                .orElseThrow(() -> new JobWorkflowNotFoundException("Job workflow not found"));
+
+                if (!jw.getJob().getCompany().getId().equals(companyId)) {
+                        throw new UnauthorizedWorkflowAccessException("Unauthorized access");
+                }
+
+                User actor = jw.getJob().getCompany().getUser();
+
+                // Determine order index (1-based)
+                int orderIndex;
+                if (request.getOrderIndex() != null) {
+                        orderIndex = request.getOrderIndex();
+                } else {
+                        orderIndex = jobWorkflowStepRepository
+                                        .findByJobWorkflowId(jw.getId())
+                                        .stream()
+                                        .map(JobWorkflowStep::getOrderIndex)
+                                        .max(Integer::compareTo)
+                                        .orElse(0) + 1;
+                }
+
+                WorkflowStepStatus status = request.getStatus() != null
+                                ? request.getStatus()
+                                : WorkflowStepStatus.NOT_STARTED;
+
+                LocalDateTime startedAt = status == WorkflowStepStatus.STARTED ? LocalDateTime.now() : null;
+                LocalDateTime completedAt = status == WorkflowStepStatus.COMPLETED ? LocalDateTime.now() : null;
+
+                JobWorkflowStep step = JobWorkflowStep.builder()
+                                .jobWorkflow(jw)
+                                .name(request.getName())
+                                .description(request.getDescription())
+                                .orderIndex(orderIndex)
+                                .status(status)
+                                .startedAt(startedAt)
+                                .completedAt(completedAt)
+                                .build();
+
+                // Assign workers
+                if (request.getAssignedWorkerIds() != null) {
+                        Set<Worker> workers = request.getAssignedWorkerIds().stream()
+                                        .map(id -> workerRepository.findById(id)
+                                                        .orElseThrow(() -> new WorkerNotFoundException(
+                                                                        "Worker not found: " + id)))
+                                        .peek(w -> {
+                                                if (!w.getCompany().getId().equals(companyId)) {
+                                                        throw new UnauthorizedWorkflowAccessException(
+                                                                        "Worker does not belong to company");
+                                                }
+                                        })
+                                        .collect(Collectors.toSet());
+
+                        step.getAssignedWorkers().addAll(workers);
+                }
+
+                jobWorkflowStepRepository.save(step);
+
+                logStep(
+                                step,
+                                actor,
+                                JobWorkflowStepActivityType.STEP_CREATED,
+                                "Created workflow step");
+
+                // Normalize order & update workflow status
+                normalizeOrderIndexes(jw.getId());
+                updateJobWorkflowStatus(jw);
+
+                return mapStep(step);
+        }
+
         /*
          * =======================
          * MAPPERS

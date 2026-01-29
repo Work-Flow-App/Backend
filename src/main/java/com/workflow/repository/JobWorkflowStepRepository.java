@@ -21,4 +21,8 @@ public interface JobWorkflowStepRepository extends JpaRepository<JobWorkflowStep
     @Query("SELECT s FROM JobWorkflowStep s JOIN s.assignedWorkers w WHERE s.id = :stepId AND w.id = :workerId")
     java.util.Optional<JobWorkflowStep> findByIdAndWorkerId(@Param("stepId") Long stepId,
             @Param("workerId") Long workerId);
+
+    @Query("SELECT COALESCE(MAX(s.orderIndex), 0) FROM JobWorkflowStep s WHERE s.jobWorkflow.id = :jobWorkflowId")
+    Integer findMaxOrderIndexByJobWorkflowId(@Param("jobWorkflowId") Long jobWorkflowId);
+
 }

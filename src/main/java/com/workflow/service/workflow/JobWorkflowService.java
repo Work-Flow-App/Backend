@@ -16,6 +16,7 @@ import com.workflow.common.exception.business.JobWorkflowNotFoundException;
 import com.workflow.common.exception.business.JobWorkflowStepNotFoundException;
 import com.workflow.common.exception.business.UnauthorizedWorkflowAccessException;
 import com.workflow.common.exception.business.WorkerNotFoundException;
+import com.workflow.common.exception.business.WorkflowAlreadyStartedException;
 import com.workflow.common.exception.business.WorkflowNotFoundException;
 import com.workflow.common.exception.business.WorkflowNotStartedException;
 import com.workflow.dto.workflow.JobWorkflowResponse;
@@ -186,6 +187,11 @@ public class JobWorkflowService implements IJobWorkflowService {
                         throw new UnauthorizedWorkflowAccessException(
                                         "Workflow does not belong to company");
                 }
+                if (jobWorkflowRepository.findByJobId(job.getId()).isPresent()) {
+                        throw new WorkflowAlreadyStartedException(
+                                        "Workflow already started for job ID " + job.getId());
+                }
+
                 JobWorkflow jw = jobWorkflowRepository.save(
                                 JobWorkflow.builder()
                                                 .job(job)

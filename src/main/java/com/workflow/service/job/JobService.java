@@ -98,12 +98,11 @@ public class JobService implements IJobService {
                                 .status(request.getStatus() != null ? request.getStatus() : JobStatus.NEW)
                                 .archived(false)
                                 .build();
-                jobRepository.save(job);
+                jobRepository.saveAndFlush(job);
 
                 saveJobFieldValues(job, request.getFieldValues());
                 assignAssetsToJob(job, request.getAssetIds(), companyId);
 
-                // Start the workflow if one is associated with the job
                 if (workflow != null) {
                         jobWorkflowService.startWorkflow(job, workflow, companyId);
                 }
@@ -142,7 +141,8 @@ public class JobService implements IJobService {
                 saveJobFieldValues(job, request.getFieldValues());
 
                 // Update asset assignments if assetIds is provided
-                // null = don't change assets, empty list = remove all assets, list with IDs = replace assets
+                // null = don't change assets, empty list = remove all assets, list with IDs =
+                // replace assets
                 if (request.getAssetIds() != null) {
                         updateJobAssetAssignments(job, request.getAssetIds(), companyId);
                 }
@@ -244,12 +244,13 @@ public class JobService implements IJobService {
          * and assigning new ones.
          *
          * This method handles three scenarios:
-         * 1. Empty list: Returns all current assets and makes them available (if not assigned elsewhere)
+         * 1. Empty list: Returns all current assets and makes them available (if not
+         * assigned elsewhere)
          * 2. Same assets: Returns and immediately reassigns the same assets
          * 3. Different assets: Returns current assets, assigns new ones
          *
-         * @param job The job to update assignments for
-         * @param assetIds List of new asset IDs to assign (can be empty to remove all)
+         * @param job       The job to update assignments for
+         * @param assetIds  List of new asset IDs to assign (can be empty to remove all)
          * @param companyId Company ID for validation
          */
         private void updateJobAssetAssignments(Job job, List<Long> assetIds, Long companyId) {
@@ -280,14 +281,17 @@ public class JobService implements IJobService {
         }
 
         /**
-         * Assigns assets to a job by creating assignment records and marking assets as unavailable.
-         * Validates that assets exist, belong to the company, are not archived, and are available.
+         * Assigns assets to a job by creating assignment records and marking assets as
+         * unavailable.
+         * Validates that assets exist, belong to the company, are not archived, and are
+         * available.
          *
-         * @param job The job to assign assets to
-         * @param assetIds List of asset IDs to assign
+         * @param job       The job to assign assets to
+         * @param assetIds  List of asset IDs to assign
          * @param companyId Company ID for validation
-         * @throws AssetNotFoundException if asset not found or doesn't belong to company
-         * @throws IllegalStateException if asset is archived or not available
+         * @throws AssetNotFoundException if asset not found or doesn't belong to
+         *                                company
+         * @throws IllegalStateException  if asset is archived or not available
          */
         private void assignAssetsToJob(Job job, List<Long> assetIds, Long companyId) {
                 if (assetIds == null || assetIds.isEmpty()) {
@@ -297,7 +301,8 @@ public class JobService implements IJobService {
                 for (Long assetId : assetIds) {
                         Asset asset = assetRepository.findById(assetId)
                                         .filter(a -> a.getCompany().getId().equals(companyId))
-                                        .orElseThrow(() -> new AssetNotFoundException("Asset not found with id: " + assetId));
+                                        .orElseThrow(() -> new AssetNotFoundException(
+                                                        "Asset not found with id: " + assetId));
 
                         if (asset.isArchived()) {
                                 throw new IllegalStateException("Cannot assign archived asset: " + assetId);
@@ -306,12 +311,16 @@ public class JobService implements IJobService {
                         if (!asset.isAvailable()) {
                                 // Check if asset is assigned to another job
                                 assetJobAssignmentRepository.findByAssetIdAndReturnedAtIsNull(assetId)
-                                        .ifPresent(activeAssignment -> {
-                                                throw new IllegalStateException(
-                                                        "Asset " + assetId + " is already assigned to job " +
-                                                        activeAssignment.getJob().getId() +
-                                                        ". It must be returned before it can be assigned to another job.");
-                                        });
+                                                .ifPresent(activeAssignment -> {
+                                                        throw new IllegalStateException(
+                                                                        "Asset " + assetId
+                                                                                        + " is already assigned to job "
+                                                                                        +
+                                                                                        activeAssignment.getJob()
+                                                                                                        .getId()
+                                                                                        +
+                                                                                        ". It must be returned before it can be assigned to another job.");
+                                                });
 
                                 // If not assigned to a job, provide generic unavailable message
                                 throw new IllegalStateException("Asset is not available: " + assetId);
@@ -344,12 +353,14 @@ public class JobService implements IJobService {
                         return LocalDateTime.parse(dateString);
                 } catch (DateTimeParseException e) {
                         try {
-                                // If that fails, try parsing as LocalDate and convert to LocalDateTime at start of day
+                                // If that fails, try parsing as LocalDate and convert to LocalDateTime at start
+                                // of day
                                 LocalDate date = LocalDate.parse(dateString);
                                 return date.atStartOfDay();
                         } catch (DateTimeParseException ex) {
                                 throw new IllegalArgumentException(
-                                        "Invalid date format. Expected ISO date (yyyy-MM-dd) or ISO date-time (yyyy-MM-ddTHH:mm:ss). Got: " + dateString);
+                                                "Invalid date format. Expected ISO date (yyyy-MM-dd) or ISO date-time (yyyy-MM-ddTHH:mm:ss). Got: "
+                                                                + dateString);
                         }
                 }
         }
@@ -364,8 +375,7 @@ public class JobService implements IJobService {
                                                                 .label(v.getField().getLabel())
                                                                 .type(v.getField().getJobFieldType())
                                                                 .value(v.getTypedValue())
-                                                                .build()
-                                ));
+                                                                .build()));
 
                 List<Long> assetIds = assetJobAssignmentRepository.findByJobIdAndReturnedAtIsNull(job.getId())
                                 .stream()

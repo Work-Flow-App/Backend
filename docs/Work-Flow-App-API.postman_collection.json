@@ -5142,6 +5142,142 @@
           ]
         },
         {
+          "name": "Get Step Comments",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/worker/job-workflow-steps/2/comments",
+              "host": ["{{base_url}}"],
+              "path": [
+                "api",
+                "v1",
+                "worker",
+                "job-workflow-steps",
+                "2",
+                "comments"
+              ]
+            },
+            "description": "Get all comments for a step.\n\n**Authentication:** Required (WORKER role)\n\n**Path Parameter:**\n- stepId (long): ID of the step\n\n**Authorization:** Worker must be assigned to this step."
+          },
+          "response": [
+            {
+              "name": "Get Step Comments - Success",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{jwt_token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "http://localhost:8080/api/v1/worker/job-workflow-steps/2/comments",
+                  "protocol": "http",
+                  "host": ["localhost"],
+                  "port": "8080",
+                  "path": [
+                    "api",
+                    "v1",
+                    "worker",
+                    "job-workflow-steps",
+                    "2",
+                    "comments"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "[\n    {\n        \"id\": 12,\n        \"content\": \"Work in progress, waiting for materials.\",\n        \"authorId\": 5,\n        \"createdAt\": \"2025-10-24T10:00:00\",\n        \"updatedAt\": \"2025-10-24T10:00:00\"\n    }\n]"
+            }
+          ]
+        },
+        {
+          "name": "Get Step Attachments",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/worker/job-workflow-steps/2/attachments",
+              "host": ["{{base_url}}"],
+              "path": [
+                "api",
+                "v1",
+                "worker",
+                "job-workflow-steps",
+                "2",
+                "attachments"
+              ]
+            },
+            "description": "Get all attachments for a step.\n\n**Authentication:** Required (WORKER role)\n\n**Path Parameter:**\n- stepId (long): ID of the step\n\n**Authorization:** Worker must be assigned to this step."
+          },
+          "response": [
+            {
+              "name": "Get Step Attachments - Success",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{jwt_token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "http://localhost:8080/api/v1/worker/job-workflow-steps/2/attachments",
+                  "protocol": "http",
+                  "host": ["localhost"],
+                  "port": "8080",
+                  "path": [
+                    "api",
+                    "v1",
+                    "worker",
+                    "job-workflow-steps",
+                    "2",
+                    "attachments"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "[\n    {\n        \"id\": 13,\n        \"fileName\": \"site_photo.jpg\",\n        \"fileType\": \"image/jpeg\",\n        \"fileUrl\": \"https://s3.bucket/path/site_photo.jpg\",\n        \"uploadedBy\": 5,\n        \"createdAt\": \"2025-10-24T10:05:00\"\n    }\n]"
+            }
+          ]
+        },
+        {
           "name": "Get Step Discussion",
           "request": {
             "auth": {

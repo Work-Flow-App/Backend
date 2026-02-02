@@ -93,6 +93,26 @@ public class WorkerJobWorkflowController {
     // STEP ACTIVITIES (Comments, Attachments, Timeline)
     // ==========================================
 
+    @Operation(summary = "Get all comments for a step")
+    @GetMapping("/job-workflow-steps/{stepId}/comments")
+    public ResponseEntity<List<StepCommentResponse>> getStepComments(
+            @PathVariable Long stepId,
+            Authentication auth) {
+
+        return ResponseEntity.ok(
+                workerWorkflowService.getStepComments(stepId, getUserId(auth)));
+    }
+
+    @Operation(summary = "Get all attachments for a step")
+    @GetMapping("/job-workflow-steps/{stepId}/attachments")
+    public ResponseEntity<List<StepAttachmentResponse>> getStepAttachments(
+            @PathVariable Long stepId,
+            Authentication auth) {
+
+        return ResponseEntity.ok(
+                workerWorkflowService.getStepAttachments(stepId, getUserId(auth)));
+    }
+
     @Operation(summary = "Get discussion timeline (Comments & Attachments) for a step")
     @GetMapping("/job-workflow-steps/{stepId}/discussion")
     public ResponseEntity<List<StepTimelineItemResponse>> getStepDiscussion(

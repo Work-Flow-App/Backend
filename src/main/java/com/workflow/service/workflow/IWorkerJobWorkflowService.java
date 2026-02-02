@@ -18,6 +18,10 @@ public interface IWorkerJobWorkflowService {
 
     JobWorkflowStepResponse getStepIfAssigned(Long stepId, Long workerUserId);
 
+    List<StepCommentResponse> getStepComments(Long stepId, Long workerUserId);
+
+    List<StepAttachmentResponse> getStepAttachments(Long stepId, Long workerUserId);
+
     List<StepTimelineItemResponse> getStepTimeline(Long stepId, Long workerUserId);
 
     // Status Actions

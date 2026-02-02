@@ -144,6 +144,47 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
 
         @Override
         @Transactional(readOnly = true)
+        public List<StepCommentResponse> getStepComments(Long stepId, Long workerUserId) {
+                Worker worker = getWorker(workerUserId);
+
+                // Ensure the worker is assigned
+                getAssignedStep(stepId, worker.getId());
+
+                return commentRepository.findByStepIdOrderByCreatedAtAsc(stepId)
+                                .stream()
+                                .map(c -> StepCommentResponse.builder()
+                                                .id(c.getId())
+                                                .content(c.getContent())
+                                                .authorId(c.getAuthor().getId())
+                                                .createdAt(c.getCreatedAt())
+                                                .updatedAt(c.getUpdatedAt())
+                                                .build())
+                                .toList();
+        }
+
+        @Override
+        @Transactional(readOnly = true)
+        public List<StepAttachmentResponse> getStepAttachments(Long stepId, Long workerUserId) {
+                Worker worker = getWorker(workerUserId);
+
+                // Ensure the worker is assigned
+                getAssignedStep(stepId, worker.getId());
+
+                return attachmentRepository.findByStepIdOrderByCreatedAtAsc(stepId)
+                                .stream()
+                                .map(a -> StepAttachmentResponse.builder()
+                                                .id(a.getId())
+                                                .fileName(a.getFileName())
+                                                .fileType(a.getFileType())
+                                                .fileUrl(resolveFileUrl(a.getFileUrl()))
+                                                .uploadedBy(a.getUploadedBy().getId())
+                                                .createdAt(a.getCreatedAt())
+                                                .build())
+                                .toList();
+        }
+
+        @Override
+        @Transactional(readOnly = true)
         public List<StepTimelineItemResponse> getStepTimeline(Long stepId, Long workerUserId) {
                 Worker worker = getWorker(workerUserId);
                 // Verify assignment

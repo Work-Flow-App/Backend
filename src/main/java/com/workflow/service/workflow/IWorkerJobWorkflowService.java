@@ -12,6 +12,8 @@ import com.workflow.dto.workflow.JobWorkflowStepResponse;
 
 public interface IWorkerJobWorkflowService {
     // Read Operations
+    List<JobWorkflowStepResponse> getMyAssignedSteps(Long workerUserId);
+
     List<JobWorkflowResponse> getAssignedJobWorkflows(Long workerUserId);
 
     JobWorkflowResponse getJobWorkflowIfAssigned(Long jobWorkflowId, Long workerUserId);

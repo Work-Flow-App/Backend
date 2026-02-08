@@ -140,4 +140,13 @@ public class WorkerJobWorkflowController {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(workerWorkflowService.uploadAttachment(stepId, file, getUserId(auth)));
     }
+
+    @Operation(summary = "Get all job workflow steps assigned to the current worker")
+    @GetMapping("/job-workflow-steps")
+    public ResponseEntity<List<JobWorkflowStepResponse>> getMyAssignedSteps(
+            Authentication auth) {
+
+        return ResponseEntity.ok(
+                workerWorkflowService.getMyAssignedSteps(getUserId(auth)));
+    }
 }

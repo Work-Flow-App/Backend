@@ -88,6 +88,17 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
 
         @Override
         @Transactional(readOnly = true)
+        public List<JobWorkflowStepResponse> getMyAssignedSteps(Long workerUserId) {
+                Worker worker = getWorker(workerUserId);
+
+                return stepRepository.findByAssignedWorkers_Id(worker.getId())
+                                .stream()
+                                .map(this::mapStep)
+                                .toList();
+        }
+
+        @Override
+        @Transactional(readOnly = true)
         public List<JobWorkflowResponse> getAssignedJobWorkflows(Long workerUserId) {
                 Worker worker = getWorker(workerUserId);
 

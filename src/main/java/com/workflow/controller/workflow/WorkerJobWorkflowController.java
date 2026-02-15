@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.workflow.common.constant.workflow.StepDiscussionType;
 import com.workflow.dto.workflow.JobWorkflowResponse;
 import com.workflow.dto.workflow.JobWorkflowStepResponse;
 import com.workflow.dto.workflow.StepAttachmentResponse;
@@ -136,9 +137,17 @@ public class WorkerJobWorkflowController {
     public ResponseEntity<StepAttachmentResponse> uploadAttachment(
             @PathVariable Long stepId,
             @RequestParam("file") MultipartFile file,
-            Authentication auth) throws IOException {
+            @RequestParam("type") StepDiscussionType type,
+            @RequestParam(value = "description", required = false) String description, Authentication auth)
+            throws IOException {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(workerWorkflowService.uploadAttachment(stepId, file, getUserId(auth)));
+                .body(workerWorkflowService.uploadAttachment(
+                        stepId,
+                        file,
+                        type,
+                        description,
+                        getUserId(auth)));
+
     }
 
     @Operation(summary = "Get all job workflow steps assigned to the current worker")

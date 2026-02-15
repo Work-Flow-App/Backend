@@ -5,8 +5,10 @@ import java.util.List;
 
 import org.springframework.web.multipart.MultipartFile;
 
+import com.workflow.common.constant.workflow.StepDiscussionType;
 import com.workflow.dto.workflow.StepActivityResponse;
 import com.workflow.dto.workflow.StepAttachmentResponse;
+import com.workflow.dto.workflow.StepAttachmentUpdateRequest;
 import com.workflow.dto.workflow.StepCommentCreateRequest;
 import com.workflow.dto.workflow.StepCommentResponse;
 import com.workflow.dto.workflow.StepTimelineItemResponse;
@@ -36,11 +38,13 @@ public interface IJobWorkflowStepActivityService {
         StepAttachmentResponse uploadAttachment(
                         Long stepId,
                         MultipartFile file,
+                        StepDiscussionType type,
+                        String description,
                         Long companyId) throws IOException;
 
-        StepAttachmentResponse updateAttachmentName(
+        StepAttachmentResponse updateAttachment(
                         Long attachmentId,
-                        String newFileName,
+                        StepAttachmentUpdateRequest request,
                         Long companyId);
 
         void deleteAttachment(

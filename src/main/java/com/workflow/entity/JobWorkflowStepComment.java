@@ -5,6 +5,8 @@ import java.time.LocalDateTime;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import com.workflow.common.constant.workflow.StepDiscussionType;
+
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -28,6 +30,10 @@ public class JobWorkflowStepComment {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "author_id", nullable = false)
     private User author;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private StepDiscussionType type;
 
     @Column(columnDefinition = "TEXT", nullable = false)
     private String content;

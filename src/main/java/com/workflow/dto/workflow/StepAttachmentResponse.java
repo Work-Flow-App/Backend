@@ -2,6 +2,8 @@ package com.workflow.dto.workflow;
 
 import java.time.LocalDateTime;
 
+import com.workflow.common.constant.workflow.StepDiscussionType;
+
 import lombok.Builder;
 import lombok.Data;
 
@@ -12,6 +14,8 @@ public class StepAttachmentResponse {
     private String fileName;
     private String fileType;
     private String fileUrl;
+    private String description;
+    private StepDiscussionType type;
     private Long uploadedBy;
     private LocalDateTime createdAt;
 }

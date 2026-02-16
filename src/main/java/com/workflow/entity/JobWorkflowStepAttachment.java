@@ -1,10 +1,11 @@
 package com.workflow.entity;
 
-
 import java.time.LocalDateTime;
 
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+
+import com.workflow.common.constant.workflow.StepDiscussionType;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -30,6 +31,13 @@ public class JobWorkflowStepAttachment {
     @JoinColumn(name = "uploaded_by", nullable = false)
     private User uploadedBy;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private StepDiscussionType type;
+
+    @Column(columnDefinition = "TEXT")
+    private String description; // 👈 text attached to file
+
     private String fileName;
     private String fileType;
     private String fileUrl;
@@ -40,4 +48,3 @@ public class JobWorkflowStepAttachment {
     @UpdateTimestamp
     private LocalDateTime updatedAt;
 }
-

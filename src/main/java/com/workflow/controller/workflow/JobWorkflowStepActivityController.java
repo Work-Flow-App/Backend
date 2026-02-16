@@ -18,7 +18,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.workflow.common.constant.workflow.StepDiscussionType;
 import com.workflow.dto.workflow.StepAttachmentResponse;
+import com.workflow.dto.workflow.StepAttachmentUpdateRequest;
 import com.workflow.dto.workflow.StepCommentCreateRequest;
 import com.workflow.dto.workflow.StepCommentResponse;
 import com.workflow.dto.workflow.StepTimelineItemResponse;
@@ -112,26 +114,30 @@ public class JobWorkflowStepActivityController {
         public ResponseEntity<StepAttachmentResponse> uploadAttachment(
                         @PathVariable Long stepId,
                         @RequestParam("file") MultipartFile file,
+                        @RequestParam("type") StepDiscussionType type,
+                        @RequestParam(value = "description", required = false) String description,
                         Authentication auth) throws IOException {
 
                 StepAttachmentResponse response = stepActivityService.uploadAttachment(
                                 stepId,
                                 file,
+                                type,
+                                description,
                                 getCompanyId(auth));
 
                 return ResponseEntity.status(HttpStatus.CREATED).body(response);
         }
 
         @PutMapping("/attachments/{attachmentId}")
-        public ResponseEntity<StepAttachmentResponse> renameAttachment(
+        public ResponseEntity<StepAttachmentResponse> updateAttachment(
                         @PathVariable Long attachmentId,
-                        @RequestParam("fileName") String newFileName,
+                        @RequestBody StepAttachmentUpdateRequest request,
                         Authentication auth) {
 
                 return ResponseEntity.ok(
-                                stepActivityService.updateAttachmentName(
+                                stepActivityService.updateAttachment(
                                                 attachmentId,
-                                                newFileName,
+                                                request,
                                                 getCompanyId(auth)));
         }
 

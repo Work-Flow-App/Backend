@@ -3,6 +3,8 @@ package com.workflow.service.workflow;
 import java.io.IOException;
 import java.util.List;
 import org.springframework.web.multipart.MultipartFile;
+
+import com.workflow.common.constant.workflow.StepDiscussionType;
 import com.workflow.dto.workflow.JobWorkflowResponse;
 import com.workflow.dto.workflow.StepAttachmentResponse;
 import com.workflow.dto.workflow.StepCommentCreateRequest;
@@ -34,5 +36,10 @@ public interface IWorkerJobWorkflowService {
     // Activities (Comments/Attachments)
     StepCommentResponse addComment(Long stepId, StepCommentCreateRequest request, Long workerUserId);
 
-    StepAttachmentResponse uploadAttachment(Long stepId, MultipartFile file, Long workerUserId) throws IOException;
+    StepAttachmentResponse uploadAttachment(
+            Long stepId,
+            MultipartFile file,
+            StepDiscussionType type,
+            String description,
+            Long workerUserId) throws IOException;
 }

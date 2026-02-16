@@ -2,10 +2,12 @@ package com.workflow.dto.workflow;
 
 import com.workflow.common.constant.workflow.StepDiscussionType;
 
-import lombok.*;
+import lombok.Data;
 
 @Data
-public class StepCommentCreateRequest {
-    private String content;
+public class StepAttachmentUpdateRequest {
+
+    private String fileName;
+    private String description;
     private StepDiscussionType type;
 }

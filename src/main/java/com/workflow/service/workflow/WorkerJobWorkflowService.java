@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.workflow.common.constant.workflow.JobWorkflowStepActivityType;
+import com.workflow.common.constant.workflow.StepDiscussionType;
 import com.workflow.common.constant.workflow.WorkflowStepStatus;
 import com.workflow.common.exception.business.EmptyFileException;
 import com.workflow.common.exception.business.FileSizeLimitExceededException;
@@ -166,6 +167,7 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
                                 .map(c -> StepCommentResponse.builder()
                                                 .id(c.getId())
                                                 .content(c.getContent())
+                                                .type(c.getType())
                                                 .authorId(c.getAuthor().getId())
                                                 .createdAt(c.getCreatedAt())
                                                 .updatedAt(c.getUpdatedAt())
@@ -188,6 +190,8 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
                                                 .fileName(a.getFileName())
                                                 .fileType(a.getFileType())
                                                 .fileUrl(resolveFileUrl(a.getFileUrl()))
+                                                .description(a.getDescription())
+                                                .type(a.getType())
                                                 .uploadedBy(a.getUploadedBy().getId())
                                                 .createdAt(a.getCreatedAt())
                                                 .build())
@@ -209,6 +213,7 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
                                                 .id(c.getId())
                                                 .itemType("COMMENT")
                                                 .content(c.getContent())
+                                                .discussionType(c.getType())
                                                 .actorId(c.getAuthor().getId())
                                                 .createdAt(c.getCreatedAt())
                                                 .build())
@@ -222,6 +227,8 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
                                                 .itemType("ATTACHMENT")
                                                 .content(a.getFileName())
                                                 .fileUrl(resolveFileUrl(a.getFileUrl()))
+                                                .discussionType(a.getType())
+                                                .description(a.getDescription())
                                                 .actorId(a.getUploadedBy().getId())
                                                 .createdAt(a.getCreatedAt())
                                                 .build())
@@ -329,6 +336,7 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
                                                 .step(step)
                                                 .author(worker.getUser())
                                                 .content(request.getContent())
+                                                .type(request.getType())
                                                 .build());
 
                 stepActivityService.log(step, worker.getUser(), JobWorkflowStepActivityType.COMMENT,
@@ -337,6 +345,7 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
                 return StepCommentResponse.builder()
                                 .id(comment.getId())
                                 .content(comment.getContent())
+                                .type(comment.getType())
                                 .authorId(comment.getAuthor().getId())
                                 .createdAt(comment.getCreatedAt())
                                 .updatedAt(comment.getUpdatedAt())
@@ -344,8 +353,12 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
         }
 
         @Override
-        public StepAttachmentResponse uploadAttachment(Long stepId, MultipartFile file, Long workerUserId)
-                        throws IOException {
+        public StepAttachmentResponse uploadAttachment(
+                        Long stepId,
+                        MultipartFile file,
+                        StepDiscussionType type,
+                        String description,
+                        Long workerUserId) throws IOException {
 
                 if (file.isEmpty()) {
                         throw new EmptyFileException("Uploaded file cannot be empty");
@@ -379,7 +392,9 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
                                                 .uploadedBy(worker.getUser())
                                                 .fileName(file.getOriginalFilename())
                                                 .fileType(file.getContentType())
-                                                .fileUrl(key) // ✅ KEY
+                                                .fileUrl(key)
+                                                .type(type)
+                                                .description(description)
                                                 .build());
 
                 stepActivityService.log(step, worker.getUser(), JobWorkflowStepActivityType.ATTACHMENT_ADDED,
@@ -390,6 +405,8 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
                                 .fileName(attachment.getFileName())
                                 .fileType(attachment.getFileType())
                                 .fileUrl(resolveFileUrl(attachment.getFileUrl()))
+                                .description(attachment.getDescription())
+                                .type(attachment.getType())
                                 .uploadedBy(attachment.getUploadedBy().getId())
                                 .createdAt(attachment.getCreatedAt())
                                 .build();

@@ -396,7 +396,7 @@
               "value": "application/json"
             }
           ],
-          "body": "[\n    {\n        \"id\": 12,\n        \"content\": \"Work in progress, waiting for materials.\",\n        \"authorId\": 5,\n        \"createdAt\": \"2025-10-24T10:00:00\",\n        \"updatedAt\": \"2025-10-24T10:00:00\"\n    }\n]"
+          "body": "[\n    {\n        \"id\": 12,\n        \"content\": \"Work in progress, waiting for materials.\",\n        \"type\": \"GENERAL\",\n        \"authorId\": 5,\n        \"createdAt\": \"2025-10-24T10:00:00\",\n        \"updatedAt\": \"2025-10-24T10:00:00\"\n    }\n]"
         }
       ]
     },
@@ -464,7 +464,7 @@
               "value": "application/json"
             }
           ],
-          "body": "[\n    {\n        \"id\": 13,\n        \"fileName\": \"site_photo.jpg\",\n        \"fileType\": \"image/jpeg\",\n        \"fileUrl\": \"https://s3.bucket/path/site_photo.jpg\",\n        \"uploadedBy\": 5,\n        \"createdAt\": \"2025-10-24T10:05:00\"\n    }\n]"
+          "body": "[\n    {\n        \"id\": 13,\n        \"fileName\": \"site_photo.jpg\",\n        \"fileType\": \"image/jpeg\",\n        \"fileUrl\": \"https://s3.bucket/path/site_photo.jpg\",\n        \"description\": \"Photo of the site before start\",\n        \"type\": \"GENERAL\",\n        \"uploadedBy\": 5,\n        \"createdAt\": \"2025-10-24T10:05:00\"\n    }\n]"
         }
       ]
     },
@@ -532,7 +532,7 @@
               "value": "application/json"
             }
           ],
-          "body": "[\n    {\n        \"id\": 10,\n        \"itemType\": \"COMMENT\",\n        \"content\": \"Arrived at location.\",\n        \"actorId\": 5,\n        \"createdAt\": \"2025-10-24T09:05:00\"\n    },\n    {\n        \"id\": 11,\n        \"itemType\": \"ATTACHMENT\",\n        \"content\": \"before_work.jpg\",\n        \"fileUrl\": \"https://s3.bucket/path/img.jpg\",\n        \"actorId\": 5,\n        \"createdAt\": \"2025-10-24T09:10:00\"\n    }\n]"
+          "body": "[\n    {\n        \"id\": 10,\n        \"itemType\": \"COMMENT\",\n        \"content\": \"Arrived at location.\",\n        \"discussionType\": \"GENERAL\",\n        \"actorId\": 5,\n        \"createdAt\": \"2025-10-24T09:05:00\"\n    },\n    {\n        \"id\": 11,\n        \"itemType\": \"ATTACHMENT\",\n        \"content\": \"before_work.jpg\",\n        \"fileUrl\": \"https://s3.bucket/path/img.jpg\",\n        \"discussionType\": \"ISSUE\",\n        \"description\": \"Cracked screen\",\n        \"actorId\": 5,\n        \"createdAt\": \"2025-10-24T09:10:00\"\n    }\n]"
         }
       ]
     },
@@ -558,14 +558,14 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n    \"content\": \"Work in progress, waiting for materials.\"\n}"
+          "raw": "{\n    \"content\": \"Work in progress, waiting for materials.\",\n    \"type\": \"GENERAL\"\n}"
         },
         "url": {
           "raw": "{{base_url}}/api/v1/worker/job-workflow-steps/2/comments",
           "host": ["{{base_url}}"],
           "path": ["api", "v1", "worker", "job-workflow-steps", "2", "comments"]
         },
-        "description": "Add a comment to a step.\n\n**Authentication:** Required (WORKER role)\n\n**Request Body:**\n- content (string, required): The comment text\n\n**Path Parameter:**\n- stepId (long): ID of the step"
+        "description": "Add a comment to a step.\n\n**Authentication:** Required (WORKER role)\n\n**Request Body:**\n- content (string, required): The comment text\n- type (string, required): The discussion type (e.g., GENERAL, ISSUE)\n\n**Path Parameter:**\n- stepId (long): ID of the step"
       },
       "response": [
         {
@@ -584,7 +584,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"content\": \"Work in progress, waiting for materials.\"\n}"
+              "raw": "{\n    \"content\": \"Work in progress, waiting for materials.\",\n    \"type\": \"GENERAL\"\n}"
             },
             "url": {
               "raw": "http://localhost:8080/api/v1/worker/job-workflow-steps/2/comments",
@@ -610,7 +610,7 @@
               "value": "application/json"
             }
           ],
-          "body": "{\n    \"id\": 12,\n    \"content\": \"Work in progress, waiting for materials.\",\n    \"authorId\": 5,\n    \"createdAt\": \"2025-10-24T10:00:00\",\n    \"updatedAt\": \"2025-10-24T10:00:00\"\n}"
+          "body": "{\n    \"id\": 12,\n    \"content\": \"Work in progress, waiting for materials.\",\n    \"type\": \"GENERAL\",\n    \"authorId\": 5,\n    \"createdAt\": \"2025-10-24T10:00:00\",\n    \"updatedAt\": \"2025-10-24T10:00:00\"\n}"
         }
       ]
     },
@@ -636,6 +636,16 @@
               "key": "file",
               "type": "file",
               "src": []
+            },
+            {
+              "key": "type",
+              "value": "GENERAL",
+              "type": "text"
+            },
+            {
+              "key": "description",
+              "value": "Photo of the site",
+              "type": "text"
             }
           ]
         },
@@ -651,7 +661,7 @@
             "attachments"
           ]
         },
-        "description": "Upload an attachment to a step.\n\n**Authentication:** Required (WORKER role)\n\n**Body (form-data):**\n- file (file, required): The file to upload\n\n**Path Parameter:**\n- stepId (long): ID of the step"
+        "description": "Upload an attachment to a step.\n\n**Authentication:** Required (WORKER role)\n\n**Body (form-data):**\n- file (file, required): The file to upload\n- type (string, required): The discussion type (e.g., GENERAL, ISSUE)\n- description (string, optional): Description of the attachment\n\n**Path Parameter:**\n- stepId (long): ID of the step"
       },
       "response": [
         {
@@ -671,6 +681,16 @@
                   "key": "file",
                   "type": "file",
                   "src": "path/to/file.jpg"
+                },
+                {
+                  "key": "type",
+                  "value": "GENERAL",
+                  "type": "text"
+                },
+                {
+                  "key": "description",
+                  "value": "Photo of the site",
+                  "type": "text"
                 }
               ]
             },
@@ -698,7 +718,7 @@
               "value": "application/json"
             }
           ],
-          "body": "{\n    \"id\": 13,\n    \"fileName\": \"site_photo.jpg\",\n    \"fileType\": \"image/jpeg\",\n    \"fileUrl\": \"https://s3.bucket/path/site_photo.jpg\",\n    \"uploadedBy\": 5,\n    \"createdAt\": \"2025-10-24T10:05:00\"\n}"
+          "body": "{\n    \"id\": 13,\n    \"fileName\": \"site_photo.jpg\",\n    \"fileType\": \"image/jpeg\",\n    \"fileUrl\": \"https://s3.bucket/path/site_photo.jpg\",\n    \"description\": \"Photo of the site\",\n    \"type\": \"GENERAL\",\n    \"uploadedBy\": 5,\n    \"createdAt\": \"2025-10-24T10:05:00\"\n}"
         }
       ]
     }

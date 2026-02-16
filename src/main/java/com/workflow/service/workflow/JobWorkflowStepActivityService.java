@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.workflow.common.constant.workflow.JobWorkflowStepActivityType;
+import com.workflow.common.constant.workflow.StepDiscussionType;
 import com.workflow.common.exception.business.AttachmentNotFoundException;
 import com.workflow.common.exception.business.CommentNotFoundException;
 import com.workflow.common.exception.business.CompanyNotFoundException;
@@ -18,6 +19,7 @@ import com.workflow.common.exception.business.JobWorkflowStepNotFoundException;
 import com.workflow.common.exception.business.UnauthorizedWorkflowAccessException;
 import com.workflow.dto.workflow.StepActivityResponse;
 import com.workflow.dto.workflow.StepAttachmentResponse;
+import com.workflow.dto.workflow.StepAttachmentUpdateRequest;
 import com.workflow.dto.workflow.StepCommentCreateRequest;
 import com.workflow.dto.workflow.StepCommentResponse;
 import com.workflow.dto.workflow.StepTimelineItemResponse;
@@ -100,6 +102,7 @@ public class JobWorkflowStepActivityService
                                                 .step(step)
                                                 .author(company.getUser())
                                                 .content(request.getContent())
+                                                .type(request.getType())
                                                 .build());
 
                 stepActivityService.log(step, company.getUser(), JobWorkflowStepActivityType.COMMENT,
@@ -123,7 +126,13 @@ public class JobWorkflowStepActivityService
                         throw new ForbiddenActionException("Not allowed to edit this comment");
                 }
 
-                comment.setContent(request.getContent());
+                if (request.getContent() != null) {
+                        comment.setContent(request.getContent());
+                }
+
+                if (request.getType() != null) {
+                        comment.setType(request.getType());
+                }
 
                 stepActivityService.log(
                                 comment.getStep(),
@@ -177,6 +186,8 @@ public class JobWorkflowStepActivityService
         public StepAttachmentResponse uploadAttachment(
                         Long stepId,
                         MultipartFile file,
+                        StepDiscussionType type,
+                        String description,
                         Long companyId) throws IOException {
 
                 if (file.isEmpty()) {
@@ -210,7 +221,9 @@ public class JobWorkflowStepActivityService
                                                 .uploadedBy(company.getUser())
                                                 .fileName(file.getOriginalFilename())
                                                 .fileType(file.getContentType())
-                                                .fileUrl(key) // ✅ STORE KEY
+                                                .fileUrl(key)
+                                                .type(type)
+                                                .description(description)
                                                 .build());
 
                 stepActivityService.log(
@@ -223,9 +236,9 @@ public class JobWorkflowStepActivityService
         }
 
         @Override
-        public StepAttachmentResponse updateAttachmentName(
+        public StepAttachmentResponse updateAttachment(
                         Long attachmentId,
-                        String newFileName,
+                        StepAttachmentUpdateRequest request,
                         Long companyId) {
 
                 Company company = getCompany(companyId);
@@ -234,16 +247,26 @@ public class JobWorkflowStepActivityService
                                 .orElseThrow(() -> new AttachmentNotFoundException("Attachment not found"));
 
                 if (!attachment.getUploadedBy().getId().equals(company.getUser().getId())) {
-                        throw new ForbiddenActionException("Not allowed to rename this attachment");
+                        throw new ForbiddenActionException("Not allowed to edit this attachment");
                 }
 
-                attachment.setFileName(newFileName);
+                if (request.getFileName() != null) {
+                        attachment.setFileName(request.getFileName());
+                }
+
+                if (request.getDescription() != null) {
+                        attachment.setDescription(request.getDescription());
+                }
+
+                if (request.getType() != null) {
+                        attachment.setType(request.getType());
+                }
 
                 stepActivityService.log(
                                 attachment.getStep(),
                                 company.getUser(),
                                 JobWorkflowStepActivityType.ATTACHMENT_UPDATED,
-                                "Renamed attachment to " + newFileName);
+                                "Updated attachment: " + attachment.getFileName());
 
                 return map(attachment);
         }
@@ -296,6 +319,7 @@ public class JobWorkflowStepActivityService
                                                 .id(c.getId())
                                                 .itemType("COMMENT")
                                                 .content(c.getContent())
+                                                .discussionType(c.getType())
                                                 .actorId(c.getAuthor().getId())
                                                 .createdAt(c.getCreatedAt())
                                                 .build())
@@ -309,6 +333,8 @@ public class JobWorkflowStepActivityService
                                                 .itemType("ATTACHMENT")
                                                 .content(a.getFileName())
                                                 .fileUrl(resolveFileUrl(a.getFileUrl()))
+                                                .discussionType(a.getType())
+                                                .description(a.getDescription())
                                                 .actorId(a.getUploadedBy().getId())
                                                 .createdAt(a.getCreatedAt())
                                                 .build())
@@ -348,6 +374,7 @@ public class JobWorkflowStepActivityService
                 return StepCommentResponse.builder()
                                 .id(c.getId())
                                 .content(c.getContent())
+                                .type(c.getType())
                                 .authorId(c.getAuthor().getId())
                                 .createdAt(c.getCreatedAt())
                                 .updatedAt(c.getUpdatedAt())
@@ -355,12 +382,13 @@ public class JobWorkflowStepActivityService
         }
 
         private StepAttachmentResponse map(JobWorkflowStepAttachment a) {
-
                 return StepAttachmentResponse.builder()
                                 .id(a.getId())
                                 .fileName(a.getFileName())
                                 .fileType(a.getFileType())
                                 .fileUrl(resolveFileUrl(a.getFileUrl()))
+                                .description(a.getDescription())
+                                .type(a.getType())
                                 .uploadedBy(a.getUploadedBy().getId())
                                 .createdAt(a.getCreatedAt())
                                 .build();

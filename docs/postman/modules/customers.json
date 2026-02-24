@@ -1,0 +1,371 @@
+{
+  "name": "Customers",
+  "description": "Customer management endpoints for creating, reading, updating, and deleting customers.",
+  "item": [
+    {
+      "name": "Create Customer",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"name\": \"GlobalTech Solutions\",\n    \"email\": \"contact@globaltech.com\",\n    \"telephone\": \"123456789\",\n    \"mobile\": \"987654321\",\n    \"address\": {\n        \"houseNumber\": \"42\",\n        \"street\": \"Baker Street\",\n        \"city\": \"London\",\n        \"county\": \"Greater London\",\n        \"postalCode\": \"NW1 6XE\",\n        \"country\": \"United Kingdom\"\n    }\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/customers",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "customers"
+          ]
+        },
+        "description": "Create a new customer for the authenticated company.\n\n**Authentication:** Required (COMPANY role)\n\n**Request Body:**\n- name (string, required): 2-150 characters\n- email (string, optional): Valid email format\n- telephone (string, optional): Max 20 characters\n- mobile (string, optional): Max 20 characters\n- address (object, optional): Nested address details\n  - houseNumber (string, optional): House or building number\n  - street (string, optional): Street name\n  - city (string, optional): City name\n  - county (string, optional): County or region\n  - postalCode (string, optional): UK postal code\n  - country (string, optional): Country name\n\n**Business Logic:**\n- Customer is associated with the company of the authenticated user\n- Name should be unique per company (enforced at service/repository level)\n\n**Response:** Created customer object with metadata (id, timestamps, archived flag)."
+      },
+      "response": [
+        {
+          "name": "Create Customer - Success",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"GlobalTech Solutions\",\n    \"email\": \"contact@globaltech.com\",\n    \"telephone\": \"123456789\",\n    \"mobile\": \"987654321\",\n    \"address\": {\n        \"houseNumber\": \"42\",\n        \"street\": \"Baker Street\",\n        \"city\": \"London\",\n        \"county\": \"Greater London\",\n        \"postalCode\": \"NW1 6XE\",\n        \"country\": \"United Kingdom\"\n    }\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/v1/customers",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "customers"
+              ]
+            }
+          },
+          "status": "Created",
+          "code": 201,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n    \"id\": 1,\n    \"name\": \"GlobalTech Solutions\",\n    \"email\": \"contact@globaltech.com\",\n    \"telephone\": \"123456789\",\n    \"mobile\": \"987654321\",\n    \"address\": {\n        \"houseNumber\": \"42\",\n        \"street\": \"Baker Street\",\n        \"city\": \"London\",\n        \"county\": \"Greater London\",\n        \"postalCode\": \"NW1 6XE\",\n        \"country\": \"United Kingdom\"\n    },\n    \"archived\": false,\n    \"createdAt\": \"2025-11-08T10:00:00\",\n    \"updatedAt\": \"2025-11-08T10:00:00\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Get All Customers",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/v1/customers",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "customers"
+          ]
+        },
+        "description": "Retrieve all customers for the authenticated company.\n\n**Authentication:** Required (COMPANY role)\n\n**Response:** Array of customer objects (same format as Create Customer response)\n\n**Note:** Returns all customers (including archived) belonging to the company."
+      },
+      "response": [
+        {
+          "name": "Get All Customers - Success",
+          "originalRequest": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8080/api/v1/customers",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "customers"
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "[\n    {\n        \"id\": 1,\n        \"name\": \"GlobalTech Solutions\",\n        \"email\": \"contact@globaltech.com\",\n        \"telephone\": \"123456789\",\n        \"mobile\": \"987654321\",\n        \"address\": {\n            \"houseNumber\": \"42\",\n            \"street\": \"Baker Street\",\n            \"city\": \"London\",\n            \"county\": \"Greater London\",\n            \"postalCode\": \"NW1 6XE\",\n            \"country\": \"United Kingdom\"\n        },\n        \"archived\": false,\n        \"createdAt\": \"2025-11-08T10:00:00\",\n        \"updatedAt\": \"2025-11-08T10:00:00\"\n    }\n]"
+        }
+      ]
+    },
+    {
+      "name": "Get Customer by ID",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/v1/customers/1",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "customers",
+            "1"
+          ]
+        },
+        "description": "Retrieve a specific customer by ID.\n\n**Authentication:** Required (COMPANY role)\n\n**Path Parameter:**\n- id (long): Customer ID\n\n**Response:** Customer object (same format as Create Customer response)\n\n**Authorization:** Only customers belonging to the authenticated company can be accessed."
+      },
+      "response": [
+        {
+          "name": "Get Customer by ID - Success",
+          "originalRequest": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8080/api/v1/customers/1",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "customers",
+                "1"
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n    \"id\": 1,\n    \"name\": \"GlobalTech Solutions\",\n    \"email\": \"contact@globaltech.com\",\n    \"telephone\": \"123456789\",\n    \"mobile\": \"987654321\",\n    \"address\": {\n        \"houseNumber\": \"42\",\n        \"street\": \"Baker Street\",\n        \"city\": \"London\",\n        \"county\": \"Greater London\",\n        \"postalCode\": \"NW1 6XE\",\n        \"country\": \"United Kingdom\"\n    },\n    \"archived\": false,\n    \"createdAt\": \"2025-11-08T10:00:00\",\n    \"updatedAt\": \"2025-11-08T10:00:00\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Update Customer",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"name\": \"GlobalTech Solutions Ltd.\",\n    \"email\": \"support@globaltech.com\",\n    \"telephone\": \"555555555\",\n    \"mobile\": \"999999999\",\n    \"address\": {\n        \"houseNumber\": \"789\",\n        \"street\": \"Innovation Drive\",\n        \"city\": \"London\",\n        \"county\": \"Greater London\",\n        \"postalCode\": \"EC2A 2BB\",\n        \"country\": \"United Kingdom\"\n    },\n    \"archived\": false\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/customers/1",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "customers",
+            "1"
+          ]
+        },
+        "description": "Update an existing customer's details.\n\n**Authentication:** Required (COMPANY role)\n\n**Path Parameter:**\n- id (long): Customer ID\n\n**Request Body:**\n- name (string, required): 2-150 characters\n- email (string, optional): Valid email format\n- telephone (string, optional): Max 20 characters\n- mobile (string, optional): Max 20 characters\n- address (object, optional): Nested address details\n  - houseNumber (string, optional): House or building number\n  - street (string, optional): Street name\n  - city (string, optional): City name\n  - county (string, optional): County or region\n  - postalCode (string, optional): UK postal code\n  - country (string, optional): Country name\n- archived (boolean, optional): Archive status\n\n**Response:** Updated customer object\n\n**Authorization:** Only customers belonging to the authenticated company can be updated."
+      },
+      "response": [
+        {
+          "name": "Update Customer - Success",
+          "originalRequest": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"GlobalTech Solutions Ltd.\",\n    \"email\": \"support@globaltech.com\",\n    \"telephone\": \"555555555\",\n    \"mobile\": \"999999999\",\n    \"address\": {\n        \"houseNumber\": \"789\",\n        \"street\": \"Innovation Drive\",\n        \"city\": \"London\",\n        \"county\": \"Greater London\",\n        \"postalCode\": \"EC2A 2BB\",\n        \"country\": \"United Kingdom\"\n    },\n    \"archived\": false\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/v1/customers/1",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "customers",
+                "1"
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n    \"id\": 1,\n    \"name\": \"GlobalTech Solutions Ltd.\",\n    \"email\": \"support@globaltech.com\",\n    \"telephone\": \"555555555\",\n    \"mobile\": \"999999999\",\n    \"address\": {\n        \"houseNumber\": \"789\",\n        \"street\": \"Innovation Drive\",\n        \"city\": \"London\",\n        \"county\": \"Greater London\",\n        \"postalCode\": \"EC2A 2BB\",\n        \"country\": \"United Kingdom\"\n    },\n    \"archived\": false,\n    \"createdAt\": \"2025-11-08T10:00:00\",\n    \"updatedAt\": \"2025-11-08T11:00:00\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Delete Customer",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/v1/customers/1",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "customers",
+            "1"
+          ]
+        },
+        "description": "Delete a customer by ID.\n\n**Authentication:** Required (COMPANY role)\n\n**Path Parameter:**\n- id (long): Customer ID\n\n**Response:** 204 No Content\n\n**Authorization:** Only customers belonging to the authenticated company can be deleted."
+      },
+      "response": [
+        {
+          "name": "Delete Customer - Success",
+          "originalRequest": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://localhost:8080/api/v1/customers/1",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "customers",
+                "1"
+              ]
+            }
+          },
+          "status": "No Content",
+          "code": 204,
+          "_postman_previewlanguage": null,
+          "header": [],
+          "body": null
+        }
+      ]
+    }
+  ]
+}

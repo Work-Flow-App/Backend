@@ -27,6 +27,7 @@ const MODULE_ORDER = [
   'company',
   'workers',
   'clients',
+  'customers',
   'job-templates',
   'jobs',
   'assets',

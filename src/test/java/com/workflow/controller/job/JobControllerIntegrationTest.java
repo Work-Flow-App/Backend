@@ -65,6 +65,9 @@ class JobControllerIntegrationTest {
     private WorkerRepository workerRepository;
 
     @Autowired
+    private CustomerRepository customerRepository;
+
+    @Autowired
     private PasswordEncoder passwordEncoder;
 
     @Autowired
@@ -79,6 +82,7 @@ class JobControllerIntegrationTest {
     private JobTemplateField field1;
     private JobTemplateField field2;
     private Client client;
+    private Customer customer;
     private Worker worker;
     private Job job;
     private String companyUserToken;
@@ -94,6 +98,7 @@ class JobControllerIntegrationTest {
         jobTemplateRepository.deleteAll();
         workerRepository.deleteAll();
         clientRepository.deleteAll();
+        customerRepository.deleteAll();
         companyRepository.deleteAll();
         userRepository.deleteAll();
 
@@ -156,6 +161,14 @@ class JobControllerIntegrationTest {
                 .build();
         client = clientRepository.save(client);
 
+        // Create customer
+        customer = Customer.builder()
+                .name("Test Customer")
+                .company(company)
+                .email("customer@example.com")
+                .build();
+        customer = customerRepository.save(customer);
+
         // Create worker
         worker = Worker.builder()
                 .name("Test Worker")
@@ -201,6 +214,7 @@ class JobControllerIntegrationTest {
                 .template(template)
                 .company(company)
                 .client(client)
+                .customer(customer)
                 .assignedWorker(worker)
                 .status(JobStatus.NEW)
                 .archived(false)
@@ -239,6 +253,7 @@ class JobControllerIntegrationTest {
         JobCreateRequest request = JobCreateRequest.builder()
                 .templateId(template.getId())
                 .clientId(client.getId())
+                .customerId(customer.getId())
                 .assignedWorkerId(worker.getId())
                 .status(JobStatus.NEW)
                 .fieldValues(fieldValues)
@@ -266,6 +281,7 @@ class JobControllerIntegrationTest {
         JobCreateRequest request = JobCreateRequest.builder()
                 .templateId(template.getId())
                 .clientId(null)
+                .customerId(customer.getId())
                 .assignedWorkerId(null)
                 .status(JobStatus.NEW)
                 .fieldValues(fieldValues)
@@ -313,6 +329,7 @@ class JobControllerIntegrationTest {
     void shouldReturn404WhenWorkerNotFound() throws Exception {
         JobCreateRequest request = JobCreateRequest.builder()
                 .templateId(template.getId())
+                .customerId(customer.getId())
                 .assignedWorkerId(99999L)
                 .fieldValues(new HashMap<>())
                 .build();

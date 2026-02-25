@@ -46,6 +46,9 @@ class JobServiceTest {
         private WorkerRepository workerRepository;
 
         @Mock
+        private CustomerRepository customerRepository;
+
+        @Mock
         private AssetRepository assetRepository;
 
         @Mock
@@ -60,6 +63,7 @@ class JobServiceTest {
         private Company company;
         private JobTemplate template;
         private Client client;
+        private Customer customer;
         private Worker worker;
         private JobCreateRequest createRequest;
 
@@ -68,6 +72,7 @@ class JobServiceTest {
                 company = Company.builder().id(1L).name("Test Company").build();
                 template = JobTemplate.builder().id(3L).company(company).name("Maintenance").build();
                 client = Client.builder().id(1L).company(company).name("Test Client").build();
+                customer = Customer.builder().id(1L).company(company).name("Test Customer").build();
                 worker = Worker.builder().id(1L).company(company).name("Test Worker").build();
 
                 Map<Long, Object> fieldValues = new HashMap<>();
@@ -76,6 +81,7 @@ class JobServiceTest {
                 createRequest = JobCreateRequest.builder()
                                 .templateId(3L)
                                 .clientId(1L)
+                                .customerId(1L)
                                 .assignedWorkerId(1L)
                                 .status(JobStatus.NEW)
                                 .fieldValues(fieldValues)
@@ -87,6 +93,7 @@ class JobServiceTest {
                 when(companyRepository.findById(1L)).thenReturn(Optional.of(company));
                 when(templateRepository.findById(3L)).thenReturn(Optional.of(template));
                 when(clientRepository.findById(1L)).thenReturn(Optional.of(client));
+                when(customerRepository.findById(1L)).thenReturn(Optional.of(customer));
                 when(workerRepository.findById(1L)).thenReturn(Optional.of(worker));
                 when(templateFieldRepository.findByTemplateIdOrderByOrderIndexAsc(3L))
                                 .thenReturn(Collections.emptyList());
@@ -105,6 +112,7 @@ class JobServiceTest {
                 verify(companyRepository).findById(1L);
                 verify(templateRepository).findById(3L);
                 verify(clientRepository).findById(1L);
+                verify(customerRepository).findById(1L);
                 verify(workerRepository).findById(1L);
                 verify(jobRepository).saveAndFlush(any(Job.class));
         }
@@ -115,6 +123,7 @@ class JobServiceTest {
                 when(companyRepository.findById(1L)).thenReturn(Optional.of(company));
                 when(templateRepository.findById(3L)).thenReturn(Optional.of(template));
                 when(clientRepository.findById(1L)).thenReturn(Optional.of(client));
+                when(customerRepository.findById(1L)).thenReturn(Optional.of(customer));
                 when(workerRepository.findById(1L)).thenReturn(Optional.of(worker));
                 when(templateFieldRepository.findByTemplateIdOrderByOrderIndexAsc(3L))
                                 .thenReturn(Collections.emptyList());
@@ -175,6 +184,7 @@ class JobServiceTest {
                 when(companyRepository.findById(1L)).thenReturn(Optional.of(company));
                 when(templateRepository.findById(3L)).thenReturn(Optional.of(template));
                 when(clientRepository.findById(1L)).thenReturn(Optional.of(client));
+                when(customerRepository.findById(1L)).thenReturn(Optional.of(customer));
                 when(workerRepository.findById(1L)).thenReturn(Optional.empty());
 
                 assertThatThrownBy(() -> jobService.createJob(createRequest, 1L))

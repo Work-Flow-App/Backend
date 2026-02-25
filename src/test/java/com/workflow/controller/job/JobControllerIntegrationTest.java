@@ -300,6 +300,7 @@ class JobControllerIntegrationTest {
     void shouldReturn404WhenTemplateNotFound() throws Exception {
         JobCreateRequest request = JobCreateRequest.builder()
                 .templateId(99999L)
+                .customerId(customer.getId())
                 .fieldValues(new HashMap<>())
                 .build();
 
@@ -315,6 +316,7 @@ class JobControllerIntegrationTest {
         JobCreateRequest request = JobCreateRequest.builder()
                 .templateId(template.getId())
                 .clientId(99999L)
+                .customerId(customer.getId())
                 .fieldValues(new HashMap<>())
                 .build();
 

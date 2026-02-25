@@ -5,6 +5,7 @@ import java.util.Map;
 
 import com.workflow.common.constant.job.JobStatus;
 
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -17,6 +18,9 @@ import lombok.NoArgsConstructor;
 public class JobCreateRequest {
     private Long templateId;
     private Long clientId;
+
+    @NotNull(message = "Customer is required")
+    private Long customerId;
     private Long assignedWorkerId;
     private Long workflowId;
     private JobStatus status;

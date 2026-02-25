@@ -32,6 +32,10 @@ public class Job {
     private Client client;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "customer_id", nullable = false)
+    private Customer customer;
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "assigned_worker_id")
     private Worker assignedWorker;
 

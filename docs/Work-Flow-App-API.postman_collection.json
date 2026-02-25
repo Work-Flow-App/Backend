@@ -2612,8 +2612,7 @@
                 "url": {
                   "raw": "http://localhost:8080/api/v1/customers/1",
                   "protocol": "http",
-                  "host": [
-                    "localhost"
+                  "host": ["localhost"
                   ],
                   "port": "8080",
                   "path": [
@@ -4084,7 +4083,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"clientId\": 1,\n    \"assignedWorkerId\": 1,\n    \"status\": \"IN_PROGRESS\",\n    \"archived\": false,\n    \"fieldValues\": {\n        \"101\": \"John Doe Updated\",\n        \"102\": \"High\"\n    }\n}"
+              "raw": "{\n    \"clientId\": 1,\n    \"assignedWorkerId\": 1,\n    \"status\": \"IN_PROGRESS\",\n    \"archived\": false,\n    \"fieldValues\": {\n        \"101\": \"John Doe Updated\",\n        \"102\": \"High\"\n    },\n    \"workflowId\": 2\n}"
             },
             "url": {
               "raw": "{{base_url}}/api/v1/jobs/55",
@@ -4098,7 +4097,7 @@
                 "55"
               ]
             },
-            "description": "Update an existing job.\n\n**Authentication:** Required (Bearer token in Authorization header)\n\n**Path Parameter:**\n- id (long): Job ID\n\n**Request Body:**\n- clientId (long, optional): The client associated with this job\n- assignedWorkerId (long, optional): The worker assigned to this job\n- status (string, optional): Job status (NEW, IN_PROGRESS, COMPLETED, ON_HOLD, CANCELLED)\n- archived (boolean, optional): Archive status\n- fieldValues (object, optional): Map of field ID to updated values\n\n**Business Logic:**\n- Only jobs belonging to the authenticated company can be updated\n- Client and worker must belong to the same company\n- Cannot change the template after creation\n\n**Response:** Updated job object\n\n**Status Code:** 200 OK"
+            "description": "Update an existing job.\n\n**Authentication:** Required (Bearer token in Authorization header)\n\n**Path Parameter:**\n- id (long): Job ID\n\n**Request Body:**\n- clientId (long, optional): The client associated with this job\n- assignedWorkerId (long, optional): The worker assigned to this job\n- status (string, optional): Job status (NEW, IN_PROGRESS, COMPLETED, ON_HOLD, CANCELLED)\n- archived (boolean, optional): Archive status\n- fieldValues (object, optional): Map of field ID to updated values\n- workflowId (long, optional): ID of the workflow to assign to this job\n\n**Business Logic:**\n- Only jobs belonging to the authenticated company can be updated\n- Client and worker must belong to the same company\n- Cannot change the template after creation\n- workflowId can only be set if the job currently has no workflow assigned. Once a workflow is assigned to a job it cannot be changed or replaced. Sending a workflowId on a job that already has a workflow returns 400 Bad Request with the message \"Workflow cannot be changed once assigned to a job\"\n- Omitting workflowId (or sending it as null) leaves the existing workflow assignment untouched\n\n**Response:** Updated job object\n\n**Status Code:** 200 OK"
           },
           "response": [
             {
@@ -4117,7 +4116,7 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n    \"clientId\": 1,\n    \"assignedWorkerId\": 1,\n    \"status\": \"IN_PROGRESS\",\n    \"archived\": false,\n    \"fieldValues\": {\n        \"101\": \"John Doe Updated\",\n        \"102\": \"High\"\n    }\n}"
+                  "raw": "{\n    \"clientId\": 1,\n    \"assignedWorkerId\": 1,\n    \"status\": \"IN_PROGRESS\",\n    \"archived\": false,\n    \"fieldValues\": {\n        \"101\": \"John Doe Updated\",\n        \"102\": \"High\"\n    },\n    \"workflowId\": 2\n}"
                 },
                 "url": {
                   "raw": "http://localhost:8080/api/v1/jobs/55",
@@ -4143,7 +4142,51 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n    \"id\": 55,\n    \"companyId\": 1,\n    \"templateId\": 3,\n    \"clientId\": 1,\n    \"assignedWorkerId\": 1,\n    \"status\": \"IN_PROGRESS\",\n    \"archived\": false,\n    \"createdAt\": \"2025-11-14T10:15:00\",\n    \"updatedAt\": \"2025-11-14T10:20:00\",\n    \"fieldValues\": {\n        \"101\": {\n            \"name\": \"customerName\",\n            \"label\": \"Customer Name\",\n            \"type\": \"TEXT\",\n            \"value\": \"John Doe Updated\"\n        },\n        \"102\": {\n            \"name\": \"priority\",\n            \"label\": \"Priority Level\",\n            \"type\": \"DROPDOWN\",\n            \"value\": \"High\"\n        }\n    },\n    \"assetIds\": [1, 2]\n}"
+              "body": "{\n    \"id\": 55,\n    \"companyId\": 1,\n    \"templateId\": 3,\n    \"clientId\": 1,\n    \"assignedWorkerId\": 1,\n    \"status\": \"IN_PROGRESS\",\n    \"archived\": false,\n    \"workflowId\": 2,\n    \"createdAt\": \"2025-11-14T10:15:00\",\n    \"updatedAt\": \"2025-11-14T10:20:00\",\n    \"fieldValues\": {\n        \"101\": {\n            \"name\": \"customerName\",\n            \"label\": \"Customer Name\",\n            \"type\": \"TEXT\",\n            \"value\": \"John Doe Updated\"\n        },\n        \"102\": {\n            \"name\": \"priority\",\n            \"label\": \"Priority Level\",\n            \"type\": \"DROPDOWN\",\n            \"value\": \"High\"\n        }\n    },\n    \"assetIds\": [1, 2]\n}"
+            },
+            {
+              "name": "Update Job - Error: Workflow Already Assigned (400)",
+              "originalRequest": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{jwt_token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"clientId\": 1,\n    \"assignedWorkerId\": 1,\n    \"status\": \"IN_PROGRESS\",\n    \"archived\": false,\n    \"fieldValues\": {\n        \"101\": \"John Doe Updated\",\n        \"102\": \"High\"\n    },\n    \"workflowId\": 5\n}"
+                },
+                "url": {
+                  "raw": "http://localhost:8080/api/v1/jobs/55",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8080",
+                  "path": [
+                    "api",
+                    "v1",
+                    "jobs",
+                    "55"
+                  ]
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n    \"message\": \"Workflow cannot be changed once assigned to a job\"\n}"
             }
           ]
         },

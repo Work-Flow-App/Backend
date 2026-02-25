@@ -130,12 +130,26 @@ public class JobService implements IJobService {
                         job.setAssignedWorker(worker);
                 }
 
+                if (request.getWorkflowId() != null) {
+                        if (job.getWorkflow() != null) {
+                                throw new IllegalStateException("Workflow cannot be changed once assigned to a job");
+                        }
+                        Workflow workflow = workflowRepository.findById(request.getWorkflowId())
+                                        .filter(w -> w.getCompany().getId().equals(companyId))
+                                        .orElseThrow(() -> new WorkflowNotFoundException("Workflow not found"));
+                        job.setWorkflow(workflow);
+                }
+
                 if (request.getStatus() != null) {
                         job.setStatus(request.getStatus());
                 }
 
                 job.setArchived(request.isArchived());
                 jobRepository.save(job);
+
+                if (request.getWorkflowId() != null && job.getWorkflow() != null) {
+                        jobWorkflowService.startWorkflow(job, job.getWorkflow(), companyId);
+                }
 
                 fieldValueRepository.deleteByJobId(jobId);
                 saveJobFieldValues(job, request.getFieldValues());

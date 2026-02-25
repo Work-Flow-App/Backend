@@ -12,6 +12,7 @@ import java.util.Map;
 @Builder
 public class JobUpdateRequest {
     private Long clientId;
+    private Long customerId;
     private Long assignedWorkerId;
     private Long workflowId;
     private JobStatus status;

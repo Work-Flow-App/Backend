@@ -15,6 +15,7 @@ import com.workflow.common.constant.job.JobStatus;
 import com.workflow.common.exception.business.AssetNotFoundException;
 import com.workflow.common.exception.business.ClientNotFoundException;
 import com.workflow.common.exception.business.CompanyNotFoundException;
+import com.workflow.common.exception.business.CustomerNotFoundException;
 import com.workflow.common.exception.business.JobNotFoundException;
 import com.workflow.common.exception.business.TemplateNotFoundException;
 import com.workflow.common.exception.business.WorkerNotFoundException;
@@ -28,6 +29,7 @@ import com.workflow.entity.Asset;
 import com.workflow.entity.AssetJobAssignment;
 import com.workflow.entity.Client;
 import com.workflow.entity.Company;
+import com.workflow.entity.Customer;
 import com.workflow.entity.Job;
 import com.workflow.entity.JobFieldValue;
 import com.workflow.entity.JobTemplate;
@@ -38,6 +40,7 @@ import com.workflow.repository.AssetJobAssignmentRepository;
 import com.workflow.repository.AssetRepository;
 import com.workflow.repository.ClientRepository;
 import com.workflow.repository.CompanyRepository;
+import com.workflow.repository.CustomerRepository;
 import com.workflow.repository.JobFieldValueRepository;
 import com.workflow.repository.JobRepository;
 import com.workflow.repository.JobTemplateFieldRepository;
@@ -60,6 +63,7 @@ public class JobService implements IJobService {
         private final JobTemplateFieldRepository templateFieldRepository;
         private final CompanyRepository companyRepository;
         private final ClientRepository clientRepository;
+        private final CustomerRepository customerRepository;
         private final WorkerRepository workerRepository;
         private final AssetRepository assetRepository;
         private final AssetJobAssignmentRepository assetJobAssignmentRepository;
@@ -80,6 +84,10 @@ public class JobService implements IJobService {
                                                 .filter(c -> c.getCompany().getId().equals(companyId))
                                                 .orElseThrow(() -> new ClientNotFoundException("Client not found"));
 
+                Customer customer = customerRepository.findById(request.getCustomerId())
+                                .filter(c -> c.getCompany().getId().equals(companyId))
+                                .orElseThrow(() -> new CustomerNotFoundException("Customer not found"));
+
                 Worker worker = request.getAssignedWorkerId() == null ? null
                                 : workerRepository.findById(request.getAssignedWorkerId())
                                                 .filter(w -> w.getCompany().getId().equals(companyId))
@@ -94,6 +102,7 @@ public class JobService implements IJobService {
                                 .company(company)
                                 .template(template)
                                 .client(client)
+                                .customer(customer)
                                 .assignedWorker(worker)
                                 .workflow(workflow)
                                 .status(request.getStatus() != null ? request.getStatus() : JobStatus.NEW)
@@ -130,6 +139,13 @@ public class JobService implements IJobService {
                                         .filter(c -> c.getCompany().getId().equals(companyId))
                                         .orElseThrow(() -> new ClientNotFoundException("Client not found"));
                         job.setClient(client);
+                }
+
+                if (request.getCustomerId() != null) {
+                        Customer customer = customerRepository.findById(request.getCustomerId())
+                                        .filter(c -> c.getCompany().getId().equals(companyId))
+                                        .orElseThrow(() -> new CustomerNotFoundException("Customer not found"));
+                        job.setCustomer(customer);
                 }
 
                 if (request.getAssignedWorkerId() != null) {
@@ -410,6 +426,7 @@ public class JobService implements IJobService {
                                 .companyId(job.getCompany().getId())
                                 .templateId(job.getTemplate().getId())
                                 .clientId(job.getClient() != null ? job.getClient().getId() : null)
+                                .customerId(job.getCustomer().getId())
                                 .assignedWorkerId(job.getAssignedWorker() != null ? job.getAssignedWorker().getId()
                                                 : null)
                                 .workflowId(job.getWorkflow() != null ? job.getWorkflow().getId() : null)

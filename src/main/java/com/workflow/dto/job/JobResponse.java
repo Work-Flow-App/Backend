@@ -16,6 +16,7 @@ public class JobResponse {
     private Long companyId;
     private Long templateId;
     private Long clientId;
+    private Long customerId;
     private Long assignedWorkerId;
     private Long workflowId;
     private JobStatus status;

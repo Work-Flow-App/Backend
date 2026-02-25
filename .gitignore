@@ -46,3 +46,6 @@ docs/**.md
 
 
 /src/main/resources/auto-generated
+
+/infra/cdk.out
+/infra/node_modules

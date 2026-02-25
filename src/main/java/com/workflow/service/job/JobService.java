@@ -23,6 +23,7 @@ import com.workflow.dto.job.FieldValueResponse;
 import com.workflow.dto.job.JobCreateRequest;
 import com.workflow.dto.job.JobResponse;
 import com.workflow.dto.job.JobUpdateRequest;
+import com.workflow.dto.workflow.JobWorkflowResponse;
 import com.workflow.entity.Asset;
 import com.workflow.entity.AssetJobAssignment;
 import com.workflow.entity.Client;
@@ -104,7 +105,15 @@ public class JobService implements IJobService {
                 assignAssetsToJob(job, request.getAssetIds(), companyId);
 
                 if (workflow != null) {
-                        jobWorkflowService.startWorkflow(job, workflow, companyId);
+                        JobWorkflowResponse workflowResponse = jobWorkflowService.startWorkflow(job, workflow,
+                                        companyId);
+
+                        if (worker != null) {
+                                jobWorkflowService.assignAWorkerToAllSteps(
+                                                workflowResponse.getId(),
+                                                worker.getId(),
+                                                companyId);
+                        }
                 }
 
                 return mapToResponse(job);

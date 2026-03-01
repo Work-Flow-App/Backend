@@ -36,13 +36,13 @@ export interface EnvironmentConfig {
 export const devConfig: EnvironmentConfig = {
   envName: 'dev',
 
-  maxAzs: 1,
+  maxAzs: 2,
   natGateways: 0,
 
   instanceType: ec2.InstanceType.of(ec2.InstanceClass.T4G, ec2.InstanceSize.MICRO),
   ebsVolumeSize: 20,
 
-  domainName: 'api.dev.workfloow.app',
+  domainName: 'api.dev2.workfloow.app',
   hostedZoneName: 'workfloow.app',
 
   dbInstanceClass: ec2.InstanceType.of(ec2.InstanceClass.T4G, ec2.InstanceSize.MICRO),

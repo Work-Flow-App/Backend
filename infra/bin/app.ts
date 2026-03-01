@@ -9,7 +9,7 @@ const app = new cdk.App();
 // Single account — both dev and prod deploy here
 const awsEnv: cdk.Environment = {
   account: process.env.CDK_DEFAULT_ACCOUNT,
-  region: process.env.CDK_DEFAULT_REGION || 'eu-central-1',
+  region: 'eu-central-1',
 };
 
 // Environment-specific configuration

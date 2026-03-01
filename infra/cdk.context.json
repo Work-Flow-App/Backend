@@ -7,5 +7,14 @@
   "hosted-zone:account=768102298608:domainName=workfloow.app:region=eu-central-1": {
     "Id": "/hostedzone/Z02941632I3Y1405S0DK2",
     "Name": "workfloow.app."
+  },
+  "availability-zones:account=768102298608:region=eu-west-1": [
+    "eu-west-1a",
+    "eu-west-1b",
+    "eu-west-1c"
+  ],
+  "hosted-zone:account=768102298608:domainName=workfloow.app:region=eu-west-1": {
+    "Id": "/hostedzone/Z02941632I3Y1405S0DK2",
+    "Name": "workfloow.app."
   }
 }

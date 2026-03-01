@@ -1,8 +1,6 @@
 name: Deploy to Dev
 
 on:
-  push:
-    branches: ["develop"]
   workflow_dispatch:
 
 jobs:
@@ -34,9 +32,9 @@ jobs:
 
       - name: Run integration tests
         run: ./mvnw test -Dtest="**/*IntegrationTest"
-
-  deploy:
-    name: Deploy to Dev EC2
+        
+  deploy-dev:
+    name: Deploy to Dev
     needs: build-and-test
     runs-on: ubuntu-latest
     environment: dev-deploy

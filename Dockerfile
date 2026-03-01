@@ -22,11 +22,18 @@ RUN ./mvnw clean package -DskipTests
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 
+# Install curl for health checks
+RUN apk add --no-cache curl
+
 # Copy only the built JAR from the build stage
 COPY --from=build /app/target/Backend-0.0.1.jar app.jar
 
-# Expose port (optional)
+# Expose port
 EXPOSE 8080
+
+# Health check for container orchestration
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:8080/actuator/health || exit 1
 
 # Run the Spring Boot application
 ENTRYPOINT ["java", "-jar", "app.jar"]

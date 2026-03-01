@@ -1,0 +1,23 @@
+# Development Profile Configuration
+# Activate with: SPRING_PROFILES_ACTIVE=dev
+
+logging:
+  level:
+    com.workflow: DEBUG
+    org.springframework.security: DEBUG
+
+# Actuator - more endpoints for development
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, metrics, env, beans
+  endpoint:
+    health:
+      show-details: always
+
+# DevTools
+spring:
+  devtools:
+    restart:
+      enabled: true

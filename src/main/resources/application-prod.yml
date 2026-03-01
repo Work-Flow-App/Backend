@@ -1,0 +1,30 @@
+# Production Profile Configuration
+# Activate with: SPRING_PROFILES_ACTIVE=prod
+
+logging:
+  level:
+    root: INFO
+    com.workflow: INFO
+
+# Actuator - minimal exposure for production
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info
+  endpoint:
+    health:
+      show-details: never
+      probes:
+        enabled: true
+
+# Graceful shutdown
+server:
+  shutdown: graceful
+
+spring:
+  lifecycle:
+    timeout-per-shutdown-phase: 30s
+  devtools:
+    restart:
+      enabled: false

@@ -87,3 +87,15 @@ worker-invitation:
   token:
     expiration-days: 7
   frontend-url: ${WORKER_INVITATION_FRONTEND_URL:http://localhost:3000}
+
+# Actuator Configuration
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+      base-path: /actuator
+  endpoint:
+    health:
+      enabled: true
+      show-details: never

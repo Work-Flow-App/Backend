@@ -32,7 +32,7 @@ jobs:
 
       - name: Run integration tests
         run: ./mvnw test -Dtest="**/*IntegrationTest"
-
+        
   deploy-dev:
     name: Deploy to Dev
     needs: build-and-test
@@ -119,7 +119,7 @@ jobs:
               "${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com"
 
             docker pull "$ECR_IMAGE"
-            docker-compose -f docker-compose.dev.yml up -d --wait
+            docker-compose -f docker-compose.dev.yml --env-file .env.dev up -d --wait
 
             docker image prune -af --filter "until=24h"
 

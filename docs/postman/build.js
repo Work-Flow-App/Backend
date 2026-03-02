@@ -35,6 +35,7 @@ const MODULE_ORDER = [
   'workflows',
   'job-workflows',
   'job-workflow-step-activities',
+  'job-workflow-step-visit-logs',
   'worker-job-workflow',
 ];
 

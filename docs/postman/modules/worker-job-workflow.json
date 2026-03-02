@@ -35,10 +35,9 @@
               }
             ],
             "url": {
-              "raw": "http://localhost:8080/api/v1/worker/job-workflow-steps",
+              "raw": "{{base_url}}/api/v1/worker/job-workflow-steps",
               "protocol": "http",
-              "host": ["localhost"],
-              "port": "8080",
+              "host": ["{{base_url}}"],
               "path": ["api", "v1", "worker", "job-workflow-steps"]
             }
           },
@@ -89,10 +88,9 @@
               }
             ],
             "url": {
-              "raw": "http://localhost:8080/api/v1/worker/job-workflows",
+              "raw": "{{base_url}}/api/v1/worker/job-workflows",
               "protocol": "http",
-              "host": ["localhost"],
-              "port": "8080",
+              "host": ["{{base_url}}"],
               "path": ["api", "v1", "worker", "job-workflows"]
             }
           },
@@ -143,10 +141,9 @@
               }
             ],
             "url": {
-              "raw": "http://localhost:8080/api/v1/worker/job-workflows/101",
+              "raw": "{{base_url}}/api/v1/worker/job-workflows/101",
               "protocol": "http",
-              "host": ["localhost"],
-              "port": "8080",
+              "host": ["{{base_url}}"],
               "path": ["api", "v1", "worker", "job-workflows", "101"]
             }
           },
@@ -197,10 +194,9 @@
               }
             ],
             "url": {
-              "raw": "http://localhost:8080/api/v1/worker/job-workflow-steps/2",
+              "raw": "{{base_url}}/api/v1/worker/job-workflow-steps/2",
               "protocol": "http",
-              "host": ["localhost"],
-              "port": "8080",
+              "host": ["{{base_url}}"],
               "path": ["api", "v1", "worker", "job-workflow-steps", "2"]
             }
           },
@@ -251,10 +247,9 @@
               }
             ],
             "url": {
-              "raw": "http://localhost:8080/api/v1/worker/job-workflow-steps/2/start",
+              "raw": "{{base_url}}/api/v1/worker/job-workflow-steps/2/start",
               "protocol": "http",
-              "host": ["localhost"],
-              "port": "8080",
+              "host": ["{{base_url}}"],
               "path": [
                 "api",
                 "v1",
@@ -312,10 +307,9 @@
               }
             ],
             "url": {
-              "raw": "http://localhost:8080/api/v1/worker/job-workflow-steps/2/complete",
+              "raw": "{{base_url}}/api/v1/worker/job-workflow-steps/2/complete",
               "protocol": "http",
-              "host": ["localhost"],
-              "port": "8080",
+              "host": ["{{base_url}}"],
               "path": [
                 "api",
                 "v1",
@@ -373,10 +367,9 @@
               }
             ],
             "url": {
-              "raw": "http://localhost:8080/api/v1/worker/job-workflow-steps/2/comments",
+              "raw": "{{base_url}}/api/v1/worker/job-workflow-steps/2/comments",
               "protocol": "http",
-              "host": ["localhost"],
-              "port": "8080",
+              "host": ["{{base_url}}"],
               "path": [
                 "api",
                 "v1",
@@ -441,10 +434,9 @@
               }
             ],
             "url": {
-              "raw": "http://localhost:8080/api/v1/worker/job-workflow-steps/2/attachments",
+              "raw": "{{base_url}}/api/v1/worker/job-workflow-steps/2/attachments",
               "protocol": "http",
-              "host": ["localhost"],
-              "port": "8080",
+              "host": ["{{base_url}}"],
               "path": [
                 "api",
                 "v1",
@@ -509,10 +501,9 @@
               }
             ],
             "url": {
-              "raw": "http://localhost:8080/api/v1/worker/job-workflow-steps/2/discussion",
+              "raw": "{{base_url}}/api/v1/worker/job-workflow-steps/2/discussion",
               "protocol": "http",
-              "host": ["localhost"],
-              "port": "8080",
+              "host": ["{{base_url}}"],
               "path": [
                 "api",
                 "v1",
@@ -533,6 +524,66 @@
             }
           ],
           "body": "[\n    {\n        \"id\": 10,\n        \"itemType\": \"COMMENT\",\n        \"content\": \"Arrived at location.\",\n        \"discussionType\": \"GENERAL\",\n        \"actorId\": 5,\n        \"createdAt\": \"2025-10-24T09:05:00\"\n    },\n    {\n        \"id\": 11,\n        \"itemType\": \"ATTACHMENT\",\n        \"content\": \"before_work.jpg\",\n        \"fileUrl\": \"https://s3.bucket/path/img.jpg\",\n        \"discussionType\": \"ISSUE\",\n        \"description\": \"Cracked screen\",\n        \"actorId\": 5,\n        \"createdAt\": \"2025-10-24T09:10:00\"\n    }\n]"
+        }
+      ]
+    },
+    {
+      "name": "Get Step Visit Logs",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/v1/worker/job-workflow-steps/2/visits",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "worker", "job-workflow-steps", "2", "visits"]
+        },
+        "description": "Get all visit logs for a specific step.\n\n**Authentication:** Required (WORKER role)\n\n**Path Parameter:**\n- stepId (long): ID of the step\n\n**Authorization:** Worker must be assigned to this step."
+      },
+      "response": [
+        {
+          "name": "Get Step Visit Logs - Success",
+          "originalRequest": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/worker/job-workflow-steps/2/visits",
+              "protocol": "http",
+              "host": ["{{base_url}}"],
+              "path": [
+                "api",
+                "v1",
+                "worker",
+                "job-workflow-steps",
+                "2",
+                "visits"
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "[\n    {\n        \"id\": 34,\n        \"visitDate\": \"2025-10-24\",\n        \"timeIn\": \"09:00:00\",\n        \"timeOut\": \"17:00:00\",\n        \"description\": \"Routine inspection and setup.\",\n        \"loggedById\": 5,\n        \"createdAt\": \"2025-10-24T17:15:00\",\n        \"updatedAt\": \"2025-10-24T17:15:00\"\n    }\n]"
         }
       ]
     },
@@ -587,10 +638,9 @@
               "raw": "{\n    \"content\": \"Work in progress, waiting for materials.\",\n    \"type\": \"GENERAL\"\n}"
             },
             "url": {
-              "raw": "http://localhost:8080/api/v1/worker/job-workflow-steps/2/comments",
+              "raw": "{{base_url}}/api/v1/worker/job-workflow-steps/2/comments",
               "protocol": "http",
-              "host": ["localhost"],
-              "port": "8080",
+              "host": ["{{base_url}}"],
               "path": [
                 "api",
                 "v1",
@@ -695,10 +745,9 @@
               ]
             },
             "url": {
-              "raw": "http://localhost:8080/api/v1/worker/job-workflow-steps/2/attachments",
+              "raw": "{{base_url}}/api/v1/worker/job-workflow-steps/2/attachments",
               "protocol": "http",
-              "host": ["localhost"],
-              "port": "8080",
+              "host": ["{{base_url}}"],
               "path": [
                 "api",
                 "v1",
@@ -719,6 +768,83 @@
             }
           ],
           "body": "{\n    \"id\": 13,\n    \"fileName\": \"site_photo.jpg\",\n    \"fileType\": \"image/jpeg\",\n    \"fileUrl\": \"https://s3.bucket/path/site_photo.jpg\",\n    \"description\": \"Photo of the site\",\n    \"type\": \"GENERAL\",\n    \"uploadedBy\": 5,\n    \"createdAt\": \"2025-10-24T10:05:00\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Add Step Visit Log",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"visitDate\": \"2025-10-24\",\n    \"timeIn\": \"09:00:00\",\n    \"timeOut\": \"17:00:00\",\n    \"description\": \"Routine inspection and setup.\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/worker/job-workflow-steps/2/visits",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "worker", "job-workflow-steps", "2", "visits"]
+        },
+        "description": "Add a new visit log to a step.\n\n**Authentication:** Required (WORKER role)\n\n**Request Body:**\n- visitDate (string, required): Date of the visit (YYYY-MM-DD)\n- timeIn (string, required): Start time (HH:MM:SS)\n- timeOut (string, optional): End time (HH:MM:SS)\n- description (string, optional): Details of the visit\n\n**Path Parameter:**\n- stepId (long): ID of the step"
+      },
+      "response": [
+        {
+          "name": "Add Step Visit Log - Success",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"visitDate\": \"2025-10-24\",\n    \"timeIn\": \"09:00:00\",\n    \"timeOut\": \"17:00:00\",\n    \"description\": \"Routine inspection and setup.\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/worker/job-workflow-steps/2/visits",
+              "protocol": "http",
+              "host": ["{{base_url}}"],
+              "path": [
+                "api",
+                "v1",
+                "worker",
+                "job-workflow-steps",
+                "2",
+                "visits"
+              ]
+            }
+          },
+          "status": "Created",
+          "code": 201,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n    \"id\": 34,\n    \"visitDate\": \"2025-10-24\",\n    \"timeIn\": \"09:00:00\",\n    \"timeOut\": \"17:00:00\",\n    \"description\": \"Routine inspection and setup.\",\n    \"loggedById\": 5,\n    \"createdAt\": \"2025-10-24T17:15:00\",\n    \"updatedAt\": \"2025-10-24T17:15:00\"\n}"
         }
       ]
     }

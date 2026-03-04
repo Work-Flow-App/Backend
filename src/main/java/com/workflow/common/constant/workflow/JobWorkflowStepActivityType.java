@@ -11,5 +11,8 @@ public enum JobWorkflowStepActivityType {
     STEP_CREATED,
     STEP_REORDERED,
     STEP_DATA_UPDATED,
-    STEP_UPDATED
+    STEP_UPDATED,
+    VISIT_LOGGED,
+    VISIT_UPDATED,
+    VISIT_DELETED
 }

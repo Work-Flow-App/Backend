@@ -23,14 +23,18 @@ import com.workflow.dto.workflow.StepAttachmentResponse;
 import com.workflow.dto.workflow.StepCommentCreateRequest;
 import com.workflow.dto.workflow.StepCommentResponse;
 import com.workflow.dto.workflow.StepTimelineItemResponse;
+import com.workflow.dto.workflow.StepVisitLogCreateRequest;
+import com.workflow.dto.workflow.StepVisitLogResponse;
 import com.workflow.entity.JobWorkflow;
 import com.workflow.entity.JobWorkflowStep;
 import com.workflow.entity.JobWorkflowStepAttachment;
 import com.workflow.entity.JobWorkflowStepComment;
+import com.workflow.entity.JobWorkflowStepVisitLog;
 import com.workflow.entity.Worker;
 import com.workflow.repository.JobWorkflowStepAttachmentRepository;
 import com.workflow.repository.JobWorkflowStepCommentRepository;
 import com.workflow.repository.JobWorkflowStepRepository;
+import com.workflow.repository.JobWorkflowStepVisitLogRepository;
 import com.workflow.repository.WorkerRepository;
 import com.workflow.service.storage.S3StorageService;
 
@@ -47,6 +51,7 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
         private final JobWorkflowStepRepository stepRepository;
         private final JobWorkflowStepCommentRepository commentRepository;
         private final JobWorkflowStepAttachmentRepository attachmentRepository;
+        private final JobWorkflowStepVisitLogRepository visitLogRepository;
         private final IStepActivityService stepActivityService;
         private final S3StorageService s3Service;
 
@@ -239,6 +244,18 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
                                 .toList();
         }
 
+        @Override
+        @Transactional(readOnly = true)
+        public List<StepVisitLogResponse> getVisitLogs(Long stepId, Long workerUserId) {
+                Worker worker = getWorker(workerUserId);
+                getAssignedStep(stepId, worker.getId());
+
+                return visitLogRepository.findByStepIdOrderByVisitDateDescTimeInDesc(stepId)
+                                .stream()
+                                .map(this::mapVisitLog)
+                                .toList();
+        }
+
         // ==========================================
         // STATUS ACTIONS
         // ==========================================
@@ -412,6 +429,27 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
                                 .build();
         }
 
+        @Override
+        public StepVisitLogResponse addVisitLog(Long stepId, StepVisitLogCreateRequest request, Long workerUserId) {
+                Worker worker = getWorker(workerUserId);
+                JobWorkflowStep step = getAssignedStep(stepId, worker.getId());
+
+                JobWorkflowStepVisitLog visitLog = visitLogRepository.save(
+                                JobWorkflowStepVisitLog.builder()
+                                                .step(step)
+                                                .loggedBy(worker.getUser())
+                                                .visitDate(request.getVisitDate())
+                                                .timeIn(request.getTimeIn())
+                                                .timeOut(request.getTimeOut())
+                                                .description(request.getDescription())
+                                                .build());
+
+                stepActivityService.log(step, worker.getUser(), JobWorkflowStepActivityType.VISIT_LOGGED,
+                                "Worker " + worker.getName() + " logged a visit for " + request.getVisitDate());
+
+                return mapVisitLog(visitLog);
+        }
+
         // ==========================================
         // MAPPERS (Copied/Adapted for independence)
         // ==========================================
@@ -443,6 +481,19 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
                                 .completedAt(step.getCompletedAt())
                                 .assignedWorkerIds(step.getAssignedWorkers().stream().map(Worker::getId)
                                                 .collect(Collectors.toSet()))
+                                .build();
+        }
+
+        private StepVisitLogResponse mapVisitLog(JobWorkflowStepVisitLog log) {
+                return StepVisitLogResponse.builder()
+                                .id(log.getId())
+                                .visitDate(log.getVisitDate())
+                                .timeIn(log.getTimeIn())
+                                .timeOut(log.getTimeOut())
+                                .description(log.getDescription())
+                                .loggedById(log.getLoggedBy().getId())
+                                .createdAt(log.getCreatedAt())
+                                .updatedAt(log.getUpdatedAt())
                                 .build();
         }
 }

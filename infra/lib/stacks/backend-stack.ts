@@ -370,7 +370,7 @@ export class BackendStack extends cdk.Stack {
     new ssm.StringParameter(this, 'CorsOrigins', {
       parameterName: `/workflow/${config.envName}/cors-allowed-origins`,
       stringValue: config.envName === 'dev'
-        ? 'https://dev.workfloow.app,http://localhost:3000'
+        ? 'https://dev.workfloow.app,http://localhost:5173'
         : 'https://workfloow.app',
       description: 'CORS allowed origins',
     });

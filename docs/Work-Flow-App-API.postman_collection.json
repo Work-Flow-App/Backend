@@ -96,8 +96,15 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/auth/signup",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "auth", "signup"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "signup"
+              ]
             },
             "description": "Register a new user account.\n\n**Request Body:**\n- username (string, required): 3-20 characters\n- email (string, required): Valid email format\n- password (string, required): Minimum 8 characters\n- role (enum, required): COMPANY, WORKER, or ADMIN\n\n**Response:**\n- accessToken (string): JWT access token for API authentication\n- refreshToken (string): Refresh token for obtaining new access tokens\n- tokenType (string): Token type (always \"Bearer\")\n- expiresIn (long): Access token expiration time in seconds (900 = 15 minutes)\n\n**Token Lifetimes:**\n- Access token: 15 minutes\n- Refresh token: 30 days\n\n**Note:** COMPANY role automatically creates a Company entity for the user."
           },
@@ -119,9 +126,16 @@
                 "url": {
                   "raw": "http://localhost:8080/api/v1/auth/signup",
                   "protocol": "http",
-                  "host": ["localhost"],
+                  "host": [
+                    "localhost"
+                  ],
                   "port": "8080",
-                  "path": ["api", "v1", "auth", "signup"]
+                  "path": [
+                    "api",
+                    "v1",
+                    "auth",
+                    "signup"
+                  ]
                 }
               },
               "status": "OK",
@@ -170,8 +184,15 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/auth/login",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "auth", "login"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "login"
+              ]
             },
             "description": "Authenticate user and receive JWT tokens.\n\n**Request Body:**\n- userName (string, required): Username\n- password (string, required): Password\n\n**Response:**\n- accessToken (string): JWT access token for API authentication\n- refreshToken (string): Refresh token for obtaining new access tokens\n- tokenType (string): Token type (always \"Bearer\")\n- expiresIn (long): Access token expiration time in seconds (900 = 15 minutes)\n\n**Token Lifetimes:**\n- Access token: 15 minutes\n- Refresh token: 30 days\n\n**Multi-Device Support:** Max 5 active sessions per user. Oldest session auto-revoked when limit exceeded."
           },
@@ -193,9 +214,16 @@
                 "url": {
                   "raw": "http://localhost:8080/api/v1/auth/login",
                   "protocol": "http",
-                  "host": ["localhost"],
+                  "host": [
+                    "localhost"
+                  ],
                   "port": "8080",
-                  "path": ["api", "v1", "auth", "login"]
+                  "path": [
+                    "api",
+                    "v1",
+                    "auth",
+                    "login"
+                  ]
                 }
               },
               "status": "OK",
@@ -244,8 +272,15 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/auth/refresh",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "auth", "refresh"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "refresh"
+              ]
             },
             "description": "Refresh access token using refresh token.\n\n**Request Body:**\n- refreshToken (string, required): Valid refresh token from login/signup\n\n**Response:**\n- accessToken (string): New JWT access token\n- refreshToken (string): New refresh token (token rotation)\n- tokenType (string): Token type (always \"Bearer\")\n- expiresIn (long): Access token expiration time in seconds\n\n**Token Rotation:** Old refresh token is automatically revoked and a new one is issued for security.\n\n**Use Case:** When access token expires (after 15 minutes), use this endpoint to get a new one without re-authenticating."
           },
@@ -267,9 +302,16 @@
                 "url": {
                   "raw": "http://localhost:8080/api/v1/auth/refresh",
                   "protocol": "http",
-                  "host": ["localhost"],
+                  "host": [
+                    "localhost"
+                  ],
                   "port": "8080",
-                  "path": ["api", "v1", "auth", "refresh"]
+                  "path": [
+                    "api",
+                    "v1",
+                    "auth",
+                    "refresh"
+                  ]
                 }
               },
               "status": "OK",
@@ -301,8 +343,15 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/auth/logout",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "auth", "logout"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "logout"
+              ]
             },
             "description": "Logout from current device by revoking refresh token.\n\n**Request Body:**\n- refreshToken (string, required): Refresh token to revoke\n\n**Response:** 204 No Content\n\n**Security Note:** Access token remains valid until expiration (15 minutes). For immediate invalidation, implement token blacklisting.\n\n**Use Case:** User logs out from current device/browser."
           },
@@ -324,9 +373,16 @@
                 "url": {
                   "raw": "http://localhost:8080/api/v1/auth/logout",
                   "protocol": "http",
-                  "host": ["localhost"],
+                  "host": [
+                    "localhost"
+                  ],
                   "port": "8080",
-                  "path": ["api", "v1", "auth", "logout"]
+                  "path": [
+                    "api",
+                    "v1",
+                    "auth",
+                    "logout"
+                  ]
                 }
               },
               "status": "No Content",
@@ -354,8 +410,15 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/v1/auth/logout-all",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "auth", "logout-all"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "logout-all"
+              ]
             },
             "description": "Logout from all devices by revoking all refresh tokens for the authenticated user.\n\n**Authentication:** Required (Bearer token in Authorization header)\n\n**Response:** 204 No Content\n\n**Security Feature:** Invalidates all active sessions across all devices (up to 5 sessions per user).\n\n**Use Cases:**\n- Security breach response\n- Password change\n- User wants to logout from all devices remotely"
           },
@@ -373,9 +436,16 @@
                 "url": {
                   "raw": "http://localhost:8080/api/v1/auth/logout-all",
                   "protocol": "http",
-                  "host": ["localhost"],
+                  "host": [
+                    "localhost"
+                  ],
                   "port": "8080",
-                  "path": ["api", "v1", "auth", "logout-all"]
+                  "path": [
+                    "api",
+                    "v1",
+                    "auth",
+                    "logout-all"
+                  ]
                 }
               },
               "status": "No Content",
@@ -402,8 +472,15 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/auth/forgot-password",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "auth", "forgot-password"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "forgot-password"
+              ]
             },
             "description": "Request a password reset verification code to be sent to the provided email.\n\n**Request Body:**\n- email (string, required): Valid email format\n\n**Response:**\n- message (string): Generic success message (returned even if email doesn't exist for security)\n\n**Security Features:**\n- Does not reveal if email exists in the system\n- Verification code expires after 60 minutes\n- Maximum 3 active reset codes per user\n- Oldest code auto-deleted when limit exceeded\n- Codes are single-use only\n- 6-digit numeric code (100000-999999)\n\n**Email Content:**\n- 6-digit verification code displayed prominently\n- Professional email template with gradient styling\n- Email includes expiry warning (60 minutes)\n- Security notice about unauthorized requests\n\n**Use Case:** User forgot their password and needs to reset it"
           },
@@ -425,9 +502,16 @@
                 "url": {
                   "raw": "http://localhost:8080/api/v1/auth/forgot-password",
                   "protocol": "http",
-                  "host": ["localhost"],
+                  "host": [
+                    "localhost"
+                  ],
                   "port": "8080",
-                  "path": ["api", "v1", "auth", "forgot-password"]
+                  "path": [
+                    "api",
+                    "v1",
+                    "auth",
+                    "forgot-password"
+                  ]
                 }
               },
               "status": "OK",
@@ -475,8 +559,15 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/auth/reset-password",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "auth", "reset-password"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "reset-password"
+              ]
             },
             "description": "Reset password using the verification code received via email.\n\n**Request Body:**\n- email (string, required): Valid email format - the email that requested the reset\n- code (string, required): 6-digit verification code from email (e.g., \"583921\")\n- newPassword (string, required): Minimum 8 characters\n\n**Response:**\n- message (string): Success message\n\n**Security Features:**\n- Validates email + code combination (code must belong to the email)\n- Validates code exists, not expired, and not used\n- Marks code as used after successful reset\n- Password is BCrypt encoded before storage\n- Automatically revokes ALL refresh tokens (forces re-login on all devices)\n- Code can only be used once\n- Code expires after 60 minutes\n\n**Validation:**\n- Code format: Must be exactly 6 digits (pattern: ^\\\\d{6}$)\n- Email format: Must be valid email\n\n**Error Cases:**\n- 400 Bad Request: Invalid, expired, or already used code\n- 400 Bad Request: Code does not match email\n- 400 Bad Request: Password too short (< 8 characters)\n- 400 Bad Request: Invalid email or code format\n\n**Post-Reset Actions:**\n- User must login again with new password\n- All active sessions are invalidated\n\n**Use Case:** User enters the 6-digit code from email along with their email and new password"
           },
@@ -498,9 +589,16 @@
                 "url": {
                   "raw": "http://localhost:8080/api/v1/auth/reset-password",
                   "protocol": "http",
-                  "host": ["localhost"],
+                  "host": [
+                    "localhost"
+                  ],
                   "port": "8080",
-                  "path": ["api", "v1", "auth", "reset-password"]
+                  "path": [
+                    "api",
+                    "v1",
+                    "auth",
+                    "reset-password"
+                  ]
                 }
               },
               "status": "OK",
@@ -531,9 +629,16 @@
                 "url": {
                   "raw": "http://localhost:8080/api/v1/auth/reset-password",
                   "protocol": "http",
-                  "host": ["localhost"],
+                  "host": [
+                    "localhost"
+                  ],
                   "port": "8080",
-                  "path": ["api", "v1", "auth", "reset-password"]
+                  "path": [
+                    "api",
+                    "v1",
+                    "auth",
+                    "reset-password"
+                  ]
                 }
               },
               "status": "Bad Request",
@@ -564,9 +669,16 @@
                 "url": {
                   "raw": "http://localhost:8080/api/v1/auth/reset-password",
                   "protocol": "http",
-                  "host": ["localhost"],
+                  "host": [
+                    "localhost"
+                  ],
                   "port": "8080",
-                  "path": ["api", "v1", "auth", "reset-password"]
+                  "path": [
+                    "api",
+                    "v1",
+                    "auth",
+                    "reset-password"
+                  ]
                 }
               },
               "status": "Bad Request",
@@ -617,8 +729,16 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/auth/signup/worker",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "auth", "signup", "worker"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "signup",
+                "worker"
+              ]
             },
             "description": "Complete worker signup using an invitation token. Creates worker account with associated company.\n\n**Request Body:**\n- invitationToken (string, required): UUID invitation token from email\n- email (string, required): Worker email (must match invitation email)\n- name (string, required): Worker's full name (2-100 characters)\n- username (string, required): Desired username (3-20 characters)\n- password (string, required): Password (minimum 8 characters)\n\n**Response:**\n- workerId (long): Created worker ID\n- name (string): Worker's name\n- email (string): Worker's email\n- username (string): Worker's username\n- companyName (string): Associated company name\n- message (string): Success message\n\n**Business Logic:**\n- Validates invitation token (must be valid, not expired, not already used)\n- Token expires after 7 days from invitation creation\n- Email in request must match invitation email\n- Creates User account with WORKER role\n- Creates Worker entity with name and company association\n- Marks invitation as used\n- Username must be unique across the system\n- User UUID is auto-generated\n\n**Security Features:**\n- Token-based verification ensures worker is invited\n- Email verification prevents token hijacking\n- Password is BCrypt encoded before storage\n- Token can only be used once\n- Invitation status updated to ACCEPTED on success\n\n**Status Code:** 200 OK\n\n**Error Responses:**\n- 400 Bad Request: Invalid or expired invitation token\n- 400 Bad Request: Invitation already used\n- 400 Bad Request: Email does not match invitation\n- 400 Bad Request: Invalid validation (name, username, password format)\n- 409 Conflict: Username already exists\n- 404 Not Found: Company not found or archived\n\n**Use Case:** Worker receives invitation email with token, creates account using this endpoint"
           },
@@ -640,9 +760,17 @@
                 "url": {
                   "raw": "http://localhost:8080/api/v1/auth/signup/worker",
                   "protocol": "http",
-                  "host": ["localhost"],
+                  "host": [
+                    "localhost"
+                  ],
                   "port": "8080",
-                  "path": ["api", "v1", "auth", "signup", "worker"]
+                  "path": [
+                    "api",
+                    "v1",
+                    "auth",
+                    "signup",
+                    "worker"
+                  ]
                 }
               },
               "status": "OK",
@@ -673,9 +801,17 @@
                 "url": {
                   "raw": "http://localhost:8080/api/v1/auth/signup/worker",
                   "protocol": "http",
-                  "host": ["localhost"],
+                  "host": [
+                    "localhost"
+                  ],
                   "port": "8080",
-                  "path": ["api", "v1", "auth", "signup", "worker"]
+                  "path": [
+                    "api",
+                    "v1",
+                    "auth",
+                    "signup",
+                    "worker"
+                  ]
                 }
               },
               "status": "Bad Request",
@@ -706,9 +842,17 @@
                 "url": {
                   "raw": "http://localhost:8080/api/v1/auth/signup/worker",
                   "protocol": "http",
-                  "host": ["localhost"],
+                  "host": [
+                    "localhost"
+                  ],
                   "port": "8080",
-                  "path": ["api", "v1", "auth", "signup", "worker"]
+                  "path": [
+                    "api",
+                    "v1",
+                    "auth",
+                    "signup",
+                    "worker"
+                  ]
                 }
               },
               "status": "Bad Request",
@@ -739,9 +883,17 @@
                 "url": {
                   "raw": "http://localhost:8080/api/v1/auth/signup/worker",
                   "protocol": "http",
-                  "host": ["localhost"],
+                  "host": [
+                    "localhost"
+                  ],
                   "port": "8080",
-                  "path": ["api", "v1", "auth", "signup", "worker"]
+                  "path": [
+                    "api",
+                    "v1",
+                    "auth",
+                    "signup",
+                    "worker"
+                  ]
                 }
               },
               "status": "Conflict",
@@ -780,8 +932,15 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/v1/companies/profile",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "companies", "profile"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "companies",
+                "profile"
+              ]
             },
             "description": "Retrieve the authenticated company's profile.\n\n**Authentication:** Required (COMPANY role)\n\n**Response:**\n- id (long): Company ID\n- name (string): Company name\n- email (string): Company email\n- telephone (string): Phone number\n- mobile (string): Mobile number\n- fax (string): Fax number\n- addressLine1, addressLine2, addressLine3 (string): Address details\n- town (string): Town/city\n- country (string): Country\n- postcode (string): Postal code\n- contactEmail (string): Contact email\n- contactNumber (string): Contact number\n- archived (boolean): Archive status\n- createdAt (datetime): Creation timestamp\n- updatedAt (datetime): Last update timestamp"
           },
@@ -799,9 +958,16 @@
                 "url": {
                   "raw": "http://localhost:8080/api/v1/companies/profile",
                   "protocol": "http",
-                  "host": ["localhost"],
+                  "host": [
+                    "localhost"
+                  ],
                   "port": "8080",
-                  "path": ["api", "v1", "companies", "profile"]
+                  "path": [
+                    "api",
+                    "v1",
+                    "companies",
+                    "profile"
+                  ]
                 }
               },
               "status": "OK",
@@ -843,8 +1009,15 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/companies/profile",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "companies", "profile"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "companies",
+                "profile"
+              ]
             },
             "description": "Update the authenticated company's profile.\n\n**Authentication:** Required (COMPANY role)\n\n**Request Body:**\n- name (string, required): 2-150 characters\n- addressLine1 (string, optional): Max 255 characters\n- addressLine2 (string, optional): Max 255 characters\n- addressLine3 (string, optional): Max 255 characters\n- town (string, optional): Max 100 characters\n- country (string, optional): Max 100 characters\n- postcode (string, optional): Max 20 characters\n- telephone (string, optional): Max 20 characters\n- mobile (string, optional): Max 20 characters\n- fax (string, optional): Max 20 characters\n- email (string, optional): Valid email format, max 100 characters\n- contactEmail (string, optional): Valid email format, max 100 characters\n- contactNumber (string, optional): Max 50 characters\n\n**Business Rules:**\n- Company name must be unique (case-insensitive)\n- Updating to the same name (different case) is allowed\n\n**Response:** Updated company profile (same format as GET)"
           },
@@ -870,9 +1043,16 @@
                 "url": {
                   "raw": "http://localhost:8080/api/v1/companies/profile",
                   "protocol": "http",
-                  "host": ["localhost"],
+                  "host": [
+                    "localhost"
+                  ],
                   "port": "8080",
-                  "path": ["api", "v1", "companies", "profile"]
+                  "path": [
+                    "api",
+                    "v1",
+                    "companies",
+                    "profile"
+                  ]
                 }
               },
               "status": "OK",
@@ -905,8 +1085,15 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/v1/companies/dashboard",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "companies", "dashboard"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "companies",
+                "dashboard"
+              ]
             },
             "description": "Retrieve company dashboard with statistics.\n\n**Authentication:** Required (COMPANY role)\n\n**Response:**\n- companyId (long): Company ID\n- companyName (string): Company name\n- totalWorkers (long): Total number of workers (active + archived)\n- totalClients (long): Total number of clients\n- activeWorkers (long): Number of active (non-archived) workers\n- archivedWorkers (long): Number of archived workers"
           },
@@ -924,9 +1111,16 @@
                 "url": {
                   "raw": "http://localhost:8080/api/v1/companies/dashboard",
                   "protocol": "http",
-                  "host": ["localhost"],
+                  "host": [
+                    "localhost"
+                  ],
                   "port": "8080",
-                  "path": ["api", "v1", "companies", "dashboard"]
+                  "path": [
+                    "api",
+                    "v1",
+                    "companies",
+                    "dashboard"
+                  ]
                 }
               },
               "status": "OK",
@@ -974,8 +1168,14 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/workers",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "workers"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "workers"
+              ]
             },
             "description": "Create a new worker with user account.\n\n**Authentication:** Required (COMPANY role)\n\n**Request Body:**\n- name (string, required): 2-100 characters\n- initials (string, optional): Max 10 characters\n- telephone (string, optional): Max 20 characters\n- mobile (string, optional): Max 20 characters\n- email (string, optional): Valid email format, max 100 characters\n- username (string, required): 3-20 characters (for worker login)\n- password (string, required): Minimum 8 characters\n\n**Business Logic:**\n- Creates both Worker entity and User account with ROLE_WORKER\n- Worker is associated with the company of the authenticated user\n- Username must be unique across all users\n- Email must be unique if provided\n\n**Response:**\n- id (long): Worker ID\n- name (string): Worker name\n- initials (string): Initials\n- telephone (string): Telephone number\n- mobile (string): Mobile number\n- email (string): Email address\n- username (string): Login username\n- loginLocked (boolean): Account lock status\n- archived (boolean): Archive status\n- createdAt (datetime): Creation timestamp\n- updatedAt (datetime): Last update timestamp"
           },
@@ -1001,9 +1201,15 @@
                 "url": {
                   "raw": "http://localhost:8080/api/v1/workers",
                   "protocol": "http",
-                  "host": ["localhost"],
+                  "host": [
+                    "localhost"
+                  ],
                   "port": "8080",
-                  "path": ["api", "v1", "workers"]
+                  "path": [
+                    "api",
+                    "v1",
+                    "workers"
+                  ]
                 }
               },
               "status": "Created",
@@ -1036,8 +1242,14 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/v1/workers",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "workers"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "workers"
+              ]
             },
             "description": "Retrieve all workers for the authenticated company.\n\n**Authentication:** Required (COMPANY role)\n\n**Response:** Array of worker objects (same format as Create Worker response)\n\n**Note:** Returns all workers (including archived) belonging to the company."
           },
@@ -1055,9 +1267,15 @@
                 "url": {
                   "raw": "http://localhost:8080/api/v1/workers",
                   "protocol": "http",
-                  "host": ["localhost"],
+                  "host": [
+                    "localhost"
+                  ],
                   "port": "8080",
-                  "path": ["api", "v1", "workers"]
+                  "path": [
+                    "api",
+                    "v1",
+                    "workers"
+                  ]
                 }
               },
               "status": "OK",
@@ -1090,8 +1308,15 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/v1/workers/1",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "workers", "1"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "workers",
+                "1"
+              ]
             },
             "description": "Retrieve a specific worker by ID.\n\n**Authentication:** Required (COMPANY role)\n\n**Path Parameter:**\n- id (long): Worker ID\n\n**Response:** Worker object (same format as Create Worker response)\n\n**Authorization:** Only workers belonging to the authenticated company can be accessed."
           },
@@ -1109,9 +1334,16 @@
                 "url": {
                   "raw": "http://localhost:8080/api/v1/workers/1",
                   "protocol": "http",
-                  "host": ["localhost"],
+                  "host": [
+                    "localhost"
+                  ],
                   "port": "8080",
-                  "path": ["api", "v1", "workers", "1"]
+                  "path": [
+                    "api",
+                    "v1",
+                    "workers",
+                    "1"
+                  ]
                 }
               },
               "status": "OK",
@@ -1153,8 +1385,15 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/workers/1",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "workers", "1"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "workers",
+                "1"
+              ]
             },
             "description": "Full replacement update of an existing worker's details.\n\n**Authentication:** Required (COMPANY role)\n\n**Path Parameter:**\n- id (long): Worker ID\n\n**Request Body:**\n- name (string, required): 2-100 characters\n- initials (string, optional): Max 10 characters\n- telephone (string, optional): Max 20 characters\n- mobile (string, optional): Max 20 characters\n- email (string, required): Valid email format, max 100 characters\n\n**REST Semantics:** PUT performs full resource replacement. All fields are sent (required fields must be provided).\n\n**Note:** \n- Username and password cannot be updated through this endpoint\n- Email is synced with the associated User entity\n\n**Response:** Updated worker object (same format as Create Worker response)\n\n**Authorization:** Only workers belonging to the authenticated company can be updated."
           },
@@ -1180,9 +1419,16 @@
                 "url": {
                   "raw": "http://localhost:8080/api/v1/workers/1",
                   "protocol": "http",
-                  "host": ["localhost"],
+                  "host": [
+                    "localhost"
+                  ],
                   "port": "8080",
-                  "path": ["api", "v1", "workers", "1"]
+                  "path": [
+                    "api",
+                    "v1",
+                    "workers",
+                    "1"
+                  ]
                 }
               },
               "status": "OK",
@@ -1224,8 +1470,15 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/workers/1",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "workers", "1"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "workers",
+                "1"
+              ]
             },
             "description": "Partial update of an existing worker's details.\n\n**Authentication:** Required (COMPANY role)\n\n**Path Parameter:**\n- id (long): Worker ID\n\n**Request Body (all fields optional - only send fields to update):**\n- name (string): 2-100 characters\n- initials (string): Max 10 characters\n- telephone (string): Max 20 characters\n- mobile (string): Max 20 characters\n- email (string): Valid email format, max 100 characters\n\n**REST Semantics:** PATCH performs partial update. Only non-null fields in the request body are updated.\n\n**Note:** \n- Username and password cannot be updated through this endpoint\n- If email is updated, it is synced with the associated User entity\n\n**Response:** Updated worker object (same format as Create Worker response)\n\n**Authorization:** Only workers belonging to the authenticated company can be updated."
           },
@@ -1251,9 +1504,16 @@
                 "url": {
                   "raw": "http://localhost:8080/api/v1/workers/1",
                   "protocol": "http",
-                  "host": ["localhost"],
+                  "host": [
+                    "localhost"
+                  ],
                   "port": "8080",
-                  "path": ["api", "v1", "workers", "1"]
+                  "path": [
+                    "api",
+                    "v1",
+                    "workers",
+                    "1"
+                  ]
                 }
               },
               "status": "OK",
@@ -1288,9 +1548,16 @@
                 "url": {
                   "raw": "http://localhost:8080/api/v1/workers/1",
                   "protocol": "http",
-                  "host": ["localhost"],
+                  "host": [
+                    "localhost"
+                  ],
                   "port": "8080",
-                  "path": ["api", "v1", "workers", "1"]
+                  "path": [
+                    "api",
+                    "v1",
+                    "workers",
+                    "1"
+                  ]
                 }
               },
               "status": "OK",
@@ -1323,8 +1590,15 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/v1/workers/1",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "workers", "1"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "workers",
+                "1"
+              ]
             },
             "description": "Soft delete a worker (archive).\n\n**Authentication:** Required (COMPANY role)\n\n**Path Parameter:**\n- id (long): Worker ID\n\n**Response:** 204 No Content\n\n**Business Logic:**\n- Sets worker.archived = true\n- Worker remains in database but is marked as archived\n- Archived workers still appear in getAllWorkers() but are counted separately in dashboard\n\n**Authorization:** Only workers belonging to the authenticated company can be deleted."
           },
@@ -1342,9 +1616,16 @@
                 "url": {
                   "raw": "http://localhost:8080/api/v1/workers/1",
                   "protocol": "http",
-                  "host": ["localhost"],
+                  "host": [
+                    "localhost"
+                  ],
                   "port": "8080",
-                  "path": ["api", "v1", "workers", "1"]
+                  "path": [
+                    "api",
+                    "v1",
+                    "workers",
+                    "1"
+                  ]
                 }
               },
               "status": "No Content",
@@ -1398,8 +1679,15 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/workers/invite",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "workers", "invite"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "workers",
+                "invite"
+              ]
             },
             "description": "Invite a new worker by email. Creates an invitation record and sends an email with a unique verification token.\n\n**Authentication:** Required (COMPANY role)\n\n**Request Body:**\n- email (string, required): Worker's email address\n- firstName (string, required): Worker's first name\n- lastName (string, required): Worker's last name\n\n**Response:**\n- id (long): Invitation ID\n- companyId (long): Company ID\n- email (string): Worker's email\n- firstName (string): Worker's first name\n- lastName (string): Worker's last name\n- status (string): Invitation status (PENDING)\n- token (string): Unique verification token (for testing only, not sent in production)\n- expiresAt (datetime): Token expiration timestamp (7 days from creation)\n- createdAt (datetime): Invitation creation timestamp\n\n**Business Logic:**\n- Generates unique verification token valid for 7 days\n- Sends invitation email with signup link containing token\n- Token can be used for worker signup\n- Only one pending invitation per email allowed\n\n**Status Code:** 201 Created\n\n**Error Responses:**\n- 400 Bad Request: Invalid email or missing required fields\n- 409 Conflict: Active invitation already exists for this email\n\n**Post-request Script:** Automatically sets {{invitation_token}} variable on success"
           },
@@ -1425,9 +1713,16 @@
                 "url": {
                   "raw": "http://localhost:8080/api/v1/workers/invite",
                   "protocol": "http",
-                  "host": ["localhost"],
+                  "host": [
+                    "localhost"
+                  ],
                   "port": "8080",
-                  "path": ["api", "v1", "workers", "invite"]
+                  "path": [
+                    "api",
+                    "v1",
+                    "workers",
+                    "invite"
+                  ]
                 }
               },
               "status": "Created",
@@ -1462,9 +1757,16 @@
                 "url": {
                   "raw": "http://localhost:8080/api/v1/workers/invite",
                   "protocol": "http",
-                  "host": ["localhost"],
+                  "host": [
+                    "localhost"
+                  ],
                   "port": "8080",
-                  "path": ["api", "v1", "workers", "invite"]
+                  "path": [
+                    "api",
+                    "v1",
+                    "workers",
+                    "invite"
+                  ]
                 }
               },
               "status": "Conflict",
@@ -1497,8 +1799,15 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/v1/workers/invites",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "workers", "invites"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "workers",
+                "invites"
+              ]
             },
             "description": "Get all worker invitations for the authenticated company.\n\n**Authentication:** Required (COMPANY role)\n\n**Response:** Array of invitation objects\n- id (long): Invitation ID\n- companyId (long): Company ID\n- email (string): Worker's email\n- firstName (string): Worker's first name\n- lastName (string): Worker's last name\n- status (string): Invitation status (PENDING, ACCEPTED, EXPIRED, CANCELLED)\n- expiresAt (datetime): Token expiration timestamp\n- createdAt (datetime): Invitation creation timestamp\n- acceptedAt (datetime, optional): When invitation was accepted\n\n**Business Logic:**\n- Returns all invitations for the authenticated company\n- Invitations are ordered by creation date (newest first)\n- Expired invitations are automatically marked as EXPIRED\n\n**Authorization:** Only invitations belonging to the authenticated company are returned.\n\n**Status Code:** 200 OK"
           },
@@ -1516,9 +1825,16 @@
                 "url": {
                   "raw": "http://localhost:8080/api/v1/workers/invites",
                   "protocol": "http",
-                  "host": ["localhost"],
+                  "host": [
+                    "localhost"
+                  ],
                   "port": "8080",
-                  "path": ["api", "v1", "workers", "invites"]
+                  "path": [
+                    "api",
+                    "v1",
+                    "workers",
+                    "invites"
+                  ]
                 }
               },
               "status": "OK",
@@ -1545,9 +1861,16 @@
                 "url": {
                   "raw": "http://localhost:8080/api/v1/workers/invites",
                   "protocol": "http",
-                  "host": ["localhost"],
+                  "host": [
+                    "localhost"
+                  ],
                   "port": "8080",
-                  "path": ["api", "v1", "workers", "invites"]
+                  "path": [
+                    "api",
+                    "v1",
+                    "workers",
+                    "invites"
+                  ]
                 }
               },
               "status": "OK",
@@ -1570,7 +1893,9 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/v1/workers/invites/check/{{invitation_token}}",
-              "host": ["{{base_url}}"],
+              "host": [
+                "{{base_url}}"
+              ],
               "path": [
                 "api",
                 "v1",
@@ -1591,7 +1916,9 @@
                 "url": {
                   "raw": "http://localhost:8080/api/v1/workers/invites/check/a1b2c3d4-e5f6-7890-abcd-ef1234567890",
                   "protocol": "http",
-                  "host": ["localhost"],
+                  "host": [
+                    "localhost"
+                  ],
                   "port": "8080",
                   "path": [
                     "api",
@@ -1622,7 +1949,9 @@
                 "url": {
                   "raw": "http://localhost:8080/api/v1/workers/invites/check/used-token-123",
                   "protocol": "http",
-                  "host": ["localhost"],
+                  "host": [
+                    "localhost"
+                  ],
                   "port": "8080",
                   "path": [
                     "api",
@@ -1653,7 +1982,9 @@
                 "url": {
                   "raw": "http://localhost:8080/api/v1/workers/invites/check/expired-token-456",
                   "protocol": "http",
-                  "host": ["localhost"],
+                  "host": [
+                    "localhost"
+                  ],
                   "port": "8080",
                   "path": [
                     "api",
@@ -1684,7 +2015,9 @@
                 "url": {
                   "raw": "http://localhost:8080/api/v1/workers/invites/check/invalid-token",
                   "protocol": "http",
-                  "host": ["localhost"],
+                  "host": [
+                    "localhost"
+                  ],
                   "port": "8080",
                   "path": [
                     "api",
@@ -1742,8 +2075,14 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/clients",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "clients"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "clients"
+              ]
             },
             "description": "Create a new client for the authenticated company.\n\n**Authentication:** Required (COMPANY role)\n\n**Request Body:**\n- name (string, required): 2-150 characters\n- email (string, optional): Valid email format\n- telephone (string, optional): Max 20 characters\n- mobile (string, optional): Max 20 characters\n- address (string, optional): Full address details\n\n**Business Logic:**\n- Client is associated with the company of the authenticated user\n- Name should be unique per company (enforced at service/repository level)\n\n**Response:** Created client object with metadata (id, timestamps, archived flag)."
           },
@@ -1769,9 +2108,15 @@
                 "url": {
                   "raw": "http://localhost:8080/api/v1/clients",
                   "protocol": "http",
-                  "host": ["localhost"],
+                  "host": [
+                    "localhost"
+                  ],
                   "port": "8080",
-                  "path": ["api", "v1", "clients"]
+                  "path": [
+                    "api",
+                    "v1",
+                    "clients"
+                  ]
                 }
               },
               "status": "Created",
@@ -1804,8 +2149,14 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/v1/clients",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "clients"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "clients"
+              ]
             },
             "description": "Retrieve all clients for the authenticated company.\n\n**Authentication:** Required (COMPANY role)\n\n**Response:** Array of client objects (same format as Create Client response)\n\n**Note:** Returns all clients (including archived) belonging to the company."
           },
@@ -1823,9 +2174,15 @@
                 "url": {
                   "raw": "http://localhost:8080/api/v1/clients",
                   "protocol": "http",
-                  "host": ["localhost"],
+                  "host": [
+                    "localhost"
+                  ],
                   "port": "8080",
-                  "path": ["api", "v1", "clients"]
+                  "path": [
+                    "api",
+                    "v1",
+                    "clients"
+                  ]
                 }
               },
               "status": "OK",
@@ -1858,8 +2215,15 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/v1/clients/1",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "clients", "1"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "clients",
+                "1"
+              ]
             },
             "description": "Retrieve a specific client by ID.\n\n**Authentication:** Required (COMPANY role)\n\n**Path Parameter:**\n- id (long): Client ID\n\n**Response:** Client object (same format as Create Client response)\n\n**Authorization:** Only clients belonging to the authenticated company can be accessed."
           },
@@ -1877,9 +2241,16 @@
                 "url": {
                   "raw": "http://localhost:8080/api/v1/clients/1",
                   "protocol": "http",
-                  "host": ["localhost"],
+                  "host": [
+                    "localhost"
+                  ],
                   "port": "8080",
-                  "path": ["api", "v1", "clients", "1"]
+                  "path": [
+                    "api",
+                    "v1",
+                    "clients",
+                    "1"
+                  ]
                 }
               },
               "status": "OK",
@@ -1921,8 +2292,15 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/clients/1",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "clients", "1"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "clients",
+                "1"
+              ]
             },
             "description": "Update an existing client's details.\n\n**Authentication:** Required (COMPANY role)\n\n**Path Parameter:**\n- id (long): Client ID\n\n**Request Body:**\n- name (string, optional): 2-150 characters\n- email (string, optional): Valid email format\n- telephone (string, optional): Max 20 characters\n- mobile (string, optional): Max 20 characters\n- address (string, optional): Full address details\n- archived (boolean, optional): Archive status\n\n**Response:** Updated client object\n\n**Authorization:** Only clients belonging to the authenticated company can be updated."
           },
@@ -1948,9 +2326,16 @@
                 "url": {
                   "raw": "http://localhost:8080/api/v1/clients/1",
                   "protocol": "http",
-                  "host": ["localhost"],
+                  "host": [
+                    "localhost"
+                  ],
                   "port": "8080",
-                  "path": ["api", "v1", "clients", "1"]
+                  "path": [
+                    "api",
+                    "v1",
+                    "clients",
+                    "1"
+                  ]
                 }
               },
               "status": "OK",
@@ -1983,8 +2368,15 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/v1/clients/1",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "clients", "1"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "clients",
+                "1"
+              ]
             },
             "description": "Soft delete (archive) a client by ID.\n\n**Authentication:** Required (COMPANY role)\n\n**Path Parameter:**\n- id (long): Client ID\n\n**Response:** 204 No Content\n\n**Business Logic:**\n- Sets client.archived = true\n- Client remains in database but is marked as archived\n- Archived clients still appear in getAllClients() but are counted separately in dashboard\n\n**Authorization:** Only clients belonging to the authenticated company can be deleted."
           },
@@ -2002,9 +2394,16 @@
                 "url": {
                   "raw": "http://localhost:8080/api/v1/clients/1",
                   "protocol": "http",
-                  "host": ["localhost"],
+                  "host": [
+                    "localhost"
+                  ],
                   "port": "8080",
-                  "path": ["api", "v1", "clients", "1"]
+                  "path": [
+                    "api",
+                    "v1",
+                    "clients",
+                    "1"
+                  ]
                 }
               },
               "status": "No Content",
@@ -2047,8 +2446,14 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/customers",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "customers"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "customers"
+              ]
             },
             "description": "Create a new customer for the authenticated company.\n\n**Authentication:** Required (COMPANY role)\n\n**Request Body:**\n- name (string, required): 2-150 characters\n- email (string, optional): Valid email format\n- telephone (string, optional): Max 20 characters\n- mobile (string, optional): Max 20 characters\n- address (object, optional): Nested address details\n  - houseNumber (string, optional): House or building number\n  - street (string, optional): Street name\n  - city (string, optional): City name\n  - county (string, optional): County or region\n  - postalCode (string, optional): UK postal code\n  - country (string, optional): Country name\n\n**Business Logic:**\n- Customer is associated with the company of the authenticated user\n- Name should be unique per company (enforced at service/repository level)\n\n**Response:** Created customer object with metadata (id, timestamps, archived flag)."
           },
@@ -2074,9 +2479,15 @@
                 "url": {
                   "raw": "http://localhost:8080/api/v1/customers",
                   "protocol": "http",
-                  "host": ["localhost"],
+                  "host": [
+                    "localhost"
+                  ],
                   "port": "8080",
-                  "path": ["api", "v1", "customers"]
+                  "path": [
+                    "api",
+                    "v1",
+                    "customers"
+                  ]
                 }
               },
               "status": "Created",
@@ -2109,8 +2520,14 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/v1/customers",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "customers"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "customers"
+              ]
             },
             "description": "Retrieve all customers for the authenticated company.\n\n**Authentication:** Required (COMPANY role)\n\n**Response:** Array of customer objects (same format as Create Customer response)\n\n**Note:** Returns all customers (including archived) belonging to the company."
           },
@@ -2128,9 +2545,15 @@
                 "url": {
                   "raw": "http://localhost:8080/api/v1/customers",
                   "protocol": "http",
-                  "host": ["localhost"],
+                  "host": [
+                    "localhost"
+                  ],
                   "port": "8080",
-                  "path": ["api", "v1", "customers"]
+                  "path": [
+                    "api",
+                    "v1",
+                    "customers"
+                  ]
                 }
               },
               "status": "OK",
@@ -2163,8 +2586,15 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/v1/customers/1",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "customers", "1"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "customers",
+                "1"
+              ]
             },
             "description": "Retrieve a specific customer by ID.\n\n**Authentication:** Required (COMPANY role)\n\n**Path Parameter:**\n- id (long): Customer ID\n\n**Response:** Customer object (same format as Create Customer response)\n\n**Authorization:** Only customers belonging to the authenticated company can be accessed."
           },
@@ -2182,9 +2612,16 @@
                 "url": {
                   "raw": "http://localhost:8080/api/v1/customers/1",
                   "protocol": "http",
-                  "host": ["localhost"],
+                  "host": [
+                    "localhost"
+                  ],
                   "port": "8080",
-                  "path": ["api", "v1", "customers", "1"]
+                  "path": [
+                    "api",
+                    "v1",
+                    "customers",
+                    "1"
+                  ]
                 }
               },
               "status": "OK",
@@ -2226,8 +2663,15 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/customers/1",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "customers", "1"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "customers",
+                "1"
+              ]
             },
             "description": "Update an existing customer's details.\n\n**Authentication:** Required (COMPANY role)\n\n**Path Parameter:**\n- id (long): Customer ID\n\n**Request Body:**\n- name (string, required): 2-150 characters\n- email (string, optional): Valid email format\n- telephone (string, optional): Max 20 characters\n- mobile (string, optional): Max 20 characters\n- address (object, optional): Nested address details\n  - houseNumber (string, optional): House or building number\n  - street (string, optional): Street name\n  - city (string, optional): City name\n  - county (string, optional): County or region\n  - postalCode (string, optional): UK postal code\n  - country (string, optional): Country name\n- archived (boolean, optional): Archive status\n\n**Response:** Updated customer object\n\n**Authorization:** Only customers belonging to the authenticated company can be updated."
           },
@@ -2253,9 +2697,16 @@
                 "url": {
                   "raw": "http://localhost:8080/api/v1/customers/1",
                   "protocol": "http",
-                  "host": ["localhost"],
+                  "host": [
+                    "localhost"
+                  ],
                   "port": "8080",
-                  "path": ["api", "v1", "customers", "1"]
+                  "path": [
+                    "api",
+                    "v1",
+                    "customers",
+                    "1"
+                  ]
                 }
               },
               "status": "OK",
@@ -2288,8 +2739,15 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/v1/customers/1",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "customers", "1"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "customers",
+                "1"
+              ]
             },
             "description": "Delete a customer by ID.\n\n**Authentication:** Required (COMPANY role)\n\n**Path Parameter:**\n- id (long): Customer ID\n\n**Response:** 204 No Content\n\n**Authorization:** Only customers belonging to the authenticated company can be deleted."
           },
@@ -2307,9 +2765,16 @@
                 "url": {
                   "raw": "http://localhost:8080/api/v1/customers/1",
                   "protocol": "http",
-                  "host": ["localhost"],
+                  "host": [
+                    "localhost"
+                  ],
                   "port": "8080",
-                  "path": ["api", "v1", "customers", "1"]
+                  "path": [
+                    "api",
+                    "v1",
+                    "customers",
+                    "1"
+                  ]
                 }
               },
               "status": "No Content",
@@ -2352,8 +2817,14 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/job-templates",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "job-templates"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "job-templates"
+              ]
             },
             "description": "Create a new job template for the authenticated company.\n\n**Authentication:** Required (COMPANY role)\n\n**Request Body:**\n- name (string, required): Template name (2-150 characters, unique per company)\n- description (string, optional): Template description\n- isDefault (boolean, optional): Set as default template for the company (default: false). Only one template can be default per company.\n\n**Business Logic:**\n- Template is associated with the company of the authenticated user.\n- If isDefault is true, any existing default template will be unmarked as default.\n\n**Response:** Created template object with metadata (id, timestamps, archived flag, isDefault)."
           },
@@ -2379,9 +2850,15 @@
                 "url": {
                   "raw": "http://localhost:8080/api/v1/job-templates",
                   "protocol": "http",
-                  "host": ["localhost"],
+                  "host": [
+                    "localhost"
+                  ],
                   "port": "8080",
-                  "path": ["api", "v1", "job-templates"]
+                  "path": [
+                    "api",
+                    "v1",
+                    "job-templates"
+                  ]
                 }
               },
               "status": "Created",
@@ -2414,8 +2891,14 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/v1/job-templates",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "job-templates"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "job-templates"
+              ]
             },
             "description": "Retrieve all job templates for the authenticated company.\n\n**Authentication:** Required (COMPANY role)\n\n**Response:** Array of job template objects (including archived)\n\n**Status Code:** 200 OK"
           },
@@ -2433,9 +2916,15 @@
                 "url": {
                   "raw": "http://localhost:8080/api/v1/job-templates",
                   "protocol": "http",
-                  "host": ["localhost"],
+                  "host": [
+                    "localhost"
+                  ],
                   "port": "8080",
-                  "path": ["api", "v1", "job-templates"]
+                  "path": [
+                    "api",
+                    "v1",
+                    "job-templates"
+                  ]
                 }
               },
               "status": "OK",
@@ -2468,8 +2957,15 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/v1/job-templates/3",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "job-templates", "3"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "job-templates",
+                "3"
+              ]
             },
             "description": "Retrieve a single job template for the authenticated company.\n\n**Authentication:** Required (COMPANY role)\n\n**Path Parameter:**\n- id (long): Template ID\n\n**Authorization:** Only templates belonging to the authenticated company can be accessed.\n\n**Status Code:** 200 OK"
           },
@@ -2487,9 +2983,16 @@
                 "url": {
                   "raw": "http://localhost:8080/api/v1/job-templates/3",
                   "protocol": "http",
-                  "host": ["localhost"],
+                  "host": [
+                    "localhost"
+                  ],
                   "port": "8080",
-                  "path": ["api", "v1", "job-templates", "3"]
+                  "path": [
+                    "api",
+                    "v1",
+                    "job-templates",
+                    "3"
+                  ]
                 }
               },
               "status": "OK",
@@ -2522,8 +3025,15 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/v1/job-templates/default",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "job-templates", "default"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "job-templates",
+                "default"
+              ]
             },
             "description": "Get the default job template for the authenticated company.\n\n**Authentication:** Required (COMPANY role)\n\n**Authorization:** Returns the default template for the authenticated company.\n\n**Status Code:** 200 OK\n\n**Error Responses:**\n- 404 Not Found: No default template exists for the company"
           },
@@ -2541,9 +3051,16 @@
                 "url": {
                   "raw": "http://localhost:8080/api/v1/job-templates/default",
                   "protocol": "http",
-                  "host": ["localhost"],
+                  "host": [
+                    "localhost"
+                  ],
                   "port": "8080",
-                  "path": ["api", "v1", "job-templates", "default"]
+                  "path": [
+                    "api",
+                    "v1",
+                    "job-templates",
+                    "default"
+                  ]
                 }
               },
               "status": "OK",
@@ -2570,9 +3087,16 @@
                 "url": {
                   "raw": "http://localhost:8080/api/v1/job-templates/default",
                   "protocol": "http",
-                  "host": ["localhost"],
+                  "host": [
+                    "localhost"
+                  ],
                   "port": "8080",
-                  "path": ["api", "v1", "job-templates", "default"]
+                  "path": [
+                    "api",
+                    "v1",
+                    "job-templates",
+                    "default"
+                  ]
                 }
               },
               "status": "Not Found",
@@ -2614,8 +3138,15 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/job-templates/3",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "job-templates", "3"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "job-templates",
+                "3"
+              ]
             },
             "description": "Update an existing job template.\n\n**Authentication:** Required (COMPANY role)\n\n**Path Parameter:**\n- id (long): Template ID\n\n**Request Body:**\n- name (string, optional): Updated template name\n- description (string, optional): Updated template description\n- archived (boolean, optional): Archive status\n\n**Authorization:** Only templates belonging to the authenticated company can be updated.\n\n**Status Code:** 200 OK"
           },
@@ -2641,9 +3172,16 @@
                 "url": {
                   "raw": "http://localhost:8080/api/v1/job-templates/3",
                   "protocol": "http",
-                  "host": ["localhost"],
+                  "host": [
+                    "localhost"
+                  ],
                   "port": "8080",
-                  "path": ["api", "v1", "job-templates", "3"]
+                  "path": [
+                    "api",
+                    "v1",
+                    "job-templates",
+                    "3"
+                  ]
                 }
               },
               "status": "OK",
@@ -2676,8 +3214,15 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/v1/job-templates/3",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "job-templates", "3"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "job-templates",
+                "3"
+              ]
             },
             "description": "Deletes a job template and all associated fields.\n\n**Authentication:** Required (COMPANY role)\n\n**Path Parameter:**\n- id (long): Template ID\n\n**Business Logic:**\n- Performs a permanent delete (hard delete) of the template and its fields.\n\n**Authorization:** Only templates belonging to the authenticated company can be deleted.\n\n**Status Code:** 204 No Content"
           },
@@ -2695,9 +3240,16 @@
                 "url": {
                   "raw": "http://localhost:8080/api/v1/job-templates/3",
                   "protocol": "http",
-                  "host": ["localhost"],
+                  "host": [
+                    "localhost"
+                  ],
                   "port": "8080",
-                  "path": ["api", "v1", "job-templates", "3"]
+                  "path": [
+                    "api",
+                    "v1",
+                    "job-templates",
+                    "3"
+                  ]
                 }
               },
               "status": "No Content",
@@ -2734,8 +3286,15 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/job-templates/fields",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "job-templates", "fields"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "job-templates",
+                "fields"
+              ]
             },
             "description": "Add a field to a job template.\n\n**Authentication:** Required (COMPANY role)\n\n**Request Body:**\n- templateId (long, required): ID of the parent template\n- name (string, required): Internal field key (unique per template)\n- label (string, required): User-facing label\n- jobFieldType (enum, required): Field type (TEXT, NUMBER, CHECKBOX, DROPDOWN, etc.)\n- required (boolean, required): Whether the field is mandatory for job creation/completion\n- options (string, optional): JSON string for dropdown/radio options (e.g., \"[\\\"Option A\\\", \\\"Option B\\\"]\")\n- orderIndex (int, required): Order in which the field should appear\n\n**Authorization:** Parent template must belong to the authenticated company.\n\n**Status Code:** 201 Created"
           },
@@ -2761,9 +3320,16 @@
                 "url": {
                   "raw": "http://localhost:8080/api/v1/job-templates/fields",
                   "protocol": "http",
-                  "host": ["localhost"],
+                  "host": [
+                    "localhost"
+                  ],
                   "port": "8080",
-                  "path": ["api", "v1", "job-templates", "fields"]
+                  "path": [
+                    "api",
+                    "v1",
+                    "job-templates",
+                    "fields"
+                  ]
                 }
               },
               "status": "Created",
@@ -2798,9 +3364,16 @@
                 "url": {
                   "raw": "http://localhost:8080/api/v1/job-templates/fields",
                   "protocol": "http",
-                  "host": ["localhost"],
+                  "host": [
+                    "localhost"
+                  ],
                   "port": "8080",
-                  "path": ["api", "v1", "job-templates", "fields"]
+                  "path": [
+                    "api",
+                    "v1",
+                    "job-templates",
+                    "fields"
+                  ]
                 }
               },
               "status": "Created",
@@ -2835,9 +3408,16 @@
                 "url": {
                   "raw": "http://localhost:8080/api/v1/job-templates/fields",
                   "protocol": "http",
-                  "host": ["localhost"],
+                  "host": [
+                    "localhost"
+                  ],
                   "port": "8080",
-                  "path": ["api", "v1", "job-templates", "fields"]
+                  "path": [
+                    "api",
+                    "v1",
+                    "job-templates",
+                    "fields"
+                  ]
                 }
               },
               "status": "Created",
@@ -2872,9 +3452,16 @@
                 "url": {
                   "raw": "http://localhost:8080/api/v1/job-templates/fields",
                   "protocol": "http",
-                  "host": ["localhost"],
+                  "host": [
+                    "localhost"
+                  ],
                   "port": "8080",
-                  "path": ["api", "v1", "job-templates", "fields"]
+                  "path": [
+                    "api",
+                    "v1",
+                    "job-templates",
+                    "fields"
+                  ]
                 }
               },
               "status": "Created",
@@ -2907,8 +3494,16 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/v1/job-templates/3/fields",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "job-templates", "3", "fields"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "job-templates",
+                "3",
+                "fields"
+              ]
             },
             "description": "Retrieve all fields for a specific job template.\n\n**Authentication:** Required (COMPANY role)\n\n**Path Parameter:**\n- id (long): Template ID\n\n**Response:** Array of job template field objects.\n\n**Authorization:** Parent template must belong to the authenticated company.\n\n**Status Code:** 200 OK"
           },
@@ -2926,9 +3521,17 @@
                 "url": {
                   "raw": "http://localhost:8080/api/v1/job-templates/3/fields",
                   "protocol": "http",
-                  "host": ["localhost"],
+                  "host": [
+                    "localhost"
+                  ],
                   "port": "8080",
-                  "path": ["api", "v1", "job-templates", "3", "fields"]
+                  "path": [
+                    "api",
+                    "v1",
+                    "job-templates",
+                    "3",
+                    "fields"
+                  ]
                 }
               },
               "status": "OK",
@@ -2961,8 +3564,16 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/v1/job-templates/fields/101",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "job-templates", "fields", "101"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "job-templates",
+                "fields",
+                "101"
+              ]
             },
             "description": "Retrieve a single field by its ID.\n\n**Authentication:** Required (COMPANY role)\n\n**Path Parameter:**\n- id (long): Field ID\n\n**Authorization:** Parent template must belong to the authenticated company.\n\n**Status Code:** 200 OK"
           },
@@ -2980,9 +3591,17 @@
                 "url": {
                   "raw": "http://localhost:8080/api/v1/job-templates/fields/101",
                   "protocol": "http",
-                  "host": ["localhost"],
+                  "host": [
+                    "localhost"
+                  ],
                   "port": "8080",
-                  "path": ["api", "v1", "job-templates", "fields", "101"]
+                  "path": [
+                    "api",
+                    "v1",
+                    "job-templates",
+                    "fields",
+                    "101"
+                  ]
                 }
               },
               "status": "OK",
@@ -3024,8 +3643,16 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/job-templates/fields/102",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "job-templates", "fields", "102"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "job-templates",
+                "fields",
+                "102"
+              ]
             },
             "description": "Update a template field.\n\n**Authentication:** Required (COMPANY role)\n\n**Path Parameter:**\n- id (long): Field ID\n\n**Request Body:** (All fields optional, provide only those to update)\n- label (string, optional): User-facing label\n- jobFieldType (enum, optional): Field type\n- required (boolean, optional): Mandatory status\n- options (string, optional): JSON string for dropdown/radio options\n- orderIndex (int, optional): Order index\n\n**Note:** `templateId` and `name` (internal key) cannot be updated via this endpoint.\n\n**Authorization:** Field's parent template must belong to the authenticated company.\n\n**Status Code:** 200 OK"
           },
@@ -3051,9 +3678,17 @@
                 "url": {
                   "raw": "http://localhost:8080/api/v1/job-templates/fields/102",
                   "protocol": "http",
-                  "host": ["localhost"],
+                  "host": [
+                    "localhost"
+                  ],
                   "port": "8080",
-                  "path": ["api", "v1", "job-templates", "fields", "102"]
+                  "path": [
+                    "api",
+                    "v1",
+                    "job-templates",
+                    "fields",
+                    "102"
+                  ]
                 }
               },
               "status": "OK",
@@ -3086,8 +3721,16 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/v1/job-templates/fields/101",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "job-templates", "fields", "101"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "job-templates",
+                "fields",
+                "101"
+              ]
             },
             "description": "Delete a job template field.\n\n**Authentication:** Required (COMPANY role)\n\n**Path Parameter:**\n- id (long): Field ID\n\n**Business Logic:**\n- Performs a permanent delete (hard delete) of the field.\n\n**Authorization:** Field's parent template must belong to the authenticated company.\n\n**Status Code:** 204 No Content"
           },
@@ -3105,9 +3748,17 @@
                 "url": {
                   "raw": "http://localhost:8080/api/v1/job-templates/fields/101",
                   "protocol": "http",
-                  "host": ["localhost"],
+                  "host": [
+                    "localhost"
+                  ],
                   "port": "8080",
-                  "path": ["api", "v1", "job-templates", "fields", "101"]
+                  "path": [
+                    "api",
+                    "v1",
+                    "job-templates",
+                    "fields",
+                    "101"
+                  ]
                 }
               },
               "status": "No Content",
@@ -3135,8 +3786,16 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/v1/job-templates/3/with-fields",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "job-templates", "3", "with-fields"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "job-templates",
+                "3",
+                "with-fields"
+              ]
             },
             "description": "Retrieve a job template along with all of its fields in a nested structure.\n\n**Authentication:** Required (COMPANY role)\n\n**Path Parameter:**\n- id (long): Template ID\n\n**Response:** Job template object including a nested list of field objects.\n\n**Authorization:** Template must belong to the authenticated company.\n\n**Status Code:** 200 OK"
           },
@@ -3154,9 +3813,17 @@
                 "url": {
                   "raw": "http://localhost:8080/api/v1/job-templates/3/with-fields",
                   "protocol": "http",
-                  "host": ["localhost"],
+                  "host": [
+                    "localhost"
+                  ],
                   "port": "8080",
-                  "path": ["api", "v1", "job-templates", "3", "with-fields"]
+                  "path": [
+                    "api",
+                    "v1",
+                    "job-templates",
+                    "3",
+                    "with-fields"
+                  ]
                 }
               },
               "status": "OK",
@@ -3204,8 +3871,14 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/jobs",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "jobs"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "jobs"
+              ]
             },
             "description": "Create a new job instance based on a job template.\n\n**Authentication:** Required (Bearer token in Authorization header)\n\n**Request Body:**\n- templateId (long, required): The job template ID to use\n- customerId (long, required): The customer associated with this job\n- clientId (long, optional): The client associated with this job\n- assignedWorkerId (long, optional): The worker assigned to this job\n- status (string, required): Job status (e.g., NEW, IN_PROGRESS, COMPLETED, ON_HOLD, CANCELLED)\n- fieldValues (object, required): Map of field ID to value (e.g., {\"101\": \"John Doe\", \"102\": \"Medium\"})\n- assetIds (array of long, optional): IDs of assets to assign to this job\n\n**Business Logic:**\n- Job is associated with the company of the authenticated user\n- Must reference a valid template ID\n- Customer must belong to the same company (required field)\n- Client and worker must belong to the same company\n- All required template fields must have values in fieldValues\n- Assets must be available, not archived, and belong to the same company\n- Asset assignment will mark assets as unavailable\n\n**Response:** Created job object with id, companyId, templateId, customerId, clientId, assignedWorkerId, status, archived flag, timestamps, fieldValues, and assetIds\n\n**Status Code:** 201 Created"
           },
@@ -3231,9 +3904,15 @@
                 "url": {
                   "raw": "http://localhost:8080/api/v1/jobs",
                   "protocol": "http",
-                  "host": ["localhost"],
+                  "host": [
+                    "localhost"
+                  ],
                   "port": "8080",
-                  "path": ["api", "v1", "jobs"]
+                  "path": [
+                    "api",
+                    "v1",
+                    "jobs"
+                  ]
                 }
               },
               "status": "Created",
@@ -3266,8 +3945,14 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/v1/jobs",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "jobs"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "jobs"
+              ]
             },
             "description": "Retrieve all jobs for the authenticated company.\n\n**Authentication:** Required (Bearer token in Authorization header)\n\n**Response:** Array of job objects\n\n**Note:** Returns all jobs (including archived) belonging to the company.\n\n**Status Code:** 200 OK"
           },
@@ -3285,9 +3970,15 @@
                 "url": {
                   "raw": "http://localhost:8080/api/v1/jobs",
                   "protocol": "http",
-                  "host": ["localhost"],
+                  "host": [
+                    "localhost"
+                  ],
                   "port": "8080",
-                  "path": ["api", "v1", "jobs"]
+                  "path": [
+                    "api",
+                    "v1",
+                    "jobs"
+                  ]
                 }
               },
               "status": "OK",
@@ -3320,8 +4011,15 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/v1/jobs/55",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "jobs", "55"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "jobs",
+                "55"
+              ]
             },
             "description": "Retrieve a specific job by ID.\n\n**Authentication:** Required (Bearer token in Authorization header)\n\n**Path Parameter:**\n- id (long): Job ID\n\n**Response:** Job object (same format as Create Job response)\n\n**Authorization:** Only jobs belonging to the authenticated company can be accessed.\n\n**Status Code:** 200 OK"
           },
@@ -3339,9 +4037,16 @@
                 "url": {
                   "raw": "http://localhost:8080/api/v1/jobs/55",
                   "protocol": "http",
-                  "host": ["localhost"],
+                  "host": [
+                    "localhost"
+                  ],
                   "port": "8080",
-                  "path": ["api", "v1", "jobs", "55"]
+                  "path": [
+                    "api",
+                    "v1",
+                    "jobs",
+                    "55"
+                  ]
                 }
               },
               "status": "OK",
@@ -3383,8 +4088,15 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/jobs/55",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "jobs", "55"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "jobs",
+                "55"
+              ]
             },
             "description": "Update an existing job.\n\n**Authentication:** Required (Bearer token in Authorization header)\n\n**Path Parameter:**\n- id (long): Job ID\n\n**Request Body:**\n- customerId (long, optional): The customer associated with this job\n- clientId (long, optional): The client associated with this job\n- assignedWorkerId (long, optional): The worker assigned to this job\n- status (string, optional): Job status (NEW, IN_PROGRESS, COMPLETED, ON_HOLD, CANCELLED)\n- archived (boolean, optional): Archive status\n- fieldValues (object, optional): Map of field ID to updated values\n- workflowId (long, optional): ID of the workflow to assign to this job\n\n**Business Logic:**\n- Only jobs belonging to the authenticated company can be updated\n- Customer must belong to the same company\n- Client and worker must belong to the same company\n- Cannot change the template after creation\n- workflowId can only be set if the job currently has no workflow assigned. Once a workflow is assigned to a job it cannot be changed or replaced. Sending a workflowId on a job that already has a workflow returns 400 Bad Request with the message \"Workflow cannot be changed once assigned to a job\"\n- Omitting workflowId (or sending it as null) leaves the existing workflow assignment untouched\n\n**Response:** Updated job object\n\n**Status Code:** 200 OK"
           },
@@ -3410,9 +4122,16 @@
                 "url": {
                   "raw": "http://localhost:8080/api/v1/jobs/55",
                   "protocol": "http",
-                  "host": ["localhost"],
+                  "host": [
+                    "localhost"
+                  ],
                   "port": "8080",
-                  "path": ["api", "v1", "jobs", "55"]
+                  "path": [
+                    "api",
+                    "v1",
+                    "jobs",
+                    "55"
+                  ]
                 }
               },
               "status": "OK",
@@ -3447,9 +4166,16 @@
                 "url": {
                   "raw": "http://localhost:8080/api/v1/jobs/55",
                   "protocol": "http",
-                  "host": ["localhost"],
+                  "host": [
+                    "localhost"
+                  ],
                   "port": "8080",
-                  "path": ["api", "v1", "jobs", "55"]
+                  "path": [
+                    "api",
+                    "v1",
+                    "jobs",
+                    "55"
+                  ]
                 }
               },
               "status": "Bad Request",
@@ -3482,8 +4208,15 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/v1/jobs/55",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "jobs", "55"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "jobs",
+                "55"
+              ]
             },
             "description": "Soft delete (archive) a job by ID.\n\n**Authentication:** Required (Bearer token in Authorization header)\n\n**Path Parameter:**\n- id (long): Job ID\n\n**Response:** 204 No Content\n\n**Business Logic:**\n- Sets job.archived = true\n- Job remains in database but is marked as archived\n- Archived jobs still appear in getAllJobs() but are marked as archived\n\n**Authorization:** Only jobs belonging to the authenticated company can be deleted.\n\n**Status Code:** 204 No Content"
           },
@@ -3501,9 +4234,16 @@
                 "url": {
                   "raw": "http://localhost:8080/api/v1/jobs/55",
                   "protocol": "http",
-                  "host": ["localhost"],
+                  "host": [
+                    "localhost"
+                  ],
                   "port": "8080",
-                  "path": ["api", "v1", "jobs", "55"]
+                  "path": [
+                    "api",
+                    "v1",
+                    "jobs",
+                    "55"
+                  ]
                 }
               },
               "status": "No Content",
@@ -3531,8 +4271,16 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/v1/jobs/templates/3",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "jobs", "templates", "3"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "jobs",
+                "templates",
+                "3"
+              ]
             },
             "description": "Retrieve all jobs for a specific job template.\n\n**Authentication:** Required (Bearer token in Authorization header)\n\n**Path Parameter:**\n- templateId (long): Job Template ID\n\n**Response:** Array of job objects (same format as Get All Jobs response)\n\n**Note:** Returns all jobs (including archived) belonging to the authenticated company that were created from the specified template.\n\n**Authorization:** Only jobs belonging to the authenticated company can be accessed.\n\n**Status Code:** 200 OK"
           },
@@ -3550,9 +4298,17 @@
                 "url": {
                   "raw": "http://localhost:8080/api/v1/jobs/templates/3",
                   "protocol": "http",
-                  "host": ["localhost"],
+                  "host": [
+                    "localhost"
+                  ],
                   "port": "8080",
-                  "path": ["api", "v1", "jobs", "templates", "3"]
+                  "path": [
+                    "api",
+                    "v1",
+                    "jobs",
+                    "templates",
+                    "3"
+                  ]
                 }
               },
               "status": "OK",
@@ -3600,8 +4356,14 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/assets",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "assets"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "assets"
+              ]
             },
             "description": "Create a new company asset\n\n```bash\ncurl -X POST \"{{base_url}}/api/v1/assets\" \\\n  -H \"Authorization: Bearer {{jwt_token}}\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n    \"name\": \"Company Van A1\",\n    \"assetTag\": \"VAN-001\",\n    \"serialNumber\": \"SN-2025-AX11\",\n    \"purchasePrice\": 30000.00,\n    \"purchaseDate\": \"2023-01-01\",\n    \"depreciationRate\": 20.00,\n    \"salvageValue\": 5000.00\n  }'\n```"
           },
@@ -3623,9 +4385,15 @@
                 "url": {
                   "raw": "http://localhost:8080/api/v1/assets",
                   "protocol": "http",
-                  "host": ["localhost"],
+                  "host": [
+                    "localhost"
+                  ],
                   "port": "8080",
-                  "path": ["api", "v1", "assets"]
+                  "path": [
+                    "api",
+                    "v1",
+                    "assets"
+                  ]
                 }
               },
               "status": "Created",
@@ -3657,8 +4425,15 @@
             "method": "GET",
             "url": {
               "raw": "{{base_url}}/api/v1/assets/10",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "assets", "10"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "assets",
+                "10"
+              ]
             },
             "description": "Fetch asset details\n\n```bash\ncurl -X GET \"{{base_url}}/api/v1/assets/10\" \\\n  -H \"Authorization: Bearer {{jwt_token}}\"\n```"
           },
@@ -3671,9 +4446,16 @@
                 "url": {
                   "raw": "http://localhost:8080/api/v1/assets/10",
                   "protocol": "http",
-                  "host": ["localhost"],
+                  "host": [
+                    "localhost"
+                  ],
                   "port": "8080",
-                  "path": ["api", "v1", "assets", "10"]
+                  "path": [
+                    "api",
+                    "v1",
+                    "assets",
+                    "10"
+                  ]
                 }
               },
               "status": "OK",
@@ -3704,8 +4486,14 @@
             "method": "GET",
             "url": {
               "raw": "{{base_url}}/api/v1/assets?page=0&size=20&available=true&archived=false",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "assets"],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "assets"
+              ],
               "query": [
                 {
                   "key": "page",
@@ -3769,8 +4557,15 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/assets/10",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "assets", "10"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "assets",
+                "10"
+              ]
             },
             "description": "Update non-immutable fields of an asset\n\n```bash\ncurl -X PUT \"{{base_url}}/api/v1/assets/10\" \\\n  -H \"Authorization: Bearer {{jwt_token}}\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{ \"name\": \"Company Van A1 (Updated)\" }'\n```"
           },
@@ -3807,8 +4602,16 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/v1/assets/10/archive",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "assets", "10", "archive"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "assets",
+                "10",
+                "archive"
+              ]
             },
             "description": "Archive (soft delete) an asset\n\n```bash\ncurl -X POST \"{{base_url}}/api/v1/assets/10/archive\" \\\n  -H \"Authorization: Bearer {{jwt_token}}\"\n```"
           },
@@ -3838,8 +4641,16 @@
             "method": "GET",
             "url": {
               "raw": "{{base_url}}/api/v1/assets/10/value?asOfDate=2025-11-24",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "assets", "10", "value"],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "assets",
+                "10",
+                "value"
+              ],
               "query": [
                 {
                   "key": "asOfDate",
@@ -3882,8 +4693,15 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/v1/assets/statistics",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "assets", "statistics"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "assets",
+                "statistics"
+              ]
             },
             "description": "Get asset statistics for the company\n\n**Response:**\n- totalAssets (long): Total number of assets\n- activeAssets (long): Number of active (non-archived) assets\n- archivedAssets (long): Number of archived assets\n- totalValue (BigDecimal): Total purchase value of all assets\n- currentValue (BigDecimal): Current depreciated value of all assets\n- totalDepreciation (BigDecimal): Total depreciation amount\n\n```bash\ncurl -X GET \"{{base_url}}/api/v1/assets/statistics\" \\\n  -H \"Authorization: Bearer {{jwt_token}}\"\n```"
           },
@@ -3900,8 +4718,15 @@
                 ],
                 "url": {
                   "raw": "{{base_url}}/api/v1/assets/statistics",
-                  "host": ["{{base_url}}"],
-                  "path": ["api", "v1", "assets", "statistics"]
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "assets",
+                    "statistics"
+                  ]
                 }
               },
               "status": "OK",
@@ -3948,8 +4773,15 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/asset-assignments/assign",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "asset-assignments", "assign"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "asset-assignments",
+                "assign"
+              ]
             },
             "description": "Assign an asset to a job (sets asset.available=false)\n\n```bash\ncurl -X POST \"{{base_url}}/api/v1/asset-assignments/assign\" \\\n  -H \"Authorization: Bearer {{jwt_token}}\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{ \"assetId\": 10, \"jobId\": 3, \"notes\": \"Used for transport to client site\" }'\n```"
           },
@@ -3995,8 +4827,15 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/asset-assignments/return",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "asset-assignments", "return"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "asset-assignments",
+                "return"
+              ]
             },
             "description": "Return an asset from a job (sets returnedAt and asset.available=true)\n\n```bash\ncurl -X POST \"{{base_url}}/api/v1/asset-assignments/return\" \\\n  -H \"Authorization: Bearer {{jwt_token}}\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{ \"assetId\": 10, \"jobId\": 3, \"notes\": \"Returned after completion\" }'\n```"
           },
@@ -4032,7 +4871,9 @@
             "method": "GET",
             "url": {
               "raw": "{{base_url}}/api/v1/asset-assignments/asset/10/history",
-              "host": ["{{base_url}}"],
+              "host": [
+                "{{base_url}}"
+              ],
               "path": [
                 "api",
                 "v1",
@@ -4075,8 +4916,16 @@
             "method": "GET",
             "url": {
               "raw": "{{base_url}}/api/v1/asset-assignments/job/3?onlyActive=true",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "asset-assignments", "job", "3"],
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "asset-assignments",
+                "job",
+                "3"
+              ],
               "query": [
                 {
                   "key": "onlyActive",
@@ -4503,7 +5352,9 @@
             "method": "POST",
             "url": {
               "raw": "{{base_url}}/api/v1/job-workflows/jobs/1/workflows/2/start",
-              "host": ["{{base_url}}"],
+              "host": [
+                "{{base_url}}"
+              ],
               "path": [
                 "api",
                 "v1",
@@ -4541,8 +5392,16 @@
             "method": "GET",
             "url": {
               "raw": "{{base_url}}/api/v1/job-workflows/jobs/1",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "job-workflows", "jobs", "1"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "job-workflows",
+                "jobs",
+                "1"
+              ]
             }
           },
           "response": [
@@ -4570,8 +5429,15 @@
             "method": "GET",
             "url": {
               "raw": "{{base_url}}/api/v1/job-workflows/10",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "job-workflows", "10"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "job-workflows",
+                "10"
+              ]
             }
           },
           "response": [
@@ -4599,8 +5465,14 @@
             "method": "GET",
             "url": {
               "raw": "{{base_url}}/api/v1/job-workflows",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "job-workflows"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "job-workflows"
+              ]
             }
           },
           "response": [
@@ -4638,8 +5510,15 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/job-workflows/10",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "job-workflows", "10"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "job-workflows",
+                "10"
+              ]
             }
           },
           "response": [
@@ -4677,8 +5556,17 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/job-workflows/10/steps/101",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "job-workflows", "10", "steps", "101"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "job-workflows",
+                "10",
+                "steps",
+                "101"
+              ]
             }
           },
           "response": [
@@ -4706,8 +5594,17 @@
             "method": "PUT",
             "url": {
               "raw": "{{base_url}}/api/v1/job-workflows/10/assign-worker/7",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "job-workflows", "10", "assign-worker", "7"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "job-workflows",
+                "10",
+                "assign-worker",
+                "7"
+              ]
             }
           },
           "response": [
@@ -4735,8 +5632,16 @@
             "method": "DELETE",
             "url": {
               "raw": "{{base_url}}/api/v1/job-workflows/jobs/1",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "job-workflows", "jobs", "1"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "job-workflows",
+                "jobs",
+                "1"
+              ]
             }
           },
           "response": [
@@ -4773,8 +5678,16 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/job-workflows/10/steps",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "job-workflows", "10", "steps"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "job-workflows",
+                "10",
+                "steps"
+              ]
             }
           },
           "response": [
@@ -4783,6 +5696,1112 @@
               "status": "Created",
               "code": 201,
               "body": "{\n  \"id\": 103,\n  \"name\": \"Final Review\",\n  \"description\": \"Supervisor final check\",\n  \"orderIndex\": 2,\n  \"status\": \"NOT_STARTED\",\n  \"startedAt\": null,\n  \"completedAt\": null,\n  \"assignedWorkerIds\": [5, 6]\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Estimates",
+      "description": "Estimate management endpoints for reading, updating, and deleting job estimates, plus line item linking/unlinking (CORE/SUB classification, VAT, and automatic totalling). Estimates are created by the job service — one per job.",
+      "item": [
+        {
+          "name": "Get Estimate by ID",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/estimates/1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "estimates",
+                "1"
+              ]
+            },
+            "description": "Fetch a single estimate by its ID. The estimate must belong to the authenticated user's company.\n\n```bash\ncurl -X GET \"{{base_url}}/api/v1/estimates/1\" \\\n  -H \"Authorization: Bearer {{jwt_token}}\"\n```"
+          },
+          "response": [
+            {
+              "name": "Get Estimate by ID - Success",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "http://localhost:8080/api/v1/estimates/1",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8080",
+                  "path": [
+                    "api",
+                    "v1",
+                    "estimates",
+                    "1"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n    \"id\": 1,\n    \"jobId\": 5,\n    \"companyId\": 1,\n    \"notes\": \"Initial estimate for the job\",\n    \"lineItems\": [\n        {\n            \"id\": 1,\n            \"companyId\": 1,\n            \"productCode\": \"SVC-001\",\n            \"productDescription\": \"Installation Service\",\n            \"additionalDetails\": \"Ground floor installation\",\n            \"unitPrice\": 150.00,\n            \"coreOrSub\": \"CORE\",\n            \"quantity\": 2.0000,\n            \"vatRate\": 0.2000,\n            \"netAmount\": 300.00,\n            \"vatAmount\": 60.00,\n            \"totalAmount\": 360.00,\n            \"createdAt\": \"2026-03-05T10:00:00\",\n            \"updatedAt\": \"2026-03-05T10:00:00\"\n        }\n    ],\n    \"totalNet\": 300.00,\n    \"totalVat\": 60.00,\n    \"grandTotal\": 360.00,\n    \"createdAt\": \"2026-03-05T10:00:00\",\n    \"updatedAt\": \"2026-03-05T10:00:00\"\n}"
+            },
+            {
+              "name": "Get Estimate by ID - Not Found",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "http://localhost:8080/api/v1/estimates/999",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8080",
+                  "path": [
+                    "api",
+                    "v1",
+                    "estimates",
+                    "999"
+                  ]
+                }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n    \"status\": 404,\n    \"error\": \"Not Found\",\n    \"message\": \"Estimate not found\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Estimate by Job ID",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/estimates/job/5",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "estimates",
+                "job",
+                "5"
+              ]
+            },
+            "description": "Fetch the estimate associated with a specific job. Useful when you have the job ID but not the estimate ID.\n\n```bash\ncurl -X GET \"{{base_url}}/api/v1/estimates/job/5\" \\\n  -H \"Authorization: Bearer {{jwt_token}}\"\n```"
+          },
+          "response": [
+            {
+              "name": "Get Estimate by Job ID - Success",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "http://localhost:8080/api/v1/estimates/job/5",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8080",
+                  "path": [
+                    "api",
+                    "v1",
+                    "estimates",
+                    "job",
+                    "5"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n    \"id\": 1,\n    \"jobId\": 5,\n    \"companyId\": 1,\n    \"notes\": \"Initial estimate for the job\",\n    \"lineItems\": [\n        {\n            \"id\": 1,\n            \"companyId\": 1,\n            \"productCode\": \"SVC-001\",\n            \"productDescription\": \"Installation Service\",\n            \"additionalDetails\": \"Ground floor installation\",\n            \"unitPrice\": 150.00,\n            \"coreOrSub\": \"CORE\",\n            \"quantity\": 2.0000,\n            \"vatRate\": 0.2000,\n            \"netAmount\": 300.00,\n            \"vatAmount\": 60.00,\n            \"totalAmount\": 360.00,\n            \"createdAt\": \"2026-03-05T10:00:00\",\n            \"updatedAt\": \"2026-03-05T10:00:00\"\n        }\n    ],\n    \"totalNet\": 300.00,\n    \"totalVat\": 60.00,\n    \"grandTotal\": 360.00,\n    \"createdAt\": \"2026-03-05T10:00:00\",\n    \"updatedAt\": \"2026-03-05T10:00:00\"\n}"
+            },
+            {
+              "name": "Get Estimate by Job ID - Not Found",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "http://localhost:8080/api/v1/estimates/job/999",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8080",
+                  "path": [
+                    "api",
+                    "v1",
+                    "estimates",
+                    "job",
+                    "999"
+                  ]
+                }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n    \"status\": 404,\n    \"error\": \"Not Found\",\n    \"message\": \"Estimate not found\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Update Estimate",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"notes\": \"Updated notes after site survey\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/estimates/1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "estimates",
+                "1"
+              ]
+            },
+            "description": "Update the notes on an existing estimate. All fields are optional — only provided fields will be updated.\n\n**Optional fields:**\n- `notes` (String): Updated free-text notes\n\n```bash\ncurl -X PUT \"{{base_url}}/api/v1/estimates/1\" \\\n  -H \"Authorization: Bearer {{jwt_token}}\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{ \"notes\": \"Updated notes after site survey\" }'\n```"
+          },
+          "response": [
+            {
+              "name": "Update Estimate - Success",
+              "originalRequest": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"notes\": \"Updated notes after site survey\"\n}"
+                },
+                "url": {
+                  "raw": "http://localhost:8080/api/v1/estimates/1",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8080",
+                  "path": [
+                    "api",
+                    "v1",
+                    "estimates",
+                    "1"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n    \"id\": 1,\n    \"jobId\": 5,\n    \"companyId\": 1,\n    \"notes\": \"Updated notes after site survey\",\n    \"lineItems\": [\n        {\n            \"id\": 1,\n            \"companyId\": 1,\n            \"productCode\": \"SVC-001\",\n            \"productDescription\": \"Installation Service\",\n            \"additionalDetails\": \"Ground floor installation\",\n            \"unitPrice\": 150.00,\n            \"coreOrSub\": \"CORE\",\n            \"quantity\": 2.0000,\n            \"vatRate\": 0.2000,\n            \"netAmount\": 300.00,\n            \"vatAmount\": 60.00,\n            \"totalAmount\": 360.00,\n            \"createdAt\": \"2026-03-05T10:00:00\",\n            \"updatedAt\": \"2026-03-05T10:00:00\"\n        }\n    ],\n    \"totalNet\": 300.00,\n    \"totalVat\": 60.00,\n    \"grandTotal\": 360.00,\n    \"createdAt\": \"2026-03-05T10:00:00\",\n    \"updatedAt\": \"2026-03-05T10:30:00\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Delete Estimate",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/estimates/1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "estimates",
+                "1"
+              ]
+            },
+            "description": "Permanently delete an estimate and all its line item associations. The line items themselves are NOT deleted — they remain in the system and can be linked to other estimates.\n\n```bash\ncurl -X DELETE \"{{base_url}}/api/v1/estimates/1\" \\\n  -H \"Authorization: Bearer {{jwt_token}}\"\n```"
+          },
+          "response": [
+            {
+              "name": "Delete Estimate - Success",
+              "originalRequest": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "http://localhost:8080/api/v1/estimates/1",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8080",
+                  "path": [
+                    "api",
+                    "v1",
+                    "estimates",
+                    "1"
+                  ]
+                }
+              },
+              "status": "No Content",
+              "code": 204,
+              "header": []
+            }
+          ]
+        },
+        {
+          "name": "Create and Link Line Item",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"productCode\": \"SVC-001\",\n    \"productDescription\": \"Installation Service\",\n    \"additionalDetails\": \"Ground floor installation, requires 2 engineers\",\n    \"unitPrice\": 150.00,\n    \"coreOrSub\": \"CORE\",\n    \"quantity\": 2.0,\n    \"vatRate\": 0.20\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/estimates/1/line-items",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "estimates",
+                "1",
+                "line-items"
+              ]
+            },
+            "description": "Create a brand-new line item and immediately link it to this estimate in one operation. Returns the full updated estimate (201 Created) including recalculated totals.\n\n**Required fields:**\n- `productCode` (String): Short product or service code (e.g. `SVC-001`)\n- `productDescription` (String): Human-readable description of the product or service\n- `unitPrice` (BigDecimal): Price per unit, must be >= 0\n- `coreOrSub` (String enum): Classification — `CORE` for core work, `SUB` for subcontracted work\n- `quantity` (BigDecimal): Number of units, must be > 0\n- `vatRate` (BigDecimal): VAT rate as a decimal (e.g. `0.20` for 20%), must be >= 0\n\n**Optional fields:**\n- `additionalDetails` (String): Free-text additional context\n\n**Calculated fields (read-only in response):**\n- `netAmount` = `unitPrice` * `quantity`\n- `vatAmount` = `netAmount` * `vatRate`\n- `totalAmount` = `netAmount` + `vatAmount`\n\n```bash\ncurl -X POST \"{{base_url}}/api/v1/estimates/1/line-items\" \\\n  -H \"Authorization: Bearer {{jwt_token}}\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n    \"productCode\": \"SVC-001\",\n    \"productDescription\": \"Installation Service\",\n    \"additionalDetails\": \"Ground floor installation, requires 2 engineers\",\n    \"unitPrice\": 150.00,\n    \"coreOrSub\": \"CORE\",\n    \"quantity\": 2.0,\n    \"vatRate\": 0.20\n  }'\n```"
+          },
+          "response": [
+            {
+              "name": "Create and Link Line Item - Success",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"productCode\": \"SVC-001\",\n    \"productDescription\": \"Installation Service\",\n    \"additionalDetails\": \"Ground floor installation, requires 2 engineers\",\n    \"unitPrice\": 150.00,\n    \"coreOrSub\": \"CORE\",\n    \"quantity\": 2.0,\n    \"vatRate\": 0.20\n}"
+                },
+                "url": {
+                  "raw": "http://localhost:8080/api/v1/estimates/1/line-items",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8080",
+                  "path": [
+                    "api",
+                    "v1",
+                    "estimates",
+                    "1",
+                    "line-items"
+                  ]
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n    \"id\": 1,\n    \"jobId\": 5,\n    \"companyId\": 1,\n    \"notes\": \"Initial estimate for the job\",\n    \"lineItems\": [\n        {\n            \"id\": 1,\n            \"companyId\": 1,\n            \"productCode\": \"SVC-001\",\n            \"productDescription\": \"Installation Service\",\n            \"additionalDetails\": \"Ground floor installation, requires 2 engineers\",\n            \"unitPrice\": 150.00,\n            \"coreOrSub\": \"CORE\",\n            \"quantity\": 2.0000,\n            \"vatRate\": 0.2000,\n            \"netAmount\": 300.00,\n            \"vatAmount\": 60.00,\n            \"totalAmount\": 360.00,\n            \"createdAt\": \"2026-03-05T10:00:00\",\n            \"updatedAt\": \"2026-03-05T10:00:00\"\n        }\n    ],\n    \"totalNet\": 300.00,\n    \"totalVat\": 60.00,\n    \"grandTotal\": 360.00,\n    \"createdAt\": \"2026-03-05T10:00:00\",\n    \"updatedAt\": \"2026-03-05T10:00:00\"\n}"
+            },
+            {
+              "name": "Create and Link Line Item - Estimate Not Found",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"productCode\": \"SVC-001\",\n    \"productDescription\": \"Installation Service\",\n    \"unitPrice\": 150.00,\n    \"coreOrSub\": \"CORE\",\n    \"quantity\": 2.0,\n    \"vatRate\": 0.20\n}"
+                },
+                "url": {
+                  "raw": "http://localhost:8080/api/v1/estimates/999/line-items",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8080",
+                  "path": [
+                    "api",
+                    "v1",
+                    "estimates",
+                    "999",
+                    "line-items"
+                  ]
+                }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n    \"status\": 404,\n    \"error\": \"Not Found\",\n    \"message\": \"Estimate not found\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Link Existing Line Item",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/estimates/1/line-items/1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "estimates",
+                "1",
+                "line-items",
+                "1"
+              ]
+            },
+            "description": "Attach an already-existing line item (by its ID) to this estimate. No request body is required — the link is established purely by the path parameters. Returns the full updated estimate (200 OK) with recalculated totals.\n\nUse this when a line item was created via `POST /api/v1/line-items` and you now want to associate it with an estimate.\n\n```bash\ncurl -X PUT \"{{base_url}}/api/v1/estimates/1/line-items/1\" \\\n  -H \"Authorization: Bearer {{jwt_token}}\"\n```"
+          },
+          "response": [
+            {
+              "name": "Link Existing Line Item - Success",
+              "originalRequest": {
+                "method": "PUT",
+                "header": [],
+                "url": {
+                  "raw": "http://localhost:8080/api/v1/estimates/1/line-items/1",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8080",
+                  "path": [
+                    "api",
+                    "v1",
+                    "estimates",
+                    "1",
+                    "line-items",
+                    "1"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n    \"id\": 1,\n    \"jobId\": 5,\n    \"companyId\": 1,\n    \"notes\": \"Initial estimate for the job\",\n    \"lineItems\": [\n        {\n            \"id\": 1,\n            \"companyId\": 1,\n            \"productCode\": \"SVC-001\",\n            \"productDescription\": \"Installation Service\",\n            \"additionalDetails\": \"Ground floor installation\",\n            \"unitPrice\": 150.00,\n            \"coreOrSub\": \"CORE\",\n            \"quantity\": 2.0000,\n            \"vatRate\": 0.2000,\n            \"netAmount\": 300.00,\n            \"vatAmount\": 60.00,\n            \"totalAmount\": 360.00,\n            \"createdAt\": \"2026-03-05T10:00:00\",\n            \"updatedAt\": \"2026-03-05T10:00:00\"\n        }\n    ],\n    \"totalNet\": 300.00,\n    \"totalVat\": 60.00,\n    \"grandTotal\": 360.00,\n    \"createdAt\": \"2026-03-05T10:00:00\",\n    \"updatedAt\": \"2026-03-05T10:15:00\"\n}"
+            },
+            {
+              "name": "Link Existing Line Item - Line Item Not Found",
+              "originalRequest": {
+                "method": "PUT",
+                "header": [],
+                "url": {
+                  "raw": "http://localhost:8080/api/v1/estimates/1/line-items/999",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8080",
+                  "path": [
+                    "api",
+                    "v1",
+                    "estimates",
+                    "1",
+                    "line-items",
+                    "999"
+                  ]
+                }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n    \"status\": 404,\n    \"error\": \"Not Found\",\n    \"message\": \"Line item not found\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Unlink Line Item",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/estimates/1/line-items/1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "estimates",
+                "1",
+                "line-items",
+                "1"
+              ]
+            },
+            "description": "Remove the association between a line item and this estimate. The line item itself is NOT deleted — it remains in the system and can be linked to other estimates. Returns the full updated estimate (200 OK) with recalculated totals.\n\n```bash\ncurl -X DELETE \"{{base_url}}/api/v1/estimates/1/line-items/1\" \\\n  -H \"Authorization: Bearer {{jwt_token}}\"\n```"
+          },
+          "response": [
+            {
+              "name": "Unlink Line Item - Success",
+              "originalRequest": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "http://localhost:8080/api/v1/estimates/1/line-items/1",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8080",
+                  "path": [
+                    "api",
+                    "v1",
+                    "estimates",
+                    "1",
+                    "line-items",
+                    "1"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n    \"id\": 1,\n    \"jobId\": 5,\n    \"companyId\": 1,\n    \"notes\": \"Initial estimate for the job\",\n    \"lineItems\": [],\n    \"totalNet\": 0.00,\n    \"totalVat\": 0.00,\n    \"grandTotal\": 0.00,\n    \"createdAt\": \"2026-03-05T10:00:00\",\n    \"updatedAt\": \"2026-03-05T11:00:00\"\n}"
+            },
+            {
+              "name": "Unlink Line Item - Line Item Not Found",
+              "originalRequest": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "http://localhost:8080/api/v1/estimates/1/line-items/999",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8080",
+                  "path": [
+                    "api",
+                    "v1",
+                    "estimates",
+                    "1",
+                    "line-items",
+                    "999"
+                  ]
+                }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n    \"status\": 404,\n    \"error\": \"Not Found\",\n    \"message\": \"Line item not found\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Line Items",
+      "description": "Standalone line item management endpoints for creating, reading, updating, and deleting line items (CORE/SUB classification, VAT, and automatic amount calculation). Line items can be created here and then linked to estimates, or created and linked in a single step via the Estimates API.",
+      "item": [
+        {
+          "name": "Create Line Item",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"productCode\": \"SVC-001\",\n    \"productDescription\": \"Installation Service\",\n    \"additionalDetails\": \"Ground floor installation, requires 2 engineers\",\n    \"unitPrice\": 150.00,\n    \"coreOrSub\": \"CORE\",\n    \"quantity\": 2.0,\n    \"vatRate\": 0.20\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/line-items",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "line-items"
+              ]
+            },
+            "description": "Create a new standalone line item for the authenticated user's company. The line item is not linked to any estimate on creation — use `POST /api/v1/estimates/{estimateId}/line-items` to create and link in one step, or `PUT /api/v1/estimates/{estimateId}/line-items/{lineItemId}` to link an existing line item.\n\n**Required fields:**\n- `productCode` (String): Short product or service code (e.g. `SVC-001`)\n- `productDescription` (String): Human-readable description of the product or service\n- `unitPrice` (BigDecimal): Price per unit, must be >= 0\n- `coreOrSub` (String enum): Classification — `CORE` for core work, `SUB` for subcontracted work\n- `quantity` (BigDecimal): Number of units, must be > 0\n- `vatRate` (BigDecimal): VAT rate as a decimal (e.g. `0.20` for 20%), must be >= 0\n\n**Optional fields:**\n- `additionalDetails` (String): Free-text additional context\n\n**Calculated fields (read-only in response):**\n- `netAmount` = `unitPrice` * `quantity`\n- `vatAmount` = `netAmount` * `vatRate`\n- `totalAmount` = `netAmount` + `vatAmount`\n\n```bash\ncurl -X POST \"{{base_url}}/api/v1/line-items\" \\\n  -H \"Authorization: Bearer {{jwt_token}}\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n    \"productCode\": \"SVC-001\",\n    \"productDescription\": \"Installation Service\",\n    \"additionalDetails\": \"Ground floor installation, requires 2 engineers\",\n    \"unitPrice\": 150.00,\n    \"coreOrSub\": \"CORE\",\n    \"quantity\": 2.0,\n    \"vatRate\": 0.20\n  }'\n```"
+          },
+          "response": [
+            {
+              "name": "Create Line Item - Success",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"productCode\": \"SVC-001\",\n    \"productDescription\": \"Installation Service\",\n    \"additionalDetails\": \"Ground floor installation, requires 2 engineers\",\n    \"unitPrice\": 150.00,\n    \"coreOrSub\": \"CORE\",\n    \"quantity\": 2.0,\n    \"vatRate\": 0.20\n}"
+                },
+                "url": {
+                  "raw": "http://localhost:8080/api/v1/line-items",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8080",
+                  "path": [
+                    "api",
+                    "v1",
+                    "line-items"
+                  ]
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n    \"id\": 1,\n    \"companyId\": 1,\n    \"productCode\": \"SVC-001\",\n    \"productDescription\": \"Installation Service\",\n    \"additionalDetails\": \"Ground floor installation, requires 2 engineers\",\n    \"unitPrice\": 150.00,\n    \"coreOrSub\": \"CORE\",\n    \"quantity\": 2.0000,\n    \"vatRate\": 0.2000,\n    \"netAmount\": 300.00,\n    \"vatAmount\": 60.00,\n    \"totalAmount\": 360.00,\n    \"createdAt\": \"2026-03-05T10:00:00\",\n    \"updatedAt\": \"2026-03-05T10:00:00\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get All Line Items",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/line-items",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "line-items"
+              ]
+            },
+            "description": "Retrieve all line items belonging to the authenticated user's company.\n\n```bash\ncurl -X GET \"{{base_url}}/api/v1/line-items\" \\\n  -H \"Authorization: Bearer {{jwt_token}}\"\n```"
+          },
+          "response": [
+            {
+              "name": "Get All Line Items - Success",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "http://localhost:8080/api/v1/line-items",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8080",
+                  "path": [
+                    "api",
+                    "v1",
+                    "line-items"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "[\n    {\n        \"id\": 1,\n        \"companyId\": 1,\n        \"productCode\": \"SVC-001\",\n        \"productDescription\": \"Installation Service\",\n        \"additionalDetails\": \"Ground floor installation\",\n        \"unitPrice\": 150.00,\n        \"coreOrSub\": \"CORE\",\n        \"quantity\": 2.0000,\n        \"vatRate\": 0.2000,\n        \"netAmount\": 300.00,\n        \"vatAmount\": 60.00,\n        \"totalAmount\": 360.00,\n        \"createdAt\": \"2026-03-05T10:00:00\",\n        \"updatedAt\": \"2026-03-05T10:00:00\"\n    },\n    {\n        \"id\": 2,\n        \"companyId\": 1,\n        \"productCode\": \"MAT-002\",\n        \"productDescription\": \"Electrical Cable (per metre)\",\n        \"additionalDetails\": null,\n        \"unitPrice\": 4.50,\n        \"coreOrSub\": \"SUB\",\n        \"quantity\": 100.0000,\n        \"vatRate\": 0.2000,\n        \"netAmount\": 450.00,\n        \"vatAmount\": 90.00,\n        \"totalAmount\": 540.00,\n        \"createdAt\": \"2026-03-05T09:00:00\",\n        \"updatedAt\": \"2026-03-05T09:00:00\"\n    }\n]"
+            }
+          ]
+        },
+        {
+          "name": "Get Line Item by ID",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/line-items/1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "line-items",
+                "1"
+              ]
+            },
+            "description": "Fetch a single line item by its ID. The line item must belong to the authenticated user's company.\n\n```bash\ncurl -X GET \"{{base_url}}/api/v1/line-items/1\" \\\n  -H \"Authorization: Bearer {{jwt_token}}\"\n```"
+          },
+          "response": [
+            {
+              "name": "Get Line Item by ID - Success",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "http://localhost:8080/api/v1/line-items/1",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8080",
+                  "path": [
+                    "api",
+                    "v1",
+                    "line-items",
+                    "1"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n    \"id\": 1,\n    \"companyId\": 1,\n    \"productCode\": \"SVC-001\",\n    \"productDescription\": \"Installation Service\",\n    \"additionalDetails\": \"Ground floor installation\",\n    \"unitPrice\": 150.00,\n    \"coreOrSub\": \"CORE\",\n    \"quantity\": 2.0000,\n    \"vatRate\": 0.2000,\n    \"netAmount\": 300.00,\n    \"vatAmount\": 60.00,\n    \"totalAmount\": 360.00,\n    \"createdAt\": \"2026-03-05T10:00:00\",\n    \"updatedAt\": \"2026-03-05T10:00:00\"\n}"
+            },
+            {
+              "name": "Get Line Item by ID - Not Found",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "http://localhost:8080/api/v1/line-items/999",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8080",
+                  "path": [
+                    "api",
+                    "v1",
+                    "line-items",
+                    "999"
+                  ]
+                }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n    \"status\": 404,\n    \"error\": \"Not Found\",\n    \"message\": \"Line item not found\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Update Line Item",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"productCode\": \"SVC-002\",\n    \"unitPrice\": 200.00,\n    \"quantity\": 3.0\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/line-items/1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "line-items",
+                "1"
+              ]
+            },
+            "description": "Update an existing line item. All fields are optional — only provided fields will be updated. The `netAmount`, `vatAmount`, and `totalAmount` fields are automatically recalculated based on the updated values.\n\n**Optional fields (all):**\n- `productCode` (String): Updated product or service code\n- `productDescription` (String): Updated description\n- `additionalDetails` (String): Updated additional context\n- `unitPrice` (BigDecimal): Updated unit price, must be >= 0\n- `coreOrSub` (String enum): `CORE` or `SUB`\n- `quantity` (BigDecimal): Updated quantity, must be > 0\n- `vatRate` (BigDecimal): Updated VAT rate as a decimal, must be >= 0\n\n**Note:** If this line item is linked to any estimates, those estimates will reflect the updated amounts immediately.\n\n```bash\ncurl -X PUT \"{{base_url}}/api/v1/line-items/1\" \\\n  -H \"Authorization: Bearer {{jwt_token}}\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n    \"productCode\": \"SVC-002\",\n    \"unitPrice\": 200.00,\n    \"quantity\": 3.0\n  }'\n```"
+          },
+          "response": [
+            {
+              "name": "Update Line Item - Success",
+              "originalRequest": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"productCode\": \"SVC-002\",\n    \"unitPrice\": 200.00,\n    \"quantity\": 3.0\n}"
+                },
+                "url": {
+                  "raw": "http://localhost:8080/api/v1/line-items/1",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8080",
+                  "path": [
+                    "api",
+                    "v1",
+                    "line-items",
+                    "1"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n    \"id\": 1,\n    \"companyId\": 1,\n    \"productCode\": \"SVC-002\",\n    \"productDescription\": \"Installation Service\",\n    \"additionalDetails\": \"Ground floor installation\",\n    \"unitPrice\": 200.00,\n    \"coreOrSub\": \"CORE\",\n    \"quantity\": 3.0000,\n    \"vatRate\": 0.2000,\n    \"netAmount\": 600.00,\n    \"vatAmount\": 120.00,\n    \"totalAmount\": 720.00,\n    \"createdAt\": \"2026-03-05T10:00:00\",\n    \"updatedAt\": \"2026-03-05T10:45:00\"\n}"
+            },
+            {
+              "name": "Update Line Item - Not Found",
+              "originalRequest": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"unitPrice\": 200.00\n}"
+                },
+                "url": {
+                  "raw": "http://localhost:8080/api/v1/line-items/999",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8080",
+                  "path": [
+                    "api",
+                    "v1",
+                    "line-items",
+                    "999"
+                  ]
+                }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n    \"status\": 404,\n    \"error\": \"Not Found\",\n    \"message\": \"Line item not found\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Delete Line Item",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/line-items/1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "line-items",
+                "1"
+              ]
+            },
+            "description": "Permanently delete a line item. Due to `ON DELETE CASCADE` on the estimate-line item join table, deleting a line item also automatically removes it from any estimates it was linked to, and those estimates' totals will be recalculated on the next fetch.\n\n```bash\ncurl -X DELETE \"{{base_url}}/api/v1/line-items/1\" \\\n  -H \"Authorization: Bearer {{jwt_token}}\"\n```"
+          },
+          "response": [
+            {
+              "name": "Delete Line Item - Success",
+              "originalRequest": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "http://localhost:8080/api/v1/line-items/1",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8080",
+                  "path": [
+                    "api",
+                    "v1",
+                    "line-items",
+                    "1"
+                  ]
+                }
+              },
+              "status": "No Content",
+              "code": 204,
+              "header": []
+            },
+            {
+              "name": "Delete Line Item - Not Found",
+              "originalRequest": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "http://localhost:8080/api/v1/line-items/999",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8080",
+                  "path": [
+                    "api",
+                    "v1",
+                    "line-items",
+                    "999"
+                  ]
+                }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n    \"status\": 404,\n    \"error\": \"Not Found\",\n    \"message\": \"Line item not found\"\n}"
             }
           ]
         }
@@ -4821,8 +6840,16 @@
                 },
                 "url": {
                   "raw": "{{base_url}}/api/v1/job-workflow-steps/101/comments",
-                  "host": ["{{base_url}}"],
-                  "path": ["api", "v1", "job-workflow-steps", "101", "comments"]
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "job-workflow-steps",
+                    "101",
+                    "comments"
+                  ]
                 }
               },
               "response": [
@@ -4861,8 +6888,16 @@
                 },
                 "url": {
                   "raw": "{{base_url}}/api/v1/job-workflow-steps/comments/1",
-                  "host": ["{{base_url}}"],
-                  "path": ["api", "v1", "job-workflow-steps", "comments", "1"]
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "job-workflow-steps",
+                    "comments",
+                    "1"
+                  ]
                 }
               },
               "response": [
@@ -4891,8 +6926,16 @@
                 "method": "DELETE",
                 "url": {
                   "raw": "{{base_url}}/api/v1/job-workflow-steps/comments/1",
-                  "host": ["{{base_url}}"],
-                  "path": ["api", "v1", "job-workflow-steps", "comments", "1"]
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "job-workflow-steps",
+                    "comments",
+                    "1"
+                  ]
                 }
               },
               "response": [
@@ -4919,8 +6962,16 @@
                 "method": "GET",
                 "url": {
                   "raw": "{{base_url}}/api/v1/job-workflow-steps/101/comments",
-                  "host": ["{{base_url}}"],
-                  "path": ["api", "v1", "job-workflow-steps", "101", "comments"]
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "job-workflow-steps",
+                    "101",
+                    "comments"
+                  ]
                 }
               },
               "response": [
@@ -4975,7 +7026,9 @@
                 },
                 "url": {
                   "raw": "{{base_url}}/api/v1/job-workflow-steps/101/attachments",
-                  "host": ["{{base_url}}"],
+                  "host": [
+                    "{{base_url}}"
+                  ],
                   "path": [
                     "api",
                     "v1",
@@ -5021,7 +7074,9 @@
                 },
                 "url": {
                   "raw": "{{base_url}}/api/v1/job-workflow-steps/attachments/1",
-                  "host": ["{{base_url}}"],
+                  "host": [
+                    "{{base_url}}"
+                  ],
                   "path": [
                     "api",
                     "v1",
@@ -5057,7 +7112,9 @@
                 "method": "DELETE",
                 "url": {
                   "raw": "{{base_url}}/api/v1/job-workflow-steps/attachments/1",
-                  "host": ["{{base_url}}"],
+                  "host": [
+                    "{{base_url}}"
+                  ],
                   "path": [
                     "api",
                     "v1",
@@ -5091,7 +7148,9 @@
                 "method": "GET",
                 "url": {
                   "raw": "{{base_url}}/api/v1/job-workflow-steps/101/attachments",
-                  "host": ["{{base_url}}"],
+                  "host": [
+                    "{{base_url}}"
+                  ],
                   "path": [
                     "api",
                     "v1",
@@ -5132,7 +7191,9 @@
                 "method": "GET",
                 "url": {
                   "raw": "{{base_url}}/api/v1/job-workflow-steps/101/discussion",
-                  "host": ["{{base_url}}"],
+                  "host": [
+                    "{{base_url}}"
+                  ],
                   "path": [
                     "api",
                     "v1",
@@ -5185,8 +7246,16 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/job-workflow-steps/1/visits",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "job-workflow-steps", "1", "visits"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "job-workflow-steps",
+                "1",
+                "visits"
+              ]
             },
             "description": "Add a new visit log to a specific workflow step.\n\n**Authentication:** Required\n\n**Path Parameter:**\n- stepId (long): The ID of the workflow step\n\n**Request Body:**\n- visitDate (string, required): Format YYYY-MM-DD\n- timeIn (string, required): Format HH:MM:SS\n- timeOut (string, optional): Format HH:MM:SS\n- description (string, optional): Visit details\n\n**Business Logic:**\n- Validates that the step belongs to the user's company\n- Logs an activity record (VISIT_LOGGED) in the timeline\n- Associates the visit log with the currently authenticated user\n\n**Response:**\n- id (long): Visit log ID\n- visitDate (string): Visit date\n- timeIn (string): Time in\n- timeOut (string): Time out\n- description (string): Description\n- loggedById (long): ID of the user who logged it\n- createdAt (datetime): Creation timestamp\n- updatedAt (datetime): Last update timestamp"
           },
@@ -5212,9 +7281,17 @@
                 "url": {
                   "raw": "http://localhost:8080/api/v1/job-workflow-steps/1/visits",
                   "protocol": "http",
-                  "host": ["localhost"],
+                  "host": [
+                    "localhost"
+                  ],
                   "port": "8080",
-                  "path": ["api", "v1", "job-workflow-steps", "1", "visits"]
+                  "path": [
+                    "api",
+                    "v1",
+                    "job-workflow-steps",
+                    "1",
+                    "visits"
+                  ]
                 }
               },
               "status": "Created",
@@ -5256,8 +7333,16 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/job-workflow-steps/visits/1",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "job-workflow-steps", "visits", "1"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "job-workflow-steps",
+                "visits",
+                "1"
+              ]
             },
             "description": "Update an existing visit log.\n\n**Authentication:** Required\n\n**Path Parameter:**\n- visitLogId (long): The ID of the visit log\n\n**Request Body (all optional):**\n- visitDate (string): Format YYYY-MM-DD\n- timeIn (string): Format HH:MM:SS\n- timeOut (string): Format HH:MM:SS\n- description (string): Visit details\n\n**Business Logic:**\n- User can only update their own visit logs (checked via loggedById)\n- Logs an activity record (VISIT_UPDATED) in the timeline\n\n**Response:** Updated visit log object"
           },
@@ -5283,9 +7368,17 @@
                 "url": {
                   "raw": "http://localhost:8080/api/v1/job-workflow-steps/visits/1",
                   "protocol": "http",
-                  "host": ["localhost"],
+                  "host": [
+                    "localhost"
+                  ],
                   "port": "8080",
-                  "path": ["api", "v1", "job-workflow-steps", "visits", "1"]
+                  "path": [
+                    "api",
+                    "v1",
+                    "job-workflow-steps",
+                    "visits",
+                    "1"
+                  ]
                 }
               },
               "status": "OK",
@@ -5318,8 +7411,16 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/v1/job-workflow-steps/visits/1",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "job-workflow-steps", "visits", "1"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "job-workflow-steps",
+                "visits",
+                "1"
+              ]
             },
             "description": "Delete a visit log.\n\n**Authentication:** Required\n\n**Path Parameter:**\n- visitLogId (long): The ID of the visit log\n\n**Response:** 204 No Content\n\n**Business Logic:**\n- User can only delete their own visit logs (checked via loggedById)\n- Logs an activity record (VISIT_DELETED) in the timeline"
           },
@@ -5337,9 +7438,17 @@
                 "url": {
                   "raw": "http://localhost:8080/api/v1/job-workflow-steps/visits/1",
                   "protocol": "http",
-                  "host": ["localhost"],
+                  "host": [
+                    "localhost"
+                  ],
                   "port": "8080",
-                  "path": ["api", "v1", "job-workflow-steps", "visits", "1"]
+                  "path": [
+                    "api",
+                    "v1",
+                    "job-workflow-steps",
+                    "visits",
+                    "1"
+                  ]
                 }
               },
               "status": "No Content",
@@ -5367,8 +7476,16 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/v1/job-workflow-steps/1/visits",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "job-workflow-steps", "1", "visits"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "job-workflow-steps",
+                "1",
+                "visits"
+              ]
             },
             "description": "Retrieve all visit logs for a specific workflow step.\n\n**Authentication:** Required\n\n**Path Parameter:**\n- stepId (long): The ID of the workflow step\n\n**Response:** Array of visit log objects, ordered by visitDate (descending) and timeIn (descending).\n\n**Business Logic:**\n- Validates that the workflow step belongs to the user's company"
           },
@@ -5386,9 +7503,17 @@
                 "url": {
                   "raw": "http://localhost:8080/api/v1/job-workflow-steps/1/visits",
                   "protocol": "http",
-                  "host": ["localhost"],
+                  "host": [
+                    "localhost"
+                  ],
                   "port": "8080",
-                  "path": ["api", "v1", "job-workflow-steps", "1", "visits"]
+                  "path": [
+                    "api",
+                    "v1",
+                    "job-workflow-steps",
+                    "1",
+                    "visits"
+                  ]
                 }
               },
               "status": "OK",
@@ -5427,8 +7552,15 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/v1/worker/job-workflow-steps",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "worker", "job-workflow-steps"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "worker",
+                "job-workflow-steps"
+              ]
             },
             "description": "Get all job workflow steps assigned to the current worker.\n\n**Authentication:** Required (WORKER role)\n\n**Response:** Array of JobWorkflowStepResponse objects."
           },
@@ -5446,8 +7578,15 @@
                 "url": {
                   "raw": "{{base_url}}/api/v1/worker/job-workflow-steps",
                   "protocol": "http",
-                  "host": ["{{base_url}}"],
-                  "path": ["api", "v1", "worker", "job-workflow-steps"]
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "worker",
+                    "job-workflow-steps"
+                  ]
                 }
               },
               "status": "OK",
@@ -5480,8 +7619,15 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/v1/worker/job-workflows",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "worker", "job-workflows"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "worker",
+                "job-workflows"
+              ]
             },
             "description": "Get all job workflows assigned to the current worker.\n\n**Authentication:** Required (WORKER role)\n\n**Response:** Array of JobWorkflowResponse objects containing workflow details and steps."
           },
@@ -5499,8 +7645,15 @@
                 "url": {
                   "raw": "{{base_url}}/api/v1/worker/job-workflows",
                   "protocol": "http",
-                  "host": ["{{base_url}}"],
-                  "path": ["api", "v1", "worker", "job-workflows"]
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "worker",
+                    "job-workflows"
+                  ]
                 }
               },
               "status": "OK",
@@ -5533,8 +7686,16 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/v1/worker/job-workflows/101",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "worker", "job-workflows", "101"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "worker",
+                "job-workflows",
+                "101"
+              ]
             },
             "description": "Get specific job workflow details if assigned to the worker.\n\n**Authentication:** Required (WORKER role)\n\n**Path Parameter:**\n- jobWorkflowId (long): ID of the job workflow\n\n**Authorization:** The worker must be assigned to at least one step in this workflow."
           },
@@ -5552,8 +7713,16 @@
                 "url": {
                   "raw": "{{base_url}}/api/v1/worker/job-workflows/101",
                   "protocol": "http",
-                  "host": ["{{base_url}}"],
-                  "path": ["api", "v1", "worker", "job-workflows", "101"]
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "worker",
+                    "job-workflows",
+                    "101"
+                  ]
                 }
               },
               "status": "OK",
@@ -5586,8 +7755,16 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/v1/worker/job-workflow-steps/2",
-              "host": ["{{base_url}}"],
-              "path": ["api", "v1", "worker", "job-workflow-steps", "2"]
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "worker",
+                "job-workflow-steps",
+                "2"
+              ]
             },
             "description": "Get details of a specific step.\n\n**Authentication:** Required (WORKER role)\n\n**Path Parameter:**\n- stepId (long): ID of the step\n\n**Authorization:** Worker must be assigned to this specific step."
           },
@@ -5605,8 +7782,16 @@
                 "url": {
                   "raw": "{{base_url}}/api/v1/worker/job-workflow-steps/2",
                   "protocol": "http",
-                  "host": ["{{base_url}}"],
-                  "path": ["api", "v1", "worker", "job-workflow-steps", "2"]
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "worker",
+                    "job-workflow-steps",
+                    "2"
+                  ]
                 }
               },
               "status": "OK",
@@ -5639,7 +7824,9 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/v1/worker/job-workflow-steps/2/start",
-              "host": ["{{base_url}}"],
+              "host": [
+                "{{base_url}}"
+              ],
               "path": [
                 "api",
                 "v1",
@@ -5665,7 +7852,9 @@
                 "url": {
                   "raw": "{{base_url}}/api/v1/worker/job-workflow-steps/2/start",
                   "protocol": "http",
-                  "host": ["{{base_url}}"],
+                  "host": [
+                    "{{base_url}}"
+                  ],
                   "path": [
                     "api",
                     "v1",
@@ -5706,7 +7895,9 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/v1/worker/job-workflow-steps/2/complete",
-              "host": ["{{base_url}}"],
+              "host": [
+                "{{base_url}}"
+              ],
               "path": [
                 "api",
                 "v1",
@@ -5732,7 +7923,9 @@
                 "url": {
                   "raw": "{{base_url}}/api/v1/worker/job-workflow-steps/2/complete",
                   "protocol": "http",
-                  "host": ["{{base_url}}"],
+                  "host": [
+                    "{{base_url}}"
+                  ],
                   "path": [
                     "api",
                     "v1",
@@ -5773,7 +7966,9 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/v1/worker/job-workflow-steps/2/comments",
-              "host": ["{{base_url}}"],
+              "host": [
+                "{{base_url}}"
+              ],
               "path": [
                 "api",
                 "v1",
@@ -5799,7 +7994,9 @@
                 "url": {
                   "raw": "{{base_url}}/api/v1/worker/job-workflow-steps/2/comments",
                   "protocol": "http",
-                  "host": ["{{base_url}}"],
+                  "host": [
+                    "{{base_url}}"
+                  ],
                   "path": [
                     "api",
                     "v1",
@@ -5840,7 +8037,9 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/v1/worker/job-workflow-steps/2/attachments",
-              "host": ["{{base_url}}"],
+              "host": [
+                "{{base_url}}"
+              ],
               "path": [
                 "api",
                 "v1",
@@ -5866,7 +8065,9 @@
                 "url": {
                   "raw": "{{base_url}}/api/v1/worker/job-workflow-steps/2/attachments",
                   "protocol": "http",
-                  "host": ["{{base_url}}"],
+                  "host": [
+                    "{{base_url}}"
+                  ],
                   "path": [
                     "api",
                     "v1",
@@ -5907,7 +8108,9 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/v1/worker/job-workflow-steps/2/discussion",
-              "host": ["{{base_url}}"],
+              "host": [
+                "{{base_url}}"
+              ],
               "path": [
                 "api",
                 "v1",
@@ -5933,7 +8136,9 @@
                 "url": {
                   "raw": "{{base_url}}/api/v1/worker/job-workflow-steps/2/discussion",
                   "protocol": "http",
-                  "host": ["{{base_url}}"],
+                  "host": [
+                    "{{base_url}}"
+                  ],
                   "path": [
                     "api",
                     "v1",
@@ -5974,7 +8179,9 @@
             "header": [],
             "url": {
               "raw": "{{base_url}}/api/v1/worker/job-workflow-steps/2/visits",
-              "host": ["{{base_url}}"],
+              "host": [
+                "{{base_url}}"
+              ],
               "path": [
                 "api",
                 "v1",
@@ -6000,7 +8207,9 @@
                 "url": {
                   "raw": "{{base_url}}/api/v1/worker/job-workflow-steps/2/visits",
                   "protocol": "http",
-                  "host": ["{{base_url}}"],
+                  "host": [
+                    "{{base_url}}"
+                  ],
                   "path": [
                     "api",
                     "v1",
@@ -6050,7 +8259,9 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/worker/job-workflow-steps/2/comments",
-              "host": ["{{base_url}}"],
+              "host": [
+                "{{base_url}}"
+              ],
               "path": [
                 "api",
                 "v1",
@@ -6084,7 +8295,9 @@
                 "url": {
                   "raw": "{{base_url}}/api/v1/worker/job-workflow-steps/2/comments",
                   "protocol": "http",
-                  "host": ["{{base_url}}"],
+                  "host": [
+                    "{{base_url}}"
+                  ],
                   "path": [
                     "api",
                     "v1",
@@ -6145,7 +8358,9 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/worker/job-workflow-steps/2/attachments",
-              "host": ["{{base_url}}"],
+              "host": [
+                "{{base_url}}"
+              ],
               "path": [
                 "api",
                 "v1",
@@ -6191,7 +8406,9 @@
                 "url": {
                   "raw": "{{base_url}}/api/v1/worker/job-workflow-steps/2/attachments",
                   "protocol": "http",
-                  "host": ["{{base_url}}"],
+                  "host": [
+                    "{{base_url}}"
+                  ],
                   "path": [
                     "api",
                     "v1",
@@ -6241,7 +8458,9 @@
             },
             "url": {
               "raw": "{{base_url}}/api/v1/worker/job-workflow-steps/2/visits",
-              "host": ["{{base_url}}"],
+              "host": [
+                "{{base_url}}"
+              ],
               "path": [
                 "api",
                 "v1",
@@ -6275,7 +8494,9 @@
                 "url": {
                   "raw": "{{base_url}}/api/v1/worker/job-workflow-steps/2/visits",
                   "protocol": "http",
-                  "host": ["{{base_url}}"],
+                  "host": [
+                    "{{base_url}}"
+                  ],
                   "path": [
                     "api",
                     "v1",

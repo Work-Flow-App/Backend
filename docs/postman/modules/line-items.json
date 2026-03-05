@@ -1,0 +1,448 @@
+{
+  "name": "Line Items",
+  "description": "Standalone line item management endpoints for creating, reading, updating, and deleting line items (CORE/SUB classification, VAT, and automatic amount calculation). Line items can be created here and then linked to estimates, or created and linked in a single step via the Estimates API.",
+  "item": [
+    {
+      "name": "Create Line Item",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"productCode\": \"SVC-001\",\n    \"productDescription\": \"Installation Service\",\n    \"additionalDetails\": \"Ground floor installation, requires 2 engineers\",\n    \"unitPrice\": 150.00,\n    \"coreOrSub\": \"CORE\",\n    \"quantity\": 2.0,\n    \"vatRate\": 0.20\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/line-items",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "line-items"
+          ]
+        },
+        "description": "Create a new standalone line item for the authenticated user's company. The line item is not linked to any estimate on creation — use `POST /api/v1/estimates/{estimateId}/line-items` to create and link in one step, or `PUT /api/v1/estimates/{estimateId}/line-items/{lineItemId}` to link an existing line item.\n\n**Required fields:**\n- `productCode` (String): Short product or service code (e.g. `SVC-001`)\n- `productDescription` (String): Human-readable description of the product or service\n- `unitPrice` (BigDecimal): Price per unit, must be >= 0\n- `coreOrSub` (String enum): Classification — `CORE` for core work, `SUB` for subcontracted work\n- `quantity` (BigDecimal): Number of units, must be > 0\n- `vatRate` (BigDecimal): VAT rate as a decimal (e.g. `0.20` for 20%), must be >= 0\n\n**Optional fields:**\n- `additionalDetails` (String): Free-text additional context\n\n**Calculated fields (read-only in response):**\n- `netAmount` = `unitPrice` * `quantity`\n- `vatAmount` = `netAmount` * `vatRate`\n- `totalAmount` = `netAmount` + `vatAmount`\n\n```bash\ncurl -X POST \"{{base_url}}/api/v1/line-items\" \\\n  -H \"Authorization: Bearer {{jwt_token}}\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n    \"productCode\": \"SVC-001\",\n    \"productDescription\": \"Installation Service\",\n    \"additionalDetails\": \"Ground floor installation, requires 2 engineers\",\n    \"unitPrice\": 150.00,\n    \"coreOrSub\": \"CORE\",\n    \"quantity\": 2.0,\n    \"vatRate\": 0.20\n  }'\n```"
+      },
+      "response": [
+        {
+          "name": "Create Line Item - Success",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"productCode\": \"SVC-001\",\n    \"productDescription\": \"Installation Service\",\n    \"additionalDetails\": \"Ground floor installation, requires 2 engineers\",\n    \"unitPrice\": 150.00,\n    \"coreOrSub\": \"CORE\",\n    \"quantity\": 2.0,\n    \"vatRate\": 0.20\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/v1/line-items",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "line-items"
+              ]
+            }
+          },
+          "status": "Created",
+          "code": 201,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n    \"id\": 1,\n    \"companyId\": 1,\n    \"productCode\": \"SVC-001\",\n    \"productDescription\": \"Installation Service\",\n    \"additionalDetails\": \"Ground floor installation, requires 2 engineers\",\n    \"unitPrice\": 150.00,\n    \"coreOrSub\": \"CORE\",\n    \"quantity\": 2.0000,\n    \"vatRate\": 0.2000,\n    \"netAmount\": 300.00,\n    \"vatAmount\": 60.00,\n    \"totalAmount\": 360.00,\n    \"createdAt\": \"2026-03-05T10:00:00\",\n    \"updatedAt\": \"2026-03-05T10:00:00\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Get All Line Items",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/v1/line-items",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "line-items"
+          ]
+        },
+        "description": "Retrieve all line items belonging to the authenticated user's company.\n\n```bash\ncurl -X GET \"{{base_url}}/api/v1/line-items\" \\\n  -H \"Authorization: Bearer {{jwt_token}}\"\n```"
+      },
+      "response": [
+        {
+          "name": "Get All Line Items - Success",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/v1/line-items",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "line-items"
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "[\n    {\n        \"id\": 1,\n        \"companyId\": 1,\n        \"productCode\": \"SVC-001\",\n        \"productDescription\": \"Installation Service\",\n        \"additionalDetails\": \"Ground floor installation\",\n        \"unitPrice\": 150.00,\n        \"coreOrSub\": \"CORE\",\n        \"quantity\": 2.0000,\n        \"vatRate\": 0.2000,\n        \"netAmount\": 300.00,\n        \"vatAmount\": 60.00,\n        \"totalAmount\": 360.00,\n        \"createdAt\": \"2026-03-05T10:00:00\",\n        \"updatedAt\": \"2026-03-05T10:00:00\"\n    },\n    {\n        \"id\": 2,\n        \"companyId\": 1,\n        \"productCode\": \"MAT-002\",\n        \"productDescription\": \"Electrical Cable (per metre)\",\n        \"additionalDetails\": null,\n        \"unitPrice\": 4.50,\n        \"coreOrSub\": \"SUB\",\n        \"quantity\": 100.0000,\n        \"vatRate\": 0.2000,\n        \"netAmount\": 450.00,\n        \"vatAmount\": 90.00,\n        \"totalAmount\": 540.00,\n        \"createdAt\": \"2026-03-05T09:00:00\",\n        \"updatedAt\": \"2026-03-05T09:00:00\"\n    }\n]"
+        }
+      ]
+    },
+    {
+      "name": "Get Line Item by ID",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/v1/line-items/1",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "line-items",
+            "1"
+          ]
+        },
+        "description": "Fetch a single line item by its ID. The line item must belong to the authenticated user's company.\n\n```bash\ncurl -X GET \"{{base_url}}/api/v1/line-items/1\" \\\n  -H \"Authorization: Bearer {{jwt_token}}\"\n```"
+      },
+      "response": [
+        {
+          "name": "Get Line Item by ID - Success",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/v1/line-items/1",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "line-items",
+                "1"
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n    \"id\": 1,\n    \"companyId\": 1,\n    \"productCode\": \"SVC-001\",\n    \"productDescription\": \"Installation Service\",\n    \"additionalDetails\": \"Ground floor installation\",\n    \"unitPrice\": 150.00,\n    \"coreOrSub\": \"CORE\",\n    \"quantity\": 2.0000,\n    \"vatRate\": 0.2000,\n    \"netAmount\": 300.00,\n    \"vatAmount\": 60.00,\n    \"totalAmount\": 360.00,\n    \"createdAt\": \"2026-03-05T10:00:00\",\n    \"updatedAt\": \"2026-03-05T10:00:00\"\n}"
+        },
+        {
+          "name": "Get Line Item by ID - Not Found",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/v1/line-items/999",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "line-items",
+                "999"
+              ]
+            }
+          },
+          "status": "Not Found",
+          "code": 404,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n    \"status\": 404,\n    \"error\": \"Not Found\",\n    \"message\": \"Line item not found\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Update Line Item",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"productCode\": \"SVC-002\",\n    \"unitPrice\": 200.00,\n    \"quantity\": 3.0\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/line-items/1",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "line-items",
+            "1"
+          ]
+        },
+        "description": "Update an existing line item. All fields are optional — only provided fields will be updated. The `netAmount`, `vatAmount`, and `totalAmount` fields are automatically recalculated based on the updated values.\n\n**Optional fields (all):**\n- `productCode` (String): Updated product or service code\n- `productDescription` (String): Updated description\n- `additionalDetails` (String): Updated additional context\n- `unitPrice` (BigDecimal): Updated unit price, must be >= 0\n- `coreOrSub` (String enum): `CORE` or `SUB`\n- `quantity` (BigDecimal): Updated quantity, must be > 0\n- `vatRate` (BigDecimal): Updated VAT rate as a decimal, must be >= 0\n\n**Note:** If this line item is linked to any estimates, those estimates will reflect the updated amounts immediately.\n\n```bash\ncurl -X PUT \"{{base_url}}/api/v1/line-items/1\" \\\n  -H \"Authorization: Bearer {{jwt_token}}\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n    \"productCode\": \"SVC-002\",\n    \"unitPrice\": 200.00,\n    \"quantity\": 3.0\n  }'\n```"
+      },
+      "response": [
+        {
+          "name": "Update Line Item - Success",
+          "originalRequest": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"productCode\": \"SVC-002\",\n    \"unitPrice\": 200.00,\n    \"quantity\": 3.0\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/v1/line-items/1",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "line-items",
+                "1"
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n    \"id\": 1,\n    \"companyId\": 1,\n    \"productCode\": \"SVC-002\",\n    \"productDescription\": \"Installation Service\",\n    \"additionalDetails\": \"Ground floor installation\",\n    \"unitPrice\": 200.00,\n    \"coreOrSub\": \"CORE\",\n    \"quantity\": 3.0000,\n    \"vatRate\": 0.2000,\n    \"netAmount\": 600.00,\n    \"vatAmount\": 120.00,\n    \"totalAmount\": 720.00,\n    \"createdAt\": \"2026-03-05T10:00:00\",\n    \"updatedAt\": \"2026-03-05T10:45:00\"\n}"
+        },
+        {
+          "name": "Update Line Item - Not Found",
+          "originalRequest": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"unitPrice\": 200.00\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/v1/line-items/999",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "line-items",
+                "999"
+              ]
+            }
+          },
+          "status": "Not Found",
+          "code": 404,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n    \"status\": 404,\n    \"error\": \"Not Found\",\n    \"message\": \"Line item not found\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Delete Line Item",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/v1/line-items/1",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "line-items",
+            "1"
+          ]
+        },
+        "description": "Permanently delete a line item. Due to `ON DELETE CASCADE` on the estimate-line item join table, deleting a line item also automatically removes it from any estimates it was linked to, and those estimates' totals will be recalculated on the next fetch.\n\n```bash\ncurl -X DELETE \"{{base_url}}/api/v1/line-items/1\" \\\n  -H \"Authorization: Bearer {{jwt_token}}\"\n```"
+      },
+      "response": [
+        {
+          "name": "Delete Line Item - Success",
+          "originalRequest": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/v1/line-items/1",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "line-items",
+                "1"
+              ]
+            }
+          },
+          "status": "No Content",
+          "code": 204,
+          "header": []
+        },
+        {
+          "name": "Delete Line Item - Not Found",
+          "originalRequest": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/v1/line-items/999",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "line-items",
+                "999"
+              ]
+            }
+          },
+          "status": "Not Found",
+          "code": 404,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n    \"status\": 404,\n    \"error\": \"Not Found\",\n    \"message\": \"Line item not found\"\n}"
+        }
+      ]
+    }
+  ]
+}

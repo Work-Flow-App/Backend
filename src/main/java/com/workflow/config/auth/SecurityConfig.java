@@ -91,6 +91,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/workers/**").hasRole(COMPANY)
                         .requestMatchers("/api/v1/clients/**").hasRole(COMPANY)
                         .requestMatchers("/api/v1/jobs/**").hasRole(COMPANY)
+                        .requestMatchers("/api/v1/estimates/**").hasRole(COMPANY)
+                        .requestMatchers("/api/v1/line-items/**").hasRole(COMPANY)
                         .requestMatchers("/api/v1/job-templates/**").hasRole(COMPANY)
                         .requestMatchers("/api/v1/worker/**").hasRole(WORKER)
                         .anyRequest().authenticated())

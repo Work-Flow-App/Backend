@@ -55,6 +55,12 @@ class JobServiceTest {
         private AssetJobAssignmentRepository assetJobAssignmentRepository;
 
         @Mock
+        private WorkflowRepository workflowRepository;
+
+        @Mock
+        private EstimateRepository estimateRepository;
+
+        @Mock
         private IJobWorkflowService jobWorkflowService;
 
         @InjectMocks

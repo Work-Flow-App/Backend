@@ -30,6 +30,7 @@ import com.workflow.entity.AssetJobAssignment;
 import com.workflow.entity.Client;
 import com.workflow.entity.Company;
 import com.workflow.entity.Customer;
+import com.workflow.entity.Estimate;
 import com.workflow.entity.Job;
 import com.workflow.entity.JobFieldValue;
 import com.workflow.entity.JobTemplate;
@@ -41,6 +42,7 @@ import com.workflow.repository.AssetRepository;
 import com.workflow.repository.ClientRepository;
 import com.workflow.repository.CompanyRepository;
 import com.workflow.repository.CustomerRepository;
+import com.workflow.repository.EstimateRepository;
 import com.workflow.repository.JobFieldValueRepository;
 import com.workflow.repository.JobRepository;
 import com.workflow.repository.JobTemplateFieldRepository;
@@ -68,6 +70,7 @@ public class JobService implements IJobService {
         private final AssetRepository assetRepository;
         private final AssetJobAssignmentRepository assetJobAssignmentRepository;
         private final WorkflowRepository workflowRepository;
+        private final EstimateRepository estimateRepository;
         private final IJobWorkflowService jobWorkflowService;
 
         @Override
@@ -109,6 +112,8 @@ public class JobService implements IJobService {
                                 .archived(false)
                                 .build();
                 jobRepository.saveAndFlush(job);
+
+                estimateRepository.save(Estimate.builder().job(job).company(company).build());
 
                 saveJobFieldValues(job, request.getFieldValues());
                 assignAssetsToJob(job, request.getAssetIds(), companyId);

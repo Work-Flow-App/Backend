@@ -13,6 +13,7 @@ public class StepVisitLogResponse {
     private LocalDate visitDate;
     private LocalTime timeIn;
     private LocalTime timeOut;
+    private Long workedMinutes;
     private String description;
     private Long loggedById;
     private LocalDateTime createdAt;

@@ -23,14 +23,14 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n    \"visitDate\": \"2026-03-02\",\n    \"timeIn\": \"09:00:00\",\n    \"timeOut\": \"11:30:00\",\n    \"description\": \"Initial site inspection and setup.\"\n}"
+          "raw": "{\n    \"visitDate\": \"2026-03-02\",\n    \"timeIn\": \"09:00:00\",\n    \"timeOut\": \"11:30:00\",\n    \"description\": \"Initial site inspection and setup.\",\n    \"loggedById\": 42\n}"
         },
         "url": {
           "raw": "{{base_url}}/api/v1/job-workflow-steps/1/visits",
           "host": ["{{base_url}}"],
           "path": ["api", "v1", "job-workflow-steps", "1", "visits"]
         },
-        "description": "Add a new visit log to a specific workflow step.\n\n**Authentication:** Required\n\n**Path Parameter:**\n- stepId (long): The ID of the workflow step\n\n**Request Body:**\n- visitDate (string, required): Format YYYY-MM-DD\n- timeIn (string, required): Format HH:MM:SS\n- timeOut (string, optional): Format HH:MM:SS\n- description (string, optional): Visit details\n\n**Business Logic:**\n- Validates that the step belongs to the user's company\n- Logs an activity record (VISIT_LOGGED) in the timeline\n- Associates the visit log with the currently authenticated user\n\n**Response:**\n- id (long): Visit log ID\n- visitDate (string): Visit date\n- timeIn (string): Time in\n- timeOut (string): Time out\n- description (string): Description\n- loggedById (long): ID of the user who logged it\n- createdAt (datetime): Creation timestamp\n- updatedAt (datetime): Last update timestamp"
+        "description": "Add a new visit log to a specific workflow step.\n\n**Authentication:** Required\n\n**Path Parameter:**\n- stepId (long): The ID of the workflow step\n\n**Request Body:**\n- visitDate (string, required): Format YYYY-MM-DD\n- timeIn (string, required): Format HH:MM:SS\n- timeOut (string, optional): Format HH:MM:SS\n- description (string, optional): Visit details\n- loggedById (long, optional): ID of the user logging the visit. Defaults to the authenticated user if omitted.\n\n**Business Logic:**\n- Validates that the step belongs to the user's company\n- Validates that timeOut is not before timeIn\n- Calculates workedMinutes automatically\n- Logs an activity record (VISIT_LOGGED) in the timeline\n\n**Response:**\n- id (long): Visit log ID\n- visitDate (string): Visit date\n- timeIn (string): Time in\n- timeOut (string): Time out\n- workedMinutes (long): Total minutes worked\n- description (string): Description\n- loggedById (long): ID of the user who logged it\n- createdAt (datetime): Creation timestamp\n- updatedAt (datetime): Last update timestamp"
       },
       "response": [
         {
@@ -49,7 +49,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"visitDate\": \"2026-03-02\",\n    \"timeIn\": \"09:00:00\",\n    \"timeOut\": \"11:30:00\",\n    \"description\": \"Initial site inspection and setup.\"\n}"
+              "raw": "{\n    \"visitDate\": \"2026-03-02\",\n    \"timeIn\": \"09:00:00\",\n    \"timeOut\": \"11:30:00\",\n    \"description\": \"Initial site inspection and setup.\",\n    \"loggedById\": 42\n}"
             },
             "url": {
               "raw": "http://localhost:8080/api/v1/job-workflow-steps/1/visits",
@@ -68,7 +68,7 @@
               "value": "application/json"
             }
           ],
-          "body": "{\n    \"id\": 1,\n    \"visitDate\": \"2026-03-02\",\n    \"timeIn\": \"09:00:00\",\n    \"timeOut\": \"11:30:00\",\n    \"description\": \"Initial site inspection and setup.\",\n    \"loggedById\": 42,\n    \"createdAt\": \"2026-03-02T12:00:00\",\n    \"updatedAt\": \"2026-03-02T12:00:00\"\n}"
+          "body": "{\n    \"id\": 1,\n    \"visitDate\": \"2026-03-02\",\n    \"timeIn\": \"09:00:00\",\n    \"timeOut\": \"11:30:00\",\n    \"workedMinutes\": 150,\n    \"description\": \"Initial site inspection and setup.\",\n    \"loggedById\": 42,\n    \"createdAt\": \"2026-03-02T12:00:00\",\n    \"updatedAt\": \"2026-03-02T12:00:00\"\n}"
         }
       ]
     },
@@ -94,14 +94,14 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n    \"visitDate\": \"2026-03-02\",\n    \"timeIn\": \"09:00:00\",\n    \"timeOut\": \"13:00:00\",\n    \"description\": \"Extended site inspection due to delays.\"\n}"
+          "raw": "{\n    \"visitDate\": \"2026-03-02\",\n    \"timeIn\": \"09:00:00\",\n    \"timeOut\": \"13:00:00\",\n    \"description\": \"Extended site inspection due to delays.\",\n    \"loggedById\": 45\n}"
         },
         "url": {
           "raw": "{{base_url}}/api/v1/job-workflow-steps/visits/1",
           "host": ["{{base_url}}"],
           "path": ["api", "v1", "job-workflow-steps", "visits", "1"]
         },
-        "description": "Update an existing visit log.\n\n**Authentication:** Required\n\n**Path Parameter:**\n- visitLogId (long): The ID of the visit log\n\n**Request Body (all optional):**\n- visitDate (string): Format YYYY-MM-DD\n- timeIn (string): Format HH:MM:SS\n- timeOut (string): Format HH:MM:SS\n- description (string): Visit details\n\n**Business Logic:**\n- User can only update their own visit logs (checked via loggedById)\n- Logs an activity record (VISIT_UPDATED) in the timeline\n\n**Response:** Updated visit log object"
+        "description": "Update an existing visit log.\n\n**Authentication:** Required\n\n**Path Parameter:**\n- visitLogId (long): The ID of the visit log\n\n**Request Body (all optional):**\n- visitDate (string): Format YYYY-MM-DD\n- timeIn (string): Format HH:MM:SS\n- timeOut (string): Format HH:MM:SS\n- description (string): Visit details\n- loggedById (long): Allows company admin to reassign who logged the visit\n\n**Business Logic:**\n- Validates that the visit log belongs to a step owned by the user's company\n- Validates that timeOut is not before timeIn\n- Logs an activity record (VISIT_UPDATED) in the timeline\n\n**Response:** Updated visit log object"
       },
       "response": [
         {
@@ -120,7 +120,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"visitDate\": \"2026-03-02\",\n    \"timeIn\": \"09:00:00\",\n    \"timeOut\": \"13:00:00\",\n    \"description\": \"Extended site inspection due to delays.\"\n}"
+              "raw": "{\n    \"visitDate\": \"2026-03-02\",\n    \"timeIn\": \"09:00:00\",\n    \"timeOut\": \"13:00:00\",\n    \"description\": \"Extended site inspection due to delays.\",\n    \"loggedById\": 45\n}"
             },
             "url": {
               "raw": "http://localhost:8080/api/v1/job-workflow-steps/visits/1",
@@ -139,7 +139,7 @@
               "value": "application/json"
             }
           ],
-          "body": "{\n    \"id\": 1,\n    \"visitDate\": \"2026-03-02\",\n    \"timeIn\": \"09:00:00\",\n    \"timeOut\": \"13:00:00\",\n    \"description\": \"Extended site inspection due to delays.\",\n    \"loggedById\": 42,\n    \"createdAt\": \"2026-03-02T12:00:00\",\n    \"updatedAt\": \"2026-03-02T13:30:00\"\n}"
+          "body": "{\n    \"id\": 1,\n    \"visitDate\": \"2026-03-02\",\n    \"timeIn\": \"09:00:00\",\n    \"timeOut\": \"13:00:00\",\n    \"workedMinutes\": 240,\n    \"description\": \"Extended site inspection due to delays.\",\n    \"loggedById\": 45,\n    \"createdAt\": \"2026-03-02T12:00:00\",\n    \"updatedAt\": \"2026-03-02T13:30:00\"\n}"
         }
       ]
     },
@@ -163,7 +163,7 @@
           "host": ["{{base_url}}"],
           "path": ["api", "v1", "job-workflow-steps", "visits", "1"]
         },
-        "description": "Delete a visit log.\n\n**Authentication:** Required\n\n**Path Parameter:**\n- visitLogId (long): The ID of the visit log\n\n**Response:** 204 No Content\n\n**Business Logic:**\n- User can only delete their own visit logs (checked via loggedById)\n- Logs an activity record (VISIT_DELETED) in the timeline"
+        "description": "Delete a visit log.\n\n**Authentication:** Required\n\n**Path Parameter:**\n- visitLogId (long): The ID of the visit log\n\n**Response:** 204 No Content\n\n**Business Logic:**\n- Validates that the visit log belongs to a step owned by the user's company\n- Logs an activity record (VISIT_DELETED) in the timeline"
       },
       "response": [
         {
@@ -212,7 +212,7 @@
           "host": ["{{base_url}}"],
           "path": ["api", "v1", "job-workflow-steps", "1", "visits"]
         },
-        "description": "Retrieve all visit logs for a specific workflow step.\n\n**Authentication:** Required\n\n**Path Parameter:**\n- stepId (long): The ID of the workflow step\n\n**Response:** Array of visit log objects, ordered by visitDate (descending) and timeIn (descending).\n\n**Business Logic:**\n- Validates that the workflow step belongs to the user's company"
+        "description": "Retrieve a summary of all visit logs for a specific workflow step.\n\n**Authentication:** Required\n\n**Path Parameter:**\n- stepId (long): The ID of the workflow step\n\n**Response:** A summary object containing an array of visit logs ordered by visitDate (descending) and timeIn (descending), along with the total minutes worked across all logs.\n\n**Business Logic:**\n- Validates that the workflow step belongs to the user's company"
       },
       "response": [
         {
@@ -242,7 +242,7 @@
               "value": "application/json"
             }
           ],
-          "body": "[\n    {\n        \"id\": 2,\n        \"visitDate\": \"2026-03-03\",\n        \"timeIn\": \"10:00:00\",\n        \"timeOut\": \"12:00:00\",\n        \"description\": \"Follow-up inspection.\",\n        \"loggedById\": 42,\n        \"createdAt\": \"2026-03-03T12:05:00\",\n        \"updatedAt\": \"2026-03-03T12:05:00\"\n    },\n    {\n        \"id\": 1,\n        \"visitDate\": \"2026-03-02\",\n        \"timeIn\": \"09:00:00\",\n        \"timeOut\": \"13:00:00\",\n        \"description\": \"Extended site inspection due to delays.\",\n        \"loggedById\": 42,\n        \"createdAt\": \"2026-03-02T12:00:00\",\n        \"updatedAt\": \"2026-03-02T13:30:00\"\n    }\n]"
+          "body": "{\n    \"visitLogs\": [\n        {\n            \"id\": 2,\n            \"visitDate\": \"2026-03-03\",\n            \"timeIn\": \"10:00:00\",\n            \"timeOut\": \"12:00:00\",\n            \"workedMinutes\": 120,\n            \"description\": \"Follow-up inspection.\",\n            \"loggedById\": 45,\n            \"createdAt\": \"2026-03-03T12:05:00\",\n            \"updatedAt\": \"2026-03-03T12:05:00\"\n        },\n        {\n            \"id\": 1,\n            \"visitDate\": \"2026-03-02\",\n            \"timeIn\": \"09:00:00\",\n            \"timeOut\": \"13:00:00\",\n            \"workedMinutes\": 240,\n            \"description\": \"Extended site inspection due to delays.\",\n            \"loggedById\": 42,\n            \"createdAt\": \"2026-03-02T12:00:00\",\n            \"updatedAt\": \"2026-03-02T13:30:00\"\n        }\n    ],\n    \"totalWorkedMinutes\": 360\n}"
         }
       ]
     }

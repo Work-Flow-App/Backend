@@ -1,7 +1,9 @@
 package com.workflow.service.workflow;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -17,6 +19,8 @@ import com.workflow.common.exception.business.FileSizeLimitExceededException;
 import com.workflow.common.exception.business.ForbiddenActionException;
 import com.workflow.common.exception.business.JobWorkflowNotFoundException;
 import com.workflow.common.exception.business.WorkerNotFoundException;
+import com.workflow.common.exception.business.InvalidTimeLogException;
+import com.workflow.dto.workflow.StepVisitLogSummaryResponse;
 import com.workflow.dto.workflow.JobWorkflowResponse;
 import com.workflow.dto.workflow.JobWorkflowStepResponse;
 import com.workflow.dto.workflow.StepAttachmentResponse;
@@ -246,14 +250,24 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
 
         @Override
         @Transactional(readOnly = true)
-        public List<StepVisitLogResponse> getVisitLogs(Long stepId, Long workerUserId) {
+        public StepVisitLogSummaryResponse getVisitLogs(Long stepId, Long workerUserId) {
                 Worker worker = getWorker(workerUserId);
                 getAssignedStep(stepId, worker.getId());
 
-                return visitLogRepository.findByStepIdOrderByVisitDateDescTimeInDesc(stepId)
+                List<StepVisitLogResponse> logs = visitLogRepository.findByStepIdOrderByVisitDateDescTimeInDesc(stepId)
                                 .stream()
                                 .map(this::mapVisitLog)
                                 .toList();
+
+                // Calculate total minutes worked across all logs for this step
+                Long totalMinutes = logs.stream()
+                                .mapToLong(StepVisitLogResponse::getWorkedMinutes)
+                                .sum();
+
+                return StepVisitLogSummaryResponse.builder()
+                                .visitLogs(logs)
+                                .totalWorkedMinutes(totalMinutes)
+                                .build();
         }
 
         // ==========================================
@@ -429,8 +443,17 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
                                 .build();
         }
 
+        private void validateTimeLog(LocalTime timeIn, LocalTime timeOut) {
+                if (timeIn != null && timeOut != null && timeOut.isBefore(timeIn)) {
+                        throw new InvalidTimeLogException("End time cannot be before start time.");
+                }
+        }
+
         @Override
         public StepVisitLogResponse addVisitLog(Long stepId, StepVisitLogCreateRequest request, Long workerUserId) {
+                // Validate time before processing
+                validateTimeLog(request.getTimeIn(), request.getTimeOut());
+
                 Worker worker = getWorker(workerUserId);
                 JobWorkflowStep step = getAssignedStep(stepId, worker.getId());
 
@@ -485,11 +508,17 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
         }
 
         private StepVisitLogResponse mapVisitLog(JobWorkflowStepVisitLog log) {
+                // Calculate duration in minutes for the individual log
+                Long duration = (log.getTimeIn() != null && log.getTimeOut() != null)
+                                ? Duration.between(log.getTimeIn(), log.getTimeOut()).toMinutes()
+                                : 0L;
+
                 return StepVisitLogResponse.builder()
                                 .id(log.getId())
                                 .visitDate(log.getVisitDate())
                                 .timeIn(log.getTimeIn())
                                 .timeOut(log.getTimeOut())
+                                .workedMinutes(duration) // Added mapped duration
                                 .description(log.getDescription())
                                 .loggedById(log.getLoggedBy().getId())
                                 .createdAt(log.getCreatedAt())

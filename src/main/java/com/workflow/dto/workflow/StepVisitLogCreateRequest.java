@@ -10,4 +10,6 @@ public class StepVisitLogCreateRequest {
     private LocalTime timeIn;
     private LocalTime timeOut;
     private String description;
+    // Allow companies to specify/update who logged this visit
+    private Long loggedById;
 }

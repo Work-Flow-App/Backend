@@ -547,7 +547,7 @@
           "host": ["{{base_url}}"],
           "path": ["api", "v1", "worker", "job-workflow-steps", "2", "visits"]
         },
-        "description": "Get all visit logs for a specific step.\n\n**Authentication:** Required (WORKER role)\n\n**Path Parameter:**\n- stepId (long): ID of the step\n\n**Authorization:** Worker must be assigned to this step."
+        "description": "Get a summary of all visit logs for a specific step.\n\n**Authentication:** Required (WORKER role)\n\n**Path Parameter:**\n- stepId (long): ID of the step\n\n**Authorization:** Worker must be assigned to this step.\n\n**Response:** Returns a summary object containing the `visitLogs` array and the `totalWorkedMinutes` across all logs."
       },
       "response": [
         {
@@ -583,12 +583,12 @@
               "value": "application/json"
             }
           ],
-          "body": "[\n    {\n        \"id\": 34,\n        \"visitDate\": \"2025-10-24\",\n        \"timeIn\": \"09:00:00\",\n        \"timeOut\": \"17:00:00\",\n        \"description\": \"Routine inspection and setup.\",\n        \"loggedById\": 5,\n        \"createdAt\": \"2025-10-24T17:15:00\",\n        \"updatedAt\": \"2025-10-24T17:15:00\"\n    }\n]"
+          "body": "{\n    \"visitLogs\": [\n        {\n            \"id\": 34,\n            \"visitDate\": \"2025-10-24\",\n            \"timeIn\": \"09:00:00\",\n            \"timeOut\": \"17:00:00\",\n            \"workedMinutes\": 480,\n            \"description\": \"Routine inspection and setup.\",\n            \"loggedById\": 5,\n            \"createdAt\": \"2025-10-24T17:15:00\",\n            \"updatedAt\": \"2025-10-24T17:15:00\"\n        }\n    ],\n    \"totalWorkedMinutes\": 480\n}"
         }
       ]
     },
     {
-      "name": "Add Step Comment",
+      "name": "Add Step Visit Log",
       "request": {
         "auth": {
           "type": "bearer",
@@ -609,18 +609,18 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n    \"content\": \"Work in progress, waiting for materials.\",\n    \"type\": \"GENERAL\"\n}"
+          "raw": "{\n    \"visitDate\": \"2025-10-24\",\n    \"timeIn\": \"09:00:00\",\n    \"timeOut\": \"17:00:00\",\n    \"description\": \"Routine inspection and setup.\"\n}"
         },
         "url": {
-          "raw": "{{base_url}}/api/v1/worker/job-workflow-steps/2/comments",
+          "raw": "{{base_url}}/api/v1/worker/job-workflow-steps/2/visits",
           "host": ["{{base_url}}"],
-          "path": ["api", "v1", "worker", "job-workflow-steps", "2", "comments"]
+          "path": ["api", "v1", "worker", "job-workflow-steps", "2", "visits"]
         },
-        "description": "Add a comment to a step.\n\n**Authentication:** Required (WORKER role)\n\n**Request Body:**\n- content (string, required): The comment text\n- type (string, required): The discussion type (e.g., GENERAL, ISSUE)\n\n**Path Parameter:**\n- stepId (long): ID of the step"
+        "description": "Add a new visit log to a step.\n\n**Authentication:** Required (WORKER role)\n\n**Request Body:**\n- visitDate (string, required): Date of the visit (YYYY-MM-DD)\n- timeIn (string, required): Start time (HH:MM:SS)\n- timeOut (string, optional): End time (HH:MM:SS). Cannot be before timeIn.\n- description (string, optional): Details of the visit\n\n**Path Parameter:**\n- stepId (long): ID of the step\n\n**Response:** Returns the created visit log, including the automatically calculated `workedMinutes`."
       },
       "response": [
         {
-          "name": "Add Step Comment - Success",
+          "name": "Add Step Visit Log - Success",
           "originalRequest": {
             "method": "POST",
             "header": [
@@ -635,10 +635,10 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"content\": \"Work in progress, waiting for materials.\",\n    \"type\": \"GENERAL\"\n}"
+              "raw": "{\n    \"visitDate\": \"2025-10-24\",\n    \"timeIn\": \"09:00:00\",\n    \"timeOut\": \"17:00:00\",\n    \"description\": \"Routine inspection and setup.\"\n}"
             },
             "url": {
-              "raw": "{{base_url}}/api/v1/worker/job-workflow-steps/2/comments",
+              "raw": "{{base_url}}/api/v1/worker/job-workflow-steps/2/visits",
               "protocol": "http",
               "host": ["{{base_url}}"],
               "path": [
@@ -647,7 +647,7 @@
                 "worker",
                 "job-workflow-steps",
                 "2",
-                "comments"
+                "visits"
               ]
             }
           },
@@ -660,7 +660,7 @@
               "value": "application/json"
             }
           ],
-          "body": "{\n    \"id\": 12,\n    \"content\": \"Work in progress, waiting for materials.\",\n    \"type\": \"GENERAL\",\n    \"authorId\": 5,\n    \"createdAt\": \"2025-10-24T10:00:00\",\n    \"updatedAt\": \"2025-10-24T10:00:00\"\n}"
+          "body": "{\n    \"id\": 34,\n    \"visitDate\": \"2025-10-24\",\n    \"timeIn\": \"09:00:00\",\n    \"timeOut\": \"17:00:00\",\n    \"workedMinutes\": 480,\n    \"description\": \"Routine inspection and setup.\",\n    \"loggedById\": 5,\n    \"createdAt\": \"2025-10-24T17:15:00\",\n    \"updatedAt\": \"2025-10-24T17:15:00\"\n}"
         }
       ]
     },

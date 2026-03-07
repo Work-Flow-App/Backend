@@ -2,6 +2,7 @@ package com.workflow.service.workflow;
 
 import com.workflow.dto.workflow.StepVisitLogCreateRequest;
 import com.workflow.dto.workflow.StepVisitLogResponse;
+import com.workflow.dto.workflow.StepVisitLogSummaryResponse;
 
 import java.util.List;
 
@@ -12,5 +13,5 @@ public interface IJobWorkflowStepVisitLogService {
 
     void deleteVisitLog(Long visitLogId, Long companyId);
 
-    List<StepVisitLogResponse> getVisitLogs(Long stepId, Long companyId);
+    StepVisitLogSummaryResponse getVisitLogs(Long stepId, Long companyId);
 }

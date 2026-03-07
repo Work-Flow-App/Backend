@@ -13,6 +13,7 @@ import com.workflow.dto.workflow.StepTimelineItemResponse;
 import com.workflow.dto.workflow.JobWorkflowStepResponse;
 import com.workflow.dto.workflow.StepVisitLogCreateRequest;
 import com.workflow.dto.workflow.StepVisitLogResponse;
+import com.workflow.dto.workflow.StepVisitLogSummaryResponse;
 
 public interface IWorkerJobWorkflowService {
     // Read Operations
@@ -30,7 +31,7 @@ public interface IWorkerJobWorkflowService {
 
     List<StepTimelineItemResponse> getStepTimeline(Long stepId, Long workerUserId);
 
-    List<StepVisitLogResponse> getVisitLogs(Long stepId, Long workerUserId);
+    StepVisitLogSummaryResponse getVisitLogs(Long stepId, Long workerUserId);
 
     // Status Actions
     JobWorkflowStepResponse startStep(Long stepId, Long workerUserId);

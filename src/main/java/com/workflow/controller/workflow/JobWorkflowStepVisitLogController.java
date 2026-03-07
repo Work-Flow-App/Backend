@@ -2,6 +2,7 @@ package com.workflow.controller.workflow;
 
 import com.workflow.dto.workflow.StepVisitLogCreateRequest;
 import com.workflow.dto.workflow.StepVisitLogResponse;
+import com.workflow.dto.workflow.StepVisitLogSummaryResponse;
 import com.workflow.entity.Company;
 import com.workflow.entity.User;
 import com.workflow.service.company.ICompanyService;
@@ -12,8 +13,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @Tag(name = "Workflow Step Visit Logs")
 @RestController
@@ -57,7 +56,7 @@ public class JobWorkflowStepVisitLogController {
     }
 
     @GetMapping("/{stepId}/visits")
-    public ResponseEntity<List<StepVisitLogResponse>> getVisitLogs(
+    public ResponseEntity<StepVisitLogSummaryResponse> getVisitLogs(
             @PathVariable Long stepId,
             Authentication auth) {
         return ResponseEntity.ok(

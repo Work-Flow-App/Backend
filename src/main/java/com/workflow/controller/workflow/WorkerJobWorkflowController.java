@@ -25,6 +25,7 @@ import com.workflow.dto.workflow.StepCommentResponse;
 import com.workflow.dto.workflow.StepTimelineItemResponse;
 import com.workflow.dto.workflow.StepVisitLogCreateRequest;
 import com.workflow.dto.workflow.StepVisitLogResponse;
+import com.workflow.dto.workflow.StepVisitLogSummaryResponse;
 import com.workflow.entity.User;
 import com.workflow.service.workflow.IWorkerJobWorkflowService;
 
@@ -66,12 +67,12 @@ public class WorkerJobWorkflowController {
 
     @Operation(summary = "Get all visit logs for a step")
     @GetMapping("/job-workflow-steps/{stepId}/visits")
-    public ResponseEntity<List<StepVisitLogResponse>> getStepVisits(
+    public ResponseEntity<StepVisitLogSummaryResponse> getStepVisits(
             @PathVariable Long stepId,
             Authentication auth) {
 
         // Calls the service method which verifies the worker is assigned to the step
-        // before returning the list of visit logs ordered by date/time.
+        // before returning the summary of visit logs ordered by date/time.
         return ResponseEntity.ok(workerWorkflowService.getVisitLogs(stepId, getUserId(auth)));
     }
 
@@ -181,5 +182,5 @@ public class WorkerJobWorkflowController {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(workerWorkflowService.addVisitLog(stepId, request, getUserId(auth)));
     }
-    
+
 }

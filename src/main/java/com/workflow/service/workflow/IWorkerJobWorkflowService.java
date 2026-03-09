@@ -14,10 +14,11 @@ import com.workflow.dto.workflow.JobWorkflowStepResponse;
 import com.workflow.dto.workflow.StepVisitLogCreateRequest;
 import com.workflow.dto.workflow.StepVisitLogResponse;
 import com.workflow.dto.workflow.StepVisitLogSummaryResponse;
+import com.workflow.dto.workflow.WorkerAssignedStepResponse;
 
 public interface IWorkerJobWorkflowService {
     // Read Operations
-    List<JobWorkflowStepResponse> getMyAssignedSteps(Long workerUserId);
+    List<WorkerAssignedStepResponse> getMyAssignedSteps(Long workerUserId);
 
     List<JobWorkflowResponse> getAssignedJobWorkflows(Long workerUserId);
 

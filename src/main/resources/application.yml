@@ -83,6 +83,9 @@ password-reset:
     expiration-minutes: 60
     max-active-per-user: 3
 
+google:
+  client-id: ${GOOGLE_CLIENT_ID}
+
 worker-invitation:
   token:
     expiration-days: 7

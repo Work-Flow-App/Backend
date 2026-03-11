@@ -124,11 +124,8 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
                                         List<AssetJobAssignment> activeJobAssets = assignmentRepository
                                                         .findByJobIdAndReturnedAtIsNull(job.getId());
 
-                                        List<AssetAssignmentResponse> workerAssets = activeJobAssets.stream()
-                                                        .filter(a -> a.getAssignedWorker() != null
-                                                                        && a.getAssignedWorker().getId()
-                                                                                        .equals(worker.getId()))
-                                                        // 3. Use an explicit lambda instead of a method reference
+                                        // Map them directly without filtering by the specific worker
+                                        List<AssetAssignmentResponse> jobAssets = activeJobAssets.stream()
                                                         .map(a -> mapAssetAssignment(a))
                                                         .collect(Collectors.toList());
 
@@ -136,7 +133,7 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
                                                         .step(mapStep(step))
                                                         .jobId(job.getId())
                                                         .customer(mapCustomer(customer))
-                                                        .assignedAssets(workerAssets)
+                                                        .assignedAssets(jobAssets)
                                                         .build();
                                 })
                                 .collect(Collectors.toList());

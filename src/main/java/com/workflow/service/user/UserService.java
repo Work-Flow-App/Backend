@@ -57,6 +57,49 @@ public class UserService implements IUserService{
         return savedUser;
     }
 
+    @Override
+    @Transactional
+    public User findOrCreateGoogleUser(String googleId, String email, String name) {
+        // 1. Exact match by google_id
+        return userRepository.findByGoogleId(googleId).orElseGet(() -> {
+            // 2. Email match — link google_id to existing user
+            return userRepository.findByEmail(email).map(existing -> {
+                existing.setGoogleId(googleId);
+                return userRepository.save(existing);
+            }).orElseGet(() -> {
+                // 3. Brand-new user
+                String username = generateUniqueUsername(email, name);
+                User user = User.builder()
+                        .uuid(UUID.randomUUID().toString())
+                        .username(username)
+                        .password(passwordEncoder.encode(UUID.randomUUID().toString()))
+                        .email(email)
+                        .googleId(googleId)
+                        .role(Role.COMPANY)
+                        .enabled(true)
+                        .build();
+                User saved = userRepository.save(user);
+                createDefaultCompany(saved);
+                return saved;
+            });
+        });
+    }
+
+    private String generateUniqueUsername(String email, String name) {
+        // Derive a base username from name or email prefix
+        String base = (name != null && !name.isBlank())
+                ? name.toLowerCase().replaceAll("\\s+", "_").replaceAll("[^a-z0-9_]", "")
+                : email.split("@")[0].toLowerCase().replaceAll("[^a-z0-9_]", "");
+        if (base.isBlank()) base = "user";
+
+        String candidate = base;
+        int suffix = 1;
+        while (userRepository.findByUsername(candidate).isPresent()) {
+            candidate = base + suffix++;
+        }
+        return candidate;
+    }
+
     private void createDefaultCompany(User user) {
         // Create company with minimal required information
         Company company = Company.builder()

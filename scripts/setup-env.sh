@@ -26,7 +26,10 @@ MAIL_FROM=$(echo "$MAIL_SECRET"      | jq -r '.from')
 MAIL_FROM_NAME=$(echo "$MAIL_SECRET" | jq -r '.fromName')
 
 # ── SSM Parameter Store ──
-get_param() { aws ssm get-parameter --region "$REGION" --name "$1" --query Parameter.Value --output text; }
+get_param() {
+  echo "[setup-env] Fetching SSM param: $1"
+  aws ssm get-parameter --region "$REGION" --name "$1" --query Parameter.Value --output text
+}
 CORS_ORIGINS=$(get_param "/workflow/$ENV_NAME/cors-allowed-origins")
 WORKER_INVITE_URL=$(get_param "/workflow/$ENV_NAME/worker-invitation-frontend-url")
 S3_BUCKET=$(get_param "/workflow/$ENV_NAME/s3-bucket-name")

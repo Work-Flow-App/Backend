@@ -196,7 +196,7 @@ export class BackendStack extends cdk.Stack {
       'mkdir -p /home/ubuntu/app',
       'chown ubuntu:ubuntu /home/ubuntu/app',
       '',
-      '# ── setup-env.sh is managed in the repo (scripts/setup-env.sh) ──',
+      '# setup-env.sh is managed in the repo (scripts/setup-env.sh)',
       '# The CI/CD deploy workflow pulls and executes it on every deployment.',
     );
 

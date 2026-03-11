@@ -40,6 +40,9 @@ public class User implements UserDetails {
     @Column(unique = true)
     private String email;
 
+    @Column(name = "google_id", unique = true)
+    private String googleId;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private Role role;

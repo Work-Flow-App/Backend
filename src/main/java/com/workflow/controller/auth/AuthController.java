@@ -8,6 +8,7 @@ import com.workflow.dto.worker.WorkerSignupRequest;
 import com.workflow.dto.worker.WorkerSignupResponse;
 import com.workflow.entity.User;
 import com.workflow.service.auth.AuthenticationService;
+import com.workflow.service.auth.GoogleAuthService;
 import com.workflow.service.auth.PasswordResetService;
 import com.workflow.service.user.IUserService;
 import com.workflow.service.worker.WorkerInvitationService;
@@ -29,8 +30,17 @@ public class AuthController {
 
     private final IUserService userService;
     private final AuthenticationService authService;
+    private final GoogleAuthService googleAuthService;
     private final PasswordResetService passwordResetService;
     private final WorkerInvitationService workerInvitationService;
+
+    @PostMapping("/google")
+    public ResponseEntity<AuthenticationResponse> googleLogin(
+            @Valid @RequestBody GoogleAuthRequest request,
+            HttpServletRequest httpRequest
+    ) {
+        return ResponseEntity.ok(googleAuthService.authenticate(request, httpRequest));
+    }
 
     @PostMapping("/login")
     public ResponseEntity<AuthenticationResponse> login(

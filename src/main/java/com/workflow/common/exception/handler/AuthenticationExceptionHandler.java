@@ -2,6 +2,7 @@ package com.workflow.common.exception.handler;
 
 import com.workflow.common.exception.ResponseBuilder;
 import com.workflow.common.exception.ErrorResponse;
+import com.workflow.common.exception.business.InvalidEmailVerificationTokenException;
 import com.workflow.common.exception.business.InvalidGoogleTokenException;
 import com.workflow.common.exception.business.InvalidPasswordResetTokenException;
 import com.workflow.common.exception.business.InvalidRefreshTokenException;
@@ -46,6 +47,13 @@ public class AuthenticationExceptionHandler {
             InvalidRefreshTokenException ex,
             HttpServletRequest request) {
         return ResponseBuilder.buildUnauthorizedResponse(ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(InvalidEmailVerificationTokenException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidEmailVerificationToken(
+            InvalidEmailVerificationTokenException ex,
+            HttpServletRequest request) {
+        return ResponseBuilder.buildBadRequestResponse(ex.getMessage(), request);
     }
 
     @ExceptionHandler(InvalidGoogleTokenException.class)

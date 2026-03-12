@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.workflow.common.constant.Role;
 import com.workflow.dto.auth.LoginRequest;
 import com.workflow.dto.auth.SignupRequest;
+import com.workflow.entity.User;
 import com.workflow.repository.UserRepository;
 import com.workflow.service.auth.JwtService;
 import org.junit.jupiter.api.BeforeEach;
@@ -67,7 +68,7 @@ class JwtRoleIntegrationTest {
     }
 
     @Test
-    void signupShouldReturnJwtTokenWithCompanyRole() throws Exception {
+    void signupShouldCreateUserThatCanLoginWithCompanyRole() throws Exception {
         // Given
         SignupRequest request = new SignupRequest(
                 "companyuser",
@@ -76,24 +77,31 @@ class JwtRoleIntegrationTest {
                 Role.COMPANY
         );
 
-        // When
-        MvcResult result = mockMvc.perform(post("/api/v1/auth/signup")
+        // Signup — returns 201 + message, user is disabled pending email verification
+        mockMvc.perform(post("/api/v1/auth/signup")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.message").exists());
+
+        // Simulate email verification by enabling the user directly
+        enableUser("companyuser");
+
+        // Login to get JWT token
+        MvcResult result = mockMvc.perform(post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new LoginRequest("companyuser", "password123"))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.accessToken").exists())
                 .andReturn();
 
-        // Then
-        String responseJson = result.getResponse().getContentAsString();
-        String accessToken = objectMapper.readTree(responseJson).get("accessToken").asText();
-
-        String extractedRole = jwtService.extractRole(accessToken);
-        assertThat(extractedRole).isEqualTo("ROLE_COMPANY");
+        // Then — verify token contains correct role
+        String accessToken = objectMapper.readTree(result.getResponse().getContentAsString()).get("accessToken").asText();
+        assertThat(jwtService.extractRole(accessToken)).isEqualTo("ROLE_COMPANY");
     }
 
     @Test
-    void signupShouldReturnJwtTokenWithWorkerRole() throws Exception {
+    void signupShouldCreateUserThatCanLoginWithWorkerRole() throws Exception {
         // Given
         SignupRequest request = new SignupRequest(
                 "workeruser",
@@ -102,25 +110,32 @@ class JwtRoleIntegrationTest {
                 Role.WORKER
         );
 
-        // When
-        MvcResult result = mockMvc.perform(post("/api/v1/auth/signup")
+        // Signup
+        mockMvc.perform(post("/api/v1/auth/signup")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.message").exists());
+
+        // Simulate email verification
+        enableUser("workeruser");
+
+        // Login to get JWT token
+        MvcResult result = mockMvc.perform(post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new LoginRequest("workeruser", "password123"))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.accessToken").exists())
                 .andReturn();
 
-        // Then
-        String responseJson = result.getResponse().getContentAsString();
-        String accessToken = objectMapper.readTree(responseJson).get("accessToken").asText();
-
-        String extractedRole = jwtService.extractRole(accessToken);
-        assertThat(extractedRole).isEqualTo("ROLE_WORKER");
+        // Then — verify token contains correct role
+        String accessToken = objectMapper.readTree(result.getResponse().getContentAsString()).get("accessToken").asText();
+        assertThat(jwtService.extractRole(accessToken)).isEqualTo("ROLE_WORKER");
     }
 
     @Test
     void loginShouldReturnJwtTokenWithCorrectRole() throws Exception {
-        // Given - Create user via signup
+        // Given - signup then enable user
         SignupRequest signupRequest = new SignupRequest(
                 "testuser",
                 "test@example.com",
@@ -131,32 +146,27 @@ class JwtRoleIntegrationTest {
         mockMvc.perform(post("/api/v1/auth/signup")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(signupRequest)))
-                .andExpect(status().isOk());
+                .andExpect(status().isCreated());
 
-        // When - Login with the same user
-        LoginRequest loginRequest = new LoginRequest("testuser", "password123");
+        enableUser("testuser");
 
+        // When - Login
         MvcResult result = mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(loginRequest)))
+                        .content(objectMapper.writeValueAsString(new LoginRequest("testuser", "password123"))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.accessToken").exists())
                 .andReturn();
 
-        // Then - Verify token contains correct role
-        String responseJson = result.getResponse().getContentAsString();
-        String accessToken = objectMapper.readTree(responseJson).get("accessToken").asText();
-
-        String extractedRole = jwtService.extractRole(accessToken);
-        assertThat(extractedRole).isEqualTo("ROLE_COMPANY");
-
-        String extractedUsername = jwtService.extractUserName(accessToken);
-        assertThat(extractedUsername).isEqualTo("testuser");
+        // Then
+        String accessToken = objectMapper.readTree(result.getResponse().getContentAsString()).get("accessToken").asText();
+        assertThat(jwtService.extractRole(accessToken)).isEqualTo("ROLE_COMPANY");
+        assertThat(jwtService.extractUserName(accessToken)).isEqualTo("testuser");
     }
 
     @Test
     void refreshTokenShouldReturnNewJwtWithSameRole() throws Exception {
-        // Given - Signup to get initial tokens
+        // Given - signup, enable, login to get tokens
         SignupRequest signupRequest = new SignupRequest(
                 "testuser",
                 "test@example.com",
@@ -164,33 +174,39 @@ class JwtRoleIntegrationTest {
                 Role.WORKER
         );
 
-        MvcResult signupResult = mockMvc.perform(post("/api/v1/auth/signup")
+        mockMvc.perform(post("/api/v1/auth/signup")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(signupRequest)))
+                .andExpect(status().isCreated());
+
+        enableUser("testuser");
+
+        MvcResult loginResult = mockMvc.perform(post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new LoginRequest("testuser", "password123"))))
                 .andExpect(status().isOk())
                 .andReturn();
 
-        String signupJson = signupResult.getResponse().getContentAsString();
-        String refreshToken = objectMapper.readTree(signupJson).get("refreshToken").asText();
+        String refreshToken = objectMapper.readTree(loginResult.getResponse().getContentAsString()).get("refreshToken").asText();
 
-        // When - Use refresh token to get new access token
-        String refreshRequestBody = String.format("{\"refreshToken\":\"%s\"}", refreshToken);
-
+        // When - Use refresh token
         MvcResult refreshResult = mockMvc.perform(post("/api/v1/auth/refresh")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(refreshRequestBody))
+                        .content(String.format("{\"refreshToken\":\"%s\"}", refreshToken)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.accessToken").exists())
                 .andReturn();
 
-        // Then - Verify new token has same role
-        String refreshJson = refreshResult.getResponse().getContentAsString();
-        String newAccessToken = objectMapper.readTree(refreshJson).get("accessToken").asText();
+        // Then
+        String newAccessToken = objectMapper.readTree(refreshResult.getResponse().getContentAsString()).get("accessToken").asText();
+        assertThat(jwtService.extractRole(newAccessToken)).isEqualTo("ROLE_WORKER");
+        assertThat(jwtService.extractUserName(newAccessToken)).isEqualTo("testuser");
+    }
 
-        String extractedRole = jwtService.extractRole(newAccessToken);
-        assertThat(extractedRole).isEqualTo("ROLE_WORKER");
-
-        String extractedUsername = jwtService.extractUserName(newAccessToken);
-        assertThat(extractedUsername).isEqualTo("testuser");
+    // Helper: simulate email verification by enabling user directly
+    private void enableUser(String username) {
+        User user = userRepository.findByUsername(username).orElseThrow();
+        user.setEnabled(true);
+        userRepository.save(user);
     }
 }

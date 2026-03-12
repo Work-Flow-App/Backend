@@ -47,9 +47,9 @@ public class User implements UserDetails {
     @Column(nullable = false, length = 20)
     private Role role;
 
-    @Column(nullable = false, columnDefinition = "BOOLEAN DEFAULT TRUE")
+    @Column(nullable = false, columnDefinition = "BOOLEAN DEFAULT FALSE")
     @Builder.Default
-    private boolean enabled = true;
+    private boolean enabled = false;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)

@@ -33,6 +33,7 @@ S3_BUCKET=$(get_param "/workflow/$ENV_NAME/s3-bucket-name")
 S3_REGION=$(get_param "/workflow/$ENV_NAME/s3-region")
 APP_DOMAIN=$(get_param "/workflow/$ENV_NAME/app-domain")
 GOOGLE_CLIENT_ID=$(get_param "/workflow/$ENV_NAME/google-client-id")
+EMAIL_VERIFICATION_URL=$(get_param "/workflow/$ENV_NAME/email-verification-frontend-url")
 
 # ── Write .env.dev ──
 {
@@ -69,6 +70,9 @@ GOOGLE_CLIENT_ID=$(get_param "/workflow/$ENV_NAME/google-client-id")
   echo ""
   echo "# Google OAuth"
   echo "GOOGLE_CLIENT_ID=$GOOGLE_CLIENT_ID"
+  echo ""
+  echo "# Email Verification"
+  echo "EMAIL_VERIFICATION_FRONTEND_URL=$EMAIL_VERIFICATION_URL"
   echo ""
   echo "# Spring"
   echo "SPRING_PROFILES_ACTIVE=dev"

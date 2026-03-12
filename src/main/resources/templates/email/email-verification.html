@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify Your Email - WorkFlow App</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333333;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+        }
+        .email-wrapper {
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #ffffff;
+            padding: 40px 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+        .content {
+            padding: 40px 30px;
+        }
+        .content h2 {
+            color: #333333;
+            font-size: 24px;
+            margin: 0 0 20px 0;
+            font-weight: 600;
+        }
+        .content p {
+            margin: 15px 0;
+            color: #555555;
+            font-size: 15px;
+        }
+        .button-container {
+            text-align: center;
+            margin: 35px 0;
+        }
+        .verify-button {
+            display: inline-block;
+            padding: 16px 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #ffffff;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 16px;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+        .warning {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 18px;
+            margin: 25px 0;
+            border-radius: 4px;
+        }
+        .warning-icon {
+            font-size: 20px;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+        .warning strong {
+            color: #856404;
+            font-size: 15px;
+        }
+        .warning-description {
+            color: #856404;
+            font-size: 14px;
+            margin-top: 8px;
+            display: block;
+        }
+        .security-notice {
+            background-color: #f0f9ff;
+            border-left: 4px solid #3b82f6;
+            padding: 18px;
+            margin: 25px 0;
+            border-radius: 4px;
+        }
+        .security-notice strong {
+            color: #1e40af;
+            display: block;
+            margin-bottom: 8px;
+            font-size: 15px;
+        }
+        .security-notice p {
+            margin: 0;
+            color: #1e3a8a;
+            font-size: 14px;
+        }
+        .link-fallback {
+            font-size: 13px;
+            color: #888888;
+            word-break: break-all;
+            margin-top: 10px;
+        }
+        .footer {
+            background-color: #f8f9fa;
+            padding: 25px 30px;
+            text-align: center;
+            border-top: 1px solid #e9ecef;
+        }
+        .footer p {
+            margin: 5px 0;
+            font-size: 13px;
+            color: #6c757d;
+        }
+        .footer strong {
+            color: #495057;
+        }
+    </style>
+</head>
+<body>
+    <div class="email-wrapper">
+        <div class="container">
+            <div class="header">
+                <h1>WorkFlow App</h1>
+            </div>
+
+            <div class="content">
+                <h2>Verify Your Email Address</h2>
+                <p>Hello <strong th:text="${username}">User</strong>,</p>
+
+                <p>Thanks for signing up! Please verify your email address to activate your account and get started.</p>
+
+                <div class="button-container">
+                    <a th:href="${verificationLink}" class="verify-button">Verify Email Address</a>
+                </div>
+
+                <p class="link-fallback">If the button doesn't work, copy and paste this link into your browser:<br/>
+                    <span th:text="${verificationLink}">https://example.com/verify-email?token=xxx</span>
+                </p>
+
+                <div class="warning">
+                    <span class="warning-icon">&#9200;</span>
+                    <strong>This link expires in <span th:text="${expirationHours}">24</span> hours</strong>
+                    <span class="warning-description">For security reasons, this verification link will only work once and will expire after <span th:text="${expirationHours}">24</span> hours.</span>
+                </div>
+
+                <div class="security-notice">
+                    <strong>Security Notice</strong>
+                    <p>If you didn't create an account with WorkFlow App, please ignore this email. No account will be activated without verification.</p>
+                </div>
+            </div>
+
+            <div class="footer">
+                <p><strong>WorkFlow App</strong></p>
+                <p>This is an automated message, please do not reply to this email.</p>
+                <p>&copy; 2025 WorkFlow App. All rights reserved.</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

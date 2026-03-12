@@ -63,7 +63,7 @@ class AuthControllerIntegrationTest {
     // ============= POST /api/v1/auth/signup Tests =============
 
     @Test
-    void shouldCreateNewUserAndReturn200WithJwtToken() throws Exception {
+    void shouldCreateNewUserAndReturn201WithMessage() throws Exception {
         // Given
         SignupRequest request = new SignupRequest(
                 "newuser",
@@ -76,16 +76,14 @@ class AuthControllerIntegrationTest {
         mockMvc.perform(post("/api/v1/auth/signup")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.accessToken").exists())
-                .andExpect(jsonPath("$.accessToken").isString())
-                .andExpect(jsonPath("$.accessToken").isNotEmpty())
-                .andExpect(jsonPath("$.refreshToken").exists())
-                .andExpect(jsonPath("$.tokenType").value("Bearer"));
+                .andExpect(jsonPath("$.message").exists())
+                .andExpect(jsonPath("$.message").isNotEmpty());
 
-        // Verify user was saved to database
+        // Verify user was saved to database but not yet enabled
         assert userRepository.findByUsername("newuser").isPresent();
+        assert !userRepository.findByUsername("newuser").get().isEnabled();
     }
 
     @Test
@@ -218,10 +216,10 @@ class AuthControllerIntegrationTest {
         mockMvc.perform(post("/api/v1/auth/signup")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(companyRequest)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.accessToken").exists());
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.message").exists());
 
-        // Verify both users exist
+        // Verify user exists with correct role
         assert userRepository.findByUsername("companyuser").get().getRole() == Role.COMPANY;
     }
 
@@ -445,7 +443,7 @@ class AuthControllerIntegrationTest {
         mockMvc.perform(post("/api/v1/auth/signup")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk());
+                .andExpect(status().isCreated());
 
         // Then - verify password is encoded
         User savedUser = userRepository.findByUsername("secureuser").orElseThrow();

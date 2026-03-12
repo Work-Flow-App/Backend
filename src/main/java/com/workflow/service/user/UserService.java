@@ -44,8 +44,7 @@ public class UserService implements IUserService{
                 .password(passwordEncoder.encode(request.password()))
                 .email(request.email())
                 .role(request.role())
-                .enabled(true)
-                .build();
+                .build(); // enabled=false by default — requires email verification
 
         User savedUser = userRepository.save(user);
 
@@ -121,6 +120,13 @@ public class UserService implements IUserService{
 //    @Override
 //    public void changePassword(ChangePasswordRequest request, String uuid) {
 //    }
+
+    @Override
+    @Transactional
+    public void enableUser(User user) {
+        user.setEnabled(true);
+        userRepository.save(user);
+    }
 
     @Override
     public void deactivateAccount(String uuid) {

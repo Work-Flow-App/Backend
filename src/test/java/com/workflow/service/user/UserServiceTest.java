@@ -132,7 +132,7 @@ class UserServiceTest {
         assertEquals("$2a$10$encodedNewPassword", result.getPassword());
         assertEquals("newuser@example.com", result.getEmail());
         assertEquals(Role.WORKER, result.getRole());
-        assertTrue(result.isEnabled());
+        assertFalse(result.isEnabled()); // disabled until email verification
         verify(userRepository).findByUsername("newuser");
         verify(passwordEncoder).encode("password123");
         verify(userRepository).save(any(User.class));
@@ -172,8 +172,8 @@ class UserServiceTest {
     }
 
     @Test
-    void shouldSetEnabledFlagToTrueByDefault() {
-        // Given
+    void shouldSetEnabledFlagToFalseByDefault() {
+        // Given — new users require email verification before being enabled
         when(userRepository.findByUsername("newuser")).thenReturn(Optional.empty());
         when(passwordEncoder.encode(anyString())).thenReturn("encoded");
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -182,7 +182,7 @@ class UserServiceTest {
         User result = userService.createUser(signupRequest);
 
         // Then
-        assertTrue(result.isEnabled());
+        assertFalse(result.isEnabled());
     }
 
     @Test

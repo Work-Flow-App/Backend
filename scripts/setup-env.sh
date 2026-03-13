@@ -28,12 +28,11 @@ MAIL_FROM_NAME=$(echo "$MAIL_SECRET" | jq -r '.fromName')
 # ── SSM Parameter Store ──
 get_param() { aws ssm get-parameter --region "$REGION" --name "$1" --query Parameter.Value --output text; }
 CORS_ORIGINS=$(get_param "/workflow/$ENV_NAME/cors-allowed-origins")
-WORKER_INVITE_URL=$(get_param "/workflow/$ENV_NAME/worker-invitation-frontend-url")
+FRONTEND_URL=$(get_param "/workflow/$ENV_NAME/frontend-url")
 S3_BUCKET=$(get_param "/workflow/$ENV_NAME/s3-bucket-name")
 S3_REGION=$(get_param "/workflow/$ENV_NAME/s3-region")
 APP_DOMAIN=$(get_param "/workflow/$ENV_NAME/app-domain")
 GOOGLE_CLIENT_ID=$(get_param "/workflow/$ENV_NAME/google-client-id")
-EMAIL_VERIFICATION_URL=$(get_param "/workflow/$ENV_NAME/email-verification-frontend-url")
 
 # ── Write .env.dev ──
 {
@@ -60,7 +59,9 @@ EMAIL_VERIFICATION_URL=$(get_param "/workflow/$ENV_NAME/email-verification-front
   echo ""
   echo "# CORS"
   echo "CORS_ALLOWED_ORIGINS=$CORS_ORIGINS"
-  echo "WORKER_INVITATION_FRONTEND_URL=$WORKER_INVITE_URL"
+  echo ""
+  echo "# Frontend"
+  echo "FRONTEND_URL=$FRONTEND_URL"
   echo ""
   echo "# S3 — EC2 instance role is used; leave access keys empty"
   echo "AWS_ACCESS_KEY_ID="
@@ -70,9 +71,6 @@ EMAIL_VERIFICATION_URL=$(get_param "/workflow/$ENV_NAME/email-verification-front
   echo ""
   echo "# Google OAuth"
   echo "GOOGLE_CLIENT_ID=$GOOGLE_CLIENT_ID"
-  echo ""
-  echo "# Email Verification"
-  echo "EMAIL_VERIFICATION_FRONTEND_URL=$EMAIL_VERIFICATION_URL"
   echo ""
   echo "# Spring"
   echo "SPRING_PROFILES_ACTIVE=dev"

@@ -30,7 +30,7 @@ public class EmailVerificationService {
     @Value("${email-verification.token.expiration-hours}")
     private int expirationHours;
 
-    @Value("${email-verification.frontend-url}")
+    @Value("${app.frontend-url}")
     private String frontendUrl;
 
     @Transactional

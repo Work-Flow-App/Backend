@@ -29,7 +29,7 @@ public class EmailService {
     @Value("${password-reset.token.expiration-minutes}")
     private int expiryMinutes;
 
-    @Value("${worker-invitation.frontend-url}")
+    @Value("${app.frontend-url}")
     private String frontendUrl;
 
     @Value("${email-verification.token.expiration-hours}")

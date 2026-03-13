@@ -26,6 +26,7 @@ import com.workflow.dto.workflow.StepTimelineItemResponse;
 import com.workflow.dto.workflow.StepVisitLogCreateRequest;
 import com.workflow.dto.workflow.StepVisitLogResponse;
 import com.workflow.dto.workflow.StepVisitLogSummaryResponse;
+import com.workflow.dto.workflow.WorkerAssignedStepResponse;
 import com.workflow.entity.User;
 import com.workflow.service.workflow.IWorkerJobWorkflowService;
 
@@ -166,7 +167,7 @@ public class WorkerJobWorkflowController {
 
     @Operation(summary = "Get all job workflow steps assigned to the current worker")
     @GetMapping("/job-workflow-steps")
-    public ResponseEntity<List<JobWorkflowStepResponse>> getMyAssignedSteps(
+    public ResponseEntity<List<WorkerAssignedStepResponse>> getMyAssignedSteps(
             Authentication auth) {
 
         return ResponseEntity.ok(

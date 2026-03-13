@@ -21,6 +21,10 @@ import com.workflow.common.exception.business.JobWorkflowNotFoundException;
 import com.workflow.common.exception.business.WorkerNotFoundException;
 import com.workflow.common.exception.business.InvalidTimeLogException;
 import com.workflow.dto.workflow.StepVisitLogSummaryResponse;
+import com.workflow.dto.workflow.WorkerAssignedStepResponse;
+import com.workflow.dto.asset.AssetAssignmentResponse;
+import com.workflow.dto.customer.CustomerAddressDto;
+import com.workflow.dto.customer.CustomerResponse;
 import com.workflow.dto.workflow.JobWorkflowResponse;
 import com.workflow.dto.workflow.JobWorkflowStepResponse;
 import com.workflow.dto.workflow.StepAttachmentResponse;
@@ -29,12 +33,17 @@ import com.workflow.dto.workflow.StepCommentResponse;
 import com.workflow.dto.workflow.StepTimelineItemResponse;
 import com.workflow.dto.workflow.StepVisitLogCreateRequest;
 import com.workflow.dto.workflow.StepVisitLogResponse;
+import com.workflow.entity.AssetJobAssignment;
+import com.workflow.entity.Customer;
+import com.workflow.entity.CustomerAddress;
+import com.workflow.entity.Job;
 import com.workflow.entity.JobWorkflow;
 import com.workflow.entity.JobWorkflowStep;
 import com.workflow.entity.JobWorkflowStepAttachment;
 import com.workflow.entity.JobWorkflowStepComment;
 import com.workflow.entity.JobWorkflowStepVisitLog;
 import com.workflow.entity.Worker;
+import com.workflow.repository.AssetJobAssignmentRepository;
 import com.workflow.repository.JobWorkflowStepAttachmentRepository;
 import com.workflow.repository.JobWorkflowStepCommentRepository;
 import com.workflow.repository.JobWorkflowStepRepository;
@@ -56,6 +65,7 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
         private final JobWorkflowStepCommentRepository commentRepository;
         private final JobWorkflowStepAttachmentRepository attachmentRepository;
         private final JobWorkflowStepVisitLogRepository visitLogRepository;
+        private final AssetJobAssignmentRepository assignmentRepository;
         private final IStepActivityService stepActivityService;
         private final S3StorageService s3Service;
 
@@ -98,13 +108,35 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
 
         @Override
         @Transactional(readOnly = true)
-        public List<JobWorkflowStepResponse> getMyAssignedSteps(Long workerUserId) {
+        public List<WorkerAssignedStepResponse> getMyAssignedSteps(Long workerUserId) {
                 Worker worker = getWorker(workerUserId);
 
-                return stepRepository.findByAssignedWorkers_Id(worker.getId())
-                                .stream()
-                                .map(this::mapStep)
-                                .toList();
+                List<JobWorkflowStep> assignedSteps = stepRepository.findByAssignedWorkers_Id(worker.getId());
+
+                return assignedSteps.stream()
+                                // 1. Explicitly tell the compiler what type we are mapping to
+                                .<WorkerAssignedStepResponse>map(step -> {
+                                        Job job = step.getJobWorkflow().getJob();
+                                        Customer customer = job.getCustomer();
+
+                                        // 2. Break out the inner stream to help the compiler evaluate types
+                                        // independently
+                                        List<AssetJobAssignment> activeJobAssets = assignmentRepository
+                                                        .findByJobIdAndReturnedAtIsNull(job.getId());
+
+                                        // Map them directly without filtering by the specific worker
+                                        List<AssetAssignmentResponse> jobAssets = activeJobAssets.stream()
+                                                        .map(a -> mapAssetAssignment(a))
+                                                        .collect(Collectors.toList());
+
+                                        return WorkerAssignedStepResponse.builder()
+                                                        .step(mapStep(step))
+                                                        .jobId(job.getId())
+                                                        .customer(mapCustomer(customer))
+                                                        .assignedAssets(jobAssets)
+                                                        .build();
+                                })
+                                .collect(Collectors.toList());
         }
 
         @Override
@@ -524,5 +556,59 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
                                 .createdAt(log.getCreatedAt())
                                 .updatedAt(log.getUpdatedAt())
                                 .build();
+        }
+
+        private CustomerResponse mapCustomer(Customer customer) {
+                if (customer == null)
+                        return null;
+                return CustomerResponse.builder()
+                                .id(customer.getId())
+                                .name(customer.getName())
+                                .email(customer.getEmail())
+                                .telephone(customer.getTelephone())
+                                .mobile(customer.getMobile())
+                                .address(mapAddress(customer.getAddress()))
+                                .archived(customer.isArchived())
+                                .createdAt(customer.getCreatedAt())
+                                .updatedAt(customer.getUpdatedAt())
+                                .build();
+        }
+
+        private CustomerAddressDto mapAddress(CustomerAddress address) {
+                if (address == null)
+                        return null;
+                return CustomerAddressDto.builder()
+                                .houseNumber(address.getHouseNumber())
+                                .street(address.getStreet())
+                                .city(address.getCity())
+                                .county(address.getCounty())
+                                .postalCode(address.getPostalCode())
+                                .country(address.getCountry())
+                                .build();
+        }
+
+        private AssetAssignmentResponse mapAssetAssignment(AssetJobAssignment a) {
+                long durationDays = a.getReturnedAt() == null
+                                ? nullSafeDaysBetween(a.getAssignedAt(), LocalDateTime.now())
+                                : nullSafeDaysBetween(a.getAssignedAt(), a.getReturnedAt());
+                String status = a.getReturnedAt() == null ? "ACTIVE" : "COMPLETED";
+
+                return AssetAssignmentResponse.builder()
+                                .assignmentId(a.getId())
+                                .assetId(a.getAsset().getId())
+                                .jobId(a.getJob() != null ? a.getJob().getId() : null)
+                                .assignedWorkerId(a.getAssignedWorker() != null ? a.getAssignedWorker().getId() : null)
+                                .notes(a.getNotes())
+                                .assignedAt(a.getAssignedAt())
+                                .returnedAt(a.getReturnedAt())
+                                .durationDays(durationDays)
+                                .status(status)
+                                .build();
+        }
+
+        private long nullSafeDaysBetween(LocalDateTime from, LocalDateTime to) {
+                if (from == null || to == null)
+                        return 0L;
+                return Duration.between(from, to).toDays();
         }
 }

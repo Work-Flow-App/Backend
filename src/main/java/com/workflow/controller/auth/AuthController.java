@@ -8,6 +8,8 @@ import com.workflow.dto.worker.WorkerSignupRequest;
 import com.workflow.dto.worker.WorkerSignupResponse;
 import com.workflow.entity.User;
 import com.workflow.service.auth.AuthenticationService;
+import com.workflow.service.auth.EmailVerificationService;
+import com.workflow.service.auth.GoogleAuthService;
 import com.workflow.service.auth.PasswordResetService;
 import com.workflow.service.user.IUserService;
 import com.workflow.service.worker.WorkerInvitationService;
@@ -29,8 +31,18 @@ public class AuthController {
 
     private final IUserService userService;
     private final AuthenticationService authService;
+    private final GoogleAuthService googleAuthService;
+    private final EmailVerificationService emailVerificationService;
     private final PasswordResetService passwordResetService;
     private final WorkerInvitationService workerInvitationService;
+
+    @PostMapping("/google")
+    public ResponseEntity<AuthenticationResponse> googleLogin(
+            @Valid @RequestBody GoogleAuthRequest request,
+            HttpServletRequest httpRequest
+    ) {
+        return ResponseEntity.ok(googleAuthService.authenticate(request, httpRequest));
+    }
 
     @PostMapping("/login")
     public ResponseEntity<AuthenticationResponse> login(
@@ -41,12 +53,32 @@ public class AuthController {
     }
 
     @PostMapping("/signup")
-    public ResponseEntity<AuthenticationResponse> signup(
-            @Valid @RequestBody SignupRequest request,
-            HttpServletRequest httpRequest
+    public ResponseEntity<SignupResponse> signup(
+            @Valid @RequestBody SignupRequest request
     ) {
         User user = this.userService.createUser(request);
-        return ResponseEntity.ok(this.authService.generateJwtToken(user, httpRequest));
+        emailVerificationService.sendVerificationEmail(user);
+        return ResponseEntity.status(HttpStatus.CREATED).body(
+                new SignupResponse("Registration successful. Please check your email to verify your account.")
+        );
+    }
+
+    @PostMapping("/verify-email")
+    public ResponseEntity<AuthenticationResponse> verifyEmail(
+            @Valid @RequestBody VerifyEmailRequest request,
+            HttpServletRequest httpRequest
+    ) {
+        return ResponseEntity.ok(emailVerificationService.verifyEmail(request.token(), httpRequest));
+    }
+
+    @PostMapping("/resend-verification")
+    public ResponseEntity<SignupResponse> resendVerification(
+            @Valid @RequestBody ResendVerificationRequest request
+    ) {
+        emailVerificationService.resendVerification(request.email());
+        return ResponseEntity.ok(
+                new SignupResponse("If your email is registered and unverified, a new verification email has been sent.")
+        );
     }
 
     @PostMapping("/refresh")
@@ -100,4 +132,3 @@ public class AuthController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 }
-

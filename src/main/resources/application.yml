@@ -83,6 +83,14 @@ password-reset:
     expiration-minutes: 60
     max-active-per-user: 3
 
+google:
+  client-id: ${GOOGLE_CLIENT_ID}
+
+email-verification:
+  token:
+    expiration-hours: 24
+  frontend-url: ${EMAIL_VERIFICATION_FRONTEND_URL:http://localhost:5173}
+
 worker-invitation:
   token:
     expiration-days: 7

@@ -39,3 +39,11 @@ server:
 
 # Test JWT Secret (Base64 encoded 256-bit key)
 JWT_SECRET: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+
+google:
+  client-id: test-google-client-id.apps.googleusercontent.com
+
+email-verification:
+  token:
+    expiration-hours: 24
+  frontend-url: http://localhost:5173

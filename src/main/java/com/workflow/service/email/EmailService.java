@@ -32,6 +32,9 @@ public class EmailService {
     @Value("${worker-invitation.frontend-url}")
     private String frontendUrl;
 
+    @Value("${email-verification.token.expiration-hours}")
+    private int verificationExpiryHours;
+
     /**
      * Send password reset email with verification code asynchronously
      */
@@ -65,6 +68,37 @@ public class EmailService {
         } catch (MessagingException e) {
             log.error("Failed to send password reset email to: {}", toEmail, e);
             // Don't throw exception - email failure shouldn't break the flow
+        }
+    }
+
+    /**
+     * Send email verification link asynchronously
+     */
+    @Async
+    public void sendEmailVerificationEmail(String toEmail, String username, String verificationLink, int expirationHours) {
+        try {
+            log.info("Sending email verification to: {}", toEmail);
+
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setFrom(String.format("%s <%s>", fromName, fromEmail));
+            helper.setTo(toEmail);
+            helper.setSubject("Verify Your Email - WorkFlow App");
+
+            Context context = new Context();
+            context.setVariable("username", username);
+            context.setVariable("verificationLink", verificationLink);
+            context.setVariable("expirationHours", expirationHours);
+
+            String htmlContent = templateEngine.process("email/email-verification", context);
+            helper.setText(htmlContent, true);
+
+            mailSender.send(message);
+            log.info("Email verification sent successfully to: {}", toEmail);
+
+        } catch (MessagingException e) {
+            log.error("Failed to send email verification to: {}", toEmail, e);
         }
     }
 

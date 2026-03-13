@@ -125,13 +125,17 @@ jobs:
             mkdir -p "$APP_DIR"
             cd "$APP_DIR"
 
+            # Pull latest setup-env.sh, docker-compose and nginx config from repo
+            curl -fsSL -o "$APP_DIR/setup-env.sh" \
+              https://raw.githubusercontent.com/${{ github.repository }}/${{ github.ref_name }}/scripts/setup-env.sh
+            chmod +x "$APP_DIR/setup-env.sh"
+
             # Pull all secrets/params from Secrets Manager + SSM → writes .env.dev
             "$APP_DIR/setup-env.sh"
 
             # Inject ECR image URI (known to CI/CD, not stored in AWS)
             sed -i "s|ECR_IMAGE_URI=.*|ECR_IMAGE_URI=$ECR_IMAGE|" .env.dev
 
-            # Pull latest docker-compose and nginx config from repo
             curl -fsSL -o docker-compose.dev.yml \
               https://raw.githubusercontent.com/${{ github.repository }}/${{ github.ref_name }}/docker-compose.dev.yml
             mkdir -p docker/nginx

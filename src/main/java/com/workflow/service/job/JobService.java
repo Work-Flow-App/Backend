@@ -20,11 +20,14 @@ import com.workflow.common.exception.business.JobNotFoundException;
 import com.workflow.common.exception.business.TemplateNotFoundException;
 import com.workflow.common.exception.business.WorkerNotFoundException;
 import com.workflow.common.exception.business.WorkflowNotFoundException;
+import com.workflow.dto.job.AddressRequest;
+import com.workflow.dto.job.AddressResponse;
 import com.workflow.dto.job.FieldValueResponse;
 import com.workflow.dto.job.JobCreateRequest;
 import com.workflow.dto.job.JobResponse;
 import com.workflow.dto.job.JobUpdateRequest;
 import com.workflow.dto.workflow.JobWorkflowResponse;
+import com.workflow.entity.Address;
 import com.workflow.entity.Asset;
 import com.workflow.entity.AssetJobAssignment;
 import com.workflow.entity.Client;
@@ -37,6 +40,7 @@ import com.workflow.entity.JobTemplate;
 import com.workflow.entity.JobTemplateField;
 import com.workflow.entity.Worker;
 import com.workflow.entity.Workflow;
+import com.workflow.repository.AddressRepository;
 import com.workflow.repository.AssetJobAssignmentRepository;
 import com.workflow.repository.AssetRepository;
 import com.workflow.repository.ClientRepository;
@@ -72,6 +76,7 @@ public class JobService implements IJobService {
         private final WorkflowRepository workflowRepository;
         private final EstimateRepository estimateRepository;
         private final IJobWorkflowService jobWorkflowService;
+        private final AddressRepository addressRepository;
 
         @Override
         public JobResponse createJob(JobCreateRequest request, Long companyId) {
@@ -101,6 +106,25 @@ public class JobService implements IJobService {
                                                 .filter(w -> w.getCompany().getId().equals(companyId))
                                                 .orElseThrow(() -> new WorkflowNotFoundException("Workflow not found"));
 
+                Address address = null;
+
+                if (request.getAddress() != null) {
+                        AddressRequest ar = request.getAddress();
+
+                        address = Address.builder()
+                                        .street(ar.getStreet())
+                                        .city(ar.getCity())
+                                        .state(ar.getState())
+                                        .postalCode(ar.getPostalCode())
+                                        .country(ar.getCountry())
+                                        .additionalInfo(ar.getAdditionalInfo())
+                                        .latitude(ar.getLatitude())
+                                        .longitude(ar.getLongitude())
+                                        .build();
+
+                        addressRepository.save(address);
+                }
+
                 Job job = Job.builder()
                                 .company(company)
                                 .template(template)
@@ -108,6 +132,7 @@ public class JobService implements IJobService {
                                 .customer(customer)
                                 .assignedWorker(worker)
                                 .workflow(workflow)
+                                .address(address)
                                 .status(request.getStatus() != null ? request.getStatus() : JobStatus.NEW)
                                 .archived(false)
                                 .build();
@@ -175,6 +200,29 @@ public class JobService implements IJobService {
                 }
 
                 job.setArchived(request.isArchived());
+
+                if (request.getAddress() != null) {
+                        AddressRequest ar = request.getAddress();
+
+                        Address address = job.getAddress();
+
+                        if (address == null) {
+                                address = new Address();
+                        }
+
+                        address.setStreet(ar.getStreet());
+                        address.setCity(ar.getCity());
+                        address.setState(ar.getState());
+                        address.setPostalCode(ar.getPostalCode());
+                        address.setCountry(ar.getCountry());
+                        address.setAdditionalInfo(ar.getAdditionalInfo());
+                        address.setLatitude(ar.getLatitude());
+                        address.setLongitude(ar.getLongitude());
+
+                        addressRepository.save(address);
+                        job.setAddress(address);
+                }
+
                 jobRepository.save(job);
 
                 if (request.getWorkflowId() != null && job.getWorkflow() != null) {
@@ -426,6 +474,23 @@ public class JobService implements IJobService {
                                 .map(assignment -> assignment.getAsset().getId())
                                 .collect(Collectors.toList());
 
+                AddressResponse addressResponse = null;
+
+                if (job.getAddress() != null) {
+                        Address a = job.getAddress();
+                        addressResponse = AddressResponse.builder()
+                                        .id(a.getId())
+                                        .street(a.getStreet())
+                                        .city(a.getCity())
+                                        .state(a.getState())
+                                        .postalCode(a.getPostalCode())
+                                        .country(a.getCountry())
+                                        .additionalInfo(a.getAdditionalInfo())
+                                        .latitude(a.getLatitude())
+                                        .longitude(a.getLongitude())
+                                        .build();
+                }
+
                 return JobResponse.builder()
                                 .id(job.getId())
                                 .companyId(job.getCompany().getId())
@@ -441,6 +506,7 @@ public class JobService implements IJobService {
                                 .updatedAt(job.getUpdatedAt())
                                 .fieldValues(values)
                                 .assetIds(assetIds)
+                                .address(addressResponse)
                                 .build();
         }
 

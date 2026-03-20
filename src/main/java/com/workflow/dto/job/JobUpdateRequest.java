@@ -19,4 +19,5 @@ public class JobUpdateRequest {
     private boolean archived;
     private Map<Long, Object> fieldValues;
     private List<Long> assetIds;
+    private AddressRequest address;
 }

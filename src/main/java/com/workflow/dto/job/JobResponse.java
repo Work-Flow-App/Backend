@@ -25,4 +25,5 @@ public class JobResponse {
     private LocalDateTime updatedAt;
     private Map<Long, FieldValueResponse> fieldValues;
     private List<Long> assetIds;
+    private AddressResponse address;
 }

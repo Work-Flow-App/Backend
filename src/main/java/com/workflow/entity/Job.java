@@ -10,13 +10,17 @@ import com.workflow.common.constant.job.JobStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
-
 @Entity
 @Table(name = "jobs")
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Job {
 
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -55,5 +59,8 @@ public class Job {
 
     @UpdateTimestamp
     private LocalDateTime updatedAt;
-}
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "address_id")
+    private Address address;
+}

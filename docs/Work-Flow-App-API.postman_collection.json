@@ -6401,6 +6401,140 @@
           ]
         },
         {
+          "name": "Mark Step Ongoing",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/worker/job-workflow-steps/2/ongoing",
+              "host": ["{{base_url}}"],
+              "path": [
+                "api",
+                "v1",
+                "worker",
+                "job-workflow-steps",
+                "2",
+                "ongoing"
+              ]
+            },
+            "description": "Change step status from INITIATED to ONGOING.\n\n**Authentication:** Required (WORKER role)\n\n**Path Parameter:**\n- stepId (long): ID of the step\n\n**Authorization:** Worker must be assigned to the step."
+          },
+          "response": [
+            {
+              "name": "Mark Step Ongoing - Success",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{jwt_token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/worker/job-workflow-steps/2/ongoing",
+                  "protocol": "http",
+                  "host": ["{{base_url}}"],
+                  "path": [
+                    "api",
+                    "v1",
+                    "worker",
+                    "job-workflow-steps",
+                    "2",
+                    "ongoing"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n    \"id\": 2,\n    \"name\": \"Installation\",\n    \"status\": \"ONGOING\",\n    \"startedAt\": \"2025-10-24T09:00:00\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Complete Ongoing Step",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/worker/job-workflow-steps/2/complete-ongoing",
+              "host": ["{{base_url}}"],
+              "path": [
+                "api",
+                "v1",
+                "worker",
+                "job-workflow-steps",
+                "2",
+                "complete-ongoing"
+              ]
+            },
+            "description": "Change step status from ONGOING to COMPLETED.\n\n**Authentication:** Required (WORKER role)\n\n**Path Parameter:**\n- stepId (long): ID of the step\n\n**Authorization:** Worker must be assigned to the step."
+          },
+          "response": [
+            {
+              "name": "Complete Ongoing Step - Success",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{jwt_token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/v1/worker/job-workflow-steps/2/complete-ongoing",
+                  "protocol": "http",
+                  "host": ["{{base_url}}"],
+                  "path": [
+                    "api",
+                    "v1",
+                    "worker",
+                    "job-workflow-steps",
+                    "2",
+                    "complete-ongoing"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n    \"id\": 2,\n    \"name\": \"Installation\",\n    \"status\": \"COMPLETED\",\n    \"completedAt\": \"2025-10-24T14:30:00\"\n}"
+            }
+          ]
+        },
+        {
           "name": "Get Step Comments",
           "request": {
             "auth": {

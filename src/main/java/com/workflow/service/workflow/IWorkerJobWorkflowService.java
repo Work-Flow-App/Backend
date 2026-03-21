@@ -39,6 +39,10 @@ public interface IWorkerJobWorkflowService {
 
     JobWorkflowStepResponse completeStep(Long stepId, Long workerUserId);
 
+    JobWorkflowStepResponse markStepOngoing(Long stepId, Long workerUserId);
+
+    JobWorkflowStepResponse completeOngoingStep(Long stepId, Long workerUserId);
+
     // Activities (Comments/Attachments/Visits)
     StepCommentResponse addComment(Long stepId, StepCommentCreateRequest request, Long workerUserId);
 

@@ -336,6 +336,59 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
                 return mapStep(step);
         }
 
+        @Override
+        public JobWorkflowStepResponse markStepOngoing(Long stepId, Long workerUserId) {
+                Worker worker = getWorker(workerUserId);
+                JobWorkflowStep step = getAssignedStep(stepId, worker.getId());
+
+                // 1. Validate transition: Must be INITIATED to become ONGOING
+                checkStepStatusTransition(step, WorkflowStepStatus.INITIATED);
+
+                // 2. Update Step Status
+                step.setStatus(WorkflowStepStatus.ONGOING);
+
+                // Assuming you want to track when it actually became active
+                if (step.getStartedAt() == null) {
+                        step.setStartedAt(LocalDateTime.now());
+                }
+
+                // Optional: Update parent workflow status if it's also INITIATED
+                if (step.getJobWorkflow().getStatus() == WorkflowStepStatus.INITIATED) {
+                        step.getJobWorkflow().setStatus(WorkflowStepStatus.ONGOING);
+                }
+
+                stepRepository.save(step);
+
+                // 3. Log Activity
+                stepActivityService.log(step, worker.getUser(), JobWorkflowStepActivityType.STATUS_CHANGED,
+                                "Worker " + worker.getName() + " marked the step as ONGOING.");
+
+                return mapStep(step);
+        }
+
+        @Override
+        public JobWorkflowStepResponse completeOngoingStep(Long stepId, Long workerUserId) {
+                Worker worker = getWorker(workerUserId);
+                JobWorkflowStep step = getAssignedStep(stepId, worker.getId());
+
+                // 1. Validate transition: Must be ONGOING to become COMPLETED
+                checkStepStatusTransition(step, WorkflowStepStatus.ONGOING);
+
+                // 2. Update Step Status
+                step.setStatus(WorkflowStepStatus.COMPLETED);
+                step.setCompletedAt(LocalDateTime.now());
+                stepRepository.save(step);
+
+                // 3. Log Activity
+                stepActivityService.log(step, worker.getUser(), JobWorkflowStepActivityType.STATUS_CHANGED,
+                                "Worker " + worker.getName() + " marked the ongoing step as COMPLETED.");
+
+                // 4. Auto-complete Parent Workflow Check
+                checkAndUpdateParentWorkflowStatus(step.getJobWorkflow());
+
+                return mapStep(step);
+        }
+
         // ==========================================
         // STATUS ACTIONS
         // ==========================================

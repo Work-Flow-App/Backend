@@ -12,6 +12,12 @@ public class AssetAssignmentResponse {
     private Long assetId;
     private Long jobId;
     private Long assignedWorkerId;
+
+    private String assetName;
+    private String description;
+    private String serialNumber;
+    private String assetTag;
+
     private String notes;
     private LocalDateTime assignedAt;
     private LocalDateTime returnedAt;

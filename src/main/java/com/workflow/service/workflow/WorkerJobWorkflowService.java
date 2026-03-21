@@ -25,6 +25,7 @@ import com.workflow.dto.workflow.WorkerAssignedStepResponse;
 import com.workflow.dto.asset.AssetAssignmentResponse;
 import com.workflow.dto.customer.CustomerAddressDto;
 import com.workflow.dto.customer.CustomerResponse;
+import com.workflow.dto.job.AddressResponse;
 import com.workflow.dto.workflow.JobWorkflowResponse;
 import com.workflow.dto.workflow.JobWorkflowStepResponse;
 import com.workflow.dto.workflow.StepAttachmentResponse;
@@ -33,6 +34,7 @@ import com.workflow.dto.workflow.StepCommentResponse;
 import com.workflow.dto.workflow.StepTimelineItemResponse;
 import com.workflow.dto.workflow.StepVisitLogCreateRequest;
 import com.workflow.dto.workflow.StepVisitLogResponse;
+import com.workflow.entity.Address;
 import com.workflow.entity.AssetJobAssignment;
 import com.workflow.entity.Customer;
 import com.workflow.entity.CustomerAddress;
@@ -66,6 +68,7 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
         private final JobWorkflowStepAttachmentRepository attachmentRepository;
         private final JobWorkflowStepVisitLogRepository visitLogRepository;
         private final AssetJobAssignmentRepository assignmentRepository;
+
         private final IStepActivityService stepActivityService;
         private final S3StorageService s3Service;
 
@@ -117,6 +120,7 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
                                 // 1. Explicitly tell the compiler what type we are mapping to
                                 .<WorkerAssignedStepResponse>map(step -> {
                                         Job job = step.getJobWorkflow().getJob();
+                                        Address jobAddress = job.getAddress();
                                         Customer customer = job.getCustomer();
 
                                         // 2. Break out the inner stream to help the compiler evaluate types
@@ -132,6 +136,7 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
                                         return WorkerAssignedStepResponse.builder()
                                                         .step(mapStep(step))
                                                         .jobId(job.getId())
+                                                        .jobAddress(mapJobAddress(jobAddress))
                                                         .customer(mapCustomer(customer))
                                                         .assignedAssets(jobAssets)
                                                         .build();
@@ -603,6 +608,23 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
                                 .returnedAt(a.getReturnedAt())
                                 .durationDays(durationDays)
                                 .status(status)
+                                .build();
+        }
+
+        private AddressResponse mapJobAddress(Address address) {
+                if (address == null)
+                        return null;
+
+                return AddressResponse.builder()
+                                .id(address.getId())
+                                .street(address.getStreet())
+                                .city(address.getCity())
+                                .state(address.getState())
+                                .postalCode(address.getPostalCode())
+                                .country(address.getCountry())
+                                .additionalInfo(address.getAdditionalInfo())
+                                .latitude(address.getLatitude())
+                                .longitude(address.getLongitude())
                                 .build();
         }
 

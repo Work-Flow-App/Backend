@@ -97,6 +97,22 @@ public class WorkerJobWorkflowController {
         return ResponseEntity.ok(workerWorkflowService.completeStep(stepId, getUserId(auth)));
     }
 
+    @Operation(summary = "Mark an initiated step as ongoing (INITIATED -> ONGOING)")
+    @PostMapping("/job-workflow-steps/{stepId}/ongoing")
+    public ResponseEntity<JobWorkflowStepResponse> markStepOngoing(
+            @PathVariable Long stepId,
+            Authentication auth) {
+        return ResponseEntity.ok(workerWorkflowService.markStepOngoing(stepId, getUserId(auth)));
+    }
+
+    @Operation(summary = "Complete an ongoing step (ONGOING -> COMPLETED)")
+    @PostMapping("/job-workflow-steps/{stepId}/complete-ongoing")
+    public ResponseEntity<JobWorkflowStepResponse> completeOngoingStep(
+            @PathVariable Long stepId,
+            Authentication auth) {
+        return ResponseEntity.ok(workerWorkflowService.completeOngoingStep(stepId, getUserId(auth)));
+    }
+
     @Operation(summary = "Get step details")
     @GetMapping("/job-workflow-steps/{stepId}")
     public ResponseEntity<JobWorkflowStepResponse> getStep(

@@ -649,6 +649,7 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
                 long durationDays = a.getReturnedAt() == null
                                 ? nullSafeDaysBetween(a.getAssignedAt(), LocalDateTime.now())
                                 : nullSafeDaysBetween(a.getAssignedAt(), a.getReturnedAt());
+
                 String status = a.getReturnedAt() == null ? "ACTIVE" : "COMPLETED";
 
                 return AssetAssignmentResponse.builder()
@@ -656,6 +657,13 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
                                 .assetId(a.getAsset().getId())
                                 .jobId(a.getJob() != null ? a.getJob().getId() : null)
                                 .assignedWorkerId(a.getAssignedWorker() != null ? a.getAssignedWorker().getId() : null)
+
+                                // ✅ MAP ASSET DETAILS
+                                .assetName(a.getAsset().getName())
+                                .description(a.getAsset().getDescription())
+                                .serialNumber(a.getAsset().getSerialNumber())
+                                .assetTag(a.getAsset().getAssetTag())
+
                                 .notes(a.getNotes())
                                 .assignedAt(a.getAssignedAt())
                                 .returnedAt(a.getReturnedAt())

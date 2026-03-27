@@ -77,7 +77,7 @@
               "value": "application/json"
             }
           ],
-          "body": "{\n    \"id\": 10,\n    \"companyId\": 1,\n    \"name\": \"Company Van A1\",\n    \"assetTag\": \"VAN-001\",\n    \"serialNumber\": \"SN-2025-AX11\",\n    \"purchasePrice\": 30000.00,\n    \"purchaseDate\": \"2023-01-01\",\n    \"depreciationRate\": 20.00,\n    \"salvageValue\": 5000.00,\n    \"available\": true,\n    \"archived\": false,\n    \"createdAt\": \"2025-11-20T10:00:00\",\n    \"updatedAt\": \"2025-11-20T10:00:00\"\n}"
+          "body": "{\n    \"id\": 10,\n    \"assetRef\": 1,\n    \"companyId\": 1,\n    \"name\": \"Company Van A1\",\n    \"assetTag\": \"VAN-001\",\n    \"serialNumber\": \"SN-2025-AX11\",\n    \"purchasePrice\": 30000.00,\n    \"purchaseDate\": \"2023-01-01\",\n    \"depreciationRate\": 20.00,\n    \"salvageValue\": 5000.00,\n    \"available\": true,\n    \"archived\": false,\n    \"createdAt\": \"2025-11-20T10:00:00\",\n    \"updatedAt\": \"2025-11-20T10:00:00\"\n}"
         }
       ]
     },
@@ -138,7 +138,7 @@
               "value": "application/json"
             }
           ],
-          "body": "{\n    \"id\": 10,\n    \"name\": \"Company Van A1\",\n    \"purchasePrice\": 30000.00,\n    \"currentValue\": 19200.00,\n    \"totalDepreciation\": 10800.00,\n    \"daysOwned\": 693,\n    \"yearsOwned\": 1.90,\n    \"available\": true\n}"
+          "body": "{\n    \"id\": 10,\n    \"assetRef\": 1,\n    \"name\": \"Company Van A1\",\n    \"purchasePrice\": 30000.00,\n    \"currentValue\": 19200.00,\n    \"totalDepreciation\": 10800.00,\n    \"daysOwned\": 693,\n    \"yearsOwned\": 1.90,\n    \"available\": true\n}"
         }
       ]
     },
@@ -199,7 +199,7 @@
               "value": "application/json"
             }
           ],
-          "body": "{\n    \"content\": [\n        {\n            \"id\": 10,\n            \"name\": \"Company Van A1\",\n            \"available\": true,\n            \"archived\": false\n        }\n    ],\n    \"page\": 0,\n    \"size\": 20,\n    \"totalElements\": 1,\n    \"totalPages\": 1\n}"
+          "body": "{\n    \"content\": [\n        {\n            \"id\": 10,\n            \"assetRef\": 1,\n            \"name\": \"Company Van A1\",\n            \"available\": true,\n            \"archived\": false\n        }\n    ],\n    \"page\": 0,\n    \"size\": 20,\n    \"totalElements\": 1,\n    \"totalPages\": 1\n}"
         }
       ]
     },
@@ -253,7 +253,7 @@
               "value": "application/json"
             }
           ],
-          "body": "{\n    \"id\": 10,\n    \"name\": \"Company Van A1 (Updated)\",\n    \"updatedAt\": \"2025-11-22T10:00:00\"\n}"
+          "body": "{\n    \"id\": 10,\n    \"assetRef\": 1,\n    \"name\": \"Company Van A1 (Updated)\",\n    \"updatedAt\": \"2025-11-22T10:00:00\"\n}"
         }
       ]
     },

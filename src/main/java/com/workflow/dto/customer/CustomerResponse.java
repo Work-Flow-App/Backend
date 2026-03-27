@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
 @Builder
 public class CustomerResponse {
     private Long id;
+    private Long customerRef;
     private String name;
     private String email;
     private String telephone;

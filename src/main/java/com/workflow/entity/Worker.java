@@ -51,6 +51,9 @@ public class Worker {
     @Builder.Default
     private boolean archived = false;
 
+    @Column(name = "worker_ref", nullable = false)
+    private Long workerRef;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

@@ -63,4 +63,7 @@ public class Job {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "address_id")
     private Address address;
+
+    @Column(name = "job_ref", nullable = false)
+    private Long jobRef;
 }

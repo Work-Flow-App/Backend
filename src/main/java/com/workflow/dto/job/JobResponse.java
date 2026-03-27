@@ -13,6 +13,7 @@ import java.util.Map;
 @Builder
 public class JobResponse {
     private Long id;
+    private Long jobRef;
     private Long companyId;
     private Long templateId;
     private Long clientId;

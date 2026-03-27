@@ -29,6 +29,9 @@ public class Workflow {
 
     private String description;
 
+    @Column(name = "workflow_ref", nullable = false)
+    private Long workflowRef;
+
     @CreationTimestamp
     private LocalDateTime createdAt;
 

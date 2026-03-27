@@ -53,6 +53,7 @@ import com.workflow.repository.JobTemplateFieldRepository;
 import com.workflow.repository.JobTemplateRepository;
 import com.workflow.repository.WorkerRepository;
 import com.workflow.repository.WorkflowRepository;
+import com.workflow.service.sequence.CompanyCounterService;
 import com.workflow.service.workflow.IJobWorkflowService;
 import com.workflow.util.JsonUtil;
 
@@ -77,6 +78,7 @@ public class JobService implements IJobService {
         private final EstimateRepository estimateRepository;
         private final IJobWorkflowService jobWorkflowService;
         private final AddressRepository addressRepository;
+        private final CompanyCounterService companyCounterService;
 
         @Override
         public JobResponse createJob(JobCreateRequest request, Long companyId) {
@@ -125,6 +127,8 @@ public class JobService implements IJobService {
                         addressRepository.save(address);
                 }
 
+                long jobRef = companyCounterService.nextJobId(companyId);
+
                 Job job = Job.builder()
                                 .company(company)
                                 .template(template)
@@ -135,6 +139,7 @@ public class JobService implements IJobService {
                                 .address(address)
                                 .status(request.getStatus() != null ? request.getStatus() : JobStatus.NEW)
                                 .archived(false)
+                                .jobRef(jobRef)
                                 .build();
                 jobRepository.saveAndFlush(job);
 
@@ -493,6 +498,7 @@ public class JobService implements IJobService {
 
                 return JobResponse.builder()
                                 .id(job.getId())
+                                .jobRef(job.getJobRef())
                                 .companyId(job.getCompany().getId())
                                 .templateId(job.getTemplate().getId())
                                 .clientId(job.getClient() != null ? job.getClient().getId() : null)

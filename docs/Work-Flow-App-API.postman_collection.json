@@ -695,6 +695,120 @@
           ]
         },
         {
+          "name": "Verify Email",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"token\": \"your-verification-token-here\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/verify-email",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "verify-email"
+              ]
+            },
+            "description": "Verifies a user's email address using the token sent to their email.\n\n**Authentication:** None (public endpoint)\n\n**Request Body:**\n- token (string, required): The email verification token received in the verification email\n\n**Response:**\n- accessToken (string): JWT access token for API authentication\n- refreshToken (string): Refresh token for obtaining new access tokens\n- tokenType (string): Token type (always \"Bearer\")\n- expiresIn (long): Access token expiration time in seconds (900 = 15 minutes)\n\n**Business Logic:**\n- Validates the token exists, is not expired, and has not been used\n- Marks the user's email as verified\n- Returns JWT tokens so the user is immediately authenticated after verification\n\n**Error Responses:**\n- 400 Bad Request: Invalid, expired, or already-used verification token"
+          },
+          "response": [
+            {
+              "name": "Verify Email - Success",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"token\": \"your-verification-token-here\"\n}"
+                },
+                "url": {
+                  "raw": "http://localhost:8080/api/v1/auth/verify-email",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8080",
+                  "path": [
+                    "api",
+                    "v1",
+                    "auth",
+                    "verify-email"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n    \"accessToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n    \"refreshToken\": \"c3d4e5f6-a7b8-9012-cdef-123456789012\",\n    \"tokenType\": \"Bearer\",\n    \"expiresIn\": 900\n}"
+            },
+            {
+              "name": "Verify Email - Invalid Token",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"token\": \"invalid-or-expired-token\"\n}"
+                },
+                "url": {
+                  "raw": "http://localhost:8080/api/v1/auth/verify-email",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8080",
+                  "path": [
+                    "api",
+                    "v1",
+                    "auth",
+                    "verify-email"
+                  ]
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n    \"status\": 400,\n    \"error\": \"Bad Request\",\n    \"message\": \"Invalid or expired email verification token\",\n    \"path\": \"/api/v1/auth/verify-email\"\n}"
+            }
+          ]
+        },
+        {
           "name": "Worker Signup (with Invitation)",
           "event": [
             {
@@ -1221,7 +1335,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n    \"id\": 1,\n    \"name\": \"John Doe\",\n    \"initials\": \"JD\",\n    \"telephone\": \"1234567890\",\n    \"mobile\": \"0987654321\",\n    \"email\": \"john.doe@example.com\",\n    \"username\": \"johndoe\",\n    \"loginLocked\": false,\n    \"archived\": false,\n    \"createdAt\": \"2025-10-23T12:00:00\",\n    \"updatedAt\": \"2025-10-23T12:00:00\"\n}"
+              "body": "{\n    \"id\": 1,\n    \"workerRef\": 1,\n    \"name\": \"John Doe\",\n    \"initials\": \"JD\",\n    \"telephone\": \"1234567890\",\n    \"mobile\": \"0987654321\",\n    \"email\": \"john.doe@example.com\",\n    \"username\": \"johndoe\",\n    \"loginLocked\": false,\n    \"archived\": false,\n    \"createdAt\": \"2025-10-23T12:00:00\",\n    \"updatedAt\": \"2025-10-23T12:00:00\"\n}"
             }
           ]
         },
@@ -1287,7 +1401,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "[\n    {\n        \"id\": 1,\n        \"name\": \"John Doe\",\n        \"initials\": \"JD\",\n        \"telephone\": \"1234567890\",\n        \"mobile\": \"0987654321\",\n        \"email\": \"john.doe@example.com\",\n        \"username\": \"johndoe\",\n        \"loginLocked\": false,\n        \"archived\": false,\n        \"createdAt\": \"2025-10-23T12:00:00\",\n        \"updatedAt\": \"2025-10-23T12:00:00\"\n    },\n    {\n        \"id\": 2,\n        \"name\": \"Jane Smith\",\n        \"initials\": \"JS\",\n        \"telephone\": \"1111111111\",\n        \"mobile\": \"2222222222\",\n        \"email\": \"jane.smith@example.com\",\n        \"username\": \"janesmith\",\n        \"loginLocked\": false,\n        \"archived\": false,\n        \"createdAt\": \"2025-10-23T13:00:00\",\n        \"updatedAt\": \"2025-10-23T13:00:00\"\n    }\n]"
+              "body": "[\n    {\n        \"id\": 1,\n        \"workerRef\": 1,\n        \"name\": \"John Doe\",\n        \"initials\": \"JD\",\n        \"telephone\": \"1234567890\",\n        \"mobile\": \"0987654321\",\n        \"email\": \"john.doe@example.com\",\n        \"username\": \"johndoe\",\n        \"loginLocked\": false,\n        \"archived\": false,\n        \"createdAt\": \"2025-10-23T12:00:00\",\n        \"updatedAt\": \"2025-10-23T12:00:00\"\n    },\n    {\n        \"id\": 2,\n        \"workerRef\": 2,\n        \"name\": \"Jane Smith\",\n        \"initials\": \"JS\",\n        \"telephone\": \"1111111111\",\n        \"mobile\": \"2222222222\",\n        \"email\": \"jane.smith@example.com\",\n        \"username\": \"janesmith\",\n        \"loginLocked\": false,\n        \"archived\": false,\n        \"createdAt\": \"2025-10-23T13:00:00\",\n        \"updatedAt\": \"2025-10-23T13:00:00\"\n    }\n]"
             }
           ]
         },
@@ -1355,7 +1469,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n    \"id\": 1,\n    \"name\": \"John Doe\",\n    \"initials\": \"JD\",\n    \"telephone\": \"1234567890\",\n    \"mobile\": \"0987654321\",\n    \"email\": \"john.doe@example.com\",\n    \"username\": \"johndoe\",\n    \"loginLocked\": false,\n    \"archived\": false,\n    \"createdAt\": \"2025-10-23T12:00:00\",\n    \"updatedAt\": \"2025-10-23T12:00:00\"\n}"
+              "body": "{\n    \"id\": 1,\n    \"workerRef\": 1,\n    \"name\": \"John Doe\",\n    \"initials\": \"JD\",\n    \"telephone\": \"1234567890\",\n    \"mobile\": \"0987654321\",\n    \"email\": \"john.doe@example.com\",\n    \"username\": \"johndoe\",\n    \"loginLocked\": false,\n    \"archived\": false,\n    \"createdAt\": \"2025-10-23T12:00:00\",\n    \"updatedAt\": \"2025-10-23T12:00:00\"\n}"
             }
           ]
         },
@@ -1440,7 +1554,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n    \"id\": 1,\n    \"name\": \"John Doe Updated\",\n    \"initials\": \"JDU\",\n    \"telephone\": \"9999999999\",\n    \"mobile\": \"8888888888\",\n    \"email\": \"john.updated@example.com\",\n    \"username\": \"johndoe\",\n    \"loginLocked\": false,\n    \"archived\": false,\n    \"createdAt\": \"2025-10-23T12:00:00\",\n    \"updatedAt\": \"2025-10-23T14:30:00\"\n}"
+              "body": "{\n    \"id\": 1,\n    \"workerRef\": 1,\n    \"name\": \"John Doe Updated\",\n    \"initials\": \"JDU\",\n    \"telephone\": \"9999999999\",\n    \"mobile\": \"8888888888\",\n    \"email\": \"john.updated@example.com\",\n    \"username\": \"johndoe\",\n    \"loginLocked\": false,\n    \"archived\": false,\n    \"createdAt\": \"2025-10-23T12:00:00\",\n    \"updatedAt\": \"2025-10-23T14:30:00\"\n}"
             }
           ]
         },
@@ -1525,7 +1639,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n    \"id\": 1,\n    \"name\": \"John Doe\",\n    \"initials\": \"JD\",\n    \"telephone\": \"5555555555\",\n    \"mobile\": \"0987654321\",\n    \"email\": \"john.doe@example.com\",\n    \"username\": \"johndoe\",\n    \"loginLocked\": false,\n    \"archived\": false,\n    \"createdAt\": \"2025-10-23T12:00:00\",\n    \"updatedAt\": \"2025-10-23T15:00:00\"\n}"
+              "body": "{\n    \"id\": 1,\n    \"workerRef\": 1,\n    \"name\": \"John Doe\",\n    \"initials\": \"JD\",\n    \"telephone\": \"5555555555\",\n    \"mobile\": \"0987654321\",\n    \"email\": \"john.doe@example.com\",\n    \"username\": \"johndoe\",\n    \"loginLocked\": false,\n    \"archived\": false,\n    \"createdAt\": \"2025-10-23T12:00:00\",\n    \"updatedAt\": \"2025-10-23T15:00:00\"\n}"
             },
             {
               "name": "Patch Worker - Update Multiple Fields",
@@ -1569,7 +1683,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n    \"id\": 1,\n    \"name\": \"John D. Smith\",\n    \"initials\": \"JD\",\n    \"telephone\": \"1234567890\",\n    \"mobile\": \"0987654321\",\n    \"email\": \"john.smith@example.com\",\n    \"username\": \"johndoe\",\n    \"loginLocked\": false,\n    \"archived\": false,\n    \"createdAt\": \"2025-10-23T12:00:00\",\n    \"updatedAt\": \"2025-10-23T15:30:00\"\n}"
+              "body": "{\n    \"id\": 1,\n    \"workerRef\": 1,\n    \"name\": \"John D. Smith\",\n    \"initials\": \"JD\",\n    \"telephone\": \"1234567890\",\n    \"mobile\": \"0987654321\",\n    \"email\": \"john.smith@example.com\",\n    \"username\": \"johndoe\",\n    \"loginLocked\": false,\n    \"archived\": false,\n    \"createdAt\": \"2025-10-23T12:00:00\",\n    \"updatedAt\": \"2025-10-23T15:30:00\"\n}"
             }
           ]
         },
@@ -2128,7 +2242,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n    \"id\": 1,\n    \"name\": \"Acme Corporation\",\n    \"email\": \"contact@acme.com\",\n    \"telephone\": \"123456789\",\n    \"mobile\": \"987654321\",\n    \"address\": \"123 Main Street, Suite 400, New York, USA 10001\",\n    \"archived\": false,\n    \"createdAt\": \"2025-11-08T10:00:00\",\n    \"updatedAt\": \"2025-11-08T10:00:00\"\n}"
+              "body": "{\n    \"id\": 1,\n    \"clientRef\": 1,\n    \"name\": \"Acme Corporation\",\n    \"email\": \"contact@acme.com\",\n    \"telephone\": \"123456789\",\n    \"mobile\": \"987654321\",\n    \"address\": \"123 Main Street, Suite 400, New York, USA 10001\",\n    \"archived\": false,\n    \"createdAt\": \"2025-11-08T10:00:00\",\n    \"updatedAt\": \"2025-11-08T10:00:00\"\n}"
             }
           ]
         },
@@ -2194,7 +2308,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "[\n    {\n        \"id\": 1,\n        \"name\": \"Acme Corporation\",\n        \"email\": \"contact@acme.com\",\n        \"telephone\": \"123456789\",\n        \"mobile\": \"987654321\",\n        \"address\": \"123 Main Street, Suite 400, New York, USA 10001\",\n        \"archived\": false,\n        \"createdAt\": \"2025-11-08T10:00:00\",\n        \"updatedAt\": \"2025-11-08T10:00:00\"\n    }\n]"
+              "body": "[\n    {\n        \"id\": 1,\n        \"clientRef\": 1,\n        \"name\": \"Acme Corporation\",\n        \"email\": \"contact@acme.com\",\n        \"telephone\": \"123456789\",\n        \"mobile\": \"987654321\",\n        \"address\": \"123 Main Street, Suite 400, New York, USA 10001\",\n        \"archived\": false,\n        \"createdAt\": \"2025-11-08T10:00:00\",\n        \"updatedAt\": \"2025-11-08T10:00:00\"\n    }\n]"
             }
           ]
         },
@@ -2262,7 +2376,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n    \"id\": 1,\n    \"name\": \"Acme Corporation\",\n    \"email\": \"contact@acme.com\",\n    \"telephone\": \"123456789\",\n    \"mobile\": \"987654321\",\n    \"address\": \"123 Main Street, Suite 400, New York, USA 10001\",\n    \"archived\": false,\n    \"createdAt\": \"2025-11-08T10:00:00\",\n    \"updatedAt\": \"2025-11-08T10:00:00\"\n}"
+              "body": "{\n    \"id\": 1,\n    \"clientRef\": 1,\n    \"name\": \"Acme Corporation\",\n    \"email\": \"contact@acme.com\",\n    \"telephone\": \"123456789\",\n    \"mobile\": \"987654321\",\n    \"address\": \"123 Main Street, Suite 400, New York, USA 10001\",\n    \"archived\": false,\n    \"createdAt\": \"2025-11-08T10:00:00\",\n    \"updatedAt\": \"2025-11-08T10:00:00\"\n}"
             }
           ]
         },
@@ -2347,7 +2461,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n    \"id\": 1,\n    \"name\": \"Acme Corporation Ltd.\",\n    \"email\": \"support@acme.com\",\n    \"telephone\": \"555555555\",\n    \"mobile\": \"999999999\",\n    \"address\": \"456 Oak Avenue, New York, USA 10002\",\n    \"archived\": false,\n    \"createdAt\": \"2025-11-08T10:00:00\",\n    \"updatedAt\": \"2025-11-08T11:00:00\"\n}"
+              "body": "{\n    \"id\": 1,\n    \"clientRef\": 1,\n    \"name\": \"Acme Corporation Ltd.\",\n    \"email\": \"support@acme.com\",\n    \"telephone\": \"555555555\",\n    \"mobile\": \"999999999\",\n    \"address\": \"456 Oak Avenue, New York, USA 10002\",\n    \"archived\": false,\n    \"createdAt\": \"2025-11-08T10:00:00\",\n    \"updatedAt\": \"2025-11-08T11:00:00\"\n}"
             }
           ]
         },
@@ -2499,7 +2613,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n    \"id\": 1,\n    \"name\": \"GlobalTech Solutions\",\n    \"email\": \"contact@globaltech.com\",\n    \"telephone\": \"123456789\",\n    \"mobile\": \"987654321\",\n    \"address\": {\n        \"houseNumber\": \"42\",\n        \"street\": \"Baker Street\",\n        \"city\": \"London\",\n        \"county\": \"Greater London\",\n        \"postalCode\": \"NW1 6XE\",\n        \"country\": \"United Kingdom\"\n    },\n    \"archived\": false,\n    \"createdAt\": \"2025-11-08T10:00:00\",\n    \"updatedAt\": \"2025-11-08T10:00:00\"\n}"
+              "body": "{\n    \"id\": 1,\n    \"customerRef\": 1,\n    \"name\": \"GlobalTech Solutions\",\n    \"email\": \"contact@globaltech.com\",\n    \"telephone\": \"123456789\",\n    \"mobile\": \"987654321\",\n    \"address\": {\n        \"houseNumber\": \"42\",\n        \"street\": \"Baker Street\",\n        \"city\": \"London\",\n        \"county\": \"Greater London\",\n        \"postalCode\": \"NW1 6XE\",\n        \"country\": \"United Kingdom\"\n    },\n    \"archived\": false,\n    \"createdAt\": \"2025-11-08T10:00:00\",\n    \"updatedAt\": \"2025-11-08T10:00:00\"\n}"
             }
           ]
         },
@@ -2565,7 +2679,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "[\n    {\n        \"id\": 1,\n        \"name\": \"GlobalTech Solutions\",\n        \"email\": \"contact@globaltech.com\",\n        \"telephone\": \"123456789\",\n        \"mobile\": \"987654321\",\n        \"address\": {\n            \"houseNumber\": \"42\",\n            \"street\": \"Baker Street\",\n            \"city\": \"London\",\n            \"county\": \"Greater London\",\n            \"postalCode\": \"NW1 6XE\",\n            \"country\": \"United Kingdom\"\n        },\n        \"archived\": false,\n        \"createdAt\": \"2025-11-08T10:00:00\",\n        \"updatedAt\": \"2025-11-08T10:00:00\"\n    }\n]"
+              "body": "[\n    {\n        \"id\": 1,\n        \"customerRef\": 1,\n        \"name\": \"GlobalTech Solutions\",\n        \"email\": \"contact@globaltech.com\",\n        \"telephone\": \"123456789\",\n        \"mobile\": \"987654321\",\n        \"address\": {\n            \"houseNumber\": \"42\",\n            \"street\": \"Baker Street\",\n            \"city\": \"London\",\n            \"county\": \"Greater London\",\n            \"postalCode\": \"NW1 6XE\",\n            \"country\": \"United Kingdom\"\n        },\n        \"archived\": false,\n        \"createdAt\": \"2025-11-08T10:00:00\",\n        \"updatedAt\": \"2025-11-08T10:00:00\"\n    }\n]"
             }
           ]
         },
@@ -2633,7 +2747,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n    \"id\": 1,\n    \"name\": \"GlobalTech Solutions\",\n    \"email\": \"contact@globaltech.com\",\n    \"telephone\": \"123456789\",\n    \"mobile\": \"987654321\",\n    \"address\": {\n        \"houseNumber\": \"42\",\n        \"street\": \"Baker Street\",\n        \"city\": \"London\",\n        \"county\": \"Greater London\",\n        \"postalCode\": \"NW1 6XE\",\n        \"country\": \"United Kingdom\"\n    },\n    \"archived\": false,\n    \"createdAt\": \"2025-11-08T10:00:00\",\n    \"updatedAt\": \"2025-11-08T10:00:00\"\n}"
+              "body": "{\n    \"id\": 1,\n    \"customerRef\": 1,\n    \"name\": \"GlobalTech Solutions\",\n    \"email\": \"contact@globaltech.com\",\n    \"telephone\": \"123456789\",\n    \"mobile\": \"987654321\",\n    \"address\": {\n        \"houseNumber\": \"42\",\n        \"street\": \"Baker Street\",\n        \"city\": \"London\",\n        \"county\": \"Greater London\",\n        \"postalCode\": \"NW1 6XE\",\n        \"country\": \"United Kingdom\"\n    },\n    \"archived\": false,\n    \"createdAt\": \"2025-11-08T10:00:00\",\n    \"updatedAt\": \"2025-11-08T10:00:00\"\n}"
             }
           ]
         },
@@ -2718,7 +2832,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n    \"id\": 1,\n    \"name\": \"GlobalTech Solutions Ltd.\",\n    \"email\": \"support@globaltech.com\",\n    \"telephone\": \"555555555\",\n    \"mobile\": \"999999999\",\n    \"address\": {\n        \"houseNumber\": \"789\",\n        \"street\": \"Innovation Drive\",\n        \"city\": \"London\",\n        \"county\": \"Greater London\",\n        \"postalCode\": \"EC2A 2BB\",\n        \"country\": \"United Kingdom\"\n    },\n    \"archived\": false,\n    \"createdAt\": \"2025-11-08T10:00:00\",\n    \"updatedAt\": \"2025-11-08T11:00:00\"\n}"
+              "body": "{\n    \"id\": 1,\n    \"customerRef\": 1,\n    \"name\": \"GlobalTech Solutions Ltd.\",\n    \"email\": \"support@globaltech.com\",\n    \"telephone\": \"555555555\",\n    \"mobile\": \"999999999\",\n    \"address\": {\n        \"houseNumber\": \"789\",\n        \"street\": \"Innovation Drive\",\n        \"city\": \"London\",\n        \"county\": \"Greater London\",\n        \"postalCode\": \"EC2A 2BB\",\n        \"country\": \"United Kingdom\"\n    },\n    \"archived\": false,\n    \"createdAt\": \"2025-11-08T10:00:00\",\n    \"updatedAt\": \"2025-11-08T11:00:00\"\n}"
             }
           ]
         },
@@ -2870,7 +2984,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n    \"id\": 3,\n    \"companyId\": 1,\n    \"name\": \"Maintenance Job\",\n    \"description\": \"Standard maintenance workflow template for equipment servicing\",\n    \"archived\": false,\n    \"isDefault\": false,\n    \"createdAt\": \"2025-11-14T10:00:00\",\n    \"updatedAt\": \"2025-11-14T10:00:00\"\n}"
+              "body": "{\n    \"id\": 3,\n    \"templateRef\": 1,\n    \"companyId\": 1,\n    \"name\": \"Maintenance Job\",\n    \"description\": \"Standard maintenance workflow template for equipment servicing\",\n    \"archived\": false,\n    \"isDefault\": false,\n    \"createdAt\": \"2025-11-14T10:00:00\",\n    \"updatedAt\": \"2025-11-14T10:00:00\"\n}"
             }
           ]
         },
@@ -2936,7 +3050,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "[\n    {\n        \"id\": 3,\n        \"companyId\": 1,\n        \"name\": \"Maintenance Job\",\n        \"description\": \"Standard maintenance workflow template for equipment servicing\",\n        \"archived\": false,\n        \"isDefault\": false,\n        \"createdAt\": \"2025-11-14T10:00:00\",\n        \"updatedAt\": \"2025-11-14T10:00:00\"\n    },\n    {\n        \"id\": 4,\n        \"companyId\": 1,\n        \"name\": \"Installation Checklist\",\n        \"description\": \"Checklist for new equipment installation.\",\n        \"archived\": false,\n        \"isDefault\": false,\n        \"createdAt\": \"2025-11-14T11:00:00\",\n        \"updatedAt\": \"2025-11-14T11:00:00\"\n    }\n]"
+              "body": "[\n    {\n        \"id\": 3,\n        \"templateRef\": 1,\n        \"companyId\": 1,\n        \"name\": \"Maintenance Job\",\n        \"description\": \"Standard maintenance workflow template for equipment servicing\",\n        \"archived\": false,\n        \"isDefault\": false,\n        \"createdAt\": \"2025-11-14T10:00:00\",\n        \"updatedAt\": \"2025-11-14T10:00:00\"\n    },\n    {\n        \"id\": 4,\n        \"templateRef\": 2,\n        \"companyId\": 1,\n        \"name\": \"Installation Checklist\",\n        \"description\": \"Checklist for new equipment installation.\",\n        \"archived\": false,\n        \"isDefault\": false,\n        \"createdAt\": \"2025-11-14T11:00:00\",\n        \"updatedAt\": \"2025-11-14T11:00:00\"\n    }\n]"
             }
           ]
         },
@@ -3004,7 +3118,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n    \"id\": 3,\n    \"companyId\": 1,\n    \"name\": \"Maintenance Job\",\n    \"description\": \"Standard maintenance workflow template for equipment servicing\",\n    \"archived\": false,\n    \"isDefault\": false,\n    \"createdAt\": \"2025-11-14T10:00:00\",\n    \"updatedAt\": \"2025-11-14T10:00:00\"\n}"
+              "body": "{\n    \"id\": 3,\n    \"templateRef\": 1,\n    \"companyId\": 1,\n    \"name\": \"Maintenance Job\",\n    \"description\": \"Standard maintenance workflow template for equipment servicing\",\n    \"archived\": false,\n    \"isDefault\": false,\n    \"createdAt\": \"2025-11-14T10:00:00\",\n    \"updatedAt\": \"2025-11-14T10:00:00\"\n}"
             }
           ]
         },
@@ -3072,7 +3186,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n    \"id\": 3,\n    \"companyId\": 1,\n    \"name\": \"Maintenance Job\",\n    \"description\": \"Standard maintenance workflow template for equipment servicing\",\n    \"archived\": false,\n    \"isDefault\": true,\n    \"createdAt\": \"2025-11-14T10:00:00\",\n    \"updatedAt\": \"2025-11-14T10:00:00\"\n}"
+              "body": "{\n    \"id\": 3,\n    \"templateRef\": 1,\n    \"companyId\": 1,\n    \"name\": \"Maintenance Job\",\n    \"description\": \"Standard maintenance workflow template for equipment servicing\",\n    \"archived\": false,\n    \"isDefault\": true,\n    \"createdAt\": \"2025-11-14T10:00:00\",\n    \"updatedAt\": \"2025-11-14T10:00:00\"\n}"
             },
             {
               "name": "Get Default Template - Not Found",
@@ -3193,7 +3307,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n    \"id\": 3,\n    \"companyId\": 1,\n    \"name\": \"Updated Maintenance Template\",\n    \"description\": \"Updated template description for servicing jobs\",\n    \"archived\": false,\n    \"isDefault\": false,\n    \"createdAt\": \"2025-11-14T10:00:00\",\n    \"updatedAt\": \"2025-11-14T12:00:00\"\n}"
+              "body": "{\n    \"id\": 3,\n    \"templateRef\": 1,\n    \"companyId\": 1,\n    \"name\": \"Updated Maintenance Template\",\n    \"description\": \"Updated template description for servicing jobs\",\n    \"archived\": false,\n    \"isDefault\": false,\n    \"createdAt\": \"2025-11-14T10:00:00\",\n    \"updatedAt\": \"2025-11-14T12:00:00\"\n}"
             }
           ]
         },
@@ -3835,7 +3949,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n    \"id\": 3,\n    \"companyId\": 1,\n    \"name\": \"Maintenance Job\",\n    \"description\": \"Standard maintenance workflow template for equipment servicing\",\n    \"archived\": false,\n    \"isDefault\": false,\n    \"createdAt\": \"2025-11-14T10:00:00\",\n    \"updatedAt\": \"2025-11-14T12:00:00\",\n    \"fields\": [\n        {\n            \"id\": 101,\n            \"templateId\": 3,\n            \"name\": \"customerName\",\n            \"label\": \"Customer Name\",\n            \"jobFieldType\": \"TEXT\",\n            \"required\": true,\n            \"options\": null,\n            \"orderIndex\": 1,\n            \"createdAt\": \"2025-11-14T10:05:00\",\n            \"updatedAt\": \"2025-11-14T10:05:00\"\n        },\n        {\n            \"id\": 102,\n            \"templateId\": 3,\n            \"name\": \"priority\",\n            \"label\": \"Priority Level (Changed)\",\n            \"jobFieldType\": \"DROPDOWN\",\n            \"required\": true,\n            \"options\": \"[\\\"Low\\\", \\\"Medium\\\", \\\"High\\\", \\\"Urgent\\\"]\",\n            \"orderIndex\": 2,\n            \"createdAt\": \"2025-11-14T10:06:00\",\n            \"updatedAt\": \"2025-11-14T12:30:00\"\n        }\n    ]\n}"
+              "body": "{\n    \"id\": 3,\n    \"templateRef\": 1,\n    \"companyId\": 1,\n    \"name\": \"Maintenance Job\",\n    \"description\": \"Standard maintenance workflow template for equipment servicing\",\n    \"archived\": false,\n    \"isDefault\": false,\n    \"createdAt\": \"2025-11-14T10:00:00\",\n    \"updatedAt\": \"2025-11-14T12:00:00\",\n    \"fields\": [\n        {\n            \"id\": 101,\n            \"templateId\": 3,\n            \"name\": \"customerName\",\n            \"label\": \"Customer Name\",\n            \"jobFieldType\": \"TEXT\",\n            \"required\": true,\n            \"options\": null,\n            \"orderIndex\": 1,\n            \"createdAt\": \"2025-11-14T10:05:00\",\n            \"updatedAt\": \"2025-11-14T10:05:00\"\n        },\n        {\n            \"id\": 102,\n            \"templateId\": 3,\n            \"name\": \"priority\",\n            \"label\": \"Priority Level (Changed)\",\n            \"jobFieldType\": \"DROPDOWN\",\n            \"required\": true,\n            \"options\": \"[\\\"Low\\\", \\\"Medium\\\", \\\"High\\\", \\\"Urgent\\\"]\",\n            \"orderIndex\": 2,\n            \"createdAt\": \"2025-11-14T10:06:00\",\n            \"updatedAt\": \"2025-11-14T12:30:00\"\n        }\n    ]\n}"
             }
           ]
         }
@@ -3893,7 +4007,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n    \"id\": 55,\n    \"companyId\": 1,\n    \"templateId\": 3,\n    \"clientId\": 1,\n    \"customerId\": 1,\n    \"assignedWorkerId\": 1,\n    \"status\": \"NEW\",\n    \"archived\": false,\n    \"createdAt\": \"2025-11-14T10:15:00\",\n    \"updatedAt\": \"2025-11-14T10:15:00\",\n    \"fieldValues\": {\n        \"101\": {\"name\": \"customerName\", \"label\": \"Customer Name\", \"type\": \"TEXT\", \"value\": \"John Doe\"},\n        \"102\": {\"name\": \"priority\", \"label\": \"Priority Level\", \"type\": \"DROPDOWN\", \"value\": \"Medium\"}\n    },\n    \"assetIds\": [1, 2],\n    \"address\": {\n        \"id\": 10,\n        \"street\": \"123 Main Street\",\n        \"city\": \"Berlin\",\n        \"state\": \"Berlin\",\n        \"postalCode\": \"10115\",\n        \"country\": \"Germany\",\n        \"additionalInfo\": \"Near main entrance\",\n        \"latitude\": 52.5200,\n        \"longitude\": 13.4050\n    }\n}"
+              "body": "{\n    \"id\": 55,\n    \"jobRef\": 1,\n    \"companyId\": 1,\n    \"templateId\": 3,\n    \"clientId\": 1,\n    \"customerId\": 1,\n    \"assignedWorkerId\": 1,\n    \"status\": \"NEW\",\n    \"archived\": false,\n    \"createdAt\": \"2025-11-14T10:15:00\",\n    \"updatedAt\": \"2025-11-14T10:15:00\",\n    \"fieldValues\": {\n        \"101\": {\"name\": \"customerName\", \"label\": \"Customer Name\", \"type\": \"TEXT\", \"value\": \"John Doe\"},\n        \"102\": {\"name\": \"priority\", \"label\": \"Priority Level\", \"type\": \"DROPDOWN\", \"value\": \"Medium\"}\n    },\n    \"assetIds\": [1, 2],\n    \"address\": {\n        \"id\": 10,\n        \"street\": \"123 Main Street\",\n        \"city\": \"Berlin\",\n        \"state\": \"Berlin\",\n        \"postalCode\": \"10115\",\n        \"country\": \"Germany\",\n        \"additionalInfo\": \"Near main entrance\",\n        \"latitude\": 52.5200,\n        \"longitude\": 13.4050\n    }\n}"
             }
           ]
         },
@@ -3936,7 +4050,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "[\n    {\n        \"id\": 55,\n        \"companyId\": 1,\n        \"templateId\": 3,\n        \"clientId\": 1,\n        \"customerId\": 1,\n        \"assignedWorkerId\": 1,\n        \"status\": \"NEW\",\n        \"archived\": false,\n        \"createdAt\": \"2025-11-14T10:15:00\",\n        \"updatedAt\": \"2025-11-14T10:15:00\",\n        \"fieldValues\": {\n            \"101\": {\"name\": \"customerName\",\"label\": \"Customer Name\",\"type\": \"TEXT\",\"value\": \"John Doe\"},\n            \"102\": {\"name\": \"priority\",\"label\": \"Priority Level\",\"type\": \"DROPDOWN\",\"value\": \"Medium\"}\n        },\n        \"assetIds\": [1, 2],\n        \"address\": {\"id\": 10,\"street\": \"123 Main Street\",\"city\": \"Berlin\",\"state\": \"Berlin\",\"postalCode\": \"10115\",\"country\": \"Germany\",\"additionalInfo\": \"Near main entrance\",\"latitude\": 52.5200,\"longitude\": 13.4050}\n    }\n]"
+              "body": "[\n    {\n        \"id\": 55,\n        \"jobRef\": 1,\n        \"companyId\": 1,\n        \"templateId\": 3,\n        \"clientId\": 1,\n        \"customerId\": 1,\n        \"assignedWorkerId\": 1,\n        \"status\": \"NEW\",\n        \"archived\": false,\n        \"createdAt\": \"2025-11-14T10:15:00\",\n        \"updatedAt\": \"2025-11-14T10:15:00\",\n        \"fieldValues\": {\n            \"101\": {\"name\": \"customerName\",\"label\": \"Customer Name\",\"type\": \"TEXT\",\"value\": \"John Doe\"},\n            \"102\": {\"name\": \"priority\",\"label\": \"Priority Level\",\"type\": \"DROPDOWN\",\"value\": \"Medium\"}\n        },\n        \"assetIds\": [1, 2],\n        \"address\": {\"id\": 10,\"street\": \"123 Main Street\",\"city\": \"Berlin\",\"state\": \"Berlin\",\"postalCode\": \"10115\",\"country\": \"Germany\",\"additionalInfo\": \"Near main entrance\",\"latitude\": 52.5200,\"longitude\": 13.4050}\n    }\n]"
             }
           ]
         },
@@ -3980,7 +4094,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n    \"id\": 55,\n    \"companyId\": 1,\n    \"templateId\": 3,\n    \"clientId\": 1,\n    \"customerId\": 1,\n    \"assignedWorkerId\": 1,\n    \"status\": \"NEW\",\n    \"archived\": false,\n    \"createdAt\": \"2025-11-14T10:15:00\",\n    \"updatedAt\": \"2025-11-14T10:15:00\",\n    \"fieldValues\": {\n        \"101\": {\"name\": \"customerName\",\"label\": \"Customer Name\",\"type\": \"TEXT\",\"value\": \"John Doe\"},\n        \"102\": {\"name\": \"priority\",\"label\": \"Priority Level\",\"type\": \"DROPDOWN\",\"value\": \"Medium\"}\n    },\n    \"assetIds\": [1, 2],\n    \"address\": {\"id\": 10,\"street\": \"123 Main Street\",\"city\": \"Berlin\",\"state\": \"Berlin\",\"postalCode\": \"10115\",\"country\": \"Germany\",\"additionalInfo\": \"Near main entrance\",\"latitude\": 52.5200,\"longitude\": 13.4050}\n}"
+              "body": "{\n    \"id\": 55,\n    \"jobRef\": 1,\n    \"companyId\": 1,\n    \"templateId\": 3,\n    \"clientId\": 1,\n    \"customerId\": 1,\n    \"assignedWorkerId\": 1,\n    \"status\": \"NEW\",\n    \"archived\": false,\n    \"createdAt\": \"2025-11-14T10:15:00\",\n    \"updatedAt\": \"2025-11-14T10:15:00\",\n    \"fieldValues\": {\n        \"101\": {\"name\": \"customerName\",\"label\": \"Customer Name\",\"type\": \"TEXT\",\"value\": \"John Doe\"},\n        \"102\": {\"name\": \"priority\",\"label\": \"Priority Level\",\"type\": \"DROPDOWN\",\"value\": \"Medium\"}\n    },\n    \"assetIds\": [1, 2],\n    \"address\": {\"id\": 10,\"street\": \"123 Main Street\",\"city\": \"Berlin\",\"state\": \"Berlin\",\"postalCode\": \"10115\",\"country\": \"Germany\",\"additionalInfo\": \"Near main entrance\",\"latitude\": 52.5200,\"longitude\": 13.4050}\n}"
             }
           ]
         },
@@ -4033,7 +4147,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n    \"id\": 55,\n    \"companyId\": 1,\n    \"templateId\": 3,\n    \"clientId\": 1,\n    \"customerId\": 1,\n    \"assignedWorkerId\": 1,\n    \"status\": \"IN_PROGRESS\",\n    \"archived\": false,\n    \"workflowId\": 2,\n    \"createdAt\": \"2025-11-14T10:15:00\",\n    \"updatedAt\": \"2025-11-14T10:20:00\",\n    \"fieldValues\": {\n        \"101\": {\"name\": \"customerName\",\"label\": \"Customer Name\",\"type\": \"TEXT\",\"value\": \"John Doe Updated\"},\n        \"102\": {\"name\": \"priority\",\"label\": \"Priority Level\",\"type\": \"DROPDOWN\",\"value\": \"High\"}\n    },\n    \"assetIds\": [1, 2],\n    \"address\": {\"id\": 11,\"street\": \"456 Updated Street\",\"city\": \"Berlin\",\"state\": \"Berlin\",\"postalCode\": \"10117\",\"country\": \"Germany\",\"additionalInfo\": \"Back entrance\",\"latitude\": 52.5205,\"longitude\": 13.4095}\n}"
+              "body": "{\n    \"id\": 55,\n    \"jobRef\": 1,\n    \"companyId\": 1,\n    \"templateId\": 3,\n    \"clientId\": 1,\n    \"customerId\": 1,\n    \"assignedWorkerId\": 1,\n    \"status\": \"IN_PROGRESS\",\n    \"archived\": false,\n    \"workflowId\": 2,\n    \"createdAt\": \"2025-11-14T10:15:00\",\n    \"updatedAt\": \"2025-11-14T10:20:00\",\n    \"fieldValues\": {\n        \"101\": {\"name\": \"customerName\",\"label\": \"Customer Name\",\"type\": \"TEXT\",\"value\": \"John Doe Updated\"},\n        \"102\": {\"name\": \"priority\",\"label\": \"Priority Level\",\"type\": \"DROPDOWN\",\"value\": \"High\"}\n    },\n    \"assetIds\": [1, 2],\n    \"address\": {\"id\": 11,\"street\": \"456 Updated Street\",\"city\": \"Berlin\",\"state\": \"Berlin\",\"postalCode\": \"10117\",\"country\": \"Germany\",\"additionalInfo\": \"Back entrance\",\"latitude\": 52.5205,\"longitude\": 13.4095}\n}"
             }
           ]
         }
@@ -4118,7 +4232,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n    \"id\": 10,\n    \"companyId\": 1,\n    \"name\": \"Company Van A1\",\n    \"assetTag\": \"VAN-001\",\n    \"serialNumber\": \"SN-2025-AX11\",\n    \"purchasePrice\": 30000.00,\n    \"purchaseDate\": \"2023-01-01\",\n    \"depreciationRate\": 20.00,\n    \"salvageValue\": 5000.00,\n    \"available\": true,\n    \"archived\": false,\n    \"createdAt\": \"2025-11-20T10:00:00\",\n    \"updatedAt\": \"2025-11-20T10:00:00\"\n}"
+              "body": "{\n    \"id\": 10,\n    \"assetRef\": 1,\n    \"companyId\": 1,\n    \"name\": \"Company Van A1\",\n    \"assetTag\": \"VAN-001\",\n    \"serialNumber\": \"SN-2025-AX11\",\n    \"purchasePrice\": 30000.00,\n    \"purchaseDate\": \"2023-01-01\",\n    \"depreciationRate\": 20.00,\n    \"salvageValue\": 5000.00,\n    \"available\": true,\n    \"archived\": false,\n    \"createdAt\": \"2025-11-20T10:00:00\",\n    \"updatedAt\": \"2025-11-20T10:00:00\"\n}"
             }
           ]
         },
@@ -4179,7 +4293,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n    \"id\": 10,\n    \"name\": \"Company Van A1\",\n    \"purchasePrice\": 30000.00,\n    \"currentValue\": 19200.00,\n    \"totalDepreciation\": 10800.00,\n    \"daysOwned\": 693,\n    \"yearsOwned\": 1.90,\n    \"available\": true\n}"
+              "body": "{\n    \"id\": 10,\n    \"assetRef\": 1,\n    \"name\": \"Company Van A1\",\n    \"purchasePrice\": 30000.00,\n    \"currentValue\": 19200.00,\n    \"totalDepreciation\": 10800.00,\n    \"daysOwned\": 693,\n    \"yearsOwned\": 1.90,\n    \"available\": true\n}"
             }
           ]
         },
@@ -4240,7 +4354,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n    \"content\": [\n        {\n            \"id\": 10,\n            \"name\": \"Company Van A1\",\n            \"available\": true,\n            \"archived\": false\n        }\n    ],\n    \"page\": 0,\n    \"size\": 20,\n    \"totalElements\": 1,\n    \"totalPages\": 1\n}"
+              "body": "{\n    \"content\": [\n        {\n            \"id\": 10,\n            \"assetRef\": 1,\n            \"name\": \"Company Van A1\",\n            \"available\": true,\n            \"archived\": false\n        }\n    ],\n    \"page\": 0,\n    \"size\": 20,\n    \"totalElements\": 1,\n    \"totalPages\": 1\n}"
             }
           ]
         },
@@ -4294,7 +4408,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n    \"id\": 10,\n    \"name\": \"Company Van A1 (Updated)\",\n    \"updatedAt\": \"2025-11-22T10:00:00\"\n}"
+              "body": "{\n    \"id\": 10,\n    \"assetRef\": 1,\n    \"name\": \"Company Van A1 (Updated)\",\n    \"updatedAt\": \"2025-11-22T10:00:00\"\n}"
             }
           ]
         },
@@ -4701,7 +4815,7 @@
               "name": "201 Created",
               "status": "Created",
               "code": 201,
-              "body": "{\n  \"id\": 1,\n  \"companyId\": 1,\n  \"name\": \"Repair Workflow\",\n  \"description\": \"Standard repair process\"\n}"
+              "body": "{\n  \"id\": 1,\n  \"workflowRef\": 1,\n  \"companyId\": 1,\n  \"name\": \"Repair Workflow\",\n  \"description\": \"Standard repair process\"\n}"
             }
           ]
         },
@@ -4736,7 +4850,7 @@
               "name": "200 OK",
               "status": "OK",
               "code": 200,
-              "body": "{\n  \"id\": 1,\n  \"companyId\": 1,\n  \"name\": \"Updated Workflow\",\n  \"description\": \"Updated description\"\n}"
+              "body": "{\n  \"id\": 1,\n  \"workflowRef\": 1,\n  \"companyId\": 1,\n  \"name\": \"Updated Workflow\",\n  \"description\": \"Updated description\"\n}"
             }
           ]
         },
@@ -4785,7 +4899,7 @@
               "name": "200 OK",
               "status": "OK",
               "code": 200,
-              "body": "[{\n  \"id\": 1,\n  \"companyId\": 1,\n  \"name\": \"Repair Workflow\",\n  \"description\": \"Standard repair process\"\n}]"
+              "body": "[{\n  \"id\": 1,\n  \"workflowRef\": 1,\n  \"companyId\": 1,\n  \"name\": \"Repair Workflow\",\n  \"description\": \"Standard repair process\"\n}]"
             }
           ]
         },
@@ -4810,7 +4924,7 @@
               "name": "200 OK",
               "status": "OK",
               "code": 200,
-              "body": "{\n  \"id\": 1,\n  \"companyId\": 1,\n  \"name\": \"Repair Workflow\",\n  \"description\": \"Standard repair process\"\n}"
+              "body": "{\n  \"id\": 1,\n  \"workflowRef\": 1,\n  \"companyId\": 1,\n  \"name\": \"Repair Workflow\",\n  \"description\": \"Standard repair process\"\n}"
             }
           ]
         },
@@ -5014,7 +5128,7 @@
               "name": "200 OK",
               "status": "OK",
               "code": 200,
-              "body": "{\n  \"id\": 1,\n  \"companyId\": 1,\n  \"name\": \"Repair Workflow v2\",\n  \"description\": \"Updated bulk workflow\"\n}"
+              "body": "{\n  \"id\": 1,\n  \"workflowRef\": 1,\n  \"companyId\": 1,\n  \"name\": \"Repair Workflow v2\",\n  \"description\": \"Updated bulk workflow\"\n}"
             }
           ]
         },
@@ -5039,7 +5153,7 @@
               "name": "200 OK",
               "status": "OK",
               "code": 200,
-              "body": "{\n  \"id\": 1,\n  \"companyId\": 1,\n  \"name\": \"Repair Workflow\",\n  \"description\": \"Standard repair process\",\n  \"steps\": [\n    {\n      \"id\": 10,\n      \"workflowId\": 1,\n      \"name\": \"Inspection\",\n      \"description\": \"Initial inspection\",\n      \"orderIndex\": 1,\n      \"optional\": false\n    },\n    {\n      \"id\": 11,\n      \"workflowId\": 1,\n      \"name\": \"Final Check\",\n      \"description\": \"Quality assurance\",\n      \"orderIndex\": 2,\n      \"optional\": true\n    }\n  ]\n}"
+              "body": "{\n  \"id\": 1,\n  \"workflowRef\": 1,\n  \"companyId\": 1,\n  \"name\": \"Repair Workflow\",\n  \"description\": \"Standard repair process\",\n  \"steps\": [\n    {\n      \"id\": 10,\n      \"workflowId\": 1,\n      \"name\": \"Inspection\",\n      \"description\": \"Initial inspection\",\n      \"orderIndex\": 1,\n      \"optional\": false\n    },\n    {\n      \"id\": 11,\n      \"workflowId\": 1,\n      \"name\": \"Final Check\",\n      \"description\": \"Quality assurance\",\n      \"orderIndex\": 2,\n      \"optional\": true\n    }\n  ]\n}"
             }
           ]
         }

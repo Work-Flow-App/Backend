@@ -136,6 +136,7 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
                                         return WorkerAssignedStepResponse.builder()
                                                         .step(mapStep(step))
                                                         .jobId(job.getId())
+                                                        .jobRef(job.getJobRef())
                                                         .jobAddress(mapJobAddress(jobAddress))
                                                         .customer(mapCustomer(customer))
                                                         .assignedAssets(jobAssets)

@@ -15,6 +15,7 @@ import java.util.List;
 public class WorkerAssignedStepResponse {
     private JobWorkflowStepResponse step;
     private Long jobId;
+    private Long jobRef; 
     private CustomerResponse customer;
     private List<AssetAssignmentResponse> assignedAssets;
     private AddressResponse jobAddress;

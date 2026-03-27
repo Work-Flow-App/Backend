@@ -43,6 +43,10 @@ public class Client {
     @Builder.Default
     private boolean archived = false;
 
+    @Builder.Default
+    @Column(name = "client_ref", nullable = false)
+    private Long clientRef = 0L;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

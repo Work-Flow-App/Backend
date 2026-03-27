@@ -13,6 +13,7 @@ import com.workflow.entity.JobTemplateField;
 import com.workflow.repository.CompanyRepository;
 import com.workflow.repository.JobTemplateFieldRepository;
 import com.workflow.repository.JobTemplateRepository;
+import com.workflow.service.sequence.CompanyCounterService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -41,6 +42,9 @@ class JobTemplateServiceTest {
 
     @Mock
     private CompanyRepository companyRepository;
+
+    @Mock
+    private CompanyCounterService companyCounterService;
 
     @InjectMocks
     private JobTemplateService jobTemplateService;

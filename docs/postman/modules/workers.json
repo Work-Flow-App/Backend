@@ -80,7 +80,7 @@
               "value": "application/json"
             }
           ],
-          "body": "{\n    \"id\": 1,\n    \"name\": \"John Doe\",\n    \"initials\": \"JD\",\n    \"telephone\": \"1234567890\",\n    \"mobile\": \"0987654321\",\n    \"email\": \"john.doe@example.com\",\n    \"username\": \"johndoe\",\n    \"loginLocked\": false,\n    \"archived\": false,\n    \"createdAt\": \"2025-10-23T12:00:00\",\n    \"updatedAt\": \"2025-10-23T12:00:00\"\n}"
+          "body": "{\n    \"id\": 1,\n    \"workerRef\": 1,\n    \"name\": \"John Doe\",\n    \"initials\": \"JD\",\n    \"telephone\": \"1234567890\",\n    \"mobile\": \"0987654321\",\n    \"email\": \"john.doe@example.com\",\n    \"username\": \"johndoe\",\n    \"loginLocked\": false,\n    \"archived\": false,\n    \"createdAt\": \"2025-10-23T12:00:00\",\n    \"updatedAt\": \"2025-10-23T12:00:00\"\n}"
         }
       ]
     },
@@ -146,7 +146,7 @@
               "value": "application/json"
             }
           ],
-          "body": "[\n    {\n        \"id\": 1,\n        \"name\": \"John Doe\",\n        \"initials\": \"JD\",\n        \"telephone\": \"1234567890\",\n        \"mobile\": \"0987654321\",\n        \"email\": \"john.doe@example.com\",\n        \"username\": \"johndoe\",\n        \"loginLocked\": false,\n        \"archived\": false,\n        \"createdAt\": \"2025-10-23T12:00:00\",\n        \"updatedAt\": \"2025-10-23T12:00:00\"\n    },\n    {\n        \"id\": 2,\n        \"name\": \"Jane Smith\",\n        \"initials\": \"JS\",\n        \"telephone\": \"1111111111\",\n        \"mobile\": \"2222222222\",\n        \"email\": \"jane.smith@example.com\",\n        \"username\": \"janesmith\",\n        \"loginLocked\": false,\n        \"archived\": false,\n        \"createdAt\": \"2025-10-23T13:00:00\",\n        \"updatedAt\": \"2025-10-23T13:00:00\"\n    }\n]"
+          "body": "[\n    {\n        \"id\": 1,\n        \"workerRef\": 1,\n        \"name\": \"John Doe\",\n        \"initials\": \"JD\",\n        \"telephone\": \"1234567890\",\n        \"mobile\": \"0987654321\",\n        \"email\": \"john.doe@example.com\",\n        \"username\": \"johndoe\",\n        \"loginLocked\": false,\n        \"archived\": false,\n        \"createdAt\": \"2025-10-23T12:00:00\",\n        \"updatedAt\": \"2025-10-23T12:00:00\"\n    },\n    {\n        \"id\": 2,\n        \"workerRef\": 2,\n        \"name\": \"Jane Smith\",\n        \"initials\": \"JS\",\n        \"telephone\": \"1111111111\",\n        \"mobile\": \"2222222222\",\n        \"email\": \"jane.smith@example.com\",\n        \"username\": \"janesmith\",\n        \"loginLocked\": false,\n        \"archived\": false,\n        \"createdAt\": \"2025-10-23T13:00:00\",\n        \"updatedAt\": \"2025-10-23T13:00:00\"\n    }\n]"
         }
       ]
     },
@@ -214,7 +214,7 @@
               "value": "application/json"
             }
           ],
-          "body": "{\n    \"id\": 1,\n    \"name\": \"John Doe\",\n    \"initials\": \"JD\",\n    \"telephone\": \"1234567890\",\n    \"mobile\": \"0987654321\",\n    \"email\": \"john.doe@example.com\",\n    \"username\": \"johndoe\",\n    \"loginLocked\": false,\n    \"archived\": false,\n    \"createdAt\": \"2025-10-23T12:00:00\",\n    \"updatedAt\": \"2025-10-23T12:00:00\"\n}"
+          "body": "{\n    \"id\": 1,\n    \"workerRef\": 1,\n    \"name\": \"John Doe\",\n    \"initials\": \"JD\",\n    \"telephone\": \"1234567890\",\n    \"mobile\": \"0987654321\",\n    \"email\": \"john.doe@example.com\",\n    \"username\": \"johndoe\",\n    \"loginLocked\": false,\n    \"archived\": false,\n    \"createdAt\": \"2025-10-23T12:00:00\",\n    \"updatedAt\": \"2025-10-23T12:00:00\"\n}"
         }
       ]
     },
@@ -299,7 +299,7 @@
               "value": "application/json"
             }
           ],
-          "body": "{\n    \"id\": 1,\n    \"name\": \"John Doe Updated\",\n    \"initials\": \"JDU\",\n    \"telephone\": \"9999999999\",\n    \"mobile\": \"8888888888\",\n    \"email\": \"john.updated@example.com\",\n    \"username\": \"johndoe\",\n    \"loginLocked\": false,\n    \"archived\": false,\n    \"createdAt\": \"2025-10-23T12:00:00\",\n    \"updatedAt\": \"2025-10-23T14:30:00\"\n}"
+          "body": "{\n    \"id\": 1,\n    \"workerRef\": 1,\n    \"name\": \"John Doe Updated\",\n    \"initials\": \"JDU\",\n    \"telephone\": \"9999999999\",\n    \"mobile\": \"8888888888\",\n    \"email\": \"john.updated@example.com\",\n    \"username\": \"johndoe\",\n    \"loginLocked\": false,\n    \"archived\": false,\n    \"createdAt\": \"2025-10-23T12:00:00\",\n    \"updatedAt\": \"2025-10-23T14:30:00\"\n}"
         }
       ]
     },
@@ -384,7 +384,7 @@
               "value": "application/json"
             }
           ],
-          "body": "{\n    \"id\": 1,\n    \"name\": \"John Doe\",\n    \"initials\": \"JD\",\n    \"telephone\": \"5555555555\",\n    \"mobile\": \"0987654321\",\n    \"email\": \"john.doe@example.com\",\n    \"username\": \"johndoe\",\n    \"loginLocked\": false,\n    \"archived\": false,\n    \"createdAt\": \"2025-10-23T12:00:00\",\n    \"updatedAt\": \"2025-10-23T15:00:00\"\n}"
+          "body": "{\n    \"id\": 1,\n    \"workerRef\": 1,\n    \"name\": \"John Doe\",\n    \"initials\": \"JD\",\n    \"telephone\": \"5555555555\",\n    \"mobile\": \"0987654321\",\n    \"email\": \"john.doe@example.com\",\n    \"username\": \"johndoe\",\n    \"loginLocked\": false,\n    \"archived\": false,\n    \"createdAt\": \"2025-10-23T12:00:00\",\n    \"updatedAt\": \"2025-10-23T15:00:00\"\n}"
         },
         {
           "name": "Patch Worker - Update Multiple Fields",
@@ -428,7 +428,7 @@
               "value": "application/json"
             }
           ],
-          "body": "{\n    \"id\": 1,\n    \"name\": \"John D. Smith\",\n    \"initials\": \"JD\",\n    \"telephone\": \"1234567890\",\n    \"mobile\": \"0987654321\",\n    \"email\": \"john.smith@example.com\",\n    \"username\": \"johndoe\",\n    \"loginLocked\": false,\n    \"archived\": false,\n    \"createdAt\": \"2025-10-23T12:00:00\",\n    \"updatedAt\": \"2025-10-23T15:30:00\"\n}"
+          "body": "{\n    \"id\": 1,\n    \"workerRef\": 1,\n    \"name\": \"John D. Smith\",\n    \"initials\": \"JD\",\n    \"telephone\": \"1234567890\",\n    \"mobile\": \"0987654321\",\n    \"email\": \"john.smith@example.com\",\n    \"username\": \"johndoe\",\n    \"loginLocked\": false,\n    \"archived\": false,\n    \"createdAt\": \"2025-10-23T12:00:00\",\n    \"updatedAt\": \"2025-10-23T15:30:00\"\n}"
         }
       ]
     },

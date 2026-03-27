@@ -10,6 +10,7 @@ import com.workflow.entity.CustomerAddress;
 import com.workflow.entity.Company;
 import com.workflow.repository.CustomerRepository;
 import com.workflow.repository.CompanyRepository;
+import com.workflow.service.sequence.CompanyCounterService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,6 +25,7 @@ public class CustomerService implements ICustomerService {
 
     private final CustomerRepository customerRepository;
     private final CompanyRepository companyRepository;
+    private final CompanyCounterService companyCounterService;
 
     @Override
     public CustomerResponse createCustomer(CustomerCreateRequest request, Long companyId) {
@@ -41,6 +43,7 @@ public class CustomerService implements ICustomerService {
                 .mobile(request.getMobile())
                 .address(toAddressEntity(request.getAddress()))
                 .archived(false)
+                .customerRef(companyCounterService.nextCustomerId(companyId))
                 .build();
         customerRepository.save(customer);
         return mapToResponse(customer);
@@ -91,6 +94,7 @@ public class CustomerService implements ICustomerService {
     private CustomerResponse mapToResponse(Customer customer) {
         return CustomerResponse.builder()
                 .id(customer.getId())
+                .customerRef(customer.getCustomerRef())
                 .name(customer.getName())
                 .email(customer.getEmail())
                 .telephone(customer.getTelephone())

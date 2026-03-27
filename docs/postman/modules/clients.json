@@ -81,7 +81,7 @@
               "value": "application/json"
             }
           ],
-          "body": "{\n    \"id\": 1,\n    \"name\": \"Acme Corporation\",\n    \"email\": \"contact@acme.com\",\n    \"telephone\": \"123456789\",\n    \"mobile\": \"987654321\",\n    \"address\": \"123 Main Street, Suite 400, New York, USA 10001\",\n    \"archived\": false,\n    \"createdAt\": \"2025-11-08T10:00:00\",\n    \"updatedAt\": \"2025-11-08T10:00:00\"\n}"
+          "body": "{\n    \"id\": 1,\n    \"clientRef\": 1,\n    \"name\": \"Acme Corporation\",\n    \"email\": \"contact@acme.com\",\n    \"telephone\": \"123456789\",\n    \"mobile\": \"987654321\",\n    \"address\": \"123 Main Street, Suite 400, New York, USA 10001\",\n    \"archived\": false,\n    \"createdAt\": \"2025-11-08T10:00:00\",\n    \"updatedAt\": \"2025-11-08T10:00:00\"\n}"
         }
       ]
     },
@@ -147,7 +147,7 @@
               "value": "application/json"
             }
           ],
-          "body": "[\n    {\n        \"id\": 1,\n        \"name\": \"Acme Corporation\",\n        \"email\": \"contact@acme.com\",\n        \"telephone\": \"123456789\",\n        \"mobile\": \"987654321\",\n        \"address\": \"123 Main Street, Suite 400, New York, USA 10001\",\n        \"archived\": false,\n        \"createdAt\": \"2025-11-08T10:00:00\",\n        \"updatedAt\": \"2025-11-08T10:00:00\"\n    }\n]"
+          "body": "[\n    {\n        \"id\": 1,\n        \"clientRef\": 1,\n        \"name\": \"Acme Corporation\",\n        \"email\": \"contact@acme.com\",\n        \"telephone\": \"123456789\",\n        \"mobile\": \"987654321\",\n        \"address\": \"123 Main Street, Suite 400, New York, USA 10001\",\n        \"archived\": false,\n        \"createdAt\": \"2025-11-08T10:00:00\",\n        \"updatedAt\": \"2025-11-08T10:00:00\"\n    }\n]"
         }
       ]
     },
@@ -215,7 +215,7 @@
               "value": "application/json"
             }
           ],
-          "body": "{\n    \"id\": 1,\n    \"name\": \"Acme Corporation\",\n    \"email\": \"contact@acme.com\",\n    \"telephone\": \"123456789\",\n    \"mobile\": \"987654321\",\n    \"address\": \"123 Main Street, Suite 400, New York, USA 10001\",\n    \"archived\": false,\n    \"createdAt\": \"2025-11-08T10:00:00\",\n    \"updatedAt\": \"2025-11-08T10:00:00\"\n}"
+          "body": "{\n    \"id\": 1,\n    \"clientRef\": 1,\n    \"name\": \"Acme Corporation\",\n    \"email\": \"contact@acme.com\",\n    \"telephone\": \"123456789\",\n    \"mobile\": \"987654321\",\n    \"address\": \"123 Main Street, Suite 400, New York, USA 10001\",\n    \"archived\": false,\n    \"createdAt\": \"2025-11-08T10:00:00\",\n    \"updatedAt\": \"2025-11-08T10:00:00\"\n}"
         }
       ]
     },
@@ -300,7 +300,7 @@
               "value": "application/json"
             }
           ],
-          "body": "{\n    \"id\": 1,\n    \"name\": \"Acme Corporation Ltd.\",\n    \"email\": \"support@acme.com\",\n    \"telephone\": \"555555555\",\n    \"mobile\": \"999999999\",\n    \"address\": \"456 Oak Avenue, New York, USA 10002\",\n    \"archived\": false,\n    \"createdAt\": \"2025-11-08T10:00:00\",\n    \"updatedAt\": \"2025-11-08T11:00:00\"\n}"
+          "body": "{\n    \"id\": 1,\n    \"clientRef\": 1,\n    \"name\": \"Acme Corporation Ltd.\",\n    \"email\": \"support@acme.com\",\n    \"telephone\": \"555555555\",\n    \"mobile\": \"999999999\",\n    \"address\": \"456 Oak Avenue, New York, USA 10002\",\n    \"archived\": false,\n    \"createdAt\": \"2025-11-08T10:00:00\",\n    \"updatedAt\": \"2025-11-08T11:00:00\"\n}"
         }
       ]
     },

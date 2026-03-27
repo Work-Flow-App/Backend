@@ -1,0 +1,391 @@
+{
+  "name": "Invoices",
+  "description": "Invoice generation and retrieval endpoints. Invoices are generated as PDF documents from selected line items of an estimate and stored in S3. A presigned URL is returned to allow direct PDF download.",
+  "item": [
+    {
+      "name": "Generate Invoice",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"lineItemIds\": [1, 2, 3]\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/estimates/:estimateId/invoice",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "estimates",
+            ":estimateId",
+            "invoice"
+          ],
+          "variable": [
+            {
+              "key": "estimateId",
+              "value": "1",
+              "description": "The ID of the estimate to generate an invoice for"
+            }
+          ]
+        },
+        "description": "Generate a PDF invoice from selected line items of an estimate. The PDF is stored in S3 and the response includes a presigned URL for direct download.\n\n**Path variable:**\n- `estimateId` (Long): The ID of the estimate\n\n**Required fields:**\n- `lineItemIds` (Array<Long>): IDs of the line items to include in the invoice. Must be non-empty and all must belong to the specified estimate.\n\n**Response:** Returns the created invoice record including a presigned S3 URL to download the generated PDF.\n\n```bash\ncurl -X POST \"{{base_url}}/api/v1/estimates/1/invoice\" \\\n  -H \"Authorization: Bearer {{jwt_token}}\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n    \"lineItemIds\": [1, 2, 3]\n  }'\n```"
+      },
+      "response": [
+        {
+          "name": "Generate Invoice - Success",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"lineItemIds\": [1, 2, 3]\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/v1/estimates/1/invoice",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "estimates",
+                "1",
+                "invoice"
+              ]
+            }
+          },
+          "status": "Created",
+          "code": 201,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n    \"id\": 1,\n    \"estimateId\": 1,\n    \"companyId\": 1,\n    \"lineItemIds\": [1, 2, 3],\n    \"presignedUrl\": \"https://s3.amazonaws.com/workflow-app-bucket/invoices/invoice-1.pdf?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=...\",\n    \"createdAt\": \"2026-03-27T10:00:00\",\n    \"updatedAt\": \"2026-03-27T10:00:00\"\n}"
+        },
+        {
+          "name": "Generate Invoice - Estimate Not Found",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"lineItemIds\": [1, 2, 3]\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/v1/estimates/999/invoice",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "estimates",
+                "999",
+                "invoice"
+              ]
+            }
+          },
+          "status": "Not Found",
+          "code": 404,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n    \"status\": 404,\n    \"error\": \"Not Found\",\n    \"message\": \"Estimate not found\"\n}"
+        },
+        {
+          "name": "Generate Invoice - Bad Request (Empty Line Items)",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"lineItemIds\": []\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8080/api/v1/estimates/1/invoice",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "estimates",
+                "1",
+                "invoice"
+              ]
+            }
+          },
+          "status": "Bad Request",
+          "code": 400,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n    \"status\": 400,\n    \"error\": \"Bad Request\",\n    \"message\": \"lineItemIds must not be empty\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "List Invoices for Estimate",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/v1/estimates/:estimateId/invoices",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "estimates",
+            ":estimateId",
+            "invoices"
+          ],
+          "variable": [
+            {
+              "key": "estimateId",
+              "value": "1",
+              "description": "The ID of the estimate whose invoices should be listed"
+            }
+          ]
+        },
+        "description": "Get all invoices generated for a specific estimate. Returns an array of invoice records, each including a presigned S3 URL to download the corresponding PDF.\n\n**Path variable:**\n- `estimateId` (Long): The ID of the estimate\n\n```bash\ncurl -X GET \"{{base_url}}/api/v1/estimates/1/invoices\" \\\n  -H \"Authorization: Bearer {{jwt_token}}\"\n```"
+      },
+      "response": [
+        {
+          "name": "List Invoices for Estimate - Success",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/v1/estimates/1/invoices",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "estimates",
+                "1",
+                "invoices"
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "[\n    {\n        \"id\": 1,\n        \"estimateId\": 1,\n        \"companyId\": 1,\n        \"lineItemIds\": [1, 2, 3],\n        \"presignedUrl\": \"https://s3.amazonaws.com/workflow-app-bucket/invoices/invoice-1.pdf?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=...\",\n        \"createdAt\": \"2026-03-27T10:00:00\",\n        \"updatedAt\": \"2026-03-27T10:00:00\"\n    },\n    {\n        \"id\": 2,\n        \"estimateId\": 1,\n        \"companyId\": 1,\n        \"lineItemIds\": [1],\n        \"presignedUrl\": \"https://s3.amazonaws.com/workflow-app-bucket/invoices/invoice-2.pdf?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=...\",\n        \"createdAt\": \"2026-03-27T11:00:00\",\n        \"updatedAt\": \"2026-03-27T11:00:00\"\n    }\n]"
+        },
+        {
+          "name": "List Invoices for Estimate - Estimate Not Found",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/v1/estimates/999/invoices",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "estimates",
+                "999",
+                "invoices"
+              ]
+            }
+          },
+          "status": "Not Found",
+          "code": 404,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n    \"status\": 404,\n    \"error\": \"Not Found\",\n    \"message\": \"Estimate not found\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Get Invoice",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/v1/estimates/invoices/:invoiceId",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "estimates",
+            "invoices",
+            ":invoiceId"
+          ],
+          "variable": [
+            {
+              "key": "invoiceId",
+              "value": "1",
+              "description": "The ID of the invoice to retrieve"
+            }
+          ]
+        },
+        "description": "Get a single invoice by its ID. Returns the invoice record including a presigned S3 URL to download the PDF.\n\n**Path variable:**\n- `invoiceId` (Long): The ID of the invoice\n\n```bash\ncurl -X GET \"{{base_url}}/api/v1/estimates/invoices/1\" \\\n  -H \"Authorization: Bearer {{jwt_token}}\"\n```"
+      },
+      "response": [
+        {
+          "name": "Get Invoice - Success",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/v1/estimates/invoices/1",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "estimates",
+                "invoices",
+                "1"
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n    \"id\": 1,\n    \"estimateId\": 1,\n    \"companyId\": 1,\n    \"lineItemIds\": [1, 2, 3],\n    \"presignedUrl\": \"https://s3.amazonaws.com/workflow-app-bucket/invoices/invoice-1.pdf?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=...\",\n    \"createdAt\": \"2026-03-27T10:00:00\",\n    \"updatedAt\": \"2026-03-27T10:00:00\"\n}"
+        },
+        {
+          "name": "Get Invoice - Not Found",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8080/api/v1/estimates/invoices/999",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "8080",
+              "path": [
+                "api",
+                "v1",
+                "estimates",
+                "invoices",
+                "999"
+              ]
+            }
+          },
+          "status": "Not Found",
+          "code": 404,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n    \"status\": 404,\n    \"error\": \"Not Found\",\n    \"message\": \"Invoice not found\"\n}"
+        }
+      ]
+    }
+  ]
+}

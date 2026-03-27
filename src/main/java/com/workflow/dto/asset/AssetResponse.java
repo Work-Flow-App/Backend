@@ -11,6 +11,7 @@ import java.time.LocalDateTime;
 @Builder
 public class AssetResponse {
     private Long id;
+    private Long assetRef;
     private Long companyId;
     private String name;
     private String description;

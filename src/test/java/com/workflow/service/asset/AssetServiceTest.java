@@ -10,6 +10,7 @@ import com.workflow.entity.Company;
 import com.workflow.repository.AssetJobAssignmentRepository;
 import com.workflow.repository.AssetRepository;
 import com.workflow.repository.CompanyRepository;
+import com.workflow.service.sequence.CompanyCounterService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -40,6 +41,9 @@ class AssetServiceTest {
 
     @Mock
     private CompanyRepository companyRepository;
+
+    @Mock
+    private CompanyCounterService companyCounterService;
 
     @InjectMocks
     private AssetService assetService;

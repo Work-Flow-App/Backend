@@ -4,6 +4,7 @@ import com.workflow.dto.asset.*;
 import com.workflow.entity.*;
 import com.workflow.repository.*;
 import com.workflow.common.exception.business.*;
+import com.workflow.service.sequence.CompanyCounterService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.*;
@@ -25,6 +26,7 @@ public class AssetService implements IAssetService {
     private final AssetRepository assetRepository;
     private final AssetJobAssignmentRepository assignmentRepository;
     private final CompanyRepository companyRepository;
+    private final CompanyCounterService companyCounterService;
     // private final JobRepository jobRepository;
     // private final WorkerRepository workerRepository;
 
@@ -77,8 +79,9 @@ public class AssetService implements IAssetService {
                 .depreciationRate(request.getDepreciationRate().setScale(2, RoundingMode.HALF_UP))
                 .salvageValue(request.getSalvageValue() == null ? BigDecimal.ZERO
                         : request.getSalvageValue().setScale(2, RoundingMode.HALF_UP))
-                .available(true) // requirement: available on creation
+                .available(true)
                 .archived(false)
+                .assetRef(companyCounterService.nextAssetId(companyId))
                 .build();
 
         assetRepository.save(asset);
@@ -303,6 +306,7 @@ public class AssetService implements IAssetService {
     private AssetResponse mapToResponse(Asset asset) {
         return AssetResponse.builder()
                 .id(asset.getId())
+                .assetRef(asset.getAssetRef())
                 .companyId(asset.getCompany().getId())
                 .name(asset.getName())
                 .description(asset.getDescription())

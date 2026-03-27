@@ -12,6 +12,7 @@ import com.workflow.entity.JobTemplateField;
 import com.workflow.repository.CompanyRepository;
 import com.workflow.repository.JobTemplateFieldRepository;
 import com.workflow.repository.JobTemplateRepository;
+import com.workflow.service.sequence.CompanyCounterService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,6 +29,7 @@ public class JobTemplateService implements IJobTemplateService {
     private final JobTemplateRepository templateRepository;
     private final JobTemplateFieldRepository fieldRepository;
     private final CompanyRepository companyRepository;
+    private final CompanyCounterService companyCounterService;
 
     // -------------------------------------------------------------------------
     // JOB TEMPLATE CRUD
@@ -61,6 +63,7 @@ public class JobTemplateService implements IJobTemplateService {
                 .name(request.getName())
                 .description(request.getDescription())
                 .isDefault(shouldBeDefault)
+                .templateRef(companyCounterService.nextTemplateId(companyId))
                 .build();
 
         templateRepository.save(template);
@@ -261,6 +264,7 @@ public class JobTemplateService implements IJobTemplateService {
     private JobTemplateResponse mapToResponse(JobTemplate template) {
         return JobTemplateResponse.builder()
                 .id(template.getId())
+                .templateRef(template.getTemplateRef())
                 .companyId(template.getCompany().getId())
                 .name(template.getName())
                 .description(template.getDescription())

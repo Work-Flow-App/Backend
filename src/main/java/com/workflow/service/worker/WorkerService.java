@@ -14,6 +14,7 @@ import com.workflow.entity.Worker;
 import com.workflow.repository.UserRepository;
 import com.workflow.repository.WorkerRepository;
 import com.workflow.service.company.CompanyService;
+import com.workflow.service.sequence.CompanyCounterService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -33,6 +34,7 @@ public class WorkerService implements IWorkerService {
     private final UserRepository userRepository;
     private final CompanyService companyService;
     private final PasswordEncoder passwordEncoder;
+    private final CompanyCounterService companyCounterService;
 
     @Override
     @Transactional
@@ -73,6 +75,7 @@ public class WorkerService implements IWorkerService {
                 .user(savedUser)
                 .loginLocked(false)
                 .archived(false)
+                .workerRef(companyCounterService.nextWorkerId(company.getId()))
                 .build();
 
         Worker savedWorker = workerRepository.save(worker);

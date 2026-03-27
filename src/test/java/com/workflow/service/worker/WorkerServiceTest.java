@@ -14,6 +14,7 @@ import com.workflow.entity.Worker;
 import com.workflow.repository.UserRepository;
 import com.workflow.repository.WorkerRepository;
 import com.workflow.service.company.CompanyService;
+import com.workflow.service.sequence.CompanyCounterService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -46,6 +47,9 @@ class WorkerServiceTest {
 
     @Mock
     private PasswordEncoder passwordEncoder;
+
+    @Mock
+    private CompanyCounterService companyCounterService;
 
     @InjectMocks
     private WorkerService workerService;

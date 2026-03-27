@@ -51,8 +51,9 @@ public class Worker {
     @Builder.Default
     private boolean archived = false;
 
+    @Builder.Default
     @Column(name = "worker_ref", nullable = false)
-    private Long workerRef;
+    private Long workerRef = 0L;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)

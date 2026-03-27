@@ -35,8 +35,9 @@ public class JobTemplate {
     @Column(nullable = false, columnDefinition = "BOOLEAN DEFAULT FALSE")
     private boolean isDefault;
 
+    @Builder.Default
     @Column(name = "template_ref", nullable = false)
-    private Long templateRef;
+    private Long templateRef = 0L;
 
     @CreationTimestamp
     private LocalDateTime createdAt;

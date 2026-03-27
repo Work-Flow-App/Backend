@@ -104,6 +104,7 @@ class EntityMappingIntegrationTest {
                 .user(workerUser)
                 .loginLocked(false)
                 .archived(false)
+                .workerRef(1L)
                 .build();
         worker = workerRepository.save(worker);
         // Add to company collection (bidirectional relationship)
@@ -116,6 +117,7 @@ class EntityMappingIntegrationTest {
                 .email("client@example.com")
                 .telephone("1111111111")
                 .archived(false)
+                .clientRef(1L)
                 .build();
         client = clientRepository.save(client);
         // Add to company collection (bidirectional relationship)

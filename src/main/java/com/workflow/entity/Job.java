@@ -64,6 +64,7 @@ public class Job {
     @JoinColumn(name = "address_id")
     private Address address;
 
+    @Builder.Default
     @Column(name = "job_ref", nullable = false)
-    private Long jobRef;
+    private Long jobRef = 0L;
 }

@@ -6,6 +6,7 @@ import com.workflow.dto.job.JobCreateRequest;
 import com.workflow.dto.job.JobResponse;
 import com.workflow.entity.*;
 import com.workflow.repository.*;
+import com.workflow.service.sequence.CompanyCounterService;
 import com.workflow.service.workflow.IJobWorkflowService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -62,6 +63,9 @@ class JobServiceTest {
 
         @Mock
         private IJobWorkflowService jobWorkflowService;
+
+        @Mock
+        private CompanyCounterService companyCounterService;
 
         @InjectMocks
         private JobService jobService;

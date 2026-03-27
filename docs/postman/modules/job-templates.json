@@ -81,7 +81,7 @@
               "value": "application/json"
             }
           ],
-          "body": "{\n    \"id\": 3,\n    \"companyId\": 1,\n    \"name\": \"Maintenance Job\",\n    \"description\": \"Standard maintenance workflow template for equipment servicing\",\n    \"archived\": false,\n    \"isDefault\": false,\n    \"createdAt\": \"2025-11-14T10:00:00\",\n    \"updatedAt\": \"2025-11-14T10:00:00\"\n}"
+          "body": "{\n    \"id\": 3,\n    \"templateRef\": 1,\n    \"companyId\": 1,\n    \"name\": \"Maintenance Job\",\n    \"description\": \"Standard maintenance workflow template for equipment servicing\",\n    \"archived\": false,\n    \"isDefault\": false,\n    \"createdAt\": \"2025-11-14T10:00:00\",\n    \"updatedAt\": \"2025-11-14T10:00:00\"\n}"
         }
       ]
     },
@@ -147,7 +147,7 @@
               "value": "application/json"
             }
           ],
-          "body": "[\n    {\n        \"id\": 3,\n        \"companyId\": 1,\n        \"name\": \"Maintenance Job\",\n        \"description\": \"Standard maintenance workflow template for equipment servicing\",\n        \"archived\": false,\n        \"isDefault\": false,\n        \"createdAt\": \"2025-11-14T10:00:00\",\n        \"updatedAt\": \"2025-11-14T10:00:00\"\n    },\n    {\n        \"id\": 4,\n        \"companyId\": 1,\n        \"name\": \"Installation Checklist\",\n        \"description\": \"Checklist for new equipment installation.\",\n        \"archived\": false,\n        \"isDefault\": false,\n        \"createdAt\": \"2025-11-14T11:00:00\",\n        \"updatedAt\": \"2025-11-14T11:00:00\"\n    }\n]"
+          "body": "[\n    {\n        \"id\": 3,\n        \"templateRef\": 1,\n        \"companyId\": 1,\n        \"name\": \"Maintenance Job\",\n        \"description\": \"Standard maintenance workflow template for equipment servicing\",\n        \"archived\": false,\n        \"isDefault\": false,\n        \"createdAt\": \"2025-11-14T10:00:00\",\n        \"updatedAt\": \"2025-11-14T10:00:00\"\n    },\n    {\n        \"id\": 4,\n        \"templateRef\": 2,\n        \"companyId\": 1,\n        \"name\": \"Installation Checklist\",\n        \"description\": \"Checklist for new equipment installation.\",\n        \"archived\": false,\n        \"isDefault\": false,\n        \"createdAt\": \"2025-11-14T11:00:00\",\n        \"updatedAt\": \"2025-11-14T11:00:00\"\n    }\n]"
         }
       ]
     },
@@ -215,7 +215,7 @@
               "value": "application/json"
             }
           ],
-          "body": "{\n    \"id\": 3,\n    \"companyId\": 1,\n    \"name\": \"Maintenance Job\",\n    \"description\": \"Standard maintenance workflow template for equipment servicing\",\n    \"archived\": false,\n    \"isDefault\": false,\n    \"createdAt\": \"2025-11-14T10:00:00\",\n    \"updatedAt\": \"2025-11-14T10:00:00\"\n}"
+          "body": "{\n    \"id\": 3,\n    \"templateRef\": 1,\n    \"companyId\": 1,\n    \"name\": \"Maintenance Job\",\n    \"description\": \"Standard maintenance workflow template for equipment servicing\",\n    \"archived\": false,\n    \"isDefault\": false,\n    \"createdAt\": \"2025-11-14T10:00:00\",\n    \"updatedAt\": \"2025-11-14T10:00:00\"\n}"
         }
       ]
     },
@@ -283,7 +283,7 @@
               "value": "application/json"
             }
           ],
-          "body": "{\n    \"id\": 3,\n    \"companyId\": 1,\n    \"name\": \"Maintenance Job\",\n    \"description\": \"Standard maintenance workflow template for equipment servicing\",\n    \"archived\": false,\n    \"isDefault\": true,\n    \"createdAt\": \"2025-11-14T10:00:00\",\n    \"updatedAt\": \"2025-11-14T10:00:00\"\n}"
+          "body": "{\n    \"id\": 3,\n    \"templateRef\": 1,\n    \"companyId\": 1,\n    \"name\": \"Maintenance Job\",\n    \"description\": \"Standard maintenance workflow template for equipment servicing\",\n    \"archived\": false,\n    \"isDefault\": true,\n    \"createdAt\": \"2025-11-14T10:00:00\",\n    \"updatedAt\": \"2025-11-14T10:00:00\"\n}"
         },
         {
           "name": "Get Default Template - Not Found",
@@ -404,7 +404,7 @@
               "value": "application/json"
             }
           ],
-          "body": "{\n    \"id\": 3,\n    \"companyId\": 1,\n    \"name\": \"Updated Maintenance Template\",\n    \"description\": \"Updated template description for servicing jobs\",\n    \"archived\": false,\n    \"isDefault\": false,\n    \"createdAt\": \"2025-11-14T10:00:00\",\n    \"updatedAt\": \"2025-11-14T12:00:00\"\n}"
+          "body": "{\n    \"id\": 3,\n    \"templateRef\": 1,\n    \"companyId\": 1,\n    \"name\": \"Updated Maintenance Template\",\n    \"description\": \"Updated template description for servicing jobs\",\n    \"archived\": false,\n    \"isDefault\": false,\n    \"createdAt\": \"2025-11-14T10:00:00\",\n    \"updatedAt\": \"2025-11-14T12:00:00\"\n}"
         }
       ]
     },
@@ -1046,7 +1046,7 @@
               "value": "application/json"
             }
           ],
-          "body": "{\n    \"id\": 3,\n    \"companyId\": 1,\n    \"name\": \"Maintenance Job\",\n    \"description\": \"Standard maintenance workflow template for equipment servicing\",\n    \"archived\": false,\n    \"isDefault\": false,\n    \"createdAt\": \"2025-11-14T10:00:00\",\n    \"updatedAt\": \"2025-11-14T12:00:00\",\n    \"fields\": [\n        {\n            \"id\": 101,\n            \"templateId\": 3,\n            \"name\": \"customerName\",\n            \"label\": \"Customer Name\",\n            \"jobFieldType\": \"TEXT\",\n            \"required\": true,\n            \"options\": null,\n            \"orderIndex\": 1,\n            \"createdAt\": \"2025-11-14T10:05:00\",\n            \"updatedAt\": \"2025-11-14T10:05:00\"\n        },\n        {\n            \"id\": 102,\n            \"templateId\": 3,\n            \"name\": \"priority\",\n            \"label\": \"Priority Level (Changed)\",\n            \"jobFieldType\": \"DROPDOWN\",\n            \"required\": true,\n            \"options\": \"[\\\"Low\\\", \\\"Medium\\\", \\\"High\\\", \\\"Urgent\\\"]\",\n            \"orderIndex\": 2,\n            \"createdAt\": \"2025-11-14T10:06:00\",\n            \"updatedAt\": \"2025-11-14T12:30:00\"\n        }\n    ]\n}"
+          "body": "{\n    \"id\": 3,\n    \"templateRef\": 1,\n    \"companyId\": 1,\n    \"name\": \"Maintenance Job\",\n    \"description\": \"Standard maintenance workflow template for equipment servicing\",\n    \"archived\": false,\n    \"isDefault\": false,\n    \"createdAt\": \"2025-11-14T10:00:00\",\n    \"updatedAt\": \"2025-11-14T12:00:00\",\n    \"fields\": [\n        {\n            \"id\": 101,\n            \"templateId\": 3,\n            \"name\": \"customerName\",\n            \"label\": \"Customer Name\",\n            \"jobFieldType\": \"TEXT\",\n            \"required\": true,\n            \"options\": null,\n            \"orderIndex\": 1,\n            \"createdAt\": \"2025-11-14T10:05:00\",\n            \"updatedAt\": \"2025-11-14T10:05:00\"\n        },\n        {\n            \"id\": 102,\n            \"templateId\": 3,\n            \"name\": \"priority\",\n            \"label\": \"Priority Level (Changed)\",\n            \"jobFieldType\": \"DROPDOWN\",\n            \"required\": true,\n            \"options\": \"[\\\"Low\\\", \\\"Medium\\\", \\\"High\\\", \\\"Urgent\\\"]\",\n            \"orderIndex\": 2,\n            \"createdAt\": \"2025-11-14T10:06:00\",\n            \"updatedAt\": \"2025-11-14T12:30:00\"\n        }\n    ]\n}"
         }
       ]
     }

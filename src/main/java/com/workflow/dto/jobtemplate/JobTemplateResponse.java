@@ -9,6 +9,7 @@ import java.time.LocalDateTime;
 @Builder
 public class JobTemplateResponse {
     private Long id;
+    private Long templateRef;
     private Long companyId;
     private String name;
     private String description;

@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 
 public record WorkerResponse(
         Long id,
+        Long workerRef,
         String name,
         String initials,
         String telephone,
@@ -20,6 +21,7 @@ public record WorkerResponse(
     public static WorkerResponse fromEntity(Worker worker) {
         return new WorkerResponse(
                 worker.getId(),
+                worker.getWorkerRef(),
                 worker.getName(),
                 worker.getInitials(),
                 worker.getTelephone(),

@@ -36,6 +36,7 @@ const MODULE_ORDER = [
   'job-workflows',
   'estimates',
   'line-items',
+  'invoices',
   'job-workflow-step-activities',
   'job-workflow-step-visit-logs',
   'worker-job-workflow',

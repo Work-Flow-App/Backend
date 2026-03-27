@@ -8,6 +8,7 @@ import lombok.*;
 @Builder
 public class WorkflowResponse {
     private Long id;
+    private Long workflowRef;
     private Long companyId;
     private String name;
     private String description;

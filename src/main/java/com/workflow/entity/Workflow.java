@@ -29,6 +29,10 @@ public class Workflow {
 
     private String description;
 
+    @Builder.Default
+    @Column(name = "workflow_ref", nullable = false)
+    private Long workflowRef = 0L;
+
     @CreationTimestamp
     private LocalDateTime createdAt;
 

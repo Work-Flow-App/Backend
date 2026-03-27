@@ -158,6 +158,13 @@
 			<version>2.7.0</version>
 		</dependency>
 
+		<!-- PDF generation (LGPL) -->
+		<dependency>
+			<groupId>com.github.librepdf</groupId>
+			<artifactId>openpdf</artifactId>
+			<version>1.3.42</version>
+		</dependency>
+
 	</dependencies>
 
 	<build>

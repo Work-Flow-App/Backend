@@ -63,6 +63,10 @@ public class Asset {
     @Builder.Default
     private boolean archived = false;
 
+    @Builder.Default
+    @Column(name = "asset_ref", nullable = false)
+    private Long assetRef = 0L;
+
     @CreationTimestamp
     private LocalDateTime createdAt;
 

@@ -8,6 +8,7 @@ import com.workflow.entity.Client;
 import com.workflow.entity.Company;
 import com.workflow.repository.ClientRepository;
 import com.workflow.repository.CompanyRepository;
+import com.workflow.service.sequence.CompanyCounterService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,6 +23,7 @@ public class ClientService implements IClientService {
 
     private final ClientRepository clientRepository;
     private final CompanyRepository companyRepository;
+    private final CompanyCounterService companyCounterService;
 
     @Override
     public ClientResponse createClient(ClientCreateRequest request, Long companyId) {
@@ -35,6 +37,7 @@ public class ClientService implements IClientService {
                 .mobile(request.getMobile())
                 .address(request.getAddress())
                 .archived(false)
+                .clientRef(companyCounterService.nextClientId(companyId))
                 .build();
         clientRepository.save(client);
         return mapToResponse(client);
@@ -81,6 +84,7 @@ public class ClientService implements IClientService {
     private ClientResponse mapToResponse(Client client) {
         return ClientResponse.builder()
                 .id(client.getId())
+                .clientRef(client.getClientRef())
                 .name(client.getName())
                 .email(client.getEmail())
                 .telephone(client.getTelephone())

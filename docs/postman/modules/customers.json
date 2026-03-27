@@ -81,7 +81,7 @@
               "value": "application/json"
             }
           ],
-          "body": "{\n    \"id\": 1,\n    \"name\": \"GlobalTech Solutions\",\n    \"email\": \"contact@globaltech.com\",\n    \"telephone\": \"123456789\",\n    \"mobile\": \"987654321\",\n    \"address\": {\n        \"houseNumber\": \"42\",\n        \"street\": \"Baker Street\",\n        \"city\": \"London\",\n        \"county\": \"Greater London\",\n        \"postalCode\": \"NW1 6XE\",\n        \"country\": \"United Kingdom\"\n    },\n    \"archived\": false,\n    \"createdAt\": \"2025-11-08T10:00:00\",\n    \"updatedAt\": \"2025-11-08T10:00:00\"\n}"
+          "body": "{\n    \"id\": 1,\n    \"customerRef\": 1,\n    \"name\": \"GlobalTech Solutions\",\n    \"email\": \"contact@globaltech.com\",\n    \"telephone\": \"123456789\",\n    \"mobile\": \"987654321\",\n    \"address\": {\n        \"houseNumber\": \"42\",\n        \"street\": \"Baker Street\",\n        \"city\": \"London\",\n        \"county\": \"Greater London\",\n        \"postalCode\": \"NW1 6XE\",\n        \"country\": \"United Kingdom\"\n    },\n    \"archived\": false,\n    \"createdAt\": \"2025-11-08T10:00:00\",\n    \"updatedAt\": \"2025-11-08T10:00:00\"\n}"
         }
       ]
     },
@@ -147,7 +147,7 @@
               "value": "application/json"
             }
           ],
-          "body": "[\n    {\n        \"id\": 1,\n        \"name\": \"GlobalTech Solutions\",\n        \"email\": \"contact@globaltech.com\",\n        \"telephone\": \"123456789\",\n        \"mobile\": \"987654321\",\n        \"address\": {\n            \"houseNumber\": \"42\",\n            \"street\": \"Baker Street\",\n            \"city\": \"London\",\n            \"county\": \"Greater London\",\n            \"postalCode\": \"NW1 6XE\",\n            \"country\": \"United Kingdom\"\n        },\n        \"archived\": false,\n        \"createdAt\": \"2025-11-08T10:00:00\",\n        \"updatedAt\": \"2025-11-08T10:00:00\"\n    }\n]"
+          "body": "[\n    {\n        \"id\": 1,\n        \"customerRef\": 1,\n        \"name\": \"GlobalTech Solutions\",\n        \"email\": \"contact@globaltech.com\",\n        \"telephone\": \"123456789\",\n        \"mobile\": \"987654321\",\n        \"address\": {\n            \"houseNumber\": \"42\",\n            \"street\": \"Baker Street\",\n            \"city\": \"London\",\n            \"county\": \"Greater London\",\n            \"postalCode\": \"NW1 6XE\",\n            \"country\": \"United Kingdom\"\n        },\n        \"archived\": false,\n        \"createdAt\": \"2025-11-08T10:00:00\",\n        \"updatedAt\": \"2025-11-08T10:00:00\"\n    }\n]"
         }
       ]
     },
@@ -215,7 +215,7 @@
               "value": "application/json"
             }
           ],
-          "body": "{\n    \"id\": 1,\n    \"name\": \"GlobalTech Solutions\",\n    \"email\": \"contact@globaltech.com\",\n    \"telephone\": \"123456789\",\n    \"mobile\": \"987654321\",\n    \"address\": {\n        \"houseNumber\": \"42\",\n        \"street\": \"Baker Street\",\n        \"city\": \"London\",\n        \"county\": \"Greater London\",\n        \"postalCode\": \"NW1 6XE\",\n        \"country\": \"United Kingdom\"\n    },\n    \"archived\": false,\n    \"createdAt\": \"2025-11-08T10:00:00\",\n    \"updatedAt\": \"2025-11-08T10:00:00\"\n}"
+          "body": "{\n    \"id\": 1,\n    \"customerRef\": 1,\n    \"name\": \"GlobalTech Solutions\",\n    \"email\": \"contact@globaltech.com\",\n    \"telephone\": \"123456789\",\n    \"mobile\": \"987654321\",\n    \"address\": {\n        \"houseNumber\": \"42\",\n        \"street\": \"Baker Street\",\n        \"city\": \"London\",\n        \"county\": \"Greater London\",\n        \"postalCode\": \"NW1 6XE\",\n        \"country\": \"United Kingdom\"\n    },\n    \"archived\": false,\n    \"createdAt\": \"2025-11-08T10:00:00\",\n    \"updatedAt\": \"2025-11-08T10:00:00\"\n}"
         }
       ]
     },
@@ -300,7 +300,7 @@
               "value": "application/json"
             }
           ],
-          "body": "{\n    \"id\": 1,\n    \"name\": \"GlobalTech Solutions Ltd.\",\n    \"email\": \"support@globaltech.com\",\n    \"telephone\": \"555555555\",\n    \"mobile\": \"999999999\",\n    \"address\": {\n        \"houseNumber\": \"789\",\n        \"street\": \"Innovation Drive\",\n        \"city\": \"London\",\n        \"county\": \"Greater London\",\n        \"postalCode\": \"EC2A 2BB\",\n        \"country\": \"United Kingdom\"\n    },\n    \"archived\": false,\n    \"createdAt\": \"2025-11-08T10:00:00\",\n    \"updatedAt\": \"2025-11-08T11:00:00\"\n}"
+          "body": "{\n    \"id\": 1,\n    \"customerRef\": 1,\n    \"name\": \"GlobalTech Solutions Ltd.\",\n    \"email\": \"support@globaltech.com\",\n    \"telephone\": \"555555555\",\n    \"mobile\": \"999999999\",\n    \"address\": {\n        \"houseNumber\": \"789\",\n        \"street\": \"Innovation Drive\",\n        \"city\": \"London\",\n        \"county\": \"Greater London\",\n        \"postalCode\": \"EC2A 2BB\",\n        \"country\": \"United Kingdom\"\n    },\n    \"archived\": false,\n    \"createdAt\": \"2025-11-08T10:00:00\",\n    \"updatedAt\": \"2025-11-08T11:00:00\"\n}"
         }
       ]
     },

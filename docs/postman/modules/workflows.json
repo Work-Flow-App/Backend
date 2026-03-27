@@ -33,7 +33,7 @@
           "name": "201 Created",
           "status": "Created",
           "code": 201,
-          "body": "{\n  \"id\": 1,\n  \"companyId\": 1,\n  \"name\": \"Repair Workflow\",\n  \"description\": \"Standard repair process\"\n}"
+          "body": "{\n  \"id\": 1,\n  \"workflowRef\": 1,\n  \"companyId\": 1,\n  \"name\": \"Repair Workflow\",\n  \"description\": \"Standard repair process\"\n}"
         }
       ]
     },
@@ -68,7 +68,7 @@
           "name": "200 OK",
           "status": "OK",
           "code": 200,
-          "body": "{\n  \"id\": 1,\n  \"companyId\": 1,\n  \"name\": \"Updated Workflow\",\n  \"description\": \"Updated description\"\n}"
+          "body": "{\n  \"id\": 1,\n  \"workflowRef\": 1,\n  \"companyId\": 1,\n  \"name\": \"Updated Workflow\",\n  \"description\": \"Updated description\"\n}"
         }
       ]
     },
@@ -117,7 +117,7 @@
           "name": "200 OK",
           "status": "OK",
           "code": 200,
-          "body": "[{\n  \"id\": 1,\n  \"companyId\": 1,\n  \"name\": \"Repair Workflow\",\n  \"description\": \"Standard repair process\"\n}]"
+          "body": "[{\n  \"id\": 1,\n  \"workflowRef\": 1,\n  \"companyId\": 1,\n  \"name\": \"Repair Workflow\",\n  \"description\": \"Standard repair process\"\n}]"
         }
       ]
     },
@@ -142,7 +142,7 @@
           "name": "200 OK",
           "status": "OK",
           "code": 200,
-          "body": "{\n  \"id\": 1,\n  \"companyId\": 1,\n  \"name\": \"Repair Workflow\",\n  \"description\": \"Standard repair process\"\n}"
+          "body": "{\n  \"id\": 1,\n  \"workflowRef\": 1,\n  \"companyId\": 1,\n  \"name\": \"Repair Workflow\",\n  \"description\": \"Standard repair process\"\n}"
         }
       ]
     },
@@ -346,7 +346,7 @@
           "name": "200 OK",
           "status": "OK",
           "code": 200,
-          "body": "{\n  \"id\": 1,\n  \"companyId\": 1,\n  \"name\": \"Repair Workflow v2\",\n  \"description\": \"Updated bulk workflow\"\n}"
+          "body": "{\n  \"id\": 1,\n  \"workflowRef\": 1,\n  \"companyId\": 1,\n  \"name\": \"Repair Workflow v2\",\n  \"description\": \"Updated bulk workflow\"\n}"
         }
       ]
     },
@@ -371,7 +371,7 @@
           "name": "200 OK",
           "status": "OK",
           "code": 200,
-          "body": "{\n  \"id\": 1,\n  \"companyId\": 1,\n  \"name\": \"Repair Workflow\",\n  \"description\": \"Standard repair process\",\n  \"steps\": [\n    {\n      \"id\": 10,\n      \"workflowId\": 1,\n      \"name\": \"Inspection\",\n      \"description\": \"Initial inspection\",\n      \"orderIndex\": 1,\n      \"optional\": false\n    },\n    {\n      \"id\": 11,\n      \"workflowId\": 1,\n      \"name\": \"Final Check\",\n      \"description\": \"Quality assurance\",\n      \"orderIndex\": 2,\n      \"optional\": true\n    }\n  ]\n}"
+          "body": "{\n  \"id\": 1,\n  \"workflowRef\": 1,\n  \"companyId\": 1,\n  \"name\": \"Repair Workflow\",\n  \"description\": \"Standard repair process\",\n  \"steps\": [\n    {\n      \"id\": 10,\n      \"workflowId\": 1,\n      \"name\": \"Inspection\",\n      \"description\": \"Initial inspection\",\n      \"orderIndex\": 1,\n      \"optional\": false\n    },\n    {\n      \"id\": 11,\n      \"workflowId\": 1,\n      \"name\": \"Final Check\",\n      \"description\": \"Quality assurance\",\n      \"orderIndex\": 2,\n      \"optional\": true\n    }\n  ]\n}"
         }
       ]
     }

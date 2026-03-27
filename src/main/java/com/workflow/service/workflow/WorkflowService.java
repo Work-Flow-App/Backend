@@ -25,6 +25,7 @@ import com.workflow.entity.WorkflowStep;
 import com.workflow.repository.CompanyRepository;
 import com.workflow.repository.WorkflowRepository;
 import com.workflow.repository.WorkflowStepRepository;
+import com.workflow.service.sequence.CompanyCounterService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -36,6 +37,7 @@ public class WorkflowService implements IWorkflowService {
     private final WorkflowRepository workflowRepository;
     private final WorkflowStepRepository stepRepository;
     private final CompanyRepository companyRepository;
+    private final CompanyCounterService companyCounterService;
 
     @Override
     public WorkflowResponse createWorkflow(WorkflowCreateRequest request, Long companyId) {
@@ -47,6 +49,7 @@ public class WorkflowService implements IWorkflowService {
                         .company(company)
                         .name(request.getName())
                         .description(request.getDescription())
+                        .workflowRef(companyCounterService.nextWorkflowId(companyId))
                         .build());
 
         return map(workflow);
@@ -253,6 +256,7 @@ public class WorkflowService implements IWorkflowService {
     private WorkflowResponse map(Workflow w) {
         return WorkflowResponse.builder()
                 .id(w.getId())
+                .workflowRef(w.getWorkflowRef())
                 .companyId(w.getCompany().getId())
                 .name(w.getName())
                 .description(w.getDescription())

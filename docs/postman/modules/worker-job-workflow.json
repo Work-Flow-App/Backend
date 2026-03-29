@@ -156,7 +156,7 @@
               "value": "application/json"
             }
           ],
-          "body": "{\n    \"id\": 101,\n    \"jobId\": 50,\n    \"status\": \"ONGOING\",\n    \"steps\": [\n        {\n            \"id\": 2,\n            \"name\": \"Installation\",\n            \"description\": \"Install the unit\",\n            \"orderIndex\": 2,\n            \"status\": \"STARTED\",\n            \"startedAt\": \"2025-10-24T09:00:00\",\n            \"assignedWorkerIds\": [5]\n        }\n    ]\n}"
+          "body": "{\n    \"id\": 101,\n    \"jobId\": 50,\n    \"jobRef\": 1001,\n    \"status\": \"ONGOING\",\n    \"steps\": [\n        {\n            \"id\": 2,\n            \"name\": \"Installation\",\n            \"description\": \"Install the unit\",\n            \"orderIndex\": 2,\n            \"status\": \"STARTED\",\n            \"startedAt\": \"2025-10-24T09:00:00\",\n            \"assignedWorkerIds\": [5]\n        }\n    ]\n}"
         }
       ]
     },

@@ -291,7 +291,7 @@ public class InvoiceService implements IInvoiceService {
                 li.getQuantity().stripTrailingZeros().toPlainString(),
                 formatAmount(li.getUnitPrice()),
                 formatAmount(li.getNetAmount()),
-                (li.getVatRate().multiply(BigDecimal.valueOf(100)).stripTrailingZeros().toPlainString()) + "%",
+                li.getVatRate().stripTrailingZeros().toPlainString() + "%",
                 formatAmount(li.getVatAmount()),
                 formatAmount(li.getTotalAmount())
         };

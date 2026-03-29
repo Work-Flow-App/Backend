@@ -1,0 +1,2 @@
+ALTER TABLE line_items
+    MODIFY COLUMN vat_rate DECIMAL(5,2) NOT NULL;

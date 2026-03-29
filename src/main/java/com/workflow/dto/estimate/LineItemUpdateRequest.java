@@ -1,6 +1,7 @@
 package com.workflow.dto.estimate;
 
 import com.workflow.common.constant.CoreOrSub;
+import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import lombok.*;
 
@@ -26,6 +27,7 @@ public class LineItemUpdateRequest {
     @DecimalMin(value = "0", inclusive = false, message = "Quantity must be greater than zero")
     private BigDecimal quantity;
 
-    @DecimalMin(value = "0", message = "VAT rate must be zero or greater")
+    @DecimalMin(value = "0", message = "VAT rate must be between 0 and 100")
+    @DecimalMax(value = "100", message = "VAT rate must be between 0 and 100")
     private BigDecimal vatRate;
 }

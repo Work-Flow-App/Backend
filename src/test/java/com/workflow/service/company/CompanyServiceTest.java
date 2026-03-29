@@ -3,10 +3,12 @@ package com.workflow.service.company;
 import com.workflow.common.constant.Role;
 import com.workflow.common.exception.business.CompanyAlreadyExistsException;
 import com.workflow.common.exception.business.CompanyNotFoundException;
+import com.workflow.dto.company.CompanyAddressRequest;
 import com.workflow.dto.company.CompanyDashboardResponse;
 import com.workflow.dto.company.CompanyProfileResponse;
 import com.workflow.dto.company.CompanyProfileUpdateRequest;
 import com.workflow.entity.Company;
+import com.workflow.entity.CompanyAddress;
 import com.workflow.entity.User;
 import com.workflow.entity.Worker;
 import com.workflow.repository.CompanyRepository;
@@ -58,10 +60,12 @@ class CompanyServiceTest {
                 .user(companyUser)
                 .email("company@example.com")
                 .telephone("1234567890")
-                .addressLine1("123 Main St")
-                .town("New York")
-                .country("USA")
-                .postcode("10001")
+                .address(CompanyAddress.builder()
+                        .addressLine1("123 Main St")
+                        .town("New York")
+                        .country("USA")
+                        .postcode("10001")
+                        .build())
                 .archived(false)
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
@@ -69,18 +73,15 @@ class CompanyServiceTest {
 
         updateRequest = new CompanyProfileUpdateRequest(
                 "Updated Company",
-                "456 Oak Ave",
-                "Suite 200",
-                null,
-                "Los Angeles",
-                "USA",
-                "90001",
+                new CompanyAddressRequest("456 Oak Ave", "Suite 200", null, "Los Angeles", "USA", "90001"),
                 "9876543210",
                 "5555555555",
                 "1111111111",
                 "updated@example.com",
                 "contact@example.com",
-                "ACC456"
+                "ACC456",
+                null,
+                null
         );
     }
 
@@ -138,7 +139,7 @@ class CompanyServiceTest {
         // Arrange
         CompanyProfileUpdateRequest sameNameRequest = new CompanyProfileUpdateRequest(
                 "test company", // Same name, different case
-                null, null, null, null, null, null, null, null, null, null, null, null
+                null, null, null, null, null, null, null, null, null
         );
         when(companyRepository.findByUserIdAndNotArchived(1L)).thenReturn(Optional.of(company));
         when(companyRepository.save(any(Company.class))).thenReturn(company);
@@ -161,11 +162,11 @@ class CompanyServiceTest {
         when(companyRepository.save(any(Company.class))).thenAnswer(invocation -> {
             Company savedCompany = invocation.getArgument(0);
             assertThat(savedCompany.getName()).isEqualTo("Updated Company");
-            assertThat(savedCompany.getAddressLine1()).isEqualTo("456 Oak Ave");
-            assertThat(savedCompany.getAddressLine2()).isEqualTo("Suite 200");
-            assertThat(savedCompany.getTown()).isEqualTo("Los Angeles");
-            assertThat(savedCompany.getCountry()).isEqualTo("USA");
-            assertThat(savedCompany.getPostcode()).isEqualTo("90001");
+            assertThat(savedCompany.getAddress().getAddressLine1()).isEqualTo("456 Oak Ave");
+            assertThat(savedCompany.getAddress().getAddressLine2()).isEqualTo("Suite 200");
+            assertThat(savedCompany.getAddress().getTown()).isEqualTo("Los Angeles");
+            assertThat(savedCompany.getAddress().getCountry()).isEqualTo("USA");
+            assertThat(savedCompany.getAddress().getPostcode()).isEqualTo("90001");
             assertThat(savedCompany.getTelephone()).isEqualTo("9876543210");
             assertThat(savedCompany.getMobile()).isEqualTo("5555555555");
             assertThat(savedCompany.getFax()).isEqualTo("1111111111");

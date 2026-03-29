@@ -95,7 +95,7 @@ public class LineItemService implements ILineItemService {
 
         BigDecimal vatAmount = netAmount
                 .multiply(item.getVatRate())
-                .setScale(2, RoundingMode.HALF_UP);
+                .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
 
         item.setNetAmount(netAmount);
         item.setVatAmount(vatAmount);

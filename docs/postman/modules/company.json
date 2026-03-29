@@ -28,7 +28,7 @@
             "profile"
           ]
         },
-        "description": "Retrieve the authenticated company's profile.\n\n**Authentication:** Required (COMPANY role)\n\n**Response:**\n- id (long): Company ID\n- name (string): Company name\n- email (string): Company email\n- telephone (string): Phone number\n- mobile (string): Mobile number\n- fax (string): Fax number\n- addressLine1, addressLine2, addressLine3 (string): Address details\n- town (string): Town/city\n- country (string): Country\n- postcode (string): Postal code\n- contactEmail (string): Contact email\n- contactNumber (string): Contact number\n- archived (boolean): Archive status\n- createdAt (datetime): Creation timestamp\n- updatedAt (datetime): Last update timestamp"
+        "description": "Retrieve the authenticated company's profile.\n\n**Authentication:** Required (COMPANY role)\n\n**Response:**\n- id (long): Company ID\n- name (string): Company name\n- email (string): Company email\n- telephone (string): Phone number\n- mobile (string): Mobile number\n- fax (string): Fax number\n- address (object, nullable): Nested address details\n  - addressLine1 (string): Address line 1\n  - addressLine2 (string): Address line 2\n  - addressLine3 (string): Address line 3\n  - town (string): Town/city\n  - country (string): Country\n  - postcode (string): Postal code\n- contactEmail (string): Contact email\n- contactNumber (string): Contact number\n- bankDetails (object, nullable): Bank account details\n  - bankName (string): Name of the bank\n  - accountName (string): Name on the bank account\n  - accountNo (string): Bank account number\n  - sortCode (string): Bank sort code\n- archived (boolean): Archive status\n- createdAt (datetime): Creation timestamp\n- updatedAt (datetime): Last update timestamp"
       },
       "response": [
         {
@@ -65,7 +65,7 @@
               "value": "application/json"
             }
           ],
-          "body": "{\n    \"id\": 1,\n    \"name\": \"Tech Solutions Inc\",\n    \"email\": \"company1@example.com\",\n    \"telephone\": \"1234567890\",\n    \"mobile\": \"0987654321\",\n    \"fax\": \"1111111111\",\n    \"addressLine1\": \"123 Main St\",\n    \"addressLine2\": \"Suite 200\",\n    \"addressLine3\": null,\n    \"town\": \"New York\",\n    \"country\": \"USA\",\n    \"postcode\": \"10001\",\n    \"contactEmail\": \"contact@techsolutions.com\",\n    \"contactNumber\": \"ACC123\",\n    \"archived\": false,\n    \"createdAt\": \"2025-10-23T10:00:00\",\n    \"updatedAt\": \"2025-10-23T10:00:00\"\n}"
+          "body": "{\n    \"id\": 1,\n    \"name\": \"WorkFlow Ltd\",\n    \"address\": {\n        \"addressLine1\": \"123 Main Street\",\n        \"addressLine2\": \"Suite 200\",\n        \"addressLine3\": null,\n        \"town\": \"London\",\n        \"country\": \"UK\",\n        \"postcode\": \"EC1A 1BB\"\n    },\n    \"telephone\": \"+44 20 1234 5678\",\n    \"mobile\": null,\n    \"fax\": null,\n    \"email\": \"info@workflow.com\",\n    \"contactEmail\": null,\n    \"contactNumber\": null,\n    \"bankDetails\": {\n        \"bankName\": \"Barclays\",\n        \"accountName\": \"WorkFlow Ltd\",\n        \"accountNo\": \"12345678\",\n        \"sortCode\": \"20-00-00\"\n    },\n    \"archived\": false,\n    \"createdAt\": \"2026-03-29T10:00:00\",\n    \"updatedAt\": \"2026-03-29T10:00:00\"\n}"
         }
       ]
     },
@@ -91,7 +91,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n    \"name\": \"Tech Solutions Inc\",\n    \"addressLine1\": \"123 Main Street\",\n    \"addressLine2\": \"Suite 200\",\n    \"addressLine3\": null,\n    \"town\": \"New York\",\n    \"country\": \"USA\",\n    \"postcode\": \"10001\",\n    \"telephone\": \"1234567890\",\n    \"mobile\": \"0987654321\",\n    \"fax\": \"1111111111\",\n    \"email\": \"info@techsolutions.com\",\n    \"contactEmail\": \"contact@techsolutions.com\",\n    \"contactNumber\": \"ACC123\"\n}"
+          "raw": "{\n    \"name\": \"WorkFlow Ltd\",\n    \"address\": {\n        \"addressLine1\": \"123 Main Street\",\n        \"addressLine2\": \"Suite 200\",\n        \"addressLine3\": null,\n        \"town\": \"London\",\n        \"country\": \"UK\",\n        \"postcode\": \"EC1A 1BB\"\n    },\n    \"telephone\": \"+44 20 1234 5678\",\n    \"mobile\": null,\n    \"fax\": null,\n    \"email\": \"info@workflow.com\",\n    \"contactEmail\": null,\n    \"contactNumber\": null,\n    \"bankDetails\": {\n        \"bankName\": \"Barclays\",\n        \"accountName\": \"WorkFlow Ltd\",\n        \"accountNo\": \"12345678\",\n        \"sortCode\": \"20-00-00\"\n    }\n}"
         },
         "url": {
           "raw": "{{base_url}}/api/v1/companies/profile",
@@ -105,7 +105,7 @@
             "profile"
           ]
         },
-        "description": "Update the authenticated company's profile.\n\n**Authentication:** Required (COMPANY role)\n\n**Request Body:**\n- name (string, required): 2-150 characters\n- addressLine1 (string, optional): Max 255 characters\n- addressLine2 (string, optional): Max 255 characters\n- addressLine3 (string, optional): Max 255 characters\n- town (string, optional): Max 100 characters\n- country (string, optional): Max 100 characters\n- postcode (string, optional): Max 20 characters\n- telephone (string, optional): Max 20 characters\n- mobile (string, optional): Max 20 characters\n- fax (string, optional): Max 20 characters\n- email (string, optional): Valid email format, max 100 characters\n- contactEmail (string, optional): Valid email format, max 100 characters\n- contactNumber (string, optional): Max 50 characters\n\n**Business Rules:**\n- Company name must be unique (case-insensitive)\n- Updating to the same name (different case) is allowed\n\n**Response:** Updated company profile (same format as GET)"
+        "description": "Update the authenticated company's profile.\n\n**Authentication:** Required (COMPANY role)\n\n**Request Body:**\n- name (string, required): 2-150 characters\n- address (object, optional): Nested address details\n  - addressLine1 (string, optional): Max 255 characters\n  - addressLine2 (string, optional): Max 255 characters\n  - addressLine3 (string, optional): Max 255 characters\n  - town (string, optional): Max 100 characters\n  - country (string, optional): Max 100 characters\n  - postcode (string, optional): Max 20 characters\n- telephone (string, optional): Max 20 characters\n- mobile (string, optional): Max 20 characters\n- fax (string, optional): Max 20 characters\n- email (string, optional): Valid email format, max 100 characters\n- contactEmail (string, optional): Valid email format, max 100 characters\n- contactNumber (string, optional): Max 50 characters\n- bankDetails (object, optional): Bank account details\n  - bankName (string, optional): Max 100 characters\n  - accountName (string, optional): Max 100 characters\n  - accountNo (string, optional): Max 50 characters\n  - sortCode (string, optional): Max 20 characters\n\n**Business Rules:**\n- Company name must be unique (case-insensitive)\n- Updating to the same name (different case) is allowed\n- Omitting bankDetails leaves existing bank details unchanged\n\n**Response:** Updated company profile (same format as GET)"
       },
       "response": [
         {
@@ -124,7 +124,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"name\": \"Tech Solutions Inc\",\n    \"addressLine1\": \"123 Main Street\",\n    \"addressLine2\": \"Suite 200\",\n    \"addressLine3\": null,\n    \"town\": \"New York\",\n    \"country\": \"USA\",\n    \"postcode\": \"10001\",\n    \"telephone\": \"1234567890\",\n    \"mobile\": \"0987654321\",\n    \"fax\": \"1111111111\",\n    \"email\": \"info@techsolutions.com\",\n    \"contactEmail\": \"contact@techsolutions.com\",\n    \"contactNumber\": \"ACC123\"\n}"
+              "raw": "{\n    \"name\": \"WorkFlow Ltd\",\n    \"address\": {\n        \"addressLine1\": \"123 Main Street\",\n        \"addressLine2\": \"Suite 200\",\n        \"addressLine3\": null,\n        \"town\": \"London\",\n        \"country\": \"UK\",\n        \"postcode\": \"EC1A 1BB\"\n    },\n    \"telephone\": \"+44 20 1234 5678\",\n    \"mobile\": null,\n    \"fax\": null,\n    \"email\": \"info@workflow.com\",\n    \"contactEmail\": null,\n    \"contactNumber\": null,\n    \"bankDetails\": {\n        \"bankName\": \"Barclays\",\n        \"accountName\": \"WorkFlow Ltd\",\n        \"accountNo\": \"12345678\",\n        \"sortCode\": \"20-00-00\"\n    }\n}"
             },
             "url": {
               "raw": "http://localhost:8080/api/v1/companies/profile",
@@ -150,7 +150,7 @@
               "value": "application/json"
             }
           ],
-          "body": "{\n    \"id\": 1,\n    \"name\": \"Tech Solutions Inc\",\n    \"email\": \"info@techsolutions.com\",\n    \"telephone\": \"1234567890\",\n    \"mobile\": \"0987654321\",\n    \"fax\": \"1111111111\",\n    \"addressLine1\": \"123 Main Street\",\n    \"addressLine2\": \"Suite 200\",\n    \"addressLine3\": null,\n    \"town\": \"New York\",\n    \"country\": \"USA\",\n    \"postcode\": \"10001\",\n    \"contactEmail\": \"contact@techsolutions.com\",\n    \"contactNumber\": \"ACC123\",\n    \"archived\": false,\n    \"createdAt\": \"2025-10-23T10:00:00\",\n    \"updatedAt\": \"2025-10-23T11:30:00\"\n}"
+          "body": "{\n    \"id\": 1,\n    \"name\": \"WorkFlow Ltd\",\n    \"address\": {\n        \"addressLine1\": \"123 Main Street\",\n        \"addressLine2\": \"Suite 200\",\n        \"addressLine3\": null,\n        \"town\": \"London\",\n        \"country\": \"UK\",\n        \"postcode\": \"EC1A 1BB\"\n    },\n    \"telephone\": \"+44 20 1234 5678\",\n    \"mobile\": null,\n    \"fax\": null,\n    \"email\": \"info@workflow.com\",\n    \"contactEmail\": null,\n    \"contactNumber\": null,\n    \"bankDetails\": {\n        \"bankName\": \"Barclays\",\n        \"accountName\": \"WorkFlow Ltd\",\n        \"accountNo\": \"12345678\",\n        \"sortCode\": \"20-00-00\"\n    },\n    \"archived\": false,\n    \"createdAt\": \"2026-03-29T10:00:00\",\n    \"updatedAt\": \"2026-03-29T10:00:00\"\n}"
         }
       ]
     },

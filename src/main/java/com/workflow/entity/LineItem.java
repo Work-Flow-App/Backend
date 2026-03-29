@@ -45,7 +45,7 @@ public class LineItem {
     @Column(nullable = false, precision = 10, scale = 4)
     private BigDecimal quantity;
 
-    @Column(name = "vat_rate", nullable = false, precision = 5, scale = 4)
+    @Column(name = "vat_rate", nullable = false, precision = 5, scale = 2)
     private BigDecimal vatRate;
 
     @Column(name = "net_amount", nullable = false, precision = 10, scale = 2)

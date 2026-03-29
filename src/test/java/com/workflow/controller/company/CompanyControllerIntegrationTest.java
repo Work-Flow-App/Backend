@@ -2,6 +2,7 @@ package com.workflow.controller.company;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.workflow.common.constant.Role;
+import com.workflow.dto.company.CompanyAddressRequest;
 import com.workflow.dto.company.CompanyProfileUpdateRequest;
 import com.workflow.entity.Company;
 import com.workflow.entity.User;
@@ -155,18 +156,15 @@ class CompanyControllerIntegrationTest {
     void shouldUpdateCompanyProfileSuccessfully() throws Exception {
         CompanyProfileUpdateRequest request = new CompanyProfileUpdateRequest(
                 "Updated Company Name",
-                "123 Main St",
-                "Suite 100",
-                null,
-                "New York",
-                "USA",
-                "10001",
+                new CompanyAddressRequest("123 Main St", "Suite 100", null, "New York", "USA", "10001"),
                 "9876543210",
                 "9876543210",
                 "1234567890",
                 "updated@example.com",
                 "contact@example.com",
-                "ACC123"
+                "ACC123",
+                null,
+                null
         );
 
         mockMvc.perform(post("/api/v1/companies/profile")
@@ -175,11 +173,11 @@ class CompanyControllerIntegrationTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("Updated Company Name"))
-                .andExpect(jsonPath("$.addressLine1").value("123 Main St"))
-                .andExpect(jsonPath("$.addressLine2").value("Suite 100"))
-                .andExpect(jsonPath("$.town").value("New York"))
-                .andExpect(jsonPath("$.country").value("USA"))
-                .andExpect(jsonPath("$.postcode").value("10001"))
+                .andExpect(jsonPath("$.address.addressLine1").value("123 Main St"))
+                .andExpect(jsonPath("$.address.addressLine2").value("Suite 100"))
+                .andExpect(jsonPath("$.address.town").value("New York"))
+                .andExpect(jsonPath("$.address.country").value("USA"))
+                .andExpect(jsonPath("$.address.postcode").value("10001"))
                 .andExpect(jsonPath("$.telephone").value("9876543210"))
                 .andExpect(jsonPath("$.mobile").value("9876543210"))
                 .andExpect(jsonPath("$.fax").value("1234567890"))
@@ -192,9 +190,9 @@ class CompanyControllerIntegrationTest {
     void shouldReturn400BadRequestForInvalidEmail() throws Exception {
         CompanyProfileUpdateRequest request = new CompanyProfileUpdateRequest(
                 "Test Company",
-                null, null, null, null, null, null, null, null, null,
+                null, null, null, null,
                 "invalid-email",
-                null, null
+                null, null, null, null
         );
 
         mockMvc.perform(post("/api/v1/companies/profile")
@@ -210,10 +208,10 @@ class CompanyControllerIntegrationTest {
     void shouldReturn400BadRequestForInvalidContactEmail() throws Exception {
         CompanyProfileUpdateRequest request = new CompanyProfileUpdateRequest(
                 "Test Company",
-                null, null, null, null, null, null, null, null, null,
+                null, null, null, null,
                 "valid@example.com",
                 "invalid-contact-email",
-                null
+                null, null, null
         );
 
         mockMvc.perform(post("/api/v1/companies/profile")
@@ -228,7 +226,7 @@ class CompanyControllerIntegrationTest {
     void shouldReturn400BadRequestForMissingCompanyName() throws Exception {
         CompanyProfileUpdateRequest request = new CompanyProfileUpdateRequest(
                 "",
-                null, null, null, null, null, null, null, null, null, null, null, null
+                null, null, null, null, null, null, null, null, null
         );
 
         mockMvc.perform(post("/api/v1/companies/profile")
@@ -263,7 +261,7 @@ class CompanyControllerIntegrationTest {
         // Try to update first company with the second company's name
         CompanyProfileUpdateRequest request = new CompanyProfileUpdateRequest(
                 "Another Company",
-                null, null, null, null, null, null, null, null, null, null, null, null
+                null, null, null, null, null, null, null, null, null
         );
 
         mockMvc.perform(post("/api/v1/companies/profile")
@@ -279,7 +277,7 @@ class CompanyControllerIntegrationTest {
     void shouldAllowUpdatingSameNameWithDifferentCase() throws Exception {
         CompanyProfileUpdateRequest request = new CompanyProfileUpdateRequest(
                 "test company", // lowercase
-                null, null, null, null, null, null, null, null, null, null, null, null
+                null, null, null, null, null, null, null, null, null
         );
 
         mockMvc.perform(post("/api/v1/companies/profile")
@@ -296,7 +294,7 @@ class CompanyControllerIntegrationTest {
 
         CompanyProfileUpdateRequest request = new CompanyProfileUpdateRequest(
                 longString, // Exceeds 150 characters
-                null, null, null, null, null, null, null, null, null, null, null, null
+                null, null, null, null, null, null, null, null, null
         );
 
         mockMvc.perform(post("/api/v1/companies/profile")
@@ -355,7 +353,7 @@ class CompanyControllerIntegrationTest {
     void shouldHandleNullFieldsInUpdate() throws Exception {
         CompanyProfileUpdateRequest request = new CompanyProfileUpdateRequest(
                 "Only Name Updated",
-                null, null, null, null, null, null, null, null, null, null, null, null
+                null, null, null, null, null, null, null, null, null
         );
 
         mockMvc.perform(post("/api/v1/companies/profile")
@@ -364,7 +362,6 @@ class CompanyControllerIntegrationTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("Only Name Updated"))
-                .andExpect(jsonPath("$.addressLine1").value(nullValue()))
-                .andExpect(jsonPath("$.addressLine2").value(nullValue()));
+                .andExpect(jsonPath("$.address").value(nullValue()));
     }
 }

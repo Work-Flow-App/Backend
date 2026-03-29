@@ -46,11 +46,11 @@ class LineItemServiceTest {
 
     @Test
     void createLineItem_ShouldCalculateNetVatTotalCorrectly() {
-        // 50.00 × 2 = 100.00 net; 100.00 × 0.19 = 19.00 vat; total = 119.00
+        // 50.00 × 2 = 100.00 net; 100.00 × 19% = 19.00 vat; total = 119.00
         LineItemCreateRequest request = LineItemCreateRequest.builder()
                 .productCode("P001").productDescription("Labour")
                 .unitPrice(new BigDecimal("50.00")).coreOrSub(CoreOrSub.CORE)
-                .quantity(new BigDecimal("2.0000")).vatRate(new BigDecimal("0.1900"))
+                .quantity(new BigDecimal("2.0000")).vatRate(new BigDecimal("19.00"))
                 .build();
 
         when(companyRepository.findById(1L)).thenReturn(Optional.of(company));
@@ -67,11 +67,11 @@ class LineItemServiceTest {
 
     @Test
     void createLineItem_ShouldRoundHalfUp() {
-        // 10.00 × 3.3333 = 33.333 → rounds to 33.33; 33.33 × 0.20 = 6.666 → rounds to 6.67
+        // 10.00 × 3.3333 = 33.333 → rounds to 33.33; 33.33 × 20% = 6.666 → rounds to 6.67
         LineItemCreateRequest request = LineItemCreateRequest.builder()
                 .productCode("P002").productDescription("Materials")
                 .unitPrice(new BigDecimal("10.00")).coreOrSub(CoreOrSub.SUB)
-                .quantity(new BigDecimal("3.3333")).vatRate(new BigDecimal("0.2000"))
+                .quantity(new BigDecimal("3.3333")).vatRate(new BigDecimal("20.00"))
                 .build();
 
         when(companyRepository.findById(1L)).thenReturn(Optional.of(company));
@@ -90,7 +90,7 @@ class LineItemServiceTest {
         assertThatThrownBy(() -> lineItemService.createLineItem(
                 LineItemCreateRequest.builder().productCode("P").productDescription("D")
                         .unitPrice(BigDecimal.TEN).coreOrSub(CoreOrSub.CORE)
-                        .quantity(BigDecimal.ONE).vatRate(new BigDecimal("0.19")).build(), 1L))
+                        .quantity(BigDecimal.ONE).vatRate(new BigDecimal("19")).build(), 1L))
                 .isInstanceOf(CompanyNotFoundException.class);
         verify(lineItemRepository, never()).save(any());
     }
@@ -114,12 +114,75 @@ class LineItemServiceTest {
                 .isInstanceOf(LineItemNotFoundException.class);
     }
 
+    @Test
+    void createLineItem_ShouldHandleZeroVatRate() {
+        // 25.00 × 4 = 100.00 net; 100.00 × 0% = 0.00 vat; total = 100.00
+        LineItemCreateRequest request = LineItemCreateRequest.builder()
+                .productCode("P003").productDescription("Zero VAT Service")
+                .unitPrice(new BigDecimal("25.00")).coreOrSub(CoreOrSub.CORE)
+                .quantity(new BigDecimal("4.0000")).vatRate(new BigDecimal("0"))
+                .build();
+
+        when(companyRepository.findById(1L)).thenReturn(Optional.of(company));
+        when(lineItemRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        LineItemResponse response = lineItemService.createLineItem(request, 1L);
+
+        assertThat(response.getNetAmount()).isEqualByComparingTo("100.00");
+        assertThat(response.getVatAmount()).isEqualByComparingTo("0.00");
+        assertThat(response.getTotalAmount()).isEqualByComparingTo("100.00");
+    }
+
+    @Test
+    void createLineItem_ShouldHandleZeroUnitPrice() {
+        // 0.00 × 5 = 0.00 net; 0.00 × 20% = 0.00 vat; total = 0.00
+        LineItemCreateRequest request = LineItemCreateRequest.builder()
+                .productCode("P004").productDescription("Free Item")
+                .unitPrice(new BigDecimal("0.00")).coreOrSub(CoreOrSub.SUB)
+                .quantity(new BigDecimal("5.0000")).vatRate(new BigDecimal("20"))
+                .build();
+
+        when(companyRepository.findById(1L)).thenReturn(Optional.of(company));
+        when(lineItemRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        LineItemResponse response = lineItemService.createLineItem(request, 1L);
+
+        assertThat(response.getNetAmount()).isEqualByComparingTo("0.00");
+        assertThat(response.getVatAmount()).isEqualByComparingTo("0.00");
+        assertThat(response.getTotalAmount()).isEqualByComparingTo("0.00");
+    }
+
+    @Test
+    void createLineItem_ShouldHandleFractionalUnitPrice() {
+        // 9.99 × 3.0000 = 29.97 net; 29.97 × 20% = 5.994 → rounds to 5.99; total = 35.96
+        LineItemCreateRequest request = LineItemCreateRequest.builder()
+                .productCode("P005").productDescription("Fractional Price")
+                .unitPrice(new BigDecimal("9.99")).coreOrSub(CoreOrSub.CORE)
+                .quantity(new BigDecimal("3.0000")).vatRate(new BigDecimal("20"))
+                .build();
+
+        when(companyRepository.findById(1L)).thenReturn(Optional.of(company));
+        when(lineItemRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        LineItemResponse response = lineItemService.createLineItem(request, 1L);
+
+        assertThat(response.getNetAmount()).isEqualByComparingTo("29.97");
+        assertThat(response.getVatAmount()).isEqualByComparingTo("5.99");
+        assertThat(response.getTotalAmount()).isEqualByComparingTo("35.96");
+    }
+
     // ============= getAllLineItems =============
 
     @Test
     void getAllLineItems_ShouldReturnAllForCompany() {
         when(lineItemRepository.findByCompanyId(1L)).thenReturn(List.of(buildItem(1L), buildItem(2L)));
         assertThat(lineItemService.getAllLineItems(1L)).hasSize(2);
+    }
+
+    @Test
+    void getAllLineItems_ShouldReturnEmptyList_WhenNoItemsExist() {
+        when(lineItemRepository.findByCompanyId(1L)).thenReturn(List.of());
+        assertThat(lineItemService.getAllLineItems(1L)).isEmpty();
     }
 
     // ============= updateLineItem =============
@@ -158,6 +221,63 @@ class LineItemServiceTest {
     }
 
     @Test
+    void updateLineItem_ShouldRecalculate_WhenOnlyVatRateChanges() {
+        // Base item: 50.00 × 2 = 100.00 net, 19% vat → change vat to 25%
+        // net stays 100.00; new vat = 100.00 × 25% = 25.00; total = 125.00
+        LineItem item = buildItem(1L);
+        when(lineItemRepository.findByIdAndCompanyId(1L, 1L)).thenReturn(Optional.of(item));
+        when(lineItemRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        LineItemUpdateRequest request = LineItemUpdateRequest.builder()
+                .vatRate(new BigDecimal("25"))
+                .build();
+
+        LineItemResponse response = lineItemService.updateLineItem(1L, request, 1L);
+
+        assertThat(response.getNetAmount()).isEqualByComparingTo("100.00");
+        assertThat(response.getVatAmount()).isEqualByComparingTo("25.00");
+        assertThat(response.getTotalAmount()).isEqualByComparingTo("125.00");
+    }
+
+    @Test
+    void updateLineItem_ShouldRecalculate_WhenOnlyQuantityChanges() {
+        // Base item: 50.00 × 2 → change quantity to 5
+        // net = 50.00 × 5 = 250.00; vat = 250.00 × 0.19 = 47.50; total = 297.50
+        LineItem item = buildItem(1L);
+        when(lineItemRepository.findByIdAndCompanyId(1L, 1L)).thenReturn(Optional.of(item));
+        when(lineItemRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        LineItemUpdateRequest request = LineItemUpdateRequest.builder()
+                .quantity(new BigDecimal("5.0000"))
+                .build();
+
+        LineItemResponse response = lineItemService.updateLineItem(1L, request, 1L);
+
+        assertThat(response.getNetAmount()).isEqualByComparingTo("250.00");
+        assertThat(response.getVatAmount()).isEqualByComparingTo("47.50");
+        assertThat(response.getTotalAmount()).isEqualByComparingTo("297.50");
+    }
+
+    @Test
+    void updateLineItem_ShouldRecalculate_WhenVatRateSetToZero() {
+        // Base item: 50.00 × 2 = 100.00 net → set vatRate to 0%
+        // vat = 0.00; total = 100.00
+        LineItem item = buildItem(1L);
+        when(lineItemRepository.findByIdAndCompanyId(1L, 1L)).thenReturn(Optional.of(item));
+        when(lineItemRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        LineItemUpdateRequest request = LineItemUpdateRequest.builder()
+                .vatRate(new BigDecimal("0"))
+                .build();
+
+        LineItemResponse response = lineItemService.updateLineItem(1L, request, 1L);
+
+        assertThat(response.getNetAmount()).isEqualByComparingTo("100.00");
+        assertThat(response.getVatAmount()).isEqualByComparingTo("0.00");
+        assertThat(response.getTotalAmount()).isEqualByComparingTo("100.00");
+    }
+
+    @Test
     void updateLineItem_ShouldThrowNotFound() {
         when(lineItemRepository.findByIdAndCompanyId(999L, 1L)).thenReturn(Optional.empty());
         assertThatThrownBy(() -> lineItemService.updateLineItem(999L,
@@ -191,7 +311,7 @@ class LineItemServiceTest {
                 .id(id).company(company)
                 .productCode("P001").productDescription("Labour")
                 .unitPrice(new BigDecimal("50.00")).coreOrSub(CoreOrSub.CORE)
-                .quantity(new BigDecimal("2.0000")).vatRate(new BigDecimal("0.1900"))
+                .quantity(new BigDecimal("2.0000")).vatRate(new BigDecimal("19.00"))
                 .netAmount(new BigDecimal("100.00"))
                 .vatAmount(new BigDecimal("19.00"))
                 .totalAmount(new BigDecimal("119.00"))

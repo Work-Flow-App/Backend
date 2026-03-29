@@ -5,6 +5,7 @@ import com.workflow.entity.Invoice;
 import lombok.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -19,6 +20,8 @@ public class InvoiceResponse {
     private Long estimateId;
     private Long companyId;
     private String invoiceNumber;
+    private LocalDate dueDate;
+    private String reference;
     private String presignedUrl;
     private List<LineItemResponse> lineItems;
     private BigDecimal totalNet;
@@ -37,6 +40,8 @@ public class InvoiceResponse {
                 .estimateId(invoice.getEstimate().getId())
                 .companyId(invoice.getCompany().getId())
                 .invoiceNumber(invoice.getInvoiceNumber())
+                .dueDate(invoice.getDueDate())
+                .reference(invoice.getReference())
                 .presignedUrl(presignedUrl)
                 .lineItems(items)
                 .totalNet(invoice.getTotalNet())

@@ -46,6 +46,9 @@ public class Company {
     @Column(name = "contact_number", length = 50)
     private String contactNumber;
 
+    @Column(name = "vat_number", length = 50)
+    private String vatNumber;
+
     @OneToOne(mappedBy = "company", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private CompanyBankDetails bankDetails;
 

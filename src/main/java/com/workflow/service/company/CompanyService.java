@@ -54,6 +54,7 @@ public class CompanyService implements ICompanyService {
         company.setEmail(request.email());
         company.setContactEmail(request.contactEmail());
         company.setContactNumber(request.contactNumber());
+        company.setVatNumber(request.vatNumber());
 
         if (request.bankDetails() != null) {
             CompanyBankDetailsRequest bd = request.bankDetails();

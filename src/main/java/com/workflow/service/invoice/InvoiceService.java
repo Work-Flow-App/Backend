@@ -86,6 +86,8 @@ public class InvoiceService implements IInvoiceService {
                 .invoiceNumber("PENDING")
                 .s3Key("PENDING")
                 .lineItems(selectedItems)
+                .dueDate(request.getDueDate())
+                .reference(request.getReference())
                 .totalNet(totalNet)
                 .totalVat(totalVat)
                 .grandTotal(grandTotal)
@@ -174,9 +176,16 @@ public class InvoiceService implements IInvoiceService {
             // Customer address
             PdfPCell billToCell = buildInfoCell("BILL TO", buildCustomerAddress(customer), headerFont, normalFont);
             // Invoice metadata
-            String meta = "Invoice No:  " + invoiceNumber + "\n"
-                    + "Date:             " + LocalDate.now().format(DateTimeFormatter.ofPattern("dd MMM yyyy"));
-            PdfPCell metaCell = buildInfoCell("DETAILS", meta, headerFont, normalFont);
+            StringBuilder meta = new StringBuilder();
+            meta.append("Invoice No:  ").append(invoiceNumber).append("\n");
+            meta.append("Date:             ").append(LocalDate.now().format(DateTimeFormatter.ofPattern("dd MMM yyyy")));
+            if (invoice.getDueDate() != null) {
+                meta.append("\nDue Date:      ").append(invoice.getDueDate().format(DateTimeFormatter.ofPattern("dd MMM yyyy")));
+            }
+            if (invoice.getReference() != null && !invoice.getReference().isBlank()) {
+                meta.append("\nReference:    ").append(invoice.getReference());
+            }
+            PdfPCell metaCell = buildInfoCell("DETAILS", meta.toString(), headerFont, normalFont);
             metaCell.setHorizontalAlignment(Element.ALIGN_RIGHT);
 
             infoTable.addCell(fromCell);
@@ -249,12 +258,15 @@ public class InvoiceService implements IInvoiceService {
 
     private String buildCompanyAddress(Company company) {
         StringBuilder sb = new StringBuilder();
-        appendIfPresent(sb, company.getAddressLine1());
-        appendIfPresent(sb, company.getAddressLine2());
-        appendIfPresent(sb, company.getAddressLine3());
-        appendIfPresent(sb, company.getTown());
-        appendIfPresent(sb, company.getPostcode());
-        appendIfPresent(sb, company.getCountry());
+        if (company.getAddress() != null) {
+            CompanyAddress addr = company.getAddress();
+            appendIfPresent(sb, addr.getAddressLine1());
+            appendIfPresent(sb, addr.getAddressLine2());
+            appendIfPresent(sb, addr.getAddressLine3());
+            appendIfPresent(sb, addr.getTown());
+            appendIfPresent(sb, addr.getPostcode());
+            appendIfPresent(sb, addr.getCountry());
+        }
         appendIfPresent(sb, company.getEmail());
         appendIfPresent(sb, company.getTelephone());
         return sb.toString().trim();

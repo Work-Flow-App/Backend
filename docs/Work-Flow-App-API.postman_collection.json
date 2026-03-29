@@ -6660,7 +6660,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"lineItemIds\": [1, 2, 3]\n}",
+              "raw": "{\n    \"lineItemIds\": [1, 2, 3],\n    \"dueDate\": \"2026-04-30\",\n    \"reference\": \"PO-2026-001\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -6687,11 +6687,52 @@
                 }
               ]
             },
-            "description": "Generate a PDF invoice from selected line items of an estimate. The PDF is stored in S3 and the response includes a presigned URL for direct download.\n\n**Path variable:**\n- `estimateId` (Long): The ID of the estimate\n\n**Required fields:**\n- `lineItemIds` (Array<Long>): IDs of the line items to include in the invoice. Must be non-empty and all must belong to the specified estimate.\n\n**Response:** Returns the created invoice record including a presigned S3 URL to download the generated PDF.\n\n```bash\ncurl -X POST \"{{base_url}}/api/v1/estimates/1/invoice\" \\\n  -H \"Authorization: Bearer {{jwt_token}}\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n    \"lineItemIds\": [1, 2, 3]\n  }'\n```"
+            "description": "Generate a PDF invoice from selected line items of an estimate. The PDF is stored in S3 and the response includes a presigned URL for direct download. When `dueDate` or `reference` are provided they are printed on the generated PDF.\n\n**Path variable:**\n- `estimateId` (Long): The ID of the estimate\n\n**Required fields:**\n- `lineItemIds` (Array<Long>): IDs of the line items to include in the invoice. Must be non-empty and all must belong to the specified estimate.\n\n**Optional fields:**\n- `dueDate` (String, ISO date `YYYY-MM-DD`): Payment due date to display on the invoice. Omitting this field leaves `dueDate` as null.\n- `reference` (String, max 100 chars): Purchase order number or any other reference to display on the invoice. Omitting this field leaves `reference` as null.\n\n**Response:** Returns the created invoice record including `invoiceNumber`, computed totals, and a presigned S3 URL to download the generated PDF.\n\n```bash\ncurl -X POST \"{{base_url}}/api/v1/estimates/1/invoice\" \\\n  -H \"Authorization: Bearer {{jwt_token}}\" \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\n    \"lineItemIds\": [1, 2, 3],\n    \"dueDate\": \"2026-04-30\",\n    \"reference\": \"PO-2026-001\"\n  }'\n```"
           },
           "response": [
             {
               "name": "Generate Invoice - Success",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"lineItemIds\": [1, 2, 3],\n    \"dueDate\": \"2026-04-30\",\n    \"reference\": \"PO-2026-001\"\n}"
+                },
+                "url": {
+                  "raw": "http://localhost:8080/api/v1/estimates/1/invoice",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8080",
+                  "path": [
+                    "api",
+                    "v1",
+                    "estimates",
+                    "1",
+                    "invoice"
+                  ]
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n    \"id\": 1,\n    \"estimateId\": 1,\n    \"companyId\": 1,\n    \"invoiceNumber\": \"INV-2026-00001\",\n    \"dueDate\": \"2026-04-30\",\n    \"reference\": \"PO-2026-001\",\n    \"presignedUrl\": \"https://s3.amazonaws.com/workflow-app-bucket/invoices/invoice-1.pdf?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=...\",\n    \"lineItems\": [\n        {\n            \"id\": 1,\n            \"description\": \"Labour - Site Survey\",\n            \"quantity\": 2,\n            \"unitPrice\": 150.00,\n            \"vatRate\": 5.0,\n            \"totalNet\": 300.00,\n            \"totalVat\": 15.00,\n            \"grandTotal\": 315.00\n        },\n        {\n            \"id\": 2,\n            \"description\": \"Materials - Cabling\",\n            \"quantity\": 1,\n            \"unitPrice\": 600.00,\n            \"vatRate\": 5.0,\n            \"totalNet\": 600.00,\n            \"totalVat\": 30.00,\n            \"grandTotal\": 630.00\n        }\n    ],\n    \"totalNet\": 900.00,\n    \"totalVat\": 45.00,\n    \"grandTotal\": 945.00,\n    \"createdAt\": \"2026-03-29T10:00:00\",\n    \"updatedAt\": \"2026-03-29T10:00:00\"\n}"
+            },
+            {
+              "name": "Generate Invoice - Success (no optional fields)",
               "originalRequest": {
                 "method": "POST",
                 "header": [
@@ -6729,7 +6770,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n    \"id\": 1,\n    \"estimateId\": 1,\n    \"companyId\": 1,\n    \"lineItemIds\": [1, 2, 3],\n    \"presignedUrl\": \"https://s3.amazonaws.com/workflow-app-bucket/invoices/invoice-1.pdf?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=...\",\n    \"createdAt\": \"2026-03-27T10:00:00\",\n    \"updatedAt\": \"2026-03-27T10:00:00\"\n}"
+              "body": "{\n    \"id\": 2,\n    \"estimateId\": 1,\n    \"companyId\": 1,\n    \"invoiceNumber\": \"INV-2026-00002\",\n    \"dueDate\": null,\n    \"reference\": null,\n    \"presignedUrl\": \"https://s3.amazonaws.com/workflow-app-bucket/invoices/invoice-2.pdf?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=...\",\n    \"lineItems\": [\n        {\n            \"id\": 1,\n            \"description\": \"Labour - Site Survey\",\n            \"quantity\": 2,\n            \"unitPrice\": 150.00,\n            \"vatRate\": 5.0,\n            \"totalNet\": 300.00,\n            \"totalVat\": 15.00,\n            \"grandTotal\": 315.00\n        }\n    ],\n    \"totalNet\": 300.00,\n    \"totalVat\": 15.00,\n    \"grandTotal\": 315.00,\n    \"createdAt\": \"2026-03-29T11:00:00\",\n    \"updatedAt\": \"2026-03-29T11:00:00\"\n}"
             },
             {
               "name": "Generate Invoice - Estimate Not Found",
@@ -6812,6 +6853,47 @@
                 }
               ],
               "body": "{\n    \"status\": 400,\n    \"error\": \"Bad Request\",\n    \"message\": \"lineItemIds must not be empty\"\n}"
+            },
+            {
+              "name": "Generate Invoice - Bad Request (Reference Too Long)",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"lineItemIds\": [1],\n    \"reference\": \"THIS-REFERENCE-STRING-IS-OVER-ONE-HUNDRED-CHARACTERS-LONG-AND-WILL-FAIL-VALIDATION-XXXXXXXXXXXXXXXXX\"\n}"
+                },
+                "url": {
+                  "raw": "http://localhost:8080/api/v1/estimates/1/invoice",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8080",
+                  "path": [
+                    "api",
+                    "v1",
+                    "estimates",
+                    "1",
+                    "invoice"
+                  ]
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n    \"status\": 400,\n    \"error\": \"Bad Request\",\n    \"message\": \"Reference cannot exceed 100 characters\"\n}"
             }
           ]
         },
@@ -6850,7 +6932,7 @@
                 }
               ]
             },
-            "description": "Get all invoices generated for a specific estimate. Returns an array of invoice records, each including a presigned S3 URL to download the corresponding PDF.\n\n**Path variable:**\n- `estimateId` (Long): The ID of the estimate\n\n```bash\ncurl -X GET \"{{base_url}}/api/v1/estimates/1/invoices\" \\\n  -H \"Authorization: Bearer {{jwt_token}}\"\n```"
+            "description": "Get all invoices generated for a specific estimate. Returns an array of invoice records, each including `invoiceNumber`, `dueDate`, `reference`, computed totals, and a presigned S3 URL to download the corresponding PDF.\n\n**Path variable:**\n- `estimateId` (Long): The ID of the estimate\n\n```bash\ncurl -X GET \"{{base_url}}/api/v1/estimates/1/invoices\" \\\n  -H \"Authorization: Bearer {{jwt_token}}\"\n```"
           },
           "response": [
             {
@@ -6883,7 +6965,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "[\n    {\n        \"id\": 1,\n        \"estimateId\": 1,\n        \"companyId\": 1,\n        \"lineItemIds\": [1, 2, 3],\n        \"presignedUrl\": \"https://s3.amazonaws.com/workflow-app-bucket/invoices/invoice-1.pdf?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=...\",\n        \"createdAt\": \"2026-03-27T10:00:00\",\n        \"updatedAt\": \"2026-03-27T10:00:00\"\n    },\n    {\n        \"id\": 2,\n        \"estimateId\": 1,\n        \"companyId\": 1,\n        \"lineItemIds\": [1],\n        \"presignedUrl\": \"https://s3.amazonaws.com/workflow-app-bucket/invoices/invoice-2.pdf?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=...\",\n        \"createdAt\": \"2026-03-27T11:00:00\",\n        \"updatedAt\": \"2026-03-27T11:00:00\"\n    }\n]"
+              "body": "[\n    {\n        \"id\": 1,\n        \"estimateId\": 1,\n        \"companyId\": 1,\n        \"invoiceNumber\": \"INV-2026-00001\",\n        \"dueDate\": \"2026-04-30\",\n        \"reference\": \"PO-2026-001\",\n        \"presignedUrl\": \"https://s3.amazonaws.com/workflow-app-bucket/invoices/invoice-1.pdf?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=...\",\n        \"lineItems\": [\n            {\n                \"id\": 1,\n                \"description\": \"Labour - Site Survey\",\n                \"quantity\": 2,\n                \"unitPrice\": 150.00,\n                \"vatRate\": 5.0,\n                \"totalNet\": 300.00,\n                \"totalVat\": 15.00,\n                \"grandTotal\": 315.00\n            },\n            {\n                \"id\": 2,\n                \"description\": \"Materials - Cabling\",\n                \"quantity\": 1,\n                \"unitPrice\": 600.00,\n                \"vatRate\": 5.0,\n                \"totalNet\": 600.00,\n                \"totalVat\": 30.00,\n                \"grandTotal\": 630.00\n            }\n        ],\n        \"totalNet\": 900.00,\n        \"totalVat\": 45.00,\n        \"grandTotal\": 945.00,\n        \"createdAt\": \"2026-03-29T10:00:00\",\n        \"updatedAt\": \"2026-03-29T10:00:00\"\n    },\n    {\n        \"id\": 2,\n        \"estimateId\": 1,\n        \"companyId\": 1,\n        \"invoiceNumber\": \"INV-2026-00002\",\n        \"dueDate\": null,\n        \"reference\": null,\n        \"presignedUrl\": \"https://s3.amazonaws.com/workflow-app-bucket/invoices/invoice-2.pdf?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=...\",\n        \"lineItems\": [\n            {\n                \"id\": 1,\n                \"description\": \"Labour - Site Survey\",\n                \"quantity\": 2,\n                \"unitPrice\": 150.00,\n                \"vatRate\": 5.0,\n                \"totalNet\": 300.00,\n                \"totalVat\": 15.00,\n                \"grandTotal\": 315.00\n            }\n        ],\n        \"totalNet\": 300.00,\n        \"totalVat\": 15.00,\n        \"grandTotal\": 315.00,\n        \"createdAt\": \"2026-03-29T11:00:00\",\n        \"updatedAt\": \"2026-03-29T11:00:00\"\n    }\n]"
             },
             {
               "name": "List Invoices for Estimate - Estimate Not Found",
@@ -6954,7 +7036,7 @@
                 }
               ]
             },
-            "description": "Get a single invoice by its ID. Returns the invoice record including a presigned S3 URL to download the PDF.\n\n**Path variable:**\n- `invoiceId` (Long): The ID of the invoice\n\n```bash\ncurl -X GET \"{{base_url}}/api/v1/estimates/invoices/1\" \\\n  -H \"Authorization: Bearer {{jwt_token}}\"\n```"
+            "description": "Get a single invoice by its ID. Returns the invoice record including `invoiceNumber`, `dueDate`, `reference`, computed totals, and a presigned S3 URL to download the PDF.\n\n**Path variable:**\n- `invoiceId` (Long): The ID of the invoice\n\n```bash\ncurl -X GET \"{{base_url}}/api/v1/estimates/invoices/1\" \\\n  -H \"Authorization: Bearer {{jwt_token}}\"\n```"
           },
           "response": [
             {
@@ -6987,7 +7069,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n    \"id\": 1,\n    \"estimateId\": 1,\n    \"companyId\": 1,\n    \"lineItemIds\": [1, 2, 3],\n    \"presignedUrl\": \"https://s3.amazonaws.com/workflow-app-bucket/invoices/invoice-1.pdf?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=...\",\n    \"createdAt\": \"2026-03-27T10:00:00\",\n    \"updatedAt\": \"2026-03-27T10:00:00\"\n}"
+              "body": "{\n    \"id\": 1,\n    \"estimateId\": 1,\n    \"companyId\": 1,\n    \"invoiceNumber\": \"INV-2026-00001\",\n    \"dueDate\": \"2026-04-30\",\n    \"reference\": \"PO-2026-001\",\n    \"presignedUrl\": \"https://s3.amazonaws.com/workflow-app-bucket/invoices/invoice-1.pdf?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=...\",\n    \"lineItems\": [\n        {\n            \"id\": 1,\n            \"description\": \"Labour - Site Survey\",\n            \"quantity\": 2,\n            \"unitPrice\": 150.00,\n            \"vatRate\": 5.0,\n            \"totalNet\": 300.00,\n            \"totalVat\": 15.00,\n            \"grandTotal\": 315.00\n        },\n        {\n            \"id\": 2,\n            \"description\": \"Materials - Cabling\",\n            \"quantity\": 1,\n            \"unitPrice\": 600.00,\n            \"vatRate\": 5.0,\n            \"totalNet\": 600.00,\n            \"totalVat\": 30.00,\n            \"grandTotal\": 630.00\n        }\n    ],\n    \"totalNet\": 900.00,\n    \"totalVat\": 45.00,\n    \"grandTotal\": 945.00,\n    \"createdAt\": \"2026-03-29T10:00:00\",\n    \"updatedAt\": \"2026-03-29T10:00:00\"\n}"
             },
             {
               "name": "Get Invoice - Not Found",

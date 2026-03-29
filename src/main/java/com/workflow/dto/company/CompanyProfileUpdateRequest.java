@@ -33,6 +33,9 @@ public record CompanyProfileUpdateRequest(
         @Size(max = 50, message = "Contact number cannot exceed 50 characters")
         String contactNumber,
 
+        @Size(max = 50, message = "VAT number cannot exceed 50 characters")
+        String vatNumber,
+
         @Valid
         CompanyBankDetailsRequest bankDetails
 ) {}

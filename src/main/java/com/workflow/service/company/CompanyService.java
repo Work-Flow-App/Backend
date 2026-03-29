@@ -2,10 +2,14 @@ package com.workflow.service.company;
 
 import com.workflow.common.exception.business.CompanyAlreadyExistsException;
 import com.workflow.common.exception.business.CompanyNotFoundException;
+import com.workflow.dto.company.CompanyAddressRequest;
+import com.workflow.dto.company.CompanyBankDetailsRequest;
 import com.workflow.dto.company.CompanyDashboardResponse;
 import com.workflow.dto.company.CompanyProfileResponse;
 import com.workflow.dto.company.CompanyProfileUpdateRequest;
 import com.workflow.entity.Company;
+import com.workflow.entity.CompanyAddress;
+import com.workflow.entity.CompanyBankDetails;
 import com.workflow.entity.User;
 import com.workflow.repository.CompanyRepository;
 import com.workflow.repository.UserRepository;
@@ -33,18 +37,36 @@ public class CompanyService implements ICompanyService {
 
         // Update company fields
         company.setName(request.name());
-        company.setAddressLine1(request.addressLine1());
-        company.setAddressLine2(request.addressLine2());
-        company.setAddressLine3(request.addressLine3());
-        company.setTown(request.town());
-        company.setCountry(request.country());
-        company.setPostcode(request.postcode());
+        if (request.address() != null) {
+            CompanyAddressRequest a = request.address();
+            company.setAddress(CompanyAddress.builder()
+                    .addressLine1(a.addressLine1())
+                    .addressLine2(a.addressLine2())
+                    .addressLine3(a.addressLine3())
+                    .town(a.town())
+                    .country(a.country())
+                    .postcode(a.postcode())
+                    .build());
+        }
         company.setTelephone(request.telephone());
         company.setMobile(request.mobile());
         company.setFax(request.fax());
         company.setEmail(request.email());
         company.setContactEmail(request.contactEmail());
         company.setContactNumber(request.contactNumber());
+
+        if (request.bankDetails() != null) {
+            CompanyBankDetailsRequest bd = request.bankDetails();
+            CompanyBankDetails bankDetails = company.getBankDetails();
+            if (bankDetails == null) {
+                bankDetails = CompanyBankDetails.builder().company(company).build();
+                company.setBankDetails(bankDetails);
+            }
+            bankDetails.setBankName(bd.bankName());
+            bankDetails.setAccountName(bd.accountName());
+            bankDetails.setAccountNo(bd.accountNo());
+            bankDetails.setSortCode(bd.sortCode());
+        }
 
         Company savedCompany = companyRepository.save(company);
         return CompanyProfileResponse.fromEntity(savedCompany);

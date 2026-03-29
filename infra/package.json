@@ -13,10 +13,14 @@
   "devDependencies": {
     "@types/node": "^20.11.0",
     "typescript": "^5.3.3",
-    "aws-cdk": "^2.174.0"
+    "aws-cdk": "^2.1114.1"
   },
   "dependencies": {
-    "aws-cdk-lib": "^2.174.0",
+    "aws-cdk-lib": "^2.245.0",
     "constructs": "^10.3.0"
+  },
+  "overrides": {
+    "minimatch": "^9.0.5",
+    "brace-expansion": "^5.0.5"
   }
 }

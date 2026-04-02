@@ -7,14 +7,18 @@ import com.workflow.entity.Company;
 import com.workflow.entity.User;
 import com.workflow.repository.CompanyRepository;
 import com.workflow.repository.UserRepository;
+import com.workflow.service.jobtemplate.DefaultTemplateSeederService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 @RequiredArgsConstructor
 @Service
@@ -23,6 +27,7 @@ public class UserService implements IUserService{
     private final UserRepository userRepository;
     private final CompanyRepository companyRepository;
     private final PasswordEncoder passwordEncoder;
+    private final DefaultTemplateSeederService defaultTemplateSeederService;
 
 
     @Override
@@ -108,7 +113,18 @@ public class UserService implements IUserService{
                 .archived(false)
                 .build();
 
-        companyRepository.save(company);
+        Company savedCompany = companyRepository.save(company);
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    CompletableFuture.runAsync(() ->
+                            defaultTemplateSeederService.seedDefaultTemplates(savedCompany));
+                }
+            });
+        } else {
+            defaultTemplateSeederService.seedDefaultTemplates(savedCompany);
+        }
     }
 
 //    @Override

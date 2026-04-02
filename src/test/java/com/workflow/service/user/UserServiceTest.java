@@ -7,6 +7,7 @@ import com.workflow.entity.Company;
 import com.workflow.entity.User;
 import com.workflow.repository.CompanyRepository;
 import com.workflow.repository.UserRepository;
+import com.workflow.service.jobtemplate.DefaultTemplateSeederService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -36,6 +37,9 @@ class UserServiceTest {
 
     @Mock
     private PasswordEncoder passwordEncoder;
+
+    @Mock
+    private DefaultTemplateSeederService defaultTemplateSeederService;
 
     @InjectMocks
     private UserService userService;

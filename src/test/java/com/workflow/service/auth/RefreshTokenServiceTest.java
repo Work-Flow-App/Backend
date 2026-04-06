@@ -267,7 +267,7 @@ class RefreshTokenServiceTest {
         when(refreshTokenRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
         // Act
-        refreshTokenService.revokeRefreshToken("token-to-revoke");
+        refreshTokenService.revokeRefreshToken("token-to-revoke", testUser);
 
         // Assert
         assertThat(token.isRevoked()).isTrue();
@@ -281,7 +281,7 @@ class RefreshTokenServiceTest {
         when(refreshTokenRepository.findByToken("non-existent")).thenReturn(Optional.empty());
 
         // Act
-        refreshTokenService.revokeRefreshToken("non-existent");
+        refreshTokenService.revokeRefreshToken("non-existent", testUser);
 
         // Assert
         verify(refreshTokenRepository, never()).save(any());

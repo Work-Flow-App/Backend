@@ -1,5 +1,6 @@
 package com.workflow.service.auth;
 
+import com.workflow.config.properties.JwtConfigProperties;
 import com.workflow.dto.auth.AuthenticationResponse;
 import com.workflow.dto.auth.LoginRequest;
 import com.workflow.entity.RefreshToken;
@@ -42,6 +43,9 @@ class AuthenticationServiceTest {
     private RefreshTokenService refreshTokenService;
 
     @Mock
+    private JwtConfigProperties jwtConfigProperties;
+
+    @Mock
     private HttpServletRequest httpRequest;
 
     @InjectMocks
@@ -53,6 +57,9 @@ class AuthenticationServiceTest {
 
     @BeforeEach
     void setUp() {
+        JwtConfigProperties.AccessToken accessToken = new JwtConfigProperties.AccessToken();
+        when(jwtConfigProperties.getAccessToken()).thenReturn(accessToken);
+
         testUser = User.builder()
                 .id(1L)
                 .uuid("test-uuid-123")

@@ -67,7 +67,6 @@ public class SecurityConfig {
             "/api/v1/auth/signup",
             "/api/v1/auth/signup/worker",
             "/api/v1/auth/refresh",
-            "/api/v1/auth/logout",
             "/api/v1/auth/forgot-password",
             "/api/v1/auth/reset-password",
             "/api/v1/auth/google",
@@ -101,6 +100,7 @@ public class SecurityConfig {
                         .anyRequest().authenticated())
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .addFilterBefore(new RateLimitingFilter(), UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtFilter(), UsernamePasswordAuthenticationFilter.class)
                 .build();
     }

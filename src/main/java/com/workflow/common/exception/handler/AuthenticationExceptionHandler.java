@@ -2,6 +2,7 @@ package com.workflow.common.exception.handler;
 
 import com.workflow.common.exception.ResponseBuilder;
 import com.workflow.common.exception.ErrorResponse;
+import com.workflow.common.exception.base.UnauthorizedException;
 import com.workflow.common.exception.business.InvalidEmailVerificationTokenException;
 import com.workflow.common.exception.business.InvalidGoogleTokenException;
 import com.workflow.common.exception.business.InvalidPasswordResetTokenException;
@@ -68,5 +69,12 @@ public class AuthenticationExceptionHandler {
             InvalidPasswordResetTokenException ex,
             HttpServletRequest request) {
         return ResponseBuilder.buildBadRequestResponse(ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(UnauthorizedException.class)
+    public ResponseEntity<ErrorResponse> handleUnauthorized(
+            UnauthorizedException ex,
+            HttpServletRequest request) {
+        return ResponseBuilder.buildUnauthorizedResponse(ex.getMessage(), request);
     }
 }

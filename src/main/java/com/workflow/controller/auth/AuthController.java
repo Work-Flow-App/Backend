@@ -91,9 +91,11 @@ public class AuthController {
 
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(
-            @Valid @RequestBody LogoutRequest request
+            @Valid @RequestBody LogoutRequest request,
+            Authentication authentication
     ) {
-        this.authService.logout(request.refreshToken());
+        User user = (User) authentication.getPrincipal();
+        this.authService.logout(request.refreshToken(), user);
         return ResponseEntity.noContent().build();
     }
 

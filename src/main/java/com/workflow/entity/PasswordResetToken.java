@@ -6,7 +6,7 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "password_reset_tokens")
+@Table(name = "password_reset_tokens", uniqueConstraints = @UniqueConstraint(name = "uq_prt_user_code", columnNames = {"user_id", "verification_code"}))
 @Getter
 @Setter
 @Builder
@@ -18,7 +18,7 @@ public class PasswordResetToken {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "verification_code", unique = true, nullable = false, length = 6)
+    @Column(name = "verification_code", nullable = false, length = 6)
     private String verificationCode;
 
     @ManyToOne(fetch = FetchType.EAGER)

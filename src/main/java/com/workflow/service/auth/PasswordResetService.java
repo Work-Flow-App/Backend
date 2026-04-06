@@ -14,14 +14,16 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Random;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class PasswordResetService {
+
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final UserRepository userRepository;
@@ -82,42 +84,25 @@ public class PasswordResetService {
     }
 
     /**
-     * Validate password reset code for a specific user (private helper method)
-     */
-    private void validateResetCode(PasswordResetToken resetToken, String email) {
-        // Verify the code belongs to the user with this email
-        if (!resetToken.getUser().getEmail().equalsIgnoreCase(email)) {
-            log.warn("Verification code does not match email: {}", email);
-            throw new InvalidPasswordResetTokenException("Invalid verification code");
-        }
-
-        if (!resetToken.isValid()) {
-            if (resetToken.isUsed()) {
-                log.warn("Attempted to use already used verification code for user: {}", resetToken.getUser().getUsername());
-                throw new InvalidPasswordResetTokenException("Verification code has already been used");
-            }
-            if (resetToken.isExpired()) {
-                log.warn("Attempted to use expired verification code for user: {}", resetToken.getUser().getUsername());
-                throw new InvalidPasswordResetTokenException("Verification code has expired");
-            }
-        }
-
-        log.debug("Verification code validated for user: {}", resetToken.getUser().getUsername());
-    }
-
-    /**
      * Reset password using verification code and email
      */
     @Transactional
     public void resetPassword(String email, String code, String newPassword) {
         log.info("Starting password reset for email: {}", email);
 
-        // Find and validate token within the same transaction
-        PasswordResetToken resetToken = passwordResetTokenRepository.findByVerificationCode(code)
+        // Scoped lookup: code must belong to the user with this exact email — prevents cross-user enumeration
+        PasswordResetToken resetToken = passwordResetTokenRepository.findByVerificationCodeAndUser_Email(code, email)
                 .orElseThrow(() -> new InvalidPasswordResetTokenException("Invalid verification code"));
 
-        // Validate the token
-        validateResetCode(resetToken, email);
+        // Token already scoped to user by email — just validate state
+        if (!resetToken.isValid()) {
+            if (resetToken.isUsed()) {
+                log.warn("Attempted to use already used verification code for user: {}", resetToken.getUser().getUsername());
+                throw new InvalidPasswordResetTokenException("Verification code has already been used");
+            }
+            log.warn("Attempted to use expired verification code for user: {}", resetToken.getUser().getUsername());
+            throw new InvalidPasswordResetTokenException("Verification code has expired");
+        }
 
         // Get user (EAGER fetch ensures user is loaded and managed)
         User user = resetToken.getUser();
@@ -167,8 +152,7 @@ public class PasswordResetService {
      * Generate a random 6-digit verification code
      */
     private String generateVerificationCode() {
-        Random random = new Random();
-        int code = 100000 + random.nextInt(900000); // Range: 100000 to 999999
+        int code = 100_000 + SECURE_RANDOM.nextInt(900_000); // Range: 100000 to 999999
         return String.valueOf(code);
     }
 }

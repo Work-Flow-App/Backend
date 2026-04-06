@@ -100,7 +100,6 @@ public class User implements UserDetails {
                 "id=" + id +
                 ", uuid='" + uuid + '\'' +
                 ", username='" + username + '\'' +
-                ", password='" + password + '\'' +
                 ", email='" + email + '\'' +
                 ", role=" + role +
                 ", enabled=" + enabled +

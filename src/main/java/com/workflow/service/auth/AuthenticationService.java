@@ -1,5 +1,6 @@
 package com.workflow.service.auth;
 
+import com.workflow.config.properties.JwtConfigProperties;
 import com.workflow.dto.auth.AuthenticationResponse;
 import com.workflow.dto.auth.LoginRequest;
 import com.workflow.dto.auth.RefreshTokenRequest;
@@ -23,6 +24,7 @@ public class AuthenticationService {
     private final UserRepository userRepository;
     private final JwtService jwtService;
     private final RefreshTokenService refreshTokenService;
+    private final JwtConfigProperties jwtConfigProperties;
 
     @Transactional
     public AuthenticationResponse authenticate(LoginRequest request, HttpServletRequest httpRequest) {
@@ -39,16 +41,18 @@ public class AuthenticationService {
 
         String accessToken = jwtService.generateToken(user);
         RefreshToken refreshToken = refreshTokenService.createRefreshToken(user, httpRequest);
+        long expiresIn = jwtConfigProperties.getAccessToken().getExpirationMinutes() * 60L;
 
-        return AuthenticationResponse.success(accessToken, refreshToken.getToken());
+        return AuthenticationResponse.success(accessToken, refreshToken.getToken(), expiresIn);
     }
 
     @Transactional
     public AuthenticationResponse generateJwtToken(UserDetails user, HttpServletRequest httpRequest) {
         String accessToken = jwtService.generateToken(user);
         RefreshToken refreshToken = refreshTokenService.createRefreshToken((User) user, httpRequest);
+        long expiresIn = jwtConfigProperties.getAccessToken().getExpirationMinutes() * 60L;
 
-        return AuthenticationResponse.success(accessToken, refreshToken.getToken());
+        return AuthenticationResponse.success(accessToken, refreshToken.getToken(), expiresIn);
     }
 
     @Transactional
@@ -61,13 +65,14 @@ public class AuthenticationService {
 
         // Rotate refresh token (security best practice)
         RefreshToken newRefreshToken = refreshTokenService.rotateRefreshToken(refreshToken, httpRequest);
+        long expiresIn = jwtConfigProperties.getAccessToken().getExpirationMinutes() * 60L;
 
-        return AuthenticationResponse.success(newAccessToken, newRefreshToken.getToken());
+        return AuthenticationResponse.success(newAccessToken, newRefreshToken.getToken(), expiresIn);
     }
 
     @Transactional
-    public void logout(String refreshToken) {
-        refreshTokenService.revokeRefreshToken(refreshToken);
+    public void logout(String refreshToken, User user) {
+        refreshTokenService.revokeRefreshToken(refreshToken, user);
     }
 
     @Transactional

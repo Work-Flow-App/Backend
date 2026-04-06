@@ -16,9 +16,14 @@ import java.util.Optional;
 public interface PasswordResetTokenRepository extends JpaRepository<PasswordResetToken, Long> {
 
     /**
-     * Find password reset token by verification code
+     * Find password reset token by verification code (global — retained for internal use)
      */
     Optional<PasswordResetToken> findByVerificationCode(String verificationCode);
+
+    /**
+     * Find password reset token scoped to a specific user by email — prevents cross-user code lookup
+     */
+    Optional<PasswordResetToken> findByVerificationCodeAndUser_Email(String verificationCode, String email);
 
     /**
      * Find all active (not used and not expired) tokens for a user

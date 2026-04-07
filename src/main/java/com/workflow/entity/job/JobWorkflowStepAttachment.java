@@ -39,8 +39,10 @@ public class JobWorkflowStepAttachment {
     @Column(columnDefinition = "TEXT")
     private String description; // 👈 text attached to file
 
+    @Column(nullable = false)
     private String fileName;
     private String fileType;
+    @Column(nullable = false)
     private String fileUrl;
 
     @CreationTimestamp

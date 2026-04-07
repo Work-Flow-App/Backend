@@ -19,7 +19,7 @@ public class WorkerInvitation {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "invitation_token", unique = true, nullable = false, length = 255)
+    @Column(name = "invitation_token", nullable = false, length = 255)
     private String invitationToken;
 
     @Column(nullable = false, length = 100)

@@ -11,12 +11,7 @@ import lombok.*;
 
 
 @Entity
-@Table(
-    name = "job_templates",
-    uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"company_id", "name"})
-    }
-)
+@Table(name = "job_templates")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class JobTemplate {
 

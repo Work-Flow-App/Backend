@@ -21,7 +21,7 @@ public class CompanyBankDetails {
     private Long id;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "company_id", nullable = false, unique = true)
+    @JoinColumn(name = "company_id", nullable = false)
     private Company company;
 
     @Column(name = "bank_name", length = 100)

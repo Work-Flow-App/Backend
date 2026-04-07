@@ -10,5 +10,6 @@ CREATE TABLE company_counters (
     next_asset_id    BIGINT NOT NULL DEFAULT 1,
     next_template_id BIGINT NOT NULL DEFAULT 1,
     next_workflow_id BIGINT NOT NULL DEFAULT 1,
+    next_invoice_id  BIGINT NOT NULL DEFAULT 1,
     CONSTRAINT fk_cc_company FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;

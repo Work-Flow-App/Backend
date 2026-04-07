@@ -28,19 +28,19 @@ public class User implements UserDetails {
     @Column(name = "id")
     private Long id;
 
-    @Column(name = "uuid", unique = true, nullable = false, updatable = false)
+    @Column(name = "uuid", nullable = false, updatable = false)
     private String uuid;
 
-    @Column(unique = true, nullable = false, length = 50)
+    @Column(nullable = false, length = 50)
     private String username;
 
     @Column(nullable = false)
     private String password;
 
-    @Column(unique = true)
+    @Column
     private String email;
 
-    @Column(name = "google_id", unique = true)
+    @Column(name = "google_id")
     private String googleId;
 
     @Enumerated(EnumType.STRING)

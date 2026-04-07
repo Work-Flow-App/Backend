@@ -52,7 +52,7 @@ CREATE TABLE job_templates (
     created_at   TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
     updated_at   TIMESTAMP    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT fk_job_template_company FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE,
-    CONSTRAINT uq_company_name UNIQUE (company_id, name),
+    CONSTRAINT uq_job_templates_company_name UNIQUE (company_id, name),
     INDEX idx_company    (company_id),
     INDEX idx_is_default (is_default)
 ) ENGINE=InnoDB;

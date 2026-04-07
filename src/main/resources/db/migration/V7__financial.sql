@@ -33,7 +33,8 @@ CREATE TABLE line_items (
     created_at          DATETIME(6)   NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
     updated_at          DATETIME(6)            DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP(6),
     PRIMARY KEY (id),
-    CONSTRAINT FK_line_items_company FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE
+    CONSTRAINT FK_line_items_company FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE,
+    INDEX idx_line_items_company (company_id)
 ) ENGINE=InnoDB;
 
 -- ============================================
@@ -44,7 +45,7 @@ CREATE TABLE estimate_line_items (
     line_item_id BIGINT NOT NULL,
     PRIMARY KEY (estimate_id, line_item_id),
     CONSTRAINT FK_eli_estimate  FOREIGN KEY (estimate_id)  REFERENCES estimates(id)  ON DELETE CASCADE,
-    CONSTRAINT FK_eli_line_item FOREIGN KEY (line_item_id) REFERENCES line_items(id) ON DELETE CASCADE
+    CONSTRAINT fk_eli_line_item FOREIGN KEY (line_item_id) REFERENCES line_items(id) ON DELETE RESTRICT
 ) ENGINE=InnoDB;
 
 -- ============================================
@@ -63,8 +64,10 @@ CREATE TABLE invoices (
     grand_total    DECIMAL(10,2) NOT NULL,
     created_at     DATETIME(6)   NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
     updated_at     DATETIME(6)            DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
-    CONSTRAINT fk_invoices_estimate FOREIGN KEY (estimate_id) REFERENCES estimates(id) ON DELETE CASCADE,
-    CONSTRAINT fk_invoices_company  FOREIGN KEY (company_id)  REFERENCES companies(id)
+    CONSTRAINT fk_invoices_estimate FOREIGN KEY (estimate_id) REFERENCES estimates(id) ON DELETE RESTRICT,
+    CONSTRAINT fk_invoices_company  FOREIGN KEY (company_id)  REFERENCES companies(id),
+    INDEX idx_invoices_estimate_company (estimate_id, company_id),
+    INDEX idx_invoices_company          (company_id)
 ) ENGINE=InnoDB;
 
 -- ============================================

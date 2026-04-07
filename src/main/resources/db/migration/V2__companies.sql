@@ -58,7 +58,8 @@ CREATE TABLE clients (
     created_at DATETIME(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
     updated_at DATETIME(6)           DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP(6),
     PRIMARY KEY (id),
-    CONSTRAINT FK_clients_company FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE
+    CONSTRAINT FK_clients_company FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE,
+    INDEX idx_clients_company_archived (company_id, archived)
 ) ENGINE=InnoDB;
 
 -- ============================================
@@ -80,7 +81,8 @@ CREATE TABLE workers (
     updated_at   DATETIME(6)           DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP(6),
     PRIMARY KEY (id),
     CONSTRAINT FK_workers_company FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE,
-    CONSTRAINT FK_workers_user    FOREIGN KEY (user_id)    REFERENCES users(id)     ON DELETE CASCADE
+    CONSTRAINT FK_workers_user    FOREIGN KEY (user_id)    REFERENCES users(id)     ON DELETE CASCADE,
+    INDEX idx_workers_company_archived (company_id, archived)
 ) ENGINE=InnoDB;
 
 -- ============================================

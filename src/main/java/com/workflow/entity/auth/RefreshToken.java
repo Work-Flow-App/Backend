@@ -12,18 +12,14 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 @Entity
-@Table(name = "refresh_tokens", indexes = {
-    @Index(name = "idx_token", columnList = "token"),
-    @Index(name = "idx_user_id", columnList = "user_id"),
-    @Index(name = "idx_expires_at", columnList = "expires_at")
-})
+@Table(name = "refresh_tokens")
 public class RefreshToken {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true, length = 255)
+    @Column(nullable = false, length = 255)
     private String token;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)

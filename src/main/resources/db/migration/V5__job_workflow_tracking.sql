@@ -4,9 +4,9 @@
 CREATE TABLE job_workflows (
     id           BIGINT   AUTO_INCREMENT PRIMARY KEY,
     job_id       BIGINT   NOT NULL,
-    started_at   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    completed_at DATETIME NULL,
-    status       VARCHAR(50),
+    started_at   DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+    completed_at DATETIME(6) NULL,
+    status       VARCHAR(50) NOT NULL DEFAULT 'NOT_STARTED',
     CONSTRAINT fk_job_workflows_job FOREIGN KEY (job_id) REFERENCES jobs(id),
     CONSTRAINT uk_job_workflows_job UNIQUE (job_id)
 ) ENGINE=InnoDB;
@@ -17,13 +17,14 @@ CREATE TABLE job_workflows (
 CREATE TABLE job_workflow_steps (
     id              BIGINT        AUTO_INCREMENT PRIMARY KEY,
     job_workflow_id BIGINT        NOT NULL,
-    name            VARCHAR(255),
+    name            VARCHAR(255)  NOT NULL,
     description     TEXT,
     order_index     INT           NOT NULL,
     status          VARCHAR(50)   NOT NULL,
     started_at      DATETIME      NULL,
     completed_at    DATETIME      NULL,
-    CONSTRAINT fk_job_workflow_steps_job_workflow FOREIGN KEY (job_workflow_id) REFERENCES job_workflows(id) ON DELETE CASCADE
+    CONSTRAINT fk_job_workflow_steps_job_workflow FOREIGN KEY (job_workflow_id) REFERENCES job_workflows(id) ON DELETE CASCADE,
+    INDEX idx_jws_workflow_order (job_workflow_id, order_index)
 ) ENGINE=InnoDB;
 
 -- ============================================
@@ -34,7 +35,8 @@ CREATE TABLE job_workflow_step_workers (
     worker_id            BIGINT NOT NULL,
     PRIMARY KEY (job_workflow_step_id, worker_id),
     CONSTRAINT fk_jwsw_step   FOREIGN KEY (job_workflow_step_id) REFERENCES job_workflow_steps(id) ON DELETE CASCADE,
-    CONSTRAINT fk_jwsw_worker FOREIGN KEY (worker_id)            REFERENCES workers(id)
+    CONSTRAINT fk_jwsw_worker FOREIGN KEY (worker_id)            REFERENCES workers(id),
+    INDEX idx_jwsw_worker_id (worker_id)
 ) ENGINE=InnoDB;
 
 -- ============================================
@@ -46,7 +48,7 @@ CREATE TABLE job_workflow_step_activities (
     actor_id             BIGINT      NOT NULL,
     type                 VARCHAR(100) NOT NULL,
     message              TEXT,
-    created_at           DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_at           DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
     PRIMARY KEY (id),
     CONSTRAINT fk_jwsa_step  FOREIGN KEY (job_workflow_step_id) REFERENCES job_workflow_steps(id) ON DELETE CASCADE,
     CONSTRAINT fk_jwsa_actor FOREIGN KEY (actor_id)             REFERENCES users(id) ON DELETE RESTRICT,
@@ -61,13 +63,13 @@ CREATE TABLE job_workflow_step_attachments (
     id                   BIGINT        NOT NULL AUTO_INCREMENT,
     job_workflow_step_id BIGINT        NOT NULL,
     uploaded_by          BIGINT        NOT NULL,
-    file_name            VARCHAR(255),
+    file_name            VARCHAR(255)  NOT NULL,
     file_type            VARCHAR(100),
-    file_url             VARCHAR(1024),
+    file_url             VARCHAR(1024) NOT NULL,
     type                 VARCHAR(50)   NOT NULL DEFAULT 'GENERAL',
     description          TEXT          NULL,
-    created_at           DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at           DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    created_at           DATETIME(6),
+    updated_at           DATETIME(6),
     PRIMARY KEY (id),
     CONSTRAINT fk_jwsa_attach_step FOREIGN KEY (job_workflow_step_id) REFERENCES job_workflow_steps(id) ON DELETE CASCADE,
     CONSTRAINT fk_jwsa_attach_user FOREIGN KEY (uploaded_by)          REFERENCES users(id) ON DELETE RESTRICT,
@@ -85,8 +87,8 @@ CREATE TABLE job_workflow_step_comments (
     author_id            BIGINT      NOT NULL,
     content              TEXT        NOT NULL,
     type                 VARCHAR(50) NOT NULL DEFAULT 'GENERAL',
-    created_at           DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at           DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    created_at           DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+    updated_at           DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
     PRIMARY KEY (id),
     CONSTRAINT fk_jwsc_step   FOREIGN KEY (job_workflow_step_id) REFERENCES job_workflow_steps(id) ON DELETE CASCADE,
     CONSTRAINT fk_jwsc_author FOREIGN KEY (author_id)            REFERENCES users(id) ON DELETE RESTRICT,
@@ -106,9 +108,9 @@ CREATE TABLE job_workflow_step_visit_logs (
     time_in              TIME     NOT NULL,
     time_out             TIME     DEFAULT NULL,
     description          TEXT,
-    created_at           DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at           DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    CONSTRAINT fk_visit_log_step FOREIGN KEY (job_workflow_step_id) REFERENCES job_workflow_steps(id),
+    created_at           DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+    updated_at           DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+    CONSTRAINT fk_visit_log_step FOREIGN KEY (job_workflow_step_id) REFERENCES job_workflow_steps(id) ON DELETE CASCADE,
     CONSTRAINT fk_visit_log_user FOREIGN KEY (logged_by_id)         REFERENCES users(id),
     INDEX idx_visit_log_step      (job_workflow_step_id),
     INDEX idx_visit_log_date_time (visit_date, time_in)

@@ -14,13 +14,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 @Entity
-@Table(
-    name = "customers",
-    uniqueConstraints = {
-        @UniqueConstraint(name = "uq_customers_company_name",  columnNames = {"company_id", "name"}),
-        @UniqueConstraint(name = "uq_customers_company_email", columnNames = {"company_id", "email"})
-    }
-)
+@Table(name = "customers")
 public class Customer {
 
     @Id

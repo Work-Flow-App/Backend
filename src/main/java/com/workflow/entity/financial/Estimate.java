@@ -25,7 +25,7 @@ public class Estimate {
     private Long id;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "job_id", nullable = false, unique = true)
+    @JoinColumn(name = "job_id", nullable = false)
     private Job job;
 
     @ManyToOne(fetch = FetchType.LAZY)

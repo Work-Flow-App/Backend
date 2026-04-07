@@ -18,7 +18,7 @@ public class EmailVerificationToken {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false)
     private String token;
 
     @ManyToOne(fetch = FetchType.EAGER)

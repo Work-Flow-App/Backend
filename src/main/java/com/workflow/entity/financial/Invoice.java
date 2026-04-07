@@ -33,7 +33,7 @@ public class Invoice {
     @JoinColumn(name = "company_id", nullable = false)
     private Company company;
 
-    @Column(name = "invoice_number", nullable = false, unique = true, length = 50)
+    @Column(name = "invoice_number", nullable = false, length = 50)
     private String invoiceNumber;
 
     @Column(name = "s3_key", nullable = false, length = 500)

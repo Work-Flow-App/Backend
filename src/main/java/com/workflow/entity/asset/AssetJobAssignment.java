@@ -7,10 +7,7 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "asset_job_assignments", indexes = {
-    @Index(name = "idx_assignment_asset", columnList = "asset_id"),
-    @Index(name = "idx_assignment_job", columnList = "job_id")
-})
+@Table(name = "asset_job_assignments")
 @Getter
 @Setter
 @NoArgsConstructor

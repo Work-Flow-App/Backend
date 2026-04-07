@@ -2,7 +2,7 @@ package com.workflow.service.auth;
 
 import com.workflow.common.constant.Role;
 import com.workflow.config.properties.JwtConfigProperties;
-import com.workflow.entity.User;
+import com.workflow.entity.auth.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;

@@ -1,6 +1,6 @@
 package com.workflow.dto.company;
 
-import com.workflow.entity.CompanyAddress;
+import com.workflow.entity.company.CompanyAddress;
 
 public record CompanyAddressResponse(
         String addressLine1,

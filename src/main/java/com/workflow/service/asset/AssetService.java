@@ -1,13 +1,20 @@
 package com.workflow.service.asset;
 
 import com.workflow.dto.asset.*;
-import com.workflow.entity.*;
-import com.workflow.repository.*;
+import com.workflow.entity.asset.Asset;
+import com.workflow.entity.asset.AssetJobAssignment;
+import com.workflow.entity.company.Company;
+import com.workflow.repository.asset.AssetJobAssignmentRepository;
+import com.workflow.repository.asset.AssetRepository;
+import com.workflow.repository.company.CompanyRepository;
 import com.workflow.common.exception.business.*;
 import com.workflow.service.sequence.CompanyCounterService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -42,27 +49,15 @@ public class AssetService implements IAssetService {
                     return new CompanyNotFoundException("Company not found");
                 });
 
-        // validations
-        if (request.getName() == null || request.getName().trim().length() < 2 || request.getName().length() > 150) {
-            throw new IllegalArgumentException("Asset name is required (2-150 chars)");
-        }
+        // Field-level validations are handled by Bean Validation on AssetCreateRequest.
+        // Cross-field validation (salvageValue vs purchasePrice) is enforced here
+        // because @Valid cannot express cross-field rules.
         if (assetRepository.existsByCompanyIdAndName(companyId, request.getName())) {
             throw new DuplicateNameException("Asset name must be unique within the company");
         }
         if (request.getAssetTag() != null
                 && assetRepository.existsByCompanyIdAndAssetTag(companyId, request.getAssetTag())) {
             throw new DuplicateNameException("Asset tag must be unique within the company");
-        }
-        if (request.getPurchasePrice() == null || request.getPurchasePrice().compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalArgumentException("Purchase price must be greater than 0");
-        }
-        if (request.getPurchaseDate() == null || request.getPurchaseDate().isAfter(LocalDate.now())) {
-            throw new IllegalArgumentException("Purchase date is required and cannot be in the future");
-        }
-        if (request.getDepreciationRate() == null
-                || request.getDepreciationRate().compareTo(BigDecimal.ZERO) < 0
-                || request.getDepreciationRate().compareTo(new BigDecimal("100")) > 0) {
-            throw new IllegalArgumentException("Depreciation rate must be between 0 and 100");
         }
         if (request.getSalvageValue() != null && request.getPurchasePrice().compareTo(request.getSalvageValue()) < 0) {
             throw new IllegalArgumentException("Purchase price must be greater than salvage value");
@@ -237,19 +232,20 @@ public class AssetService implements IAssetService {
     // ----------------- DASHBOARD --------------------
     @Override
     public AssetStatistics getStatistics(Long companyId) {
-        List<Asset> assets = assetRepository.findByCompanyIdAndArchivedFalse(companyId, Pageable.unpaged())
-                .getContent();
-
-        long total = assets.size();
-        long available = assets.stream().filter(Asset::isAvailable).count();
+        // Use aggregate queries for counts — avoids loading all assets into heap
+        long total = assetRepository.countActiveByCompanyId(companyId);
+        long available = assetRepository.countAvailableByCompanyId(companyId);
         long inUse = total - available;
+
+        // Depreciation calculations require per-asset data; load only active assets
+        // (not archived) without Pageable.unpaged() — use targeted query instead
+        List<Asset> assets = assetRepository.findActiveByCompanyId(companyId);
 
         LocalDate today = LocalDate.now();
         BigDecimal totalPurchase = BigDecimal.ZERO;
         BigDecimal totalCurrent = BigDecimal.ZERO;
         double totalRate = 0;
 
-        // Calculate in single pass to avoid N+1 queries
         for (Asset asset : assets) {
             totalPurchase = totalPurchase.add(asset.getPurchasePrice());
             totalCurrent = totalCurrent.add(calculateCurrentValue(asset, today));

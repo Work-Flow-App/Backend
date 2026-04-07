@@ -1,6 +1,8 @@
 package com.workflow.common.exception.business;
 
-public class FileSizeLimitExceededException extends RuntimeException {
+import com.workflow.common.exception.base.BadRequestException;
+
+public class FileSizeLimitExceededException extends BadRequestException {
 
     public FileSizeLimitExceededException(String message) {
         super(message);

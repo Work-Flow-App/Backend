@@ -1,0 +1,49 @@
+name: Reset Dev Database
+
+on:
+  workflow_dispatch:
+
+jobs:
+  reset-db:
+    name: Drop, Recreate & Rerun Migrations
+    runs-on: ubuntu-latest
+    environment: dev-deploy
+
+    steps:
+      - name: Reset DB via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            set -e
+            APP_DIR="/home/ubuntu/app"
+            ENV_FILE="$APP_DIR/.env.dev"
+
+            # Read DB credentials from .env.dev
+            DB_HOST=$(grep "^DB_URL="      "$ENV_FILE" | cut -d= -f2)
+            DB_PORT=$(grep "^DB_PORT="     "$ENV_FILE" | cut -d= -f2)
+            DB_NAME=$(grep "^DB_NAME="     "$ENV_FILE" | cut -d= -f2)
+            DB_USER=$(grep "^DB_USERNAME=" "$ENV_FILE" | cut -d= -f2)
+            DB_PASS=$(grep "^DB_PASSWORD=" "$ENV_FILE" | cut -d= -f2)
+
+            echo "Stopping backend container..."
+            docker stop backend || true
+
+            echo "Dropping and recreating database: $DB_NAME"
+            docker run --rm mysql:8.0 \
+              mysql -h "$DB_HOST" -P "$DB_PORT" \
+                    -u "$DB_USER" -p"$DB_PASS" \
+                    --connect-timeout=10 \
+              -e "DROP DATABASE IF EXISTS \`$DB_NAME\`;
+                  CREATE DATABASE \`$DB_NAME\`
+                    CHARACTER SET utf8mb4
+                    COLLATE utf8mb4_unicode_ci;"
+
+            echo "Starting backend — Flyway will rerun all migrations..."
+            docker-compose -f "$APP_DIR/docker-compose.dev.yml" \
+              --env-file "$ENV_FILE" \
+              up -d backend
+
+            echo "Done! Check logs with: docker logs -f backend"

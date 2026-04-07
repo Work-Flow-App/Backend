@@ -1,5 +1,7 @@
 package com.workflow.entity;
 
+import com.workflow.entity.company.Company;
+import com.workflow.entity.worker.WorkerInvitation;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 

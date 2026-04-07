@@ -1,13 +1,21 @@
 package com.workflow.service.invoice;
 
 import com.workflow.common.exception.business.EstimateNotFoundException;
+import com.workflow.common.exception.business.InvalidRequestException;
 import com.workflow.common.exception.business.InvoiceNotFoundException;
-import com.workflow.common.exception.business.LineItemNotFoundException;
 import com.workflow.dto.invoice.InvoiceCreateRequest;
 import com.workflow.dto.invoice.InvoiceResponse;
-import com.workflow.entity.*;
-import com.workflow.repository.EstimateRepository;
-import com.workflow.repository.InvoiceRepository;
+import com.workflow.entity.company.Company;
+import com.workflow.entity.company.CompanyAddress;
+import com.workflow.entity.company.CompanyBankDetails;
+import com.workflow.entity.customer.Customer;
+import com.workflow.entity.customer.CustomerAddress;
+import com.workflow.entity.financial.Estimate;
+import com.workflow.entity.financial.Invoice;
+import com.workflow.entity.financial.LineItem;
+import com.workflow.repository.financial.EstimateRepository;
+import com.workflow.repository.financial.InvoiceRepository;
+import com.workflow.service.sequence.CompanyCounterService;
 import com.workflow.service.storage.IStorageService;
 import com.workflow.templates.pdf.invoice.InvoicePdfRenderer;
 import com.workflow.templates.pdf.invoice.InvoiceTemplateData;
@@ -33,10 +41,11 @@ public class InvoiceService implements IInvoiceService {
     private final EstimateRepository estimateRepository;
     private final IStorageService storageService;
     private final InvoicePdfRenderer pdfRenderer;
+    private final CompanyCounterService companyCounterService;
 
     @Override
     public InvoiceResponse generateInvoice(Long estimateId, InvoiceCreateRequest request, Long companyId) {
-        Estimate estimate = estimateRepository.findByIdAndCompanyId(estimateId, companyId)
+        Estimate estimate = estimateRepository.findByIdWithDetailsAndCompanyId(estimateId, companyId)
                 .orElseThrow(() -> new EstimateNotFoundException("Estimate not found"));
 
         Set<Long> estimateLineItemIds = estimate.getLineItems().stream()
@@ -49,8 +58,8 @@ public class InvoiceService implements IInvoiceService {
                 .toList();
 
         if (!invalidIds.isEmpty()) {
-            throw new LineItemNotFoundException(
-                    "Line items not found in this estimate: " + invalidIds);
+            throw new InvalidRequestException(
+                    "Some selected line items do not belong to this estimate. Please verify your selection.");
         }
 
         List<LineItem> selectedItems = estimate.getLineItems().stream()
@@ -69,12 +78,16 @@ public class InvoiceService implements IInvoiceService {
                 .map(LineItem::getTotalAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        // Save invoice to get the generated ID for the invoice number
+        // Generate invoice number first — REQUIRES_NEW transaction guarantees uniqueness
+        long invoiceSeq = companyCounterService.nextInvoiceId(companyId);
+        String invoiceNumber = String.format("INV-%d-%05d", LocalDate.now().getYear(), invoiceSeq);
+        String s3Key = String.format("invoices/%d/%s.pdf", companyId, invoiceNumber);
+
         Invoice invoice = Invoice.builder()
                 .estimate(estimate)
                 .company(estimate.getCompany())
-                .invoiceNumber("PENDING")
-                .s3Key("PENDING")
+                .invoiceNumber(invoiceNumber)
+                .s3Key(s3Key)
                 .lineItems(selectedItems)
                 .dueDate(request.getDueDate())
                 .reference(request.getReference())
@@ -83,16 +96,9 @@ public class InvoiceService implements IInvoiceService {
                 .grandTotal(grandTotal)
                 .build();
 
-        invoice = invoiceRepository.save(invoice);
-
-        String invoiceNumber = String.format("INV-%d-%05d", LocalDate.now().getYear(), invoice.getId());
-        String s3Key = String.format("invoices/%d/%s.pdf", companyId, invoiceNumber);
-
         byte[] pdfBytes = generatePdf(invoice, invoiceNumber, selectedItems, estimate);
         storageService.upload(s3Key, new ByteArrayInputStream(pdfBytes), pdfBytes.length, "application/pdf");
 
-        invoice.setInvoiceNumber(invoiceNumber);
-        invoice.setS3Key(s3Key);
         invoice = invoiceRepository.save(invoice);
 
         String presignedUrl = storageService.generatePresignedUrl(s3Key);

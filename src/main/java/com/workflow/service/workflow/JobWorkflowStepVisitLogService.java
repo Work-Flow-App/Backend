@@ -5,14 +5,14 @@ import com.workflow.common.exception.business.*;
 import com.workflow.dto.workflow.StepVisitLogCreateRequest;
 import com.workflow.dto.workflow.StepVisitLogResponse;
 import com.workflow.dto.workflow.StepVisitLogSummaryResponse;
-import com.workflow.entity.Company;
-import com.workflow.entity.JobWorkflowStep;
-import com.workflow.entity.JobWorkflowStepVisitLog;
-import com.workflow.entity.User;
-import com.workflow.repository.CompanyRepository;
-import com.workflow.repository.JobWorkflowStepRepository;
-import com.workflow.repository.JobWorkflowStepVisitLogRepository;
-import com.workflow.repository.UserRepository;
+import com.workflow.entity.company.Company;
+import com.workflow.entity.job.JobWorkflowStep;
+import com.workflow.entity.job.JobWorkflowStepVisitLog;
+import com.workflow.entity.auth.User;
+import com.workflow.repository.company.CompanyRepository;
+import com.workflow.repository.job.JobWorkflowStepRepository;
+import com.workflow.repository.job.JobWorkflowStepVisitLogRepository;
+import com.workflow.repository.auth.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -90,14 +90,17 @@ public class JobWorkflowStepVisitLogService implements IJobWorkflowStepVisitLogS
 
     @Override
     public StepVisitLogResponse updateVisitLog(Long visitLogId, StepVisitLogCreateRequest request, Long companyId) {
-        Company company = getCompany(companyId);
+        // Fetch visit log first — throws 404 immediately if it doesn't exist,
+        // before making the extra getCompany() DB call.
         JobWorkflowStepVisitLog visitLog = visitLogRepository.findById(visitLogId)
                 .orElseThrow(() -> new VisitLogNotFoundException("Visit log not found"));
 
-        // Check if the company actually owns the step this visit log belongs to
+        // Validate company ownership before resolving the company entity.
         if (!visitLog.getStep().getJobWorkflow().getJob().getCompany().getId().equals(companyId)) {
             throw new ForbiddenActionException("Not allowed to edit visit logs for other companies");
         }
+
+        Company company = getCompany(companyId);
 
         // Apply fields safely and validate time
         LocalTime newTimeIn = request.getTimeIn() != null ? request.getTimeIn() : visitLog.getTimeIn();
@@ -136,9 +139,9 @@ public class JobWorkflowStepVisitLogService implements IJobWorkflowStepVisitLogS
             throw new ForbiddenActionException("Not allowed to delete visit logs for other companies");
         }
 
+        visitLogRepository.delete(visitLog);
         stepActivityService.log(visitLog.getStep(), company.getUser(), JobWorkflowStepActivityType.VISIT_DELETED,
                 "Deleted a visit log");
-        visitLogRepository.delete(visitLog);
     }
 
     @Override

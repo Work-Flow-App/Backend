@@ -1,7 +1,7 @@
 package com.workflow.service.sequence;
 
-import com.workflow.entity.CompanyCounters;
-import com.workflow.repository.CompanyCountersRepository;
+import com.workflow.entity.company.CompanyCounters;
+import com.workflow.repository.company.CompanyCountersRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -74,6 +74,15 @@ public class CompanyCounterService {
         c.setNextWorkflowId(val + 1);
         countersRepository.save(c);
         return val;
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public long nextInvoiceId(Long companyId) {
+        CompanyCounters c = getOrCreate(companyId);
+        long next = c.getNextInvoiceId();
+        c.setNextInvoiceId(next + 1);
+        countersRepository.save(c);
+        return next;
     }
 
     private CompanyCounters getOrCreate(Long companyId) {

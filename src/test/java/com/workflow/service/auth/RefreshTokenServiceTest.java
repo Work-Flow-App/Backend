@@ -3,9 +3,9 @@ package com.workflow.service.auth;
 import com.workflow.common.constant.Role;
 import com.workflow.common.exception.business.InvalidRefreshTokenException;
 import com.workflow.config.properties.JwtConfigProperties;
-import com.workflow.entity.RefreshToken;
-import com.workflow.entity.User;
-import com.workflow.repository.RefreshTokenRepository;
+import com.workflow.entity.auth.RefreshToken;
+import com.workflow.entity.auth.User;
+import com.workflow.repository.auth.RefreshTokenRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -267,7 +267,7 @@ class RefreshTokenServiceTest {
         when(refreshTokenRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
         // Act
-        refreshTokenService.revokeRefreshToken("token-to-revoke");
+        refreshTokenService.revokeRefreshToken("token-to-revoke", testUser);
 
         // Assert
         assertThat(token.isRevoked()).isTrue();
@@ -281,7 +281,7 @@ class RefreshTokenServiceTest {
         when(refreshTokenRepository.findByToken("non-existent")).thenReturn(Optional.empty());
 
         // Act
-        refreshTokenService.revokeRefreshToken("non-existent");
+        refreshTokenService.revokeRefreshToken("non-existent", testUser);
 
         // Assert
         verify(refreshTokenRepository, never()).save(any());

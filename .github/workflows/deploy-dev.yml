@@ -131,7 +131,7 @@ jobs:
             chmod +x "$APP_DIR/setup-env.sh"
 
             # Pull all secrets/params from Secrets Manager + SSM → writes .env.dev
-            "$APP_DIR/setup-env.sh"
+            APP_ENV=dev "$APP_DIR/setup-env.sh"
 
             # Inject ECR image URI (known to CI/CD, not stored in AWS)
             sed -i "s|ECR_IMAGE_URI=.*|ECR_IMAGE_URI=$ECR_IMAGE|" .env.dev

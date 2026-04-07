@@ -1,17 +1,22 @@
 package com.workflow.service.asset;
 
 import com.workflow.common.constant.job.JobStatus;
+import com.workflow.common.exception.business.AssetAssignmentNotFoundException;
 import com.workflow.common.exception.business.AssetNotFoundException;
 import com.workflow.common.exception.business.JobNotFoundException;
 import com.workflow.common.exception.business.WorkerNotFoundException;
 import com.workflow.dto.asset.AssetAssignmentCreateRequest;
 import com.workflow.dto.asset.AssetAssignmentResponse;
 import com.workflow.dto.asset.AssetAssignmentReturnRequest;
-import com.workflow.entity.*;
-import com.workflow.repository.AssetJobAssignmentRepository;
-import com.workflow.repository.AssetRepository;
-import com.workflow.repository.JobRepository;
-import com.workflow.repository.WorkerRepository;
+import com.workflow.entity.asset.Asset;
+import com.workflow.entity.asset.AssetJobAssignment;
+import com.workflow.entity.company.Company;
+import com.workflow.entity.job.Job;
+import com.workflow.entity.worker.Worker;
+import com.workflow.repository.asset.AssetJobAssignmentRepository;
+import com.workflow.repository.asset.AssetRepository;
+import com.workflow.repository.job.JobRepository;
+import com.workflow.repository.worker.WorkerRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -384,7 +389,7 @@ class AssetAssignmentServiceTest {
         when(assignmentRepository.findById(1L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> assetAssignmentService.returnAsset(returnRequest, 1L))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(AssetAssignmentNotFoundException.class)
                 .hasMessage("Assignment not found");
 
         verify(assignmentRepository, never()).save(any());

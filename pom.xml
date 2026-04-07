@@ -158,6 +158,12 @@
 			<version>2.7.0</version>
 		</dependency>
 
+		<!-- Caffeine cache — required by spring-cloud-aws-starter transitively -->
+		<dependency>
+			<groupId>com.github.ben-manes.caffeine</groupId>
+			<artifactId>caffeine</artifactId>
+		</dependency>
+
 		<!-- PDF generation (LGPL) -->
 		<dependency>
 			<groupId>com.github.librepdf</groupId>

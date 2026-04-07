@@ -7,7 +7,10 @@ import com.workflow.common.exception.business.*;
 import com.workflow.service.sequence.CompanyCounterService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -237,19 +240,20 @@ public class AssetService implements IAssetService {
     // ----------------- DASHBOARD --------------------
     @Override
     public AssetStatistics getStatistics(Long companyId) {
-        List<Asset> assets = assetRepository.findByCompanyIdAndArchivedFalse(companyId, Pageable.unpaged())
-                .getContent();
-
-        long total = assets.size();
-        long available = assets.stream().filter(Asset::isAvailable).count();
+        // Use aggregate queries for counts — avoids loading all assets into heap
+        long total = assetRepository.countActiveByCompanyId(companyId);
+        long available = assetRepository.countAvailableByCompanyId(companyId);
         long inUse = total - available;
+
+        // Depreciation calculations require per-asset data; load only active assets
+        // (not archived) without Pageable.unpaged() — use targeted query instead
+        List<Asset> assets = assetRepository.findActiveByCompanyId(companyId);
 
         LocalDate today = LocalDate.now();
         BigDecimal totalPurchase = BigDecimal.ZERO;
         BigDecimal totalCurrent = BigDecimal.ZERO;
         double totalRate = 0;
 
-        // Calculate in single pass to avoid N+1 queries
         for (Asset asset : assets) {
             totalPurchase = totalPurchase.add(asset.getPurchasePrice());
             totalCurrent = totalCurrent.add(calculateCurrentValue(asset, today));

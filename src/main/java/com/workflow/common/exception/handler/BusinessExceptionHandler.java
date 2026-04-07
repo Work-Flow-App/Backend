@@ -5,7 +5,6 @@ import com.workflow.common.exception.ErrorResponse;
 import com.workflow.common.exception.base.*;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -52,30 +51,25 @@ public class BusinessExceptionHandler {
         return ResponseBuilder.buildBadRequestResponse(ex.getMessage(), request);
     }
 
-    @ExceptionHandler(DataIntegrityViolationException.class)
-    public ResponseEntity<ErrorResponse> handleDataIntegrityViolation(
-            DataIntegrityViolationException ex,
+    /**
+     * Handles ForbiddenException subclasses (403 Forbidden)
+     * - ForbiddenActionException
+     */
+    @ExceptionHandler(ForbiddenException.class)
+    public ResponseEntity<ErrorResponse> handleForbidden(
+            ForbiddenException ex,
             HttpServletRequest request) {
-        String message = "A database constraint was violated";
+        return ResponseBuilder.buildForbiddenResponse(ex.getMessage(), request);
+    }
 
-        // Extract meaningful error message from exception
-        String rootCauseMessage = ex.getRootCause() != null ? ex.getRootCause().getMessage() : ex.getMessage();
-
-        if (rootCauseMessage != null) {
-            // Check for duplicate entry errors
-            if (rootCauseMessage.contains("Duplicate entry")) {
-                if (rootCauseMessage.contains("'UK_users_username'") || rootCauseMessage.contains("username")) {
-                    message = "Username already exists";
-                } else if (rootCauseMessage.contains("'UK_users_email'") || rootCauseMessage.contains("email")) {
-                    message = "Email already exists";
-                } else if (rootCauseMessage.contains("'user_id'")) {
-                    message = "This user account is already associated with another worker";
-                } else {
-                    message = "This record already exists";
-                }
-            }
-        }
-
-        return ResponseBuilder.buildConflictResponse(message, request);
+    /**
+     * Handles IllegalStateException (409 Conflict)
+     * - Used for state-machine violations (e.g., archiving an assigned asset)
+     */
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ErrorResponse> handleIllegalState(
+            IllegalStateException ex,
+            HttpServletRequest request) {
+        return ResponseBuilder.buildConflictResponse(ex.getMessage(), request);
     }
 }

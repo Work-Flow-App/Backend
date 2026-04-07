@@ -5,6 +5,7 @@ import com.workflow.entity.Company;
 import com.workflow.entity.User;
 import com.workflow.service.asset.IAssetService;
 import com.workflow.service.company.ICompanyService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.*;
@@ -31,13 +32,13 @@ public class AssetController {
     }
 
     @PostMapping
-    public ResponseEntity<AssetResponse> create(@RequestBody AssetCreateRequest request, Authentication auth) {
+    public ResponseEntity<AssetResponse> create(@Valid @RequestBody AssetCreateRequest request, Authentication auth) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(service.createAsset(request, getCompanyId(auth)));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<AssetResponse> update(@PathVariable Long id, @RequestBody AssetUpdateRequest request,
+    public ResponseEntity<AssetResponse> update(@PathVariable Long id, @Valid @RequestBody AssetUpdateRequest request,
             Authentication auth) {
         return ResponseEntity.ok(service.updateAsset(id, request, getCompanyId(auth)));
     }

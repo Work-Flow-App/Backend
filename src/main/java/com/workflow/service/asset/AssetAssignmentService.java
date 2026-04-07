@@ -108,7 +108,7 @@ public class AssetAssignmentService implements IAssetAssignmentService {
         AssetJobAssignment assignment = assignmentRepository.findById(request.getAssignmentId())
                 .orElseThrow(() -> {
                     log.error("Assignment not found: assignmentId={}", request.getAssignmentId());
-                    return new IllegalArgumentException("Assignment not found");
+                    return new AssetAssignmentNotFoundException("Assignment not found");
                 });
 
         // check asset company

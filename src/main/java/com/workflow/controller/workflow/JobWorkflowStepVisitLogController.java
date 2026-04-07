@@ -8,6 +8,7 @@ import com.workflow.entity.User;
 import com.workflow.service.company.ICompanyService;
 import com.workflow.service.workflow.IJobWorkflowStepVisitLogService;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -32,7 +33,7 @@ public class JobWorkflowStepVisitLogController {
     @PostMapping("/{stepId}/visits")
     public ResponseEntity<StepVisitLogResponse> addVisitLog(
             @PathVariable Long stepId,
-            @RequestBody StepVisitLogCreateRequest request,
+            @Valid @RequestBody StepVisitLogCreateRequest request,
             Authentication auth) {
         return ResponseEntity.status(HttpStatus.CREATED).body(
                 visitLogService.addVisitLog(stepId, request, getCompanyId(auth)));
@@ -41,7 +42,7 @@ public class JobWorkflowStepVisitLogController {
     @PutMapping("/visits/{visitLogId}")
     public ResponseEntity<StepVisitLogResponse> updateVisitLog(
             @PathVariable Long visitLogId,
-            @RequestBody StepVisitLogCreateRequest request,
+            @Valid @RequestBody StepVisitLogCreateRequest request,
             Authentication auth) {
         return ResponseEntity.ok(
                 visitLogService.updateVisitLog(visitLogId, request, getCompanyId(auth)));

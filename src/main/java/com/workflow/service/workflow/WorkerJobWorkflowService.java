@@ -48,6 +48,7 @@ import com.workflow.entity.JobWorkflowStepComment;
 import com.workflow.entity.JobWorkflowStepVisitLog;
 import com.workflow.entity.Worker;
 import com.workflow.repository.AssetJobAssignmentRepository;
+import com.workflow.repository.JobWorkflowRepository;
 import com.workflow.repository.JobWorkflowStepAttachmentRepository;
 import com.workflow.repository.JobWorkflowStepCommentRepository;
 import com.workflow.repository.JobWorkflowStepRepository;
@@ -66,6 +67,7 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
 
         private final WorkerRepository workerRepository;
         private final JobWorkflowStepRepository stepRepository;
+        private final JobWorkflowRepository jobWorkflowRepository;
         private final JobWorkflowStepCommentRepository commentRepository;
         private final JobWorkflowStepAttachmentRepository attachmentRepository;
         private final JobWorkflowStepVisitLogRepository visitLogRepository;
@@ -180,28 +182,19 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
         public JobWorkflowResponse getJobWorkflowIfAssigned(Long jobWorkflowId, Long workerUserId) {
                 Worker worker = getWorker(workerUserId);
 
-                // We fetch all steps for this worker to see if they are involved in this
-                // workflow at all
-                List<JobWorkflowStep> assignedSteps = stepRepository.findByAssignedWorkers_Id(worker.getId());
-
-                boolean isAssignedToWorkflow = assignedSteps.stream()
-                                .anyMatch(s -> s.getJobWorkflow().getId().equals(jobWorkflowId));
+                // Single existence check query — avoids loading all assigned steps
+                boolean isAssignedToWorkflow = stepRepository.existsByJobWorkflowIdAndWorkerId(
+                                jobWorkflowId, worker.getId());
 
                 if (!isAssignedToWorkflow) {
                         throw new ForbiddenActionException("You do not have access to this Job Workflow.");
                 }
 
-                // Return the full jobworkflow details (Worker can see the whole flow context,
-                // even
-                // steps they aren't assigned to)
-                // If you want to restrict them to ONLY see their steps, filter the steps list
-                // in buildWorkflowResponse.
-                JobWorkflowStep step = assignedSteps.stream()
-                                .filter(s -> s.getJobWorkflow().getId().equals(jobWorkflowId))
-                                .findFirst()
+                // Load the full workflow to build the response
+                JobWorkflow jw = jobWorkflowRepository.findById(jobWorkflowId)
                                 .orElseThrow(() -> new JobWorkflowNotFoundException("Job Workflow not found"));
 
-                return buildWorkflowResponse(step.getJobWorkflow());
+                return buildWorkflowResponse(jw);
         }
 
         @Override

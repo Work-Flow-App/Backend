@@ -1,6 +1,7 @@
 package com.workflow.service.workflow;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -151,20 +152,10 @@ public class JobWorkflowService implements IJobWorkflowService {
                                 .findByJobWorkflowIdOrderByOrderIndexAsc(jobWorkflowId);
 
                 for (int i = 0; i < steps.size(); i++) {
-
                         JobWorkflowStep step = steps.get(i);
                         int newIndex = i + 1;
-
                         if (!Integer.valueOf(newIndex).equals(step.getOrderIndex())) {
-
-                                int oldIndex = step.getOrderIndex();
                                 step.setOrderIndex(newIndex);
-
-                                logStep(
-                                                step,
-                                                step.getJobWorkflow().getJob().getCompany().getUser(),
-                                                JobWorkflowStepActivityType.STEP_REORDERED,
-                                                "Normalized step order from " + oldIndex + " to " + newIndex);
                         }
                 }
 
@@ -200,22 +191,26 @@ public class JobWorkflowService implements IJobWorkflowService {
                 List<WorkflowStep> templateSteps = workflowStepRepository
                                 .findByWorkflowIdOrderByOrderIndexAsc(workflow.getId());
 
+                // Build all steps first without saving individually
+                List<JobWorkflowStep> newSteps = new ArrayList<>();
                 int index = 1; // ✅ 1-based
                 for (WorkflowStep ts : templateSteps) {
-                        JobWorkflowStep step = jobWorkflowStepRepository.save(
-                                        JobWorkflowStep.builder()
-                                                        .jobWorkflow(jw)
-                                                        .name(ts.getName())
-                                                        .description(ts.getDescription())
-                                                        .orderIndex(index++)
-                                                        .status(WorkflowStepStatus.NOT_STARTED)
-                                                        .build());
+                        newSteps.add(JobWorkflowStep.builder()
+                                        .jobWorkflow(jw)
+                                        .name(ts.getName())
+                                        .description(ts.getDescription())
+                                        .orderIndex(index++)
+                                        .status(WorkflowStepStatus.NOT_STARTED)
+                                        .build());
+                }
 
-                        logStep(
-                                        step,
-                                        job.getCompany().getUser(),
-                                        JobWorkflowStepActivityType.STEP_CREATED,
-                                        "Created workflow step");
+                // Single batch insert for all steps
+                List<JobWorkflowStep> savedSteps = jobWorkflowStepRepository.saveAll(newSteps);
+
+                // Batch log activities for all saved steps
+                User actor = job.getCompany().getUser();
+                for (JobWorkflowStep step : savedSteps) {
+                        logStep(step, actor, JobWorkflowStepActivityType.STEP_CREATED, "Created workflow step");
                 }
 
                 return buildResponse(jw);
@@ -352,17 +347,17 @@ public class JobWorkflowService implements IJobWorkflowService {
                         Set<Long> previous = step.getAssignedWorkers().stream().map(Worker::getId)
                                         .collect(Collectors.toSet());
 
-                        Set<Worker> workers = request.getAssignedWorkerIds().stream()
-                                        .map(id -> workerRepository.findById(id)
-                                                        .orElseThrow(() -> new WorkerNotFoundException(
-                                                                        "Worker not found")))
-                                        .peek(w -> {
-                                                if (!w.getCompany().getId().equals(companyId)) {
-                                                        throw new UnauthorizedWorkflowAccessException(
-                                                                        "Worker does not belong to company");
-                                                }
-                                        })
-                                        .collect(Collectors.toSet());
+                        List<Worker> workerList = workerRepository.findAllById(request.getAssignedWorkerIds());
+                        if (workerList.size() != request.getAssignedWorkerIds().size()) {
+                                throw new WorkerNotFoundException("One or more workers not found");
+                        }
+                        for (Worker w : workerList) {
+                                if (!w.getCompany().getId().equals(companyId)) {
+                                        throw new UnauthorizedWorkflowAccessException(
+                                                        "Worker does not belong to company");
+                                }
+                        }
+                        Set<Worker> workers = new HashSet<>(workerList);
 
                         step.getAssignedWorkers().clear();
                         step.getAssignedWorkers().addAll(workers);
@@ -526,18 +521,17 @@ public class JobWorkflowService implements IJobWorkflowService {
                                                                 .map(Worker::getId)
                                                                 .collect(Collectors.toSet());
 
-                                                Set<Worker> workers = sr.getAssignedWorkerIds().stream()
-                                                                .map(id -> workerRepository.findById(id)
-                                                                                .orElseThrow(() -> new WorkerNotFoundException(
-                                                                                                "Worker not found: "
-                                                                                                                + id)))
-                                                                .peek(w -> {
-                                                                        if (!w.getCompany().getId().equals(companyId)) {
-                                                                                throw new UnauthorizedWorkflowAccessException(
-                                                                                                "Worker does not belong to company");
-                                                                        }
-                                                                })
-                                                                .collect(Collectors.toSet());
+                                                List<Worker> workerList = workerRepository.findAllById(sr.getAssignedWorkerIds());
+                                                if (workerList.size() != sr.getAssignedWorkerIds().size()) {
+                                                        throw new WorkerNotFoundException("One or more workers not found");
+                                                }
+                                                for (Worker w : workerList) {
+                                                        if (!w.getCompany().getId().equals(companyId)) {
+                                                                throw new UnauthorizedWorkflowAccessException(
+                                                                                "Worker does not belong to company");
+                                                        }
+                                                }
+                                                Set<Worker> workers = new HashSet<>(workerList);
 
                                                 step.getAssignedWorkers().clear();
                                                 step.getAssignedWorkers().addAll(workers);
@@ -584,19 +578,17 @@ public class JobWorkflowService implements IJobWorkflowService {
                                                         .build();
 
                                         if (sr.getAssignedWorkerIds() != null) {
-                                                Set<Worker> workers = sr.getAssignedWorkerIds().stream()
-                                                                .map(id -> workerRepository.findById(id)
-                                                                                .orElseThrow(() -> new WorkerNotFoundException(
-                                                                                                "Worker not found: "
-                                                                                                                + id)))
-                                                                .peek(w -> {
-                                                                        if (!w.getCompany().getId().equals(companyId)) {
-                                                                                throw new UnauthorizedWorkflowAccessException(
-                                                                                                "Worker does not belong to company");
-                                                                        }
-                                                                })
-                                                                .collect(Collectors.toSet());
-                                                newStep.getAssignedWorkers().addAll(workers);
+                                                List<Worker> workerList = workerRepository.findAllById(sr.getAssignedWorkerIds());
+                                                if (workerList.size() != sr.getAssignedWorkerIds().size()) {
+                                                        throw new WorkerNotFoundException("One or more workers not found");
+                                                }
+                                                for (Worker w : workerList) {
+                                                        if (!w.getCompany().getId().equals(companyId)) {
+                                                                throw new UnauthorizedWorkflowAccessException(
+                                                                                "Worker does not belong to company");
+                                                        }
+                                                }
+                                                newStep.getAssignedWorkers().addAll(workerList);
                                         }
 
                                         jobWorkflowStepRepository.save(newStep);
@@ -753,19 +745,17 @@ public class JobWorkflowService implements IJobWorkflowService {
 
                 // Assign workers
                 if (request.getAssignedWorkerIds() != null) {
-                        Set<Worker> workers = request.getAssignedWorkerIds().stream()
-                                        .map(id -> workerRepository.findById(id)
-                                                        .orElseThrow(() -> new WorkerNotFoundException(
-                                                                        "Worker not found: " + id)))
-                                        .peek(w -> {
-                                                if (!w.getCompany().getId().equals(companyId)) {
-                                                        throw new UnauthorizedWorkflowAccessException(
-                                                                        "Worker does not belong to company");
-                                                }
-                                        })
-                                        .collect(Collectors.toSet());
-
-                        step.getAssignedWorkers().addAll(workers);
+                        List<Worker> workerList = workerRepository.findAllById(request.getAssignedWorkerIds());
+                        if (workerList.size() != request.getAssignedWorkerIds().size()) {
+                                throw new WorkerNotFoundException("One or more workers not found");
+                        }
+                        for (Worker w : workerList) {
+                                if (!w.getCompany().getId().equals(companyId)) {
+                                        throw new UnauthorizedWorkflowAccessException(
+                                                        "Worker does not belong to company");
+                                }
+                        }
+                        step.getAssignedWorkers().addAll(workerList);
                 }
 
                 jobWorkflowStepRepository.save(step);

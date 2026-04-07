@@ -8,8 +8,6 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 
 public interface JobWorkflowStepRepository extends JpaRepository<JobWorkflowStep, Long> {
-    List<JobWorkflowStep> findByJobWorkflowIdOrderByOrderIndexAsc(Long jobWorkflowId);
-
     List<JobWorkflowStep> findByJobWorkflowId(Long jobWorkflowId);
 
     void deleteByJobWorkflowId(Long jobWorkflowId);
@@ -30,5 +28,11 @@ public interface JobWorkflowStepRepository extends JpaRepository<JobWorkflowStep
 
     @Query("SELECT COALESCE(MAX(s.orderIndex), 0) FROM JobWorkflowStep s WHERE s.jobWorkflow.id = :jobWorkflowId")
     Integer findMaxOrderIndexByJobWorkflowId(@Param("jobWorkflowId") Long jobWorkflowId);
+
+    @Query("SELECT COUNT(s) > 0 FROM JobWorkflowStep s JOIN s.assignedWorkers w WHERE s.jobWorkflow.id = :jwId AND w.id = :workerId")
+    boolean existsByJobWorkflowIdAndWorkerId(@Param("jwId") Long jwId, @Param("workerId") Long workerId);
+
+    @Query("SELECT DISTINCT s FROM JobWorkflowStep s LEFT JOIN FETCH s.assignedWorkers WHERE s.jobWorkflow.id = :jobWorkflowId ORDER BY s.orderIndex ASC")
+    List<JobWorkflowStep> findByJobWorkflowIdOrderByOrderIndexAsc(@Param("jobWorkflowId") Long jobWorkflowId);
 
 }

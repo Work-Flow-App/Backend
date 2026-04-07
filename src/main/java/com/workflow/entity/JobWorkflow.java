@@ -30,5 +30,7 @@ public class JobWorkflow {
     private LocalDateTime completedAt;
 
     @Enumerated(EnumType.STRING)
-    private WorkflowStepStatus status;
+    @Column(nullable = false, length = 50)
+    @Builder.Default
+    private WorkflowStepStatus status = WorkflowStepStatus.NOT_STARTED;
 }

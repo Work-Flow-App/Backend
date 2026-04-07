@@ -5,6 +5,7 @@ import com.workflow.entity.Company;
 import com.workflow.entity.User;
 import com.workflow.service.asset.IAssetAssignmentService;
 import com.workflow.service.company.ICompanyService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.*;
 import org.springframework.security.core.Authentication;
@@ -30,14 +31,14 @@ public class AssetAssignmentController {
     }
 
     @PostMapping("/assign")
-    public ResponseEntity<AssetAssignmentResponse> assign(@RequestBody AssetAssignmentCreateRequest request,
+    public ResponseEntity<AssetAssignmentResponse> assign(@Valid @RequestBody AssetAssignmentCreateRequest request,
             Authentication auth) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(assignmentService.assignAsset(request, getCompanyId(auth)));
     }
 
     @PostMapping("/return")
-    public ResponseEntity<AssetAssignmentResponse> returnAsset(@RequestBody AssetAssignmentReturnRequest request,
+    public ResponseEntity<AssetAssignmentResponse> returnAsset(@Valid @RequestBody AssetAssignmentReturnRequest request,
             Authentication auth) {
         return ResponseEntity.ok(assignmentService.returnAsset(request, getCompanyId(auth)));
     }

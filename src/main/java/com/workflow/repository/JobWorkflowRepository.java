@@ -2,6 +2,8 @@ package com.workflow.repository;
 
 import com.workflow.entity.JobWorkflow;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
@@ -9,7 +11,8 @@ import java.util.Optional;
 public interface JobWorkflowRepository extends JpaRepository<JobWorkflow, Long> {
     Optional<JobWorkflow> findByJobId(Long jobId);
 
-    List<JobWorkflow> findByJob_Company_Id(Long companyId);
+    @Query("SELECT jw FROM JobWorkflow jw JOIN FETCH jw.job WHERE jw.job.company.id = :companyId")
+    List<JobWorkflow> findByJob_Company_Id(@Param("companyId") Long companyId);
 
     void deleteByJobId(Long jobId);
 }

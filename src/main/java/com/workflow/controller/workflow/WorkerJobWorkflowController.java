@@ -3,6 +3,7 @@ package com.workflow.controller.workflow;
 import java.io.IOException;
 import java.util.List;
 
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -157,7 +158,7 @@ public class WorkerJobWorkflowController {
     @PostMapping("/job-workflow-steps/{stepId}/comments")
     public ResponseEntity<StepCommentResponse> addComment(
             @PathVariable Long stepId,
-            @RequestBody StepCommentCreateRequest request,
+            @Valid @RequestBody StepCommentCreateRequest request,
             Authentication auth) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(workerWorkflowService.addComment(stepId, request, getUserId(auth)));
@@ -194,7 +195,7 @@ public class WorkerJobWorkflowController {
     @PostMapping("/job-workflow-steps/{stepId}/visits")
     public ResponseEntity<StepVisitLogResponse> addVisitLog(
             @PathVariable Long stepId,
-            @RequestBody StepVisitLogCreateRequest request,
+            @Valid @RequestBody StepVisitLogCreateRequest request,
             Authentication auth) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(workerWorkflowService.addVisitLog(stepId, request, getUserId(auth)));

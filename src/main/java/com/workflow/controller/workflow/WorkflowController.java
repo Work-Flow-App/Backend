@@ -6,6 +6,7 @@ import com.workflow.entity.User;
 import com.workflow.service.company.ICompanyService;
 import com.workflow.service.workflow.IWorkflowService;
 import lombok.RequiredArgsConstructor;
+import jakarta.validation.Valid;
 import org.springframework.http.*;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -31,7 +32,7 @@ public class WorkflowController {
 
     @PostMapping
     public ResponseEntity<WorkflowResponse> create(
-            @RequestBody WorkflowCreateRequest request,
+            @Valid @RequestBody WorkflowCreateRequest request,
             Authentication auth) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(workflowService.createWorkflow(request, companyId(auth)));
@@ -40,7 +41,7 @@ public class WorkflowController {
     @PutMapping("/{id}")
     public WorkflowResponse update(
             @PathVariable Long id,
-            @RequestBody WorkflowCreateRequest request,
+            @Valid @RequestBody WorkflowCreateRequest request,
             Authentication auth) {
         return workflowService.updateWorkflow(id, request, companyId(auth));
     }
@@ -67,7 +68,7 @@ public class WorkflowController {
 
     @PostMapping("/steps")
     public WorkflowStepResponse createStep(
-            @RequestBody WorkflowStepCreateRequest request,
+            @Valid @RequestBody WorkflowStepCreateRequest request,
             Authentication auth) {
         return workflowService.createStep(request, companyId(auth));
     }
@@ -94,12 +95,13 @@ public class WorkflowController {
     @PutMapping("/steps/{stepId}")
     public WorkflowStepResponse updateStep(
             @PathVariable Long stepId,
-            @RequestBody WorkflowStepCreateRequest request,
+            @Valid @RequestBody WorkflowStepCreateRequest request,
             Authentication auth) {
         return workflowService.updateStep(stepId, request, companyId(auth));
     }
 
     @DeleteMapping("/steps/{stepId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteStep(@PathVariable Long stepId, Authentication auth) {
         workflowService.deleteStep(stepId, companyId(auth));
     }
@@ -107,7 +109,7 @@ public class WorkflowController {
     @PutMapping("/{workflowId}/bulk")
     public ResponseEntity<WorkflowResponse> bulkUpdate(
             @PathVariable Long workflowId,
-            @RequestBody WorkflowBulkUpdateRequest request,
+            @Valid @RequestBody WorkflowBulkUpdateRequest request,
             Authentication auth) {
 
         Long companyId = companyId(auth);

@@ -494,9 +494,9 @@ class AssetServiceTest {
                 .archived(false)
                 .build();
 
-        Page<Asset> page = new PageImpl<>(Arrays.asList(asset, asset2));
-
-        when(assetRepository.findByCompanyIdAndArchivedFalse(eq(1L), any(Pageable.class))).thenReturn(page);
+        when(assetRepository.countActiveByCompanyId(1L)).thenReturn(2L);
+        when(assetRepository.countAvailableByCompanyId(1L)).thenReturn(1L);
+        when(assetRepository.findActiveByCompanyId(1L)).thenReturn(Arrays.asList(asset, asset2));
 
         AssetStatistics stats = assetService.getStatistics(1L);
 
@@ -511,9 +511,9 @@ class AssetServiceTest {
 
     @Test
     void getStatistics_NoAssets_ReturnsZeroStats() {
-        Page<Asset> emptyPage = new PageImpl<>(List.of());
-
-        when(assetRepository.findByCompanyIdAndArchivedFalse(eq(1L), any(Pageable.class))).thenReturn(emptyPage);
+        when(assetRepository.countActiveByCompanyId(1L)).thenReturn(0L);
+        when(assetRepository.countAvailableByCompanyId(1L)).thenReturn(0L);
+        when(assetRepository.findActiveByCompanyId(1L)).thenReturn(List.of());
 
         AssetStatistics stats = assetService.getStatistics(1L);
 

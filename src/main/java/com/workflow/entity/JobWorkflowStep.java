@@ -38,7 +38,7 @@ public class JobWorkflowStep {
     private LocalDateTime startedAt;
     private LocalDateTime completedAt;
 
-    @ManyToMany
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "job_workflow_step_workers", joinColumns = @JoinColumn(name = "job_workflow_step_id"), inverseJoinColumns = @JoinColumn(name = "worker_id"))
     @Builder.Default
     private Set<Worker> assignedWorkers = new HashSet<>();

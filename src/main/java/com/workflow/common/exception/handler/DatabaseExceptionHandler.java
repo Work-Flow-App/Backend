@@ -35,7 +35,7 @@ public class DatabaseExceptionHandler {
 
         String message = extractUserFriendlyMessage(ex);
 
-        return ResponseBuilder.buildBadRequestResponse(message, request);
+        return ResponseBuilder.buildConflictResponse(message, request);
     }
 
     @ExceptionHandler(ConstraintViolationException.class)

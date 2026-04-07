@@ -1,6 +1,7 @@
 package com.workflow.service.asset;
 
 import com.workflow.common.constant.job.JobStatus;
+import com.workflow.common.exception.business.AssetAssignmentNotFoundException;
 import com.workflow.common.exception.business.AssetNotFoundException;
 import com.workflow.common.exception.business.JobNotFoundException;
 import com.workflow.common.exception.business.WorkerNotFoundException;
@@ -384,7 +385,7 @@ class AssetAssignmentServiceTest {
         when(assignmentRepository.findById(1L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> assetAssignmentService.returnAsset(returnRequest, 1L))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(AssetAssignmentNotFoundException.class)
                 .hasMessage("Assignment not found");
 
         verify(assignmentRepository, never()).save(any());

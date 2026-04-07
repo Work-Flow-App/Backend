@@ -361,7 +361,7 @@ export class BackendStack extends cdk.Stack {
 
       backupPlan.addSelection('RdsSelection', {
         resources: [
-          backup.BackupResource.fromRdsDbInstance(dbInstance),
+          backup.BackupResource.fromArn(dbInstance.instanceArn),
         ],
       });
 

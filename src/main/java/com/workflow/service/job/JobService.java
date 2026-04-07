@@ -3,6 +3,8 @@ package com.workflow.service.job;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -308,9 +310,39 @@ public class JobService implements IJobService {
 
         @Override
         public List<JobResponse> getAllJobs(Long companyId) {
-                return jobRepository.findByCompanyId(companyId)
+                List<Job> jobs = jobRepository.findByCompanyId(companyId);
+                if (jobs.isEmpty()) return new ArrayList<>();
+
+                List<Long> jobIds = jobs.stream().map(Job::getId).collect(Collectors.toList());
+
+                // Batch-load field values for all jobs in one query
+                Map<Long, Map<Long, FieldValueResponse>> fieldValuesByJob = fieldValueRepository
+                                .findByJobIdIn(jobIds)
                                 .stream()
-                                .map(this::mapToResponse)
+                                .collect(Collectors.groupingBy(
+                                                v -> v.getJob().getId(),
+                                                Collectors.toMap(
+                                                                v -> v.getField().getId(),
+                                                                v -> FieldValueResponse.builder()
+                                                                                .name(v.getField().getName())
+                                                                                .label(v.getField().getLabel())
+                                                                                .type(v.getField().getJobFieldType())
+                                                                                .value(v.getTypedValue())
+                                                                                .build())));
+
+                // Batch-load active asset assignments for all jobs in one query
+                Map<Long, List<Long>> assetIdsByJob = assetJobAssignmentRepository
+                                .findByJobIdInAndReturnedAtIsNull(jobIds)
+                                .stream()
+                                .collect(Collectors.groupingBy(
+                                                a -> a.getJob().getId(),
+                                                Collectors.mapping(a -> a.getAsset().getId(), Collectors.toList())));
+
+                return jobs.stream()
+                                .map(job -> mapToResponse(
+                                                job,
+                                                fieldValuesByJob.getOrDefault(job.getId(), new HashMap<>()),
+                                                assetIdsByJob.getOrDefault(job.getId(), new ArrayList<>())))
                                 .collect(Collectors.toList());
         }
 
@@ -478,6 +510,11 @@ public class JobService implements IJobService {
                                 .stream()
                                 .map(assignment -> assignment.getAsset().getId())
                                 .collect(Collectors.toList());
+
+                return mapToResponse(job, values, assetIds);
+        }
+
+        private JobResponse mapToResponse(Job job, Map<Long, FieldValueResponse> values, List<Long> assetIds) {
 
                 AddressResponse addressResponse = null;
 

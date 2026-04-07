@@ -14,8 +14,14 @@ public interface JobWorkflowStepRepository extends JpaRepository<JobWorkflowStep
 
     void deleteByJobWorkflowId(Long jobWorkflowId);
 
-    // Fetch all steps assigned to a specific worker
-    List<JobWorkflowStep> findByAssignedWorkers_Id(Long workerId);
+    // Fetch all steps assigned to a specific worker (with eager-loaded workflow and job to avoid lazy chains)
+    @Query("SELECT s FROM JobWorkflowStep s JOIN FETCH s.jobWorkflow jw JOIN FETCH jw.job WHERE :workerId MEMBER OF s.assignedWorkers")
+    List<JobWorkflowStep> findByAssignedWorkers_Id(@Param("workerId") Long workerId);
+
+    // Batch-load steps for multiple workflows at once; JOIN FETCH jobWorkflow so
+    // callers can group by s.getJobWorkflow().getId() without triggering N+1 lazy loads
+    @Query("SELECT s FROM JobWorkflowStep s JOIN FETCH s.jobWorkflow WHERE s.jobWorkflow.id IN :workflowIds ORDER BY s.orderIndex ASC")
+    List<JobWorkflowStep> findByJobWorkflowIdInOrderByOrderIndexAsc(@Param("workflowIds") List<Long> workflowIds);
 
     // Fetch a specific step ensuring the worker is assigned to it
     @Query("SELECT s FROM JobWorkflowStep s JOIN s.assignedWorkers w WHERE s.id = :stepId AND w.id = :workerId")

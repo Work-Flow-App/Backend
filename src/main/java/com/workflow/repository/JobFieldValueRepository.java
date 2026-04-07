@@ -11,6 +11,8 @@ public interface JobFieldValueRepository extends JpaRepository<JobFieldValue, Lo
 
     List<JobFieldValue> findByJobId(Long jobId);
 
+    List<JobFieldValue> findByJobIdIn(List<Long> jobIds);
+
     @Modifying
     @Transactional
     @Query("DELETE FROM JobFieldValue v WHERE v.job.id = :jobId")

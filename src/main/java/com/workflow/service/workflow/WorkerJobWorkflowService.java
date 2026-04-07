@@ -4,7 +4,9 @@ import java.io.IOException;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
@@ -114,32 +116,32 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
         public List<WorkerAssignedStepResponse> getMyAssignedSteps(Long workerUserId) {
                 Worker worker = getWorker(workerUserId);
 
+                // JOIN FETCH ensures jobWorkflow and job are loaded in one query (no lazy chain)
                 List<JobWorkflowStep> assignedSteps = stepRepository.findByAssignedWorkers_Id(worker.getId());
 
+                // Batch-load all active asset assignments for the relevant jobs in one query
+                List<Long> jobIds = assignedSteps.stream()
+                                .map(s -> s.getJobWorkflow().getJob().getId())
+                                .distinct()
+                                .collect(Collectors.toList());
+
+                Map<Long, List<AssetAssignmentResponse>> assetsByJobId = assignmentRepository
+                                .findByJobIdInAndReturnedAtIsNull(jobIds)
+                                .stream()
+                                .collect(Collectors.groupingBy(
+                                                a -> a.getJob().getId(),
+                                                Collectors.mapping(this::mapAssetAssignment, Collectors.toList())));
+
                 return assignedSteps.stream()
-                                // 1. Explicitly tell the compiler what type we are mapping to
                                 .<WorkerAssignedStepResponse>map(step -> {
                                         Job job = step.getJobWorkflow().getJob();
-                                        Address jobAddress = job.getAddress();
-                                        Customer customer = job.getCustomer();
-
-                                        // 2. Break out the inner stream to help the compiler evaluate types
-                                        // independently
-                                        List<AssetJobAssignment> activeJobAssets = assignmentRepository
-                                                        .findByJobIdAndReturnedAtIsNull(job.getId());
-
-                                        // Map them directly without filtering by the specific worker
-                                        List<AssetAssignmentResponse> jobAssets = activeJobAssets.stream()
-                                                        .map(a -> mapAssetAssignment(a))
-                                                        .collect(Collectors.toList());
-
                                         return WorkerAssignedStepResponse.builder()
                                                         .step(mapStep(step))
                                                         .jobId(job.getId())
                                                         .jobRef(job.getJobRef())
-                                                        .jobAddress(mapJobAddress(jobAddress))
-                                                        .customer(mapCustomer(customer))
-                                                        .assignedAssets(jobAssets)
+                                                        .jobAddress(mapJobAddress(job.getAddress()))
+                                                        .customer(mapCustomer(job.getCustomer()))
+                                                        .assignedAssets(assetsByJobId.getOrDefault(job.getId(), new ArrayList<>()))
                                                         .build();
                                 })
                                 .collect(Collectors.toList());
@@ -150,7 +152,7 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
         public List<JobWorkflowResponse> getAssignedJobWorkflows(Long workerUserId) {
                 Worker worker = getWorker(workerUserId);
 
-                // Find all steps assigned to worker
+                // JOIN FETCH loads jobWorkflow + job in one query
                 List<JobWorkflowStep> assignedSteps = stepRepository.findByAssignedWorkers_Id(worker.getId());
 
                 // Extract distinct JobWorkflows
@@ -159,8 +161,17 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
                                 .distinct()
                                 .toList();
 
+                if (workflows.isEmpty()) return new ArrayList<>();
+
+                // Batch-load all steps for all workflows in one query, then group by workflowId
+                List<Long> workflowIds = workflows.stream().map(JobWorkflow::getId).collect(Collectors.toList());
+                Map<Long, List<JobWorkflowStep>> stepsByWorkflowId = stepRepository
+                                .findByJobWorkflowIdInOrderByOrderIndexAsc(workflowIds)
+                                .stream()
+                                .collect(Collectors.groupingBy(s -> s.getJobWorkflow().getId()));
+
                 return workflows.stream()
-                                .map(this::buildWorkflowResponse)
+                                .map(jw -> buildWorkflowResponse(jw, stepsByWorkflowId.getOrDefault(jw.getId(), new ArrayList<>())))
                                 .toList();
         }
 
@@ -569,9 +580,11 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
         // ==========================================
 
         private JobWorkflowResponse buildWorkflowResponse(JobWorkflow jw) {
-                // Fetch fresh steps to ensure we have the list
                 List<JobWorkflowStep> steps = stepRepository.findByJobWorkflowIdOrderByOrderIndexAsc(jw.getId());
+                return buildWorkflowResponse(jw, steps);
+        }
 
+        private JobWorkflowResponse buildWorkflowResponse(JobWorkflow jw, List<JobWorkflowStep> steps) {
                 List<JobWorkflowStepResponse> stepResponses = steps.stream()
                                 .map(this::mapStep)
                                 .toList();

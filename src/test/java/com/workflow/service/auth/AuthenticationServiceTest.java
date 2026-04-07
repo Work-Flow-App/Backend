@@ -26,6 +26,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.lenient;
 
 @ExtendWith(MockitoExtension.class)
 class AuthenticationServiceTest {
@@ -58,7 +59,7 @@ class AuthenticationServiceTest {
     @BeforeEach
     void setUp() {
         JwtConfigProperties.AccessToken accessToken = new JwtConfigProperties.AccessToken();
-        when(jwtConfigProperties.getAccessToken()).thenReturn(accessToken);
+        lenient().when(jwtConfigProperties.getAccessToken()).thenReturn(accessToken);
 
         testUser = User.builder()
                 .id(1L)

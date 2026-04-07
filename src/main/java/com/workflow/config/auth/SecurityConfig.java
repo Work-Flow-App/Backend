@@ -35,6 +35,9 @@ public class SecurityConfig {
     @Value("${cors.allowed-origins:http://localhost:3000}")
     private String allowedOrigins;
 
+    @Value("${rate-limiting.enabled:true}")
+    private boolean rateLimitingEnabled;
+
     @Bean
     public JwtFilter jwtFilter(){
         return new JwtFilter(exceptionResolver);
@@ -83,7 +86,7 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain (HttpSecurity http) throws Exception {
-        return http
+        http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(authorize -> authorize
@@ -100,8 +103,12 @@ public class SecurityConfig {
                         .anyRequest().authenticated())
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .addFilterBefore(new RateLimitingFilter(), UsernamePasswordAuthenticationFilter.class)
-                .addFilterBefore(jwtFilter(), UsernamePasswordAuthenticationFilter.class)
-                .build();
+                .addFilterBefore(jwtFilter(), UsernamePasswordAuthenticationFilter.class);
+
+        if (rateLimitingEnabled) {
+            http.addFilterBefore(new RateLimitingFilter(), UsernamePasswordAuthenticationFilter.class);
+        }
+
+        return http.build();
     }
 }

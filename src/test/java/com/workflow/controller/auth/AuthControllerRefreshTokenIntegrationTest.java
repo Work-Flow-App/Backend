@@ -175,10 +175,11 @@ class AuthControllerRefreshTokenIntegrationTest {
                 AuthenticationResponse.class
         );
 
-        // Logout (revoke token)
+       // Logout (revoke token) — requires valid access token
         LogoutRequest logoutRequest = new LogoutRequest(loginResponse.getRefreshToken());
         mockMvc.perform(post("/api/v1/auth/logout")
                         .contentType(MediaType.APPLICATION_JSON)
+                        .header("Authorization", "Bearer " + loginResponse.getAccessToken())
                         .content(objectMapper.writeValueAsString(logoutRequest)))
                 .andExpect(status().isNoContent());
 
@@ -223,9 +224,10 @@ class AuthControllerRefreshTokenIntegrationTest {
 
         LogoutRequest logoutRequest = new LogoutRequest(loginResponse.getRefreshToken());
 
-        // Act
+        // Act — requires valid access token
         mockMvc.perform(post("/api/v1/auth/logout")
                         .contentType(MediaType.APPLICATION_JSON)
+                        .header("Authorization", "Bearer " + loginResponse.getAccessToken())
                         .content(objectMapper.writeValueAsString(logoutRequest)))
                 .andExpect(status().isNoContent());
 
@@ -245,12 +247,20 @@ class AuthControllerRefreshTokenIntegrationTest {
 
     @Test
     void logout_ShouldSucceed_EvenWhenTokenNotFound() throws Exception {
-        // Arrange
-        LogoutRequest request = new LogoutRequest("non-existent-token");
+        // Login to get a valid access token for the Authorization header
+        MvcResult loginResult = mockMvc.perform(post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new LoginRequest("testuser", "password123"))))
+                .andReturn();
+        String accessToken = objectMapper.readValue(
+                loginResult.getResponse().getContentAsString(), AuthenticationResponse.class
+        ).getAccessToken();
 
-        // Act & Assert
+        // Attempt logout with a refresh token that doesn't exist — should still return 204
+        LogoutRequest request = new LogoutRequest("non-existent-token");
         mockMvc.perform(post("/api/v1/auth/logout")
                         .contentType(MediaType.APPLICATION_JSON)
+                        .header("Authorization", "Bearer " + accessToken)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isNoContent());
     }

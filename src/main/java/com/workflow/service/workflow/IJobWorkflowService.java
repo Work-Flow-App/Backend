@@ -7,8 +7,8 @@ import com.workflow.dto.workflow.JobWorkflowStepCreateRequest;
 import com.workflow.dto.workflow.JobWorkflowStepResponse;
 import com.workflow.dto.workflow.JobWorkflowStepUpdateRequest;
 import com.workflow.dto.workflow.JobWorkflowUpdateRequest;
-import com.workflow.entity.Job;
-import com.workflow.entity.Workflow;
+import com.workflow.entity.job.Job;
+import com.workflow.entity.workflow.Workflow;
 
 public interface IJobWorkflowService {
     JobWorkflowResponse startWorkflow(Job job, Workflow workflow, Long companyId);

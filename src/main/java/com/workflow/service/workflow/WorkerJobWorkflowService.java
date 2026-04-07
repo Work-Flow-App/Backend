@@ -4,7 +4,9 @@ import java.io.IOException;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
@@ -34,23 +36,24 @@ import com.workflow.dto.workflow.StepCommentResponse;
 import com.workflow.dto.workflow.StepTimelineItemResponse;
 import com.workflow.dto.workflow.StepVisitLogCreateRequest;
 import com.workflow.dto.workflow.StepVisitLogResponse;
-import com.workflow.entity.Address;
-import com.workflow.entity.AssetJobAssignment;
-import com.workflow.entity.Customer;
-import com.workflow.entity.CustomerAddress;
-import com.workflow.entity.Job;
-import com.workflow.entity.JobWorkflow;
-import com.workflow.entity.JobWorkflowStep;
-import com.workflow.entity.JobWorkflowStepAttachment;
-import com.workflow.entity.JobWorkflowStepComment;
-import com.workflow.entity.JobWorkflowStepVisitLog;
-import com.workflow.entity.Worker;
-import com.workflow.repository.AssetJobAssignmentRepository;
-import com.workflow.repository.JobWorkflowStepAttachmentRepository;
-import com.workflow.repository.JobWorkflowStepCommentRepository;
-import com.workflow.repository.JobWorkflowStepRepository;
-import com.workflow.repository.JobWorkflowStepVisitLogRepository;
-import com.workflow.repository.WorkerRepository;
+import com.workflow.entity.common.Address;
+import com.workflow.entity.asset.AssetJobAssignment;
+import com.workflow.entity.customer.Customer;
+import com.workflow.entity.customer.CustomerAddress;
+import com.workflow.entity.job.Job;
+import com.workflow.entity.job.JobWorkflow;
+import com.workflow.entity.job.JobWorkflowStep;
+import com.workflow.entity.job.JobWorkflowStepAttachment;
+import com.workflow.entity.job.JobWorkflowStepComment;
+import com.workflow.entity.job.JobWorkflowStepVisitLog;
+import com.workflow.entity.worker.Worker;
+import com.workflow.repository.asset.AssetJobAssignmentRepository;
+import com.workflow.repository.job.JobWorkflowRepository;
+import com.workflow.repository.job.JobWorkflowStepAttachmentRepository;
+import com.workflow.repository.job.JobWorkflowStepCommentRepository;
+import com.workflow.repository.job.JobWorkflowStepRepository;
+import com.workflow.repository.job.JobWorkflowStepVisitLogRepository;
+import com.workflow.repository.worker.WorkerRepository;
 import com.workflow.service.storage.S3StorageService;
 
 import lombok.RequiredArgsConstructor;
@@ -64,6 +67,7 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
 
         private final WorkerRepository workerRepository;
         private final JobWorkflowStepRepository stepRepository;
+        private final JobWorkflowRepository jobWorkflowRepository;
         private final JobWorkflowStepCommentRepository commentRepository;
         private final JobWorkflowStepAttachmentRepository attachmentRepository;
         private final JobWorkflowStepVisitLogRepository visitLogRepository;
@@ -71,10 +75,7 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
 
         private final IStepActivityService stepActivityService;
         private final S3StorageService s3Service;
-
-        // Reuse the mapping logic from JobWorkflowService to maintain consistency
-        // Ideally, this should be in a shared Mapper component, but implemented here
-        // for self-containment.
+        private final JobWorkflowMapper jobWorkflowMapper;
 
         // ==========================================
         // INTERNAL HELPERS
@@ -114,32 +115,32 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
         public List<WorkerAssignedStepResponse> getMyAssignedSteps(Long workerUserId) {
                 Worker worker = getWorker(workerUserId);
 
+                // JOIN FETCH ensures jobWorkflow and job are loaded in one query (no lazy chain)
                 List<JobWorkflowStep> assignedSteps = stepRepository.findByAssignedWorkers_Id(worker.getId());
 
+                // Batch-load all active asset assignments for the relevant jobs in one query
+                List<Long> jobIds = assignedSteps.stream()
+                                .map(s -> s.getJobWorkflow().getJob().getId())
+                                .distinct()
+                                .collect(Collectors.toList());
+
+                Map<Long, List<AssetAssignmentResponse>> assetsByJobId = assignmentRepository
+                                .findByJobIdInAndReturnedAtIsNull(jobIds)
+                                .stream()
+                                .collect(Collectors.groupingBy(
+                                                a -> a.getJob().getId(),
+                                                Collectors.mapping(this::mapAssetAssignment, Collectors.toList())));
+
                 return assignedSteps.stream()
-                                // 1. Explicitly tell the compiler what type we are mapping to
                                 .<WorkerAssignedStepResponse>map(step -> {
                                         Job job = step.getJobWorkflow().getJob();
-                                        Address jobAddress = job.getAddress();
-                                        Customer customer = job.getCustomer();
-
-                                        // 2. Break out the inner stream to help the compiler evaluate types
-                                        // independently
-                                        List<AssetJobAssignment> activeJobAssets = assignmentRepository
-                                                        .findByJobIdAndReturnedAtIsNull(job.getId());
-
-                                        // Map them directly without filtering by the specific worker
-                                        List<AssetAssignmentResponse> jobAssets = activeJobAssets.stream()
-                                                        .map(a -> mapAssetAssignment(a))
-                                                        .collect(Collectors.toList());
-
                                         return WorkerAssignedStepResponse.builder()
                                                         .step(mapStep(step))
                                                         .jobId(job.getId())
                                                         .jobRef(job.getJobRef())
-                                                        .jobAddress(mapJobAddress(jobAddress))
-                                                        .customer(mapCustomer(customer))
-                                                        .assignedAssets(jobAssets)
+                                                        .jobAddress(mapJobAddress(job.getAddress()))
+                                                        .customer(mapCustomer(job.getCustomer()))
+                                                        .assignedAssets(assetsByJobId.getOrDefault(job.getId(), new ArrayList<>()))
                                                         .build();
                                 })
                                 .collect(Collectors.toList());
@@ -150,7 +151,7 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
         public List<JobWorkflowResponse> getAssignedJobWorkflows(Long workerUserId) {
                 Worker worker = getWorker(workerUserId);
 
-                // Find all steps assigned to worker
+                // JOIN FETCH loads jobWorkflow + job in one query
                 List<JobWorkflowStep> assignedSteps = stepRepository.findByAssignedWorkers_Id(worker.getId());
 
                 // Extract distinct JobWorkflows
@@ -159,8 +160,17 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
                                 .distinct()
                                 .toList();
 
+                if (workflows.isEmpty()) return new ArrayList<>();
+
+                // Batch-load all steps for all workflows in one query, then group by workflowId
+                List<Long> workflowIds = workflows.stream().map(JobWorkflow::getId).collect(Collectors.toList());
+                Map<Long, List<JobWorkflowStep>> stepsByWorkflowId = stepRepository
+                                .findByJobWorkflowIdInOrderByOrderIndexAsc(workflowIds)
+                                .stream()
+                                .collect(Collectors.groupingBy(s -> s.getJobWorkflow().getId()));
+
                 return workflows.stream()
-                                .map(this::buildWorkflowResponse)
+                                .map(jw -> buildWorkflowResponse(jw, stepsByWorkflowId.getOrDefault(jw.getId(), new ArrayList<>())))
                                 .toList();
         }
 
@@ -169,28 +179,19 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
         public JobWorkflowResponse getJobWorkflowIfAssigned(Long jobWorkflowId, Long workerUserId) {
                 Worker worker = getWorker(workerUserId);
 
-                // We fetch all steps for this worker to see if they are involved in this
-                // workflow at all
-                List<JobWorkflowStep> assignedSteps = stepRepository.findByAssignedWorkers_Id(worker.getId());
-
-                boolean isAssignedToWorkflow = assignedSteps.stream()
-                                .anyMatch(s -> s.getJobWorkflow().getId().equals(jobWorkflowId));
+                // Single existence check query — avoids loading all assigned steps
+                boolean isAssignedToWorkflow = stepRepository.existsByJobWorkflowIdAndWorkerId(
+                                jobWorkflowId, worker.getId());
 
                 if (!isAssignedToWorkflow) {
                         throw new ForbiddenActionException("You do not have access to this Job Workflow.");
                 }
 
-                // Return the full jobworkflow details (Worker can see the whole flow context,
-                // even
-                // steps they aren't assigned to)
-                // If you want to restrict them to ONLY see their steps, filter the steps list
-                // in buildWorkflowResponse.
-                JobWorkflowStep step = assignedSteps.stream()
-                                .filter(s -> s.getJobWorkflow().getId().equals(jobWorkflowId))
-                                .findFirst()
+                // Load the full workflow to build the response
+                JobWorkflow jw = jobWorkflowRepository.findById(jobWorkflowId)
                                 .orElseThrow(() -> new JobWorkflowNotFoundException("Job Workflow not found"));
 
-                return buildWorkflowResponse(step.getJobWorkflow());
+                return buildWorkflowResponse(jw);
         }
 
         @Override
@@ -565,37 +566,19 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
         }
 
         // ==========================================
-        // MAPPERS (Copied/Adapted for independence)
+        // MAPPERS — delegated to shared JobWorkflowMapper
         // ==========================================
 
         private JobWorkflowResponse buildWorkflowResponse(JobWorkflow jw) {
-                // Fetch fresh steps to ensure we have the list
-                List<JobWorkflowStep> steps = stepRepository.findByJobWorkflowIdOrderByOrderIndexAsc(jw.getId());
+                return jobWorkflowMapper.buildWorkflowResponse(jw);
+        }
 
-                List<JobWorkflowStepResponse> stepResponses = steps.stream()
-                                .map(this::mapStep)
-                                .toList();
-
-                return JobWorkflowResponse.builder()
-                                .id(jw.getId())
-                                .jobId(jw.getJob().getId())
-                                .steps(stepResponses)
-                                .status(jw.getStatus())
-                                .build();
+        private JobWorkflowResponse buildWorkflowResponse(JobWorkflow jw, List<JobWorkflowStep> steps) {
+                return jobWorkflowMapper.buildWorkflowResponse(jw, steps);
         }
 
         private JobWorkflowStepResponse mapStep(JobWorkflowStep step) {
-                return JobWorkflowStepResponse.builder()
-                                .id(step.getId())
-                                .name(step.getName())
-                                .description(step.getDescription())
-                                .orderIndex(step.getOrderIndex())
-                                .status(step.getStatus())
-                                .startedAt(step.getStartedAt())
-                                .completedAt(step.getCompletedAt())
-                                .assignedWorkerIds(step.getAssignedWorkers().stream().map(Worker::getId)
-                                                .collect(Collectors.toSet()))
-                                .build();
+                return jobWorkflowMapper.mapStep(step);
         }
 
         private StepVisitLogResponse mapVisitLog(JobWorkflowStepVisitLog log) {
@@ -647,11 +630,11 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
         }
 
         private AssetAssignmentResponse mapAssetAssignment(AssetJobAssignment a) {
-                long durationDays = a.getReturnedAt() == null
+                long durationDays = a.isActive()
                                 ? nullSafeDaysBetween(a.getAssignedAt(), LocalDateTime.now())
                                 : nullSafeDaysBetween(a.getAssignedAt(), a.getReturnedAt());
 
-                String status = a.getReturnedAt() == null ? "ACTIVE" : "COMPLETED";
+                String status = a.isActive() ? "ACTIVE" : "COMPLETED";
 
                 return AssetAssignmentResponse.builder()
                                 .assignmentId(a.getId())

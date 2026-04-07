@@ -3,7 +3,7 @@ package com.workflow.controller.company;
 import com.workflow.dto.company.CompanyDashboardResponse;
 import com.workflow.dto.company.CompanyProfileResponse;
 import com.workflow.dto.company.CompanyProfileUpdateRequest;
-import com.workflow.entity.User;
+import com.workflow.entity.auth.User;
 import com.workflow.service.company.ICompanyService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

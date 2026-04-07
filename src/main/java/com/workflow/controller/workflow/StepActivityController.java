@@ -9,9 +9,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.workflow.common.util.AuthUtils;
 import com.workflow.dto.workflow.StepActivityResponse;
-import com.workflow.entity.Company;
-import com.workflow.entity.User;
 import com.workflow.service.company.ICompanyService;
 import com.workflow.service.workflow.IStepActivityService;
 
@@ -28,9 +27,7 @@ public class StepActivityController {
     private final ICompanyService companyService;
 
     private Long getCompanyId(Authentication auth) {
-        User user = (User) auth.getPrincipal();
-        Company company = companyService.findCompanyByUserId(user.getId());
-        return company.getId();
+        return AuthUtils.getCompanyId(auth, companyService);
     }
 
     @GetMapping("/{stepId}/timeline")

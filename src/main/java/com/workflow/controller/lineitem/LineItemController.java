@@ -1,10 +1,9 @@
 package com.workflow.controller.lineitem;
 
+import com.workflow.common.util.AuthUtils;
 import com.workflow.dto.estimate.LineItemCreateRequest;
 import com.workflow.dto.estimate.LineItemResponse;
 import com.workflow.dto.estimate.LineItemUpdateRequest;
-import com.workflow.entity.Company;
-import com.workflow.entity.User;
 import com.workflow.service.company.ICompanyService;
 import com.workflow.service.lineitem.ILineItemService;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -67,8 +66,6 @@ public class LineItemController {
     }
 
     private Long getCompanyId(Authentication auth) {
-        User user = (User) auth.getPrincipal();
-        Company company = companyService.findCompanyByUserId(user.getId());
-        return company.getId();
+        return AuthUtils.getCompanyId(auth, companyService);
     }
 }

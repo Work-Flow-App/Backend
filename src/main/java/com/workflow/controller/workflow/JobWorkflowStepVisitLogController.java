@@ -1,13 +1,13 @@
 package com.workflow.controller.workflow;
 
+import com.workflow.common.util.AuthUtils;
 import com.workflow.dto.workflow.StepVisitLogCreateRequest;
 import com.workflow.dto.workflow.StepVisitLogResponse;
 import com.workflow.dto.workflow.StepVisitLogSummaryResponse;
-import com.workflow.entity.Company;
-import com.workflow.entity.User;
 import com.workflow.service.company.ICompanyService;
 import com.workflow.service.workflow.IJobWorkflowStepVisitLogService;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -24,15 +24,13 @@ public class JobWorkflowStepVisitLogController {
     private final ICompanyService companyService;
 
     private Long getCompanyId(Authentication auth) {
-        User user = (User) auth.getPrincipal();
-        Company company = companyService.findCompanyByUserId(user.getId());
-        return company.getId();
+        return AuthUtils.getCompanyId(auth, companyService);
     }
 
     @PostMapping("/{stepId}/visits")
     public ResponseEntity<StepVisitLogResponse> addVisitLog(
             @PathVariable Long stepId,
-            @RequestBody StepVisitLogCreateRequest request,
+            @Valid @RequestBody StepVisitLogCreateRequest request,
             Authentication auth) {
         return ResponseEntity.status(HttpStatus.CREATED).body(
                 visitLogService.addVisitLog(stepId, request, getCompanyId(auth)));
@@ -41,7 +39,7 @@ public class JobWorkflowStepVisitLogController {
     @PutMapping("/visits/{visitLogId}")
     public ResponseEntity<StepVisitLogResponse> updateVisitLog(
             @PathVariable Long visitLogId,
-            @RequestBody StepVisitLogCreateRequest request,
+            @Valid @RequestBody StepVisitLogCreateRequest request,
             Authentication auth) {
         return ResponseEntity.ok(
                 visitLogService.updateVisitLog(visitLogId, request, getCompanyId(auth)));

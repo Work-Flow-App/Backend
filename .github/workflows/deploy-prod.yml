@@ -1,0 +1,217 @@
+name: Deploy to Prod
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-and-test:
+    name: Build & Test
+    runs-on: ubuntu-latest
+    environment: development
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_S3_REGION: ${{ secrets.AWS_S3_REGION }}
+      AWS_S3_BUCKET_NAME: ${{ secrets.AWS_S3_BUCKET_NAME }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          cache: maven
+
+      - name: Build Spring Boot app
+        run: ./mvnw clean compile -DskipTests
+
+      - name: Run unit tests
+        run: ./mvnw test -Dtest="!**/*IntegrationTest"
+
+      - name: Run integration tests
+        run: ./mvnw test -Dtest="**/*IntegrationTest"
+
+  deploy-infra:
+    name: Deploy CDK Infra (prod)
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    environment: prod-deploy
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: infra/package-lock.json
+
+      - name: Install CDK dependencies
+        working-directory: infra
+        run: npm ci
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Check for infra changes
+        id: cdk-diff
+        working-directory: infra
+        continue-on-error: true
+        run: npx cdk diff WorkflowBackend-prod -c env=prod --fail
+
+      - name: Deploy CDK stack
+        if: steps.cdk-diff.outcome == 'failure'
+        working-directory: infra
+        run: npx cdk deploy WorkflowBackend-prod -c env=prod --require-approval never
+
+      - name: No infra changes detected
+        if: steps.cdk-diff.outcome == 'success'
+        run: echo "No infrastructure changes — skipping CDK deploy"
+
+  snapshot-rds:
+    name: Snapshot RDS (pre-deploy)
+    needs: [build-and-test, deploy-infra]
+    runs-on: ubuntu-latest
+    environment: prod-deploy
+
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Create pre-deploy RDS snapshot
+        run: |
+          SNAPSHOT_ID="pre-deploy-$(date -u +%Y%m%d-%H%M%S)"
+          echo "Creating snapshot: $SNAPSHOT_ID"
+
+          aws rds create-db-snapshot \
+            --db-instance-identifier workflow-prod-db \
+            --db-snapshot-identifier "$SNAPSHOT_ID"
+
+          echo "Waiting for snapshot to become available..."
+          aws rds wait db-snapshot-available \
+            --db-snapshot-identifier "$SNAPSHOT_ID"
+
+          echo "Snapshot ready: $SNAPSHOT_ID"
+
+      - name: Delete pre-deploy snapshots older than 7 days
+        run: |
+          CUTOFF_EPOCH=$(date -u -d '7 days ago' +%s)
+
+          aws rds describe-db-snapshots \
+            --db-instance-identifier workflow-prod-db \
+            --snapshot-type manual \
+            --query "DBSnapshots[?starts_with(DBSnapshotIdentifier, 'pre-deploy-')].{id:DBSnapshotIdentifier,t:SnapshotCreateTime}" \
+            --output text | while read id t; do
+              SNAP_EPOCH=$(date -u -d "$t" +%s 2>/dev/null || echo 0)
+              if [ "$SNAP_EPOCH" -gt 0 ] && [ "$SNAP_EPOCH" -le "$CUTOFF_EPOCH" ]; then
+                echo "Deleting old snapshot: $id"
+                aws rds delete-db-snapshot --db-snapshot-identifier "$id" || true
+              fi
+            done
+
+  deploy-prod:
+    name: Deploy to Prod
+    needs: [build-and-test, deploy-infra, snapshot-rds]
+    runs-on: ubuntu-latest
+    environment: prod-deploy
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push ARM64 image to ECR
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/arm64
+          push: true
+          tags: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/work-flow-prod:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          provenance: false
+          sbom: false
+
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            set -e
+
+            APP_DIR="/home/ubuntu/app"
+            ECR_IMAGE="${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/work-flow-prod:latest"
+
+            mkdir -p "$APP_DIR"
+            cd "$APP_DIR"
+
+            # Pull latest setup-env.sh from repo
+            curl -fsSL -o "$APP_DIR/setup-env.sh" \
+              https://raw.githubusercontent.com/${{ github.repository }}/${{ github.ref_name }}/scripts/setup-env.sh
+            chmod +x "$APP_DIR/setup-env.sh"
+
+            # Pull all secrets/params from Secrets Manager + SSM → writes .env.prod
+            APP_ENV=prod "$APP_DIR/setup-env.sh"
+
+            # Inject ECR image URI (known to CI/CD, not stored in AWS)
+            sed -i "s|ECR_IMAGE_URI=.*|ECR_IMAGE_URI=$ECR_IMAGE|" .env.prod
+
+            curl -fsSL -o docker-compose.prod.yml \
+              https://raw.githubusercontent.com/${{ github.repository }}/${{ github.ref_name }}/docker-compose.prod.yml
+            mkdir -p docker/nginx
+            curl -fsSL -o docker/nginx/nginx.conf \
+              https://raw.githubusercontent.com/${{ github.repository }}/${{ github.ref_name }}/docker/nginx/nginx.conf
+            mkdir -p docker/certbot/conf docker/certbot/www
+
+            # Domain comes from SSM via setup-env.sh
+            NGINX_DOMAIN=$(grep "^NGINX_DOMAIN=" .env.prod | cut -d= -f2)
+
+            # Issue SSL cert if not present for this domain
+            if [ ! -f "docker/certbot/conf/live/$NGINX_DOMAIN/fullchain.pem" ]; then
+              echo "Issuing Let's Encrypt cert for $NGINX_DOMAIN..."
+              docker stop nginx-proxy 2>/dev/null || true
+              docker run --rm \
+                -v "$APP_DIR/docker/certbot/conf:/etc/letsencrypt" \
+                -v "$APP_DIR/docker/certbot/www:/var/www/certbot" \
+                -p 80:80 \
+                certbot/certbot certonly --standalone --non-interactive \
+                --email admin@workfloow.app --agree-tos --no-eff-email \
+                -d "$NGINX_DOMAIN"
+            fi
+
+            # Login to ECR using EC2 instance role — no static credentials needed
+            aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | \
+              docker login --username AWS --password-stdin \
+              "${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com"
+
+            docker pull "$ECR_IMAGE"
+            docker-compose -f docker-compose.prod.yml --env-file .env.prod up -d --wait
+
+            docker image prune -af --filter "until=24h"
+
+            echo "Deployment complete!"

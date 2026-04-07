@@ -1,10 +1,11 @@
 package com.workflow.service.auth;
 
+import com.workflow.config.properties.JwtConfigProperties;
 import com.workflow.dto.auth.AuthenticationResponse;
 import com.workflow.dto.auth.LoginRequest;
-import com.workflow.entity.RefreshToken;
-import com.workflow.entity.User;
-import com.workflow.repository.UserRepository;
+import com.workflow.entity.auth.RefreshToken;
+import com.workflow.entity.auth.User;
+import com.workflow.repository.auth.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,6 +26,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.lenient;
 
 @ExtendWith(MockitoExtension.class)
 class AuthenticationServiceTest {
@@ -42,6 +44,9 @@ class AuthenticationServiceTest {
     private RefreshTokenService refreshTokenService;
 
     @Mock
+    private JwtConfigProperties jwtConfigProperties;
+
+    @Mock
     private HttpServletRequest httpRequest;
 
     @InjectMocks
@@ -53,6 +58,9 @@ class AuthenticationServiceTest {
 
     @BeforeEach
     void setUp() {
+        JwtConfigProperties.AccessToken accessToken = new JwtConfigProperties.AccessToken();
+        lenient().when(jwtConfigProperties.getAccessToken()).thenReturn(accessToken);
+
         testUser = User.builder()
                 .id(1L)
                 .uuid("test-uuid-123")

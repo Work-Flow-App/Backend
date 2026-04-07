@@ -3,8 +3,13 @@ package com.workflow.service.estimate;
 import com.workflow.common.constant.CoreOrSub;
 import com.workflow.common.exception.business.*;
 import com.workflow.dto.estimate.*;
-import com.workflow.entity.*;
-import com.workflow.repository.*;
+import com.workflow.entity.company.Company;
+import com.workflow.entity.financial.Estimate;
+import com.workflow.entity.job.Job;
+import com.workflow.entity.financial.LineItem;
+import com.workflow.repository.company.CompanyRepository;
+import com.workflow.repository.financial.EstimateRepository;
+import com.workflow.repository.financial.LineItemRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -90,11 +95,11 @@ class EstimateServiceTest {
 
     @Test
     void createAndLinkLineItem_ShouldCalculateAndLink() {
-        // net = 50 × 2 = 100, vat = 100 × 0.19 = 19, total = 119
+        // net = 50 × 2 = 100, vat = 100 × 19% = 19, total = 119
         LineItemCreateRequest request = LineItemCreateRequest.builder()
                 .productCode("P001").productDescription("Labour")
                 .unitPrice(new BigDecimal("50.00")).coreOrSub(CoreOrSub.CORE)
-                .quantity(new BigDecimal("2.0000")).vatRate(new BigDecimal("0.1900"))
+                .quantity(new BigDecimal("2.0000")).vatRate(new BigDecimal("19.00"))
                 .build();
 
         when(estimateRepository.findByIdAndCompanyId(100L, 1L)).thenReturn(Optional.of(estimate));

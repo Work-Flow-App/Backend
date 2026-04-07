@@ -1,10 +1,9 @@
 package com.workflow.controller.client;
 
+import com.workflow.common.util.AuthUtils;
 import com.workflow.dto.client.ClientCreateRequest;
 import com.workflow.dto.client.ClientUpdateRequest;
 import com.workflow.dto.client.ClientResponse;
-import com.workflow.entity.Company;
-import com.workflow.entity.User;
 import com.workflow.service.client.IClientService;
 import com.workflow.service.company.ICompanyService;
 import jakarta.validation.Valid;
@@ -71,9 +70,7 @@ public class ClientController {
     }
 
     private Long getCompanyId(Authentication auth) {
-        User user = (User) auth.getPrincipal();
-        Company company = companyService.findCompanyByUserId(user.getId());
-        return company.getId();
+        return AuthUtils.getCompanyId(auth, companyService);
     }
 
 }

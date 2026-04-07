@@ -1,9 +1,10 @@
 package com.workflow.repository;
 
 import com.workflow.common.constant.Role;
-import com.workflow.entity.Company;
-import com.workflow.entity.User;
-import com.workflow.entity.WorkerInvitation;
+import com.workflow.entity.company.Company;
+import com.workflow.entity.auth.User;
+import com.workflow.entity.worker.WorkerInvitation;
+import com.workflow.repository.worker.WorkerInvitationRepository;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

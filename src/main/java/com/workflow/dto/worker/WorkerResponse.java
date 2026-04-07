@@ -1,6 +1,6 @@
 package com.workflow.dto.worker;
 
-import com.workflow.entity.Worker;
+import com.workflow.entity.worker.Worker;
 
 import java.time.LocalDateTime;
 

@@ -6,8 +6,20 @@ import com.workflow.common.constant.Role;
 import com.workflow.common.constant.job.JobStatus;
 import com.workflow.dto.estimate.EstimateUpdateRequest;
 import com.workflow.dto.estimate.LineItemCreateRequest;
-import com.workflow.entity.*;
-import com.workflow.repository.*;
+import com.workflow.entity.company.Company;
+import com.workflow.entity.customer.Customer;
+import com.workflow.entity.financial.Estimate;
+import com.workflow.entity.job.Job;
+import com.workflow.entity.job.JobTemplate;
+import com.workflow.entity.financial.LineItem;
+import com.workflow.entity.auth.User;
+import com.workflow.repository.auth.UserRepository;
+import com.workflow.repository.company.CompanyRepository;
+import com.workflow.repository.customer.CustomerRepository;
+import com.workflow.repository.financial.EstimateRepository;
+import com.workflow.repository.financial.LineItemRepository;
+import com.workflow.repository.job.JobRepository;
+import com.workflow.repository.job.JobTemplateRepository;
 import com.workflow.service.auth.JwtService;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -186,11 +198,11 @@ class EstimateControllerIntegrationTest {
 
     @Test
     void shouldCreateNewLineItemAndLinkToEstimate() throws Exception {
-        // net = 50 × 2 = 100, vat = 100 × 0.19 = 19, total = 119
+        // net = 50 × 2 = 100, vat = 100 × 19% = 19, total = 119
         LineItemCreateRequest request = LineItemCreateRequest.builder()
                 .productCode("P001").productDescription("Labour")
                 .unitPrice(new BigDecimal("50.00")).coreOrSub(CoreOrSub.CORE)
-                .quantity(new BigDecimal("2")).vatRate(new BigDecimal("0.19")).build();
+                .quantity(new BigDecimal("2")).vatRate(new BigDecimal("19.00")).build();
 
         mockMvc.perform(post("/api/v1/estimates/" + estimate.getId() + "/line-items")
                         .header("Authorization", "Bearer " + companyToken)

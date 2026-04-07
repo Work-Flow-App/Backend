@@ -2,11 +2,11 @@ package com.workflow.service.password;
 
 import com.workflow.common.constant.Role;
 import com.workflow.common.exception.business.InvalidPasswordResetTokenException;
-import com.workflow.entity.PasswordResetToken;
-import com.workflow.entity.User;
-import com.workflow.repository.PasswordResetTokenRepository;
-import com.workflow.repository.RefreshTokenRepository;
-import com.workflow.repository.UserRepository;
+import com.workflow.entity.auth.PasswordResetToken;
+import com.workflow.entity.auth.User;
+import com.workflow.repository.auth.PasswordResetTokenRepository;
+import com.workflow.repository.auth.RefreshTokenRepository;
+import com.workflow.repository.auth.UserRepository;
 import com.workflow.service.auth.PasswordResetService;
 import com.workflow.service.email.EmailService;
 import org.junit.jupiter.api.BeforeEach;
@@ -280,7 +280,7 @@ class PasswordResetServiceTest {
         String newPassword = "newPassword123";
         String encodedPassword = "$2a$10$encodedNewPassword";
 
-        when(passwordResetTokenRepository.findByVerificationCode(code))
+        when(passwordResetTokenRepository.findByVerificationCodeAndUser_Email(code, email))
                 .thenReturn(Optional.of(validToken));
         when(passwordEncoder.encode(newPassword)).thenReturn(encodedPassword);
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -308,7 +308,7 @@ class PasswordResetServiceTest {
         String code = "valid-token-123";
         String newPassword = "newPassword123";
 
-        when(passwordResetTokenRepository.findByVerificationCode(code))
+        when(passwordResetTokenRepository.findByVerificationCodeAndUser_Email(code, email))
                 .thenReturn(Optional.of(validToken));
         when(passwordEncoder.encode(newPassword)).thenReturn("encoded");
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -332,7 +332,7 @@ class PasswordResetServiceTest {
         String code = "valid-token-123";
         String newPassword = "newPassword123";
 
-        when(passwordResetTokenRepository.findByVerificationCode(code))
+        when(passwordResetTokenRepository.findByVerificationCodeAndUser_Email(code, email))
                 .thenReturn(Optional.of(validToken));
         when(passwordEncoder.encode(newPassword)).thenReturn("encoded");
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -354,7 +354,7 @@ class PasswordResetServiceTest {
         String newPassword = "myNewPassword";
         String encodedPassword = "$2a$10$encodedMyNewPassword";
 
-        when(passwordResetTokenRepository.findByVerificationCode(code))
+        when(passwordResetTokenRepository.findByVerificationCodeAndUser_Email(code, email))
                 .thenReturn(Optional.of(validToken));
         when(passwordEncoder.encode(newPassword)).thenReturn(encodedPassword);
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -380,7 +380,7 @@ class PasswordResetServiceTest {
         String code = "expired-token-456";
         String newPassword = "newPassword123";
 
-        when(passwordResetTokenRepository.findByVerificationCode(code))
+        when(passwordResetTokenRepository.findByVerificationCodeAndUser_Email(code, email))
                 .thenReturn(Optional.of(expiredToken));
 
         // When/Then
@@ -401,7 +401,7 @@ class PasswordResetServiceTest {
         String code = "used-token-789";
         String newPassword = "newPassword123";
 
-        when(passwordResetTokenRepository.findByVerificationCode(code))
+        when(passwordResetTokenRepository.findByVerificationCodeAndUser_Email(code, email))
                 .thenReturn(Optional.of(usedToken));
 
         // When/Then
@@ -492,7 +492,7 @@ class PasswordResetServiceTest {
         String code = "valid-token-123";
         String longPassword = "a".repeat(128);
 
-        when(passwordResetTokenRepository.findByVerificationCode(code))
+        when(passwordResetTokenRepository.findByVerificationCodeAndUser_Email(code, email))
                 .thenReturn(Optional.of(validToken));
         when(passwordEncoder.encode(longPassword)).thenReturn("encoded-long-password");
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));

@@ -1,6 +1,8 @@
 package com.workflow.common.exception.business;
 
-public class ForbiddenActionException extends RuntimeException {
+import com.workflow.common.exception.base.ForbiddenException;
+
+public class ForbiddenActionException extends ForbiddenException {
     public ForbiddenActionException(String message) {
         super(message);
     }

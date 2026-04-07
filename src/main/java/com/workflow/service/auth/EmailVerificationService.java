@@ -2,10 +2,10 @@ package com.workflow.service.auth;
 
 import com.workflow.common.exception.business.InvalidEmailVerificationTokenException;
 import com.workflow.dto.auth.AuthenticationResponse;
-import com.workflow.entity.EmailVerificationToken;
-import com.workflow.entity.User;
-import com.workflow.repository.EmailVerificationTokenRepository;
-import com.workflow.repository.UserRepository;
+import com.workflow.entity.auth.EmailVerificationToken;
+import com.workflow.entity.auth.User;
+import com.workflow.repository.auth.EmailVerificationTokenRepository;
+import com.workflow.repository.auth.UserRepository;
 import com.workflow.service.email.EmailService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;

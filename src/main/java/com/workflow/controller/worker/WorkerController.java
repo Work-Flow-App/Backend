@@ -3,7 +3,7 @@ package com.workflow.controller.worker;
 import com.workflow.dto.worker.*;
 import com.workflow.dto.worker.validators.PatchValidation;
 import com.workflow.dto.worker.validators.PutValidation;
-import com.workflow.entity.User;
+import com.workflow.entity.auth.User;
 import com.workflow.service.worker.IWorkerService;
 import com.workflow.service.worker.WorkerInvitationService;
 import jakarta.validation.Valid;

@@ -1,7 +1,7 @@
 package com.workflow.common.security;
 
 import com.workflow.common.exception.business.ForbiddenActionException;
-import com.workflow.entity.User;
+import com.workflow.entity.auth.User;
 
 public final class OwnershipValidator {
 

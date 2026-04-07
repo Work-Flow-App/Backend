@@ -1,6 +1,6 @@
 package com.workflow.dto.company;
 
-import com.workflow.entity.CompanyBankDetails;
+import com.workflow.entity.company.CompanyBankDetails;
 
 public record CompanyBankDetailsResponse(
         String bankName,

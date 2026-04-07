@@ -3,6 +3,8 @@ package com.workflow.service.job;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -27,32 +29,32 @@ import com.workflow.dto.job.JobCreateRequest;
 import com.workflow.dto.job.JobResponse;
 import com.workflow.dto.job.JobUpdateRequest;
 import com.workflow.dto.workflow.JobWorkflowResponse;
-import com.workflow.entity.Address;
-import com.workflow.entity.Asset;
-import com.workflow.entity.AssetJobAssignment;
-import com.workflow.entity.Client;
-import com.workflow.entity.Company;
-import com.workflow.entity.Customer;
-import com.workflow.entity.Estimate;
-import com.workflow.entity.Job;
-import com.workflow.entity.JobFieldValue;
-import com.workflow.entity.JobTemplate;
-import com.workflow.entity.JobTemplateField;
-import com.workflow.entity.Worker;
-import com.workflow.entity.Workflow;
-import com.workflow.repository.AddressRepository;
-import com.workflow.repository.AssetJobAssignmentRepository;
-import com.workflow.repository.AssetRepository;
-import com.workflow.repository.ClientRepository;
-import com.workflow.repository.CompanyRepository;
-import com.workflow.repository.CustomerRepository;
-import com.workflow.repository.EstimateRepository;
-import com.workflow.repository.JobFieldValueRepository;
-import com.workflow.repository.JobRepository;
-import com.workflow.repository.JobTemplateFieldRepository;
-import com.workflow.repository.JobTemplateRepository;
-import com.workflow.repository.WorkerRepository;
-import com.workflow.repository.WorkflowRepository;
+import com.workflow.entity.common.Address;
+import com.workflow.entity.asset.Asset;
+import com.workflow.entity.asset.AssetJobAssignment;
+import com.workflow.entity.customer.Client;
+import com.workflow.entity.company.Company;
+import com.workflow.entity.customer.Customer;
+import com.workflow.entity.financial.Estimate;
+import com.workflow.entity.job.Job;
+import com.workflow.entity.job.JobFieldValue;
+import com.workflow.entity.job.JobTemplate;
+import com.workflow.entity.job.JobTemplateField;
+import com.workflow.entity.worker.Worker;
+import com.workflow.entity.workflow.Workflow;
+import com.workflow.repository.common.AddressRepository;
+import com.workflow.repository.asset.AssetJobAssignmentRepository;
+import com.workflow.repository.asset.AssetRepository;
+import com.workflow.repository.customer.ClientRepository;
+import com.workflow.repository.company.CompanyRepository;
+import com.workflow.repository.customer.CustomerRepository;
+import com.workflow.repository.financial.EstimateRepository;
+import com.workflow.repository.job.JobFieldValueRepository;
+import com.workflow.repository.job.JobRepository;
+import com.workflow.repository.job.JobTemplateFieldRepository;
+import com.workflow.repository.job.JobTemplateRepository;
+import com.workflow.repository.worker.WorkerRepository;
+import com.workflow.repository.workflow.WorkflowRepository;
 import com.workflow.service.sequence.CompanyCounterService;
 import com.workflow.service.workflow.IJobWorkflowService;
 import com.workflow.util.JsonUtil;
@@ -308,9 +310,39 @@ public class JobService implements IJobService {
 
         @Override
         public List<JobResponse> getAllJobs(Long companyId) {
-                return jobRepository.findByCompanyId(companyId)
+                List<Job> jobs = jobRepository.findByCompanyId(companyId);
+                if (jobs.isEmpty()) return new ArrayList<>();
+
+                List<Long> jobIds = jobs.stream().map(Job::getId).collect(Collectors.toList());
+
+                // Batch-load field values for all jobs in one query
+                Map<Long, Map<Long, FieldValueResponse>> fieldValuesByJob = fieldValueRepository
+                                .findByJobIdIn(jobIds)
                                 .stream()
-                                .map(this::mapToResponse)
+                                .collect(Collectors.groupingBy(
+                                                v -> v.getJob().getId(),
+                                                Collectors.toMap(
+                                                                v -> v.getField().getId(),
+                                                                v -> FieldValueResponse.builder()
+                                                                                .name(v.getField().getName())
+                                                                                .label(v.getField().getLabel())
+                                                                                .type(v.getField().getJobFieldType())
+                                                                                .value(v.getTypedValue())
+                                                                                .build())));
+
+                // Batch-load active asset assignments for all jobs in one query
+                Map<Long, List<Long>> assetIdsByJob = assetJobAssignmentRepository
+                                .findByJobIdInAndReturnedAtIsNull(jobIds)
+                                .stream()
+                                .collect(Collectors.groupingBy(
+                                                a -> a.getJob().getId(),
+                                                Collectors.mapping(a -> a.getAsset().getId(), Collectors.toList())));
+
+                return jobs.stream()
+                                .map(job -> mapToResponse(
+                                                job,
+                                                fieldValuesByJob.getOrDefault(job.getId(), new HashMap<>()),
+                                                assetIdsByJob.getOrDefault(job.getId(), new ArrayList<>())))
                                 .collect(Collectors.toList());
         }
 
@@ -478,6 +510,11 @@ public class JobService implements IJobService {
                                 .stream()
                                 .map(assignment -> assignment.getAsset().getId())
                                 .collect(Collectors.toList());
+
+                return mapToResponse(job, values, assetIds);
+        }
+
+        private JobResponse mapToResponse(Job job, Map<Long, FieldValueResponse> values, List<Long> assetIds) {
 
                 AddressResponse addressResponse = null;
 

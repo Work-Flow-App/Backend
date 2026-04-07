@@ -2,8 +2,14 @@ package com.workflow.service.asset;
 
 import com.workflow.common.constant.job.JobStatus;
 import com.workflow.dto.asset.*;
-import com.workflow.entity.*;
-import com.workflow.repository.*;
+import com.workflow.entity.asset.Asset;
+import com.workflow.entity.asset.AssetJobAssignment;
+import com.workflow.entity.job.Job;
+import com.workflow.entity.worker.Worker;
+import com.workflow.repository.asset.AssetJobAssignmentRepository;
+import com.workflow.repository.asset.AssetRepository;
+import com.workflow.repository.job.JobRepository;
+import com.workflow.repository.worker.WorkerRepository;
 import com.workflow.common.exception.business.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -108,7 +114,7 @@ public class AssetAssignmentService implements IAssetAssignmentService {
         AssetJobAssignment assignment = assignmentRepository.findById(request.getAssignmentId())
                 .orElseThrow(() -> {
                     log.error("Assignment not found: assignmentId={}", request.getAssignmentId());
-                    return new IllegalArgumentException("Assignment not found");
+                    return new AssetAssignmentNotFoundException("Assignment not found");
                 });
 
         // check asset company
@@ -118,7 +124,7 @@ public class AssetAssignmentService implements IAssetAssignmentService {
             throw new AssetNotFoundException("Assignment not found for company");
         }
 
-        if (assignment.getReturnedAt() != null) {
+        if (!assignment.isActive()) {
             log.warn("Attempted to return already returned assignment: assignmentId={}, assetId={}, returnedAt={}",
                      assignment.getId(), assignment.getAsset().getId(), assignment.getReturnedAt());
             throw new IllegalStateException("Assignment already returned");
@@ -194,9 +200,9 @@ public class AssetAssignmentService implements IAssetAssignmentService {
     }
 
     private AssetAssignmentResponse mapAssignmentToResponse(AssetJobAssignment a) {
-        long durationDays = a.getReturnedAt() == null ? nullSafeDaysBetween(a.getAssignedAt(), LocalDateTime.now())
+        long durationDays = a.isActive() ? nullSafeDaysBetween(a.getAssignedAt(), LocalDateTime.now())
                 : nullSafeDaysBetween(a.getAssignedAt(), a.getReturnedAt());
-        String status = a.getReturnedAt() == null ? "ACTIVE" : "COMPLETED";
+        String status = a.isActive() ? "ACTIVE" : "COMPLETED";
         return AssetAssignmentResponse.builder()
                 .assignmentId(a.getId())
                 .assetId(a.getAsset().getId())

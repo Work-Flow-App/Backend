@@ -16,20 +16,13 @@ public class AuthenticationResponse {
     private String refreshToken;
     private String tokenType;
     private Long expiresIn; // seconds
-    private String errorMessage;
 
-    public static AuthenticationResponse error(String errorMessage) {
-        return AuthenticationResponse.builder()
-                .errorMessage(errorMessage)
-                .build();
-    }
-
-    public static AuthenticationResponse success(String accessToken, String refreshToken) {
+    public static AuthenticationResponse success(String accessToken, String refreshToken, long expiresIn) {
         return AuthenticationResponse.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
                 .tokenType("Bearer")
-                .expiresIn(60 * 60L) // 1 hour in seconds (will be configurable)
+                .expiresIn(expiresIn)
                 .build();
     }
 }

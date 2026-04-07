@@ -9,11 +9,11 @@ import com.workflow.common.constant.workflow.JobWorkflowStepActivityType;
 import com.workflow.common.exception.business.JobWorkflowStepNotFoundException;
 import com.workflow.common.exception.business.UnauthorizedWorkflowAccessException;
 import com.workflow.dto.workflow.StepActivityResponse;
-import com.workflow.entity.JobWorkflowStep;
-import com.workflow.entity.JobWorkflowStepActivity;
-import com.workflow.entity.User;
-import com.workflow.repository.JobWorkflowStepActivityRepository;
-import com.workflow.repository.JobWorkflowStepRepository;
+import com.workflow.entity.job.JobWorkflowStep;
+import com.workflow.entity.job.JobWorkflowStepActivity;
+import com.workflow.entity.auth.User;
+import com.workflow.repository.job.JobWorkflowStepActivityRepository;
+import com.workflow.repository.job.JobWorkflowStepRepository;
 
 import lombok.RequiredArgsConstructor;
 

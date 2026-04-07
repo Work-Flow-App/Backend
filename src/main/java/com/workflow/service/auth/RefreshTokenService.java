@@ -1,10 +1,11 @@
 package com.workflow.service.auth;
 
+import com.workflow.common.exception.business.ForbiddenActionException;
 import com.workflow.common.exception.business.InvalidRefreshTokenException;
 import com.workflow.config.properties.JwtConfigProperties;
-import com.workflow.entity.RefreshToken;
-import com.workflow.entity.User;
-import com.workflow.repository.RefreshTokenRepository;
+import com.workflow.entity.auth.RefreshToken;
+import com.workflow.entity.auth.User;
+import com.workflow.repository.auth.RefreshTokenRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -98,11 +99,14 @@ public class RefreshTokenService {
     }
 
     /**
-     * Revoke a specific refresh token
+     * Revoke a specific refresh token — validates that the token belongs to the given owner
      */
     @Transactional
-    public void revokeRefreshToken(String token) {
+    public void revokeRefreshToken(String token, User owner) {
         refreshTokenRepository.findByToken(token).ifPresent(refreshToken -> {
+            if (!refreshToken.getUser().getId().equals(owner.getId())) {
+                throw new ForbiddenActionException("Cannot revoke a token you do not own");
+            }
             refreshToken.revoke();
             refreshTokenRepository.save(refreshToken);
             log.info("Revoked refresh token for user {}", refreshToken.getUser().getUsername());
@@ -144,10 +148,11 @@ public class RefreshTokenService {
     }
 
     private String extractIpAddress(HttpServletRequest request) {
-        String ip = request.getHeader("X-Forwarded-For");
-        if (ip == null || ip.isEmpty()) {
-            ip = request.getRemoteAddr();
+        String xff = request.getHeader("X-Forwarded-For");
+        if (xff != null && !xff.isBlank()) {
+            // Take only the first IP — the original client IP as set by the first trusted proxy
+            return xff.split(",")[0].trim();
         }
-        return ip;
+        return request.getRemoteAddr();
     }
 }

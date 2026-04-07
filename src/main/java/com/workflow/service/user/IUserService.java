@@ -1,7 +1,7 @@
 package com.workflow.service.user;
 
 import com.workflow.dto.auth.SignupRequest;
-import com.workflow.entity.User;
+import com.workflow.entity.auth.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 

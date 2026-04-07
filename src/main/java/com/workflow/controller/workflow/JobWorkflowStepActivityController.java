@@ -19,13 +19,12 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.workflow.common.constant.workflow.StepDiscussionType;
+import com.workflow.common.util.AuthUtils;
 import com.workflow.dto.workflow.StepAttachmentResponse;
 import com.workflow.dto.workflow.StepAttachmentUpdateRequest;
 import com.workflow.dto.workflow.StepCommentCreateRequest;
 import com.workflow.dto.workflow.StepCommentResponse;
 import com.workflow.dto.workflow.StepTimelineItemResponse;
-import com.workflow.entity.Company;
-import com.workflow.entity.User;
 import com.workflow.service.company.ICompanyService;
 import com.workflow.service.workflow.IJobWorkflowStepActivityService;
 
@@ -48,9 +47,7 @@ public class JobWorkflowStepActivityController {
          */
 
         private Long getCompanyId(Authentication auth) {
-                User user = (User) auth.getPrincipal();
-                Company company = companyService.findCompanyByUserId(user.getId());
-                return company.getId();
+                return AuthUtils.getCompanyId(auth, companyService);
         }
 
         /*

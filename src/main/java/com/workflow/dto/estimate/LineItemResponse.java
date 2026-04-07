@@ -1,7 +1,7 @@
 package com.workflow.dto.estimate;
 
 import com.workflow.common.constant.CoreOrSub;
-import com.workflow.entity.LineItem;
+import com.workflow.entity.financial.LineItem;
 import lombok.*;
 
 import java.math.BigDecimal;

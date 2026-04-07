@@ -1,7 +1,7 @@
 package com.workflow.dto.invoice;
 
 import com.workflow.dto.estimate.LineItemResponse;
-import com.workflow.entity.Invoice;
+import com.workflow.entity.financial.Invoice;
 import lombok.*;
 
 import java.math.BigDecimal;

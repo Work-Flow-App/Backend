@@ -1,6 +1,8 @@
 package com.workflow.common.exception.business;
 
-public class EmptyFileException extends RuntimeException {
+import com.workflow.common.exception.base.BadRequestException;
+
+public class EmptyFileException extends BadRequestException {
 
     public EmptyFileException(String message) {
         super(message);

@@ -7,6 +7,8 @@ import * as ssm from 'aws-cdk-lib/aws-ssm';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as rds from 'aws-cdk-lib/aws-rds';
 import * as logs from 'aws-cdk-lib/aws-logs';
+import * as backup from 'aws-cdk-lib/aws-backup';
+import * as events from 'aws-cdk-lib/aws-events';
 import { Construct } from 'constructs';
 import { EnvironmentConfig } from '../config/environment-config';
 
@@ -152,9 +154,7 @@ export class BackendStack extends cdk.Stack {
       storageEncrypted: true,
       deletionProtection: config.dbDeletionProtection,
       removalPolicy: config.removalPolicy,
-      backupRetention: config.envName === 'dev'
-        ? cdk.Duration.days(1)
-        : cdk.Duration.days(7),
+      backupRetention: cdk.Duration.days(config.backupRetentionDays),
     });
 
     // ──────────────────────────────────────────────
@@ -326,6 +326,50 @@ export class BackendStack extends cdk.Stack {
         : logs.RetentionDays.ONE_MONTH,
       removalPolicy: config.removalPolicy,
     });
+
+    // ──────────────────────────────────────────────
+    // AWS Backup (prod only)
+    // ──────────────────────────────────────────────
+    if (config.backupEnabled) {
+      const backupVault = new backup.BackupVault(this, 'BackupVault', {
+        backupVaultName: `${prefix}-vault`,
+        removalPolicy: cdk.RemovalPolicy.RETAIN,
+      });
+
+      const backupPlan = new backup.BackupPlan(this, 'BackupPlan', {
+        backupPlanName: `${prefix}-backup-plan`,
+        backupVault,
+        backupPlanRules: [
+          // Daily at 2AM UTC — keep 30 days
+          new backup.BackupPlanRule({
+            ruleName: 'daily-30d',
+            scheduleExpression: events.Schedule.cron({ hour: '2', minute: '0' }),
+            deleteAfter: cdk.Duration.days(30),
+            startWindow: cdk.Duration.hours(1),
+            completionWindow: cdk.Duration.hours(2),
+          }),
+          // Weekly Sunday at 2AM UTC — keep 90 days
+          new backup.BackupPlanRule({
+            ruleName: 'weekly-90d',
+            scheduleExpression: events.Schedule.cron({ hour: '2', minute: '0', weekDay: 'SUN' }),
+            deleteAfter: cdk.Duration.days(90),
+            startWindow: cdk.Duration.hours(1),
+            completionWindow: cdk.Duration.hours(3),
+          }),
+        ],
+      });
+
+      backupPlan.addSelection('RdsSelection', {
+        resources: [
+          backup.BackupResource.fromRdsDbInstance(dbInstance),
+        ],
+      });
+
+      new cdk.CfnOutput(this, 'BackupVaultName', {
+        value: backupVault.backupVaultName,
+        description: 'AWS Backup vault name',
+      });
+    }
 
     // ──────────────────────────────────────────────
     // CfnOutputs

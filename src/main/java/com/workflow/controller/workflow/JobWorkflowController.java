@@ -16,13 +16,12 @@ import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.validation.Valid;
 
+import com.workflow.common.util.AuthUtils;
 import com.workflow.dto.workflow.JobWorkflowResponse;
 import com.workflow.dto.workflow.JobWorkflowStepCreateRequest;
 import com.workflow.dto.workflow.JobWorkflowStepResponse;
 import com.workflow.dto.workflow.JobWorkflowStepUpdateRequest;
 import com.workflow.dto.workflow.JobWorkflowUpdateRequest;
-import com.workflow.entity.Company;
-import com.workflow.entity.User;
 import com.workflow.service.company.ICompanyService;
 import com.workflow.service.workflow.IJobWorkflowService;
 
@@ -39,9 +38,7 @@ public class JobWorkflowController {
         private final ICompanyService companyService;
 
         private Long getCompanyId(Authentication auth) {
-                User user = (User) auth.getPrincipal();
-                Company company = companyService.findCompanyByUserId(user.getId());
-                return company.getId();
+                return AuthUtils.getCompanyId(auth, companyService);
         }
 
         @PostMapping("/jobs/{jobId}/workflows/{workflowId}/start")

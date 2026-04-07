@@ -1,9 +1,8 @@
 package com.workflow.controller.invoice;
 
+import com.workflow.common.util.AuthUtils;
 import com.workflow.dto.invoice.InvoiceCreateRequest;
 import com.workflow.dto.invoice.InvoiceResponse;
-import com.workflow.entity.Company;
-import com.workflow.entity.User;
 import com.workflow.service.company.ICompanyService;
 import com.workflow.service.invoice.IInvoiceService;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -52,8 +51,6 @@ public class InvoiceController {
     }
 
     private Long getCompanyId(Authentication auth) {
-        User user = (User) auth.getPrincipal();
-        Company company = companyService.findCompanyByUserId(user.getId());
-        return company.getId();
+        return AuthUtils.getCompanyId(auth, companyService);
     }
 }

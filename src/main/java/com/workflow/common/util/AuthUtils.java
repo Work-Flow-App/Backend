@@ -1,6 +1,6 @@
 package com.workflow.common.util;
 
-import com.workflow.entity.User;
+import com.workflow.entity.auth.User;
 import com.workflow.service.company.ICompanyService;
 import org.springframework.security.core.Authentication;
 

@@ -20,12 +20,12 @@ import com.workflow.dto.workflow.WorkflowStepBulkRequest;
 import com.workflow.dto.workflow.WorkflowStepCreateRequest;
 import com.workflow.dto.workflow.WorkflowStepResponse;
 import com.workflow.dto.workflow.WorkflowWithStepsResponse;
-import com.workflow.entity.Company;
-import com.workflow.entity.Workflow;
-import com.workflow.entity.WorkflowStep;
-import com.workflow.repository.CompanyRepository;
-import com.workflow.repository.WorkflowRepository;
-import com.workflow.repository.WorkflowStepRepository;
+import com.workflow.entity.company.Company;
+import com.workflow.entity.workflow.Workflow;
+import com.workflow.entity.workflow.WorkflowStep;
+import com.workflow.repository.company.CompanyRepository;
+import com.workflow.repository.workflow.WorkflowRepository;
+import com.workflow.repository.workflow.WorkflowStepRepository;
 import com.workflow.service.sequence.CompanyCounterService;
 
 import lombok.RequiredArgsConstructor;

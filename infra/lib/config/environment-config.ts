@@ -31,6 +31,10 @@ export interface EnvironmentConfig {
 
   // CloudWatch
   logRetentionDays: number;
+
+  // Backup
+  backupRetentionDays: number;
+  backupEnabled: boolean;
 }
 
 export const devConfig: EnvironmentConfig = {
@@ -56,6 +60,9 @@ export const devConfig: EnvironmentConfig = {
   removalPolicy: cdk.RemovalPolicy.DESTROY,
 
   logRetentionDays: 7,
+
+  backupRetentionDays: 1,
+  backupEnabled: false,
 };
 
 export const prodConfig: EnvironmentConfig = {
@@ -81,4 +88,7 @@ export const prodConfig: EnvironmentConfig = {
   removalPolicy: cdk.RemovalPolicy.RETAIN,
 
   logRetentionDays: 30,
+
+  backupRetentionDays: 14,
+  backupEnabled: true,
 };

@@ -1,6 +1,6 @@
 package com.workflow.dto.company;
 
-import com.workflow.entity.Company;
+import com.workflow.entity.company.Company;
 
 import java.time.LocalDateTime;
 

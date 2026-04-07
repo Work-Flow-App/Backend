@@ -1,15 +1,17 @@
 package com.workflow.service.estimate;
 
 import com.workflow.common.exception.business.*;
+import com.workflow.common.util.LineItemCalculator;
 import com.workflow.dto.estimate.*;
-import com.workflow.entity.*;
-import com.workflow.repository.*;
+import com.workflow.entity.company.Company;
+import com.workflow.entity.financial.Estimate;
+import com.workflow.entity.financial.LineItem;
+import com.workflow.repository.company.CompanyRepository;
+import com.workflow.repository.financial.EstimateRepository;
+import com.workflow.repository.financial.LineItemRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 
 @Service
 @Transactional
@@ -72,7 +74,7 @@ public class EstimateService implements IEstimateService {
                 .vatRate(request.getVatRate())
                 .build();
 
-        calculateAmounts(item);
+        LineItemCalculator.recalculate(item);
         lineItemRepository.save(item);
         estimate.getLineItems().add(item);
         estimateRepository.save(estimate);
@@ -114,17 +116,4 @@ public class EstimateService implements IEstimateService {
         return EstimateResponse.fromEntity(estimate);
     }
 
-    private void calculateAmounts(LineItem item) {
-        BigDecimal netAmount = item.getUnitPrice()
-                .multiply(item.getQuantity())
-                .setScale(2, RoundingMode.HALF_UP);
-
-        BigDecimal vatAmount = netAmount
-                .multiply(item.getVatRate())
-                .setScale(2, RoundingMode.HALF_UP);
-
-        item.setNetAmount(netAmount);
-        item.setVatAmount(vatAmount);
-        item.setTotalAmount(netAmount.add(vatAmount));
-    }
 }

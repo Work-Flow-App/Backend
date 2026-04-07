@@ -1,15 +1,15 @@
 package com.workflow.service.jobtemplate;
 
 import com.workflow.common.constant.job.JobFieldType;
-import com.workflow.entity.Company;
-import com.workflow.entity.JobTemplate;
-import com.workflow.entity.JobTemplateField;
-import com.workflow.entity.Workflow;
-import com.workflow.entity.WorkflowStep;
-import com.workflow.repository.JobTemplateFieldRepository;
-import com.workflow.repository.JobTemplateRepository;
-import com.workflow.repository.WorkflowRepository;
-import com.workflow.repository.WorkflowStepRepository;
+import com.workflow.entity.company.Company;
+import com.workflow.entity.job.JobTemplate;
+import com.workflow.entity.job.JobTemplateField;
+import com.workflow.entity.workflow.Workflow;
+import com.workflow.entity.workflow.WorkflowStep;
+import com.workflow.repository.job.JobTemplateFieldRepository;
+import com.workflow.repository.job.JobTemplateRepository;
+import com.workflow.repository.workflow.WorkflowRepository;
+import com.workflow.repository.workflow.WorkflowStepRepository;
 import com.workflow.service.sequence.CompanyCounterService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

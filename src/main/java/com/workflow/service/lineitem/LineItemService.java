@@ -1,20 +1,21 @@
 package com.workflow.service.lineitem;
 
 import com.workflow.common.exception.business.CompanyNotFoundException;
+import com.workflow.common.exception.business.LineItemInUseException;
 import com.workflow.common.exception.business.LineItemNotFoundException;
+import com.workflow.common.util.LineItemCalculator;
 import com.workflow.dto.estimate.LineItemCreateRequest;
 import com.workflow.dto.estimate.LineItemResponse;
 import com.workflow.dto.estimate.LineItemUpdateRequest;
-import com.workflow.entity.Company;
-import com.workflow.entity.LineItem;
-import com.workflow.repository.CompanyRepository;
-import com.workflow.repository.LineItemRepository;
+import com.workflow.entity.company.Company;
+import com.workflow.entity.financial.LineItem;
+import com.workflow.repository.company.CompanyRepository;
+import com.workflow.repository.financial.InvoiceRepository;
+import com.workflow.repository.financial.LineItemRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -25,6 +26,7 @@ public class LineItemService implements ILineItemService {
 
     private final LineItemRepository lineItemRepository;
     private final CompanyRepository companyRepository;
+    private final InvoiceRepository invoiceRepository;
 
     @Override
     public LineItemResponse createLineItem(LineItemCreateRequest request, Long companyId) {
@@ -42,7 +44,7 @@ public class LineItemService implements ILineItemService {
                 .vatRate(request.getVatRate())
                 .build();
 
-        calculateAmounts(item);
+        LineItemCalculator.recalculate(item);
         lineItemRepository.save(item);
         return LineItemResponse.fromEntity(item);
     }
@@ -76,7 +78,7 @@ public class LineItemService implements ILineItemService {
         if (request.getQuantity() != null) item.setQuantity(request.getQuantity());
         if (request.getVatRate() != null) item.setVatRate(request.getVatRate());
 
-        calculateAmounts(item);
+        LineItemCalculator.recalculate(item);
         lineItemRepository.save(item);
         return LineItemResponse.fromEntity(item);
     }
@@ -85,20 +87,9 @@ public class LineItemService implements ILineItemService {
     public void deleteLineItem(Long id, Long companyId) {
         LineItem item = lineItemRepository.findByIdAndCompanyId(id, companyId)
                 .orElseThrow(() -> new LineItemNotFoundException("Line item not found"));
+        if (invoiceRepository.existsByLineItemsId(id)) {
+            throw new LineItemInUseException("Cannot delete a line item that is part of an invoice");
+        }
         lineItemRepository.delete(item);
-    }
-
-    private void calculateAmounts(LineItem item) {
-        BigDecimal netAmount = item.getUnitPrice()
-                .multiply(item.getQuantity())
-                .setScale(2, RoundingMode.HALF_UP);
-
-        BigDecimal vatAmount = netAmount
-                .multiply(item.getVatRate())
-                .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
-
-        item.setNetAmount(netAmount);
-        item.setVatAmount(vatAmount);
-        item.setTotalAmount(netAmount.add(vatAmount));
     }
 }

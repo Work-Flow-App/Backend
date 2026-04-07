@@ -6,7 +6,7 @@ import com.workflow.dto.auth.password.PasswordResetResponse;
 import com.workflow.dto.auth.password.ResetPasswordRequest;
 import com.workflow.dto.worker.WorkerSignupRequest;
 import com.workflow.dto.worker.WorkerSignupResponse;
-import com.workflow.entity.User;
+import com.workflow.entity.auth.User;
 import com.workflow.service.auth.AuthenticationService;
 import com.workflow.service.auth.EmailVerificationService;
 import com.workflow.service.auth.GoogleAuthService;

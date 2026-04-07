@@ -7,7 +7,7 @@ import com.google.api.client.json.gson.GsonFactory;
 import com.workflow.common.exception.business.InvalidGoogleTokenException;
 import com.workflow.dto.auth.AuthenticationResponse;
 import com.workflow.dto.auth.GoogleAuthRequest;
-import com.workflow.entity.User;
+import com.workflow.entity.auth.User;
 import com.workflow.service.user.IUserService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;

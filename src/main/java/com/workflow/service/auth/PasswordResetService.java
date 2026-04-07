@@ -1,11 +1,11 @@
 package com.workflow.service.auth;
 
 import com.workflow.common.exception.business.InvalidPasswordResetTokenException;
-import com.workflow.entity.PasswordResetToken;
-import com.workflow.entity.User;
-import com.workflow.repository.PasswordResetTokenRepository;
-import com.workflow.repository.RefreshTokenRepository;
-import com.workflow.repository.UserRepository;
+import com.workflow.entity.auth.PasswordResetToken;
+import com.workflow.entity.auth.User;
+import com.workflow.repository.auth.PasswordResetTokenRepository;
+import com.workflow.repository.auth.RefreshTokenRepository;
+import com.workflow.repository.auth.UserRepository;
 import com.workflow.service.email.EmailService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

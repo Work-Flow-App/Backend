@@ -75,9 +75,54 @@ jobs:
         if: steps.cdk-diff.outcome == 'success'
         run: echo "No infrastructure changes — skipping CDK deploy"
 
+  snapshot-rds:
+    name: Snapshot RDS (pre-deploy)
+    needs: [build-and-test, deploy-infra]
+    runs-on: ubuntu-latest
+    environment: prod-deploy
+
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Create pre-deploy RDS snapshot
+        run: |
+          SNAPSHOT_ID="pre-deploy-$(date -u +%Y%m%d-%H%M%S)"
+          echo "Creating snapshot: $SNAPSHOT_ID"
+
+          aws rds create-db-snapshot \
+            --db-instance-identifier workflow-prod-db \
+            --db-snapshot-identifier "$SNAPSHOT_ID"
+
+          echo "Waiting for snapshot to become available..."
+          aws rds wait db-snapshot-available \
+            --db-snapshot-identifier "$SNAPSHOT_ID"
+
+          echo "Snapshot ready: $SNAPSHOT_ID"
+
+      - name: Delete pre-deploy snapshots older than 7 days
+        run: |
+          CUTOFF_EPOCH=$(date -u -d '7 days ago' +%s)
+
+          aws rds describe-db-snapshots \
+            --db-instance-identifier workflow-prod-db \
+            --snapshot-type manual \
+            --query "DBSnapshots[?starts_with(DBSnapshotIdentifier, 'pre-deploy-')].{id:DBSnapshotIdentifier,t:SnapshotCreateTime}" \
+            --output text | while read id t; do
+              SNAP_EPOCH=$(date -u -d "$t" +%s 2>/dev/null || echo 0)
+              if [ "$SNAP_EPOCH" -gt 0 ] && [ "$SNAP_EPOCH" -le "$CUTOFF_EPOCH" ]; then
+                echo "Deleting old snapshot: $id"
+                aws rds delete-db-snapshot --db-snapshot-identifier "$id" || true
+              fi
+            done
+
   deploy-prod:
     name: Deploy to Prod
-    needs: [build-and-test, deploy-infra]
+    needs: [build-and-test, deploy-infra, snapshot-rds]
     runs-on: ubuntu-latest
     environment: prod-deploy
 

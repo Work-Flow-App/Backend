@@ -28,7 +28,7 @@ import com.workflow.dto.workflow.StepVisitLogCreateRequest;
 import com.workflow.dto.workflow.StepVisitLogResponse;
 import com.workflow.dto.workflow.StepVisitLogSummaryResponse;
 import com.workflow.dto.workflow.WorkerAssignedStepResponse;
-import com.workflow.entity.User;
+import com.workflow.entity.auth.User;
 import com.workflow.service.workflow.IWorkerJobWorkflowService;
 
 import io.swagger.v3.oas.annotations.Operation;

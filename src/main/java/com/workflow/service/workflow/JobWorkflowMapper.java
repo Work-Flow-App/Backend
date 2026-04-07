@@ -2,10 +2,10 @@ package com.workflow.service.workflow;
 
 import com.workflow.dto.workflow.JobWorkflowResponse;
 import com.workflow.dto.workflow.JobWorkflowStepResponse;
-import com.workflow.entity.JobWorkflow;
-import com.workflow.entity.JobWorkflowStep;
-import com.workflow.entity.Worker;
-import com.workflow.repository.JobWorkflowStepRepository;
+import com.workflow.entity.job.JobWorkflow;
+import com.workflow.entity.job.JobWorkflowStep;
+import com.workflow.entity.worker.Worker;
+import com.workflow.repository.job.JobWorkflowStepRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 

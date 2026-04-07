@@ -25,6 +25,7 @@ public class JobWorkflowStep {
     @JoinColumn(name = "job_workflow_id", nullable = false)
     private JobWorkflow jobWorkflow;
 
+    @Column(nullable = false, length = 255)
     private String name;
     private String description;
 

@@ -11,6 +11,10 @@ import com.workflow.repository.AssetJobAssignmentRepository;
 import com.workflow.repository.AssetRepository;
 import com.workflow.repository.CompanyRepository;
 import com.workflow.service.sequence.CompanyCounterService;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Validation;
+import jakarta.validation.Validator;
+import jakarta.validation.ValidatorFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -18,6 +22,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.*;
+
+import java.util.Set;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -48,6 +54,9 @@ class AssetServiceTest {
     @InjectMocks
     private AssetService assetService;
 
+    // Used for testing Bean Validation constraints on DTOs
+    private Validator validator;
+
     private Company company;
     private Asset asset;
     private AssetCreateRequest createRequest;
@@ -55,6 +64,8 @@ class AssetServiceTest {
 
     @BeforeEach
     void setUp() {
+        ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
+        validator = factory.getValidator();
         company = Company.builder()
                 .id(1L)
                 .name("Test Company")
@@ -132,15 +143,22 @@ class AssetServiceTest {
     }
 
     @Test
-    void createAsset_NameTooShort_ThrowsException() {
-        createRequest.setName("A");
-        when(companyRepository.findById(1L)).thenReturn(Optional.of(company));
+    void createAsset_NameTooShort_DtoViolation() {
+        // Field-level validation is now on AssetCreateRequest via @Size(min=2).
+        // The service no longer enforces this — it is enforced by @Valid at the controller.
+        AssetCreateRequest request = AssetCreateRequest.builder()
+                .name("A")
+                .purchasePrice(new BigDecimal("299.99"))
+                .purchaseDate(LocalDate.of(2024, 6, 1))
+                .depreciationRate(new BigDecimal("15.00"))
+                .build();
 
-        assertThatThrownBy(() -> assetService.createAsset(createRequest, 1L))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Asset name is required (2-150 chars)");
+        Set<ConstraintViolation<AssetCreateRequest>> violations = validator.validate(request);
 
-        verify(assetRepository, never()).save(any());
+        assertThat(violations).isNotEmpty();
+        assertThat(violations).anyMatch(v ->
+                v.getPropertyPath().toString().equals("name") &&
+                v.getMessage().contains("between 2 and 150 characters"));
     }
 
     @Test
@@ -169,42 +187,56 @@ class AssetServiceTest {
     }
 
     @Test
-    void createAsset_InvalidPurchasePrice_ThrowsException() {
-        createRequest.setPurchasePrice(BigDecimal.ZERO);
-        when(companyRepository.findById(1L)).thenReturn(Optional.of(company));
-        when(assetRepository.existsByCompanyIdAndName(anyLong(), anyString())).thenReturn(false);
+    void createAsset_InvalidPurchasePrice_DtoViolation() {
+        // Field-level validation is now on AssetCreateRequest via @DecimalMin("0.01").
+        AssetCreateRequest request = AssetCreateRequest.builder()
+                .name("Valid Name")
+                .purchasePrice(BigDecimal.ZERO)
+                .purchaseDate(LocalDate.of(2024, 6, 1))
+                .depreciationRate(new BigDecimal("15.00"))
+                .build();
 
-        assertThatThrownBy(() -> assetService.createAsset(createRequest, 1L))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Purchase price must be greater than 0");
+        Set<ConstraintViolation<AssetCreateRequest>> violations = validator.validate(request);
 
-        verify(assetRepository, never()).save(any());
+        assertThat(violations).isNotEmpty();
+        assertThat(violations).anyMatch(v ->
+                v.getPropertyPath().toString().equals("purchasePrice") &&
+                v.getMessage().contains("greater than 0"));
     }
 
     @Test
-    void createAsset_FuturePurchaseDate_ThrowsException() {
-        createRequest.setPurchaseDate(LocalDate.now().plusDays(1));
-        when(companyRepository.findById(1L)).thenReturn(Optional.of(company));
-        when(assetRepository.existsByCompanyIdAndName(anyLong(), anyString())).thenReturn(false);
+    void createAsset_FuturePurchaseDate_DtoViolation() {
+        // Field-level validation is now on AssetCreateRequest via @PastOrPresent.
+        AssetCreateRequest request = AssetCreateRequest.builder()
+                .name("Valid Name")
+                .purchasePrice(new BigDecimal("299.99"))
+                .purchaseDate(LocalDate.now().plusDays(1))
+                .depreciationRate(new BigDecimal("15.00"))
+                .build();
 
-        assertThatThrownBy(() -> assetService.createAsset(createRequest, 1L))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Purchase date is required and cannot be in the future");
+        Set<ConstraintViolation<AssetCreateRequest>> violations = validator.validate(request);
 
-        verify(assetRepository, never()).save(any());
+        assertThat(violations).isNotEmpty();
+        assertThat(violations).anyMatch(v ->
+                v.getPropertyPath().toString().equals("purchaseDate"));
     }
 
     @Test
-    void createAsset_InvalidDepreciationRate_ThrowsException() {
-        createRequest.setDepreciationRate(new BigDecimal("150"));
-        when(companyRepository.findById(1L)).thenReturn(Optional.of(company));
-        when(assetRepository.existsByCompanyIdAndName(anyLong(), anyString())).thenReturn(false);
+    void createAsset_InvalidDepreciationRate_DtoViolation() {
+        // Field-level validation is now on AssetCreateRequest via @DecimalMax("100.00").
+        AssetCreateRequest request = AssetCreateRequest.builder()
+                .name("Valid Name")
+                .purchasePrice(new BigDecimal("299.99"))
+                .purchaseDate(LocalDate.of(2024, 6, 1))
+                .depreciationRate(new BigDecimal("150"))
+                .build();
 
-        assertThatThrownBy(() -> assetService.createAsset(createRequest, 1L))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Depreciation rate must be between 0 and 100");
+        Set<ConstraintViolation<AssetCreateRequest>> violations = validator.validate(request);
 
-        verify(assetRepository, never()).save(any());
+        assertThat(violations).isNotEmpty();
+        assertThat(violations).anyMatch(v ->
+                v.getPropertyPath().toString().equals("depreciationRate") &&
+                v.getMessage().contains("must not exceed 100"));
     }
 
     @Test

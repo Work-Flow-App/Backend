@@ -51,6 +51,7 @@ public class JobWorkflowService implements IJobWorkflowService {
         private final JobRepository jobRepository;
         private final WorkflowRepository workflowRepository;
         private final IStepActivityService stepActivityService;
+        private final JobWorkflowMapper jobWorkflowMapper;
 
         /*
          * =======================
@@ -94,7 +95,6 @@ public class JobWorkflowService implements IJobWorkflowService {
          * REORDER (1-BASED)
          * =======================
          */
-        @Transactional
         private void reorderStep1Based(JobWorkflowStep step, int requestedIndex) {
 
                 List<JobWorkflowStep> steps = jobWorkflowStepRepository
@@ -145,7 +145,6 @@ public class JobWorkflowService implements IJobWorkflowService {
          * scheduled for deletion in the same transaction.
          */
 
-        @Transactional
         private void normalizeOrderIndexes(Long jobWorkflowId) {
 
                 List<JobWorkflowStep> steps = jobWorkflowStepRepository
@@ -719,11 +718,7 @@ public class JobWorkflowService implements IJobWorkflowService {
                         orderIndex = request.getOrderIndex();
                 } else {
                         orderIndex = jobWorkflowStepRepository
-                                        .findByJobWorkflowId(jw.getId())
-                                        .stream()
-                                        .map(JobWorkflowStep::getOrderIndex)
-                                        .max(Integer::compareTo)
-                                        .orElse(0) + 1;
+                                        .findMaxOrderIndexByJobWorkflowId(jw.getId()) + 1;
                 }
 
                 WorkflowStepStatus status = request.getStatus() != null
@@ -775,37 +770,14 @@ public class JobWorkflowService implements IJobWorkflowService {
 
         /*
          * =======================
-         * MAPPERS
+         * MAPPERS — delegated to shared JobWorkflowMapper
          * =======================
          */
         private JobWorkflowStepResponse mapStep(JobWorkflowStep step) {
-                return JobWorkflowStepResponse.builder()
-                                .id(step.getId())
-                                .name(step.getName())
-                                .description(step.getDescription())
-                                .orderIndex(step.getOrderIndex()) // ✅ 1-based exposed
-                                .status(step.getStatus())
-                                .startedAt(step.getStartedAt())
-                                .completedAt(step.getCompletedAt())
-                                .assignedWorkerIds(
-                                                step.getAssignedWorkers()
-                                                                .stream()
-                                                                .map(Worker::getId)
-                                                                .collect(Collectors.toSet()))
-                                .build();
+                return jobWorkflowMapper.mapStep(step);
         }
 
         private JobWorkflowResponse buildResponse(JobWorkflow jw) {
-                List<JobWorkflowStepResponse> steps = jobWorkflowStepRepository
-                                .findByJobWorkflowIdOrderByOrderIndexAsc(jw.getId())
-                                .stream()
-                                .map(this::mapStep)
-                                .toList();
-                return JobWorkflowResponse.builder()
-                                .id(jw.getId())
-                                .jobId(jw.getJob().getId())
-                                .steps(steps)
-                                .status(jw.getStatus())
-                                .build();
+                return jobWorkflowMapper.buildWorkflowResponse(jw);
         }
 }

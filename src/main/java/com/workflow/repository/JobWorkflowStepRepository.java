@@ -8,8 +8,6 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 
 public interface JobWorkflowStepRepository extends JpaRepository<JobWorkflowStep, Long> {
-    List<JobWorkflowStep> findByJobWorkflowId(Long jobWorkflowId);
-
     void deleteByJobWorkflowId(Long jobWorkflowId);
 
     // Fetch all steps assigned to a specific worker (with eager-loaded workflow and job to avoid lazy chains)

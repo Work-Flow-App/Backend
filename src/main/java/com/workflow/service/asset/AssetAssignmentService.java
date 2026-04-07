@@ -118,7 +118,7 @@ public class AssetAssignmentService implements IAssetAssignmentService {
             throw new AssetNotFoundException("Assignment not found for company");
         }
 
-        if (assignment.getReturnedAt() != null) {
+        if (!assignment.isActive()) {
             log.warn("Attempted to return already returned assignment: assignmentId={}, assetId={}, returnedAt={}",
                      assignment.getId(), assignment.getAsset().getId(), assignment.getReturnedAt());
             throw new IllegalStateException("Assignment already returned");
@@ -194,9 +194,9 @@ public class AssetAssignmentService implements IAssetAssignmentService {
     }
 
     private AssetAssignmentResponse mapAssignmentToResponse(AssetJobAssignment a) {
-        long durationDays = a.getReturnedAt() == null ? nullSafeDaysBetween(a.getAssignedAt(), LocalDateTime.now())
+        long durationDays = a.isActive() ? nullSafeDaysBetween(a.getAssignedAt(), LocalDateTime.now())
                 : nullSafeDaysBetween(a.getAssignedAt(), a.getReturnedAt());
-        String status = a.getReturnedAt() == null ? "ACTIVE" : "COMPLETED";
+        String status = a.isActive() ? "ACTIVE" : "COMPLETED";
         return AssetAssignmentResponse.builder()
                 .assignmentId(a.getId())
                 .assetId(a.getAsset().getId())

@@ -19,6 +19,8 @@ CREATE TABLE assets (
     updated_at        TIMESTAMP      DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT fk_assets_company   FOREIGN KEY (company_id) REFERENCES companies(id),
     CONSTRAINT uq_company_name     UNIQUE (company_id, name),
+    -- MySQL allows multiple NULL values in a unique index (NULL != NULL in SQL),
+    -- so assets without an asset_tag (NULL) can coexist within the same company.
     CONSTRAINT uq_company_asset_tag UNIQUE (company_id, asset_tag)
 ) ENGINE=InnoDB;
 

@@ -90,14 +90,17 @@ public class JobWorkflowStepVisitLogService implements IJobWorkflowStepVisitLogS
 
     @Override
     public StepVisitLogResponse updateVisitLog(Long visitLogId, StepVisitLogCreateRequest request, Long companyId) {
-        Company company = getCompany(companyId);
+        // Fetch visit log first — throws 404 immediately if it doesn't exist,
+        // before making the extra getCompany() DB call.
         JobWorkflowStepVisitLog visitLog = visitLogRepository.findById(visitLogId)
                 .orElseThrow(() -> new VisitLogNotFoundException("Visit log not found"));
 
-        // Check if the company actually owns the step this visit log belongs to
+        // Validate company ownership before resolving the company entity.
         if (!visitLog.getStep().getJobWorkflow().getJob().getCompany().getId().equals(companyId)) {
             throw new ForbiddenActionException("Not allowed to edit visit logs for other companies");
         }
+
+        Company company = getCompany(companyId);
 
         // Apply fields safely and validate time
         LocalTime newTimeIn = request.getTimeIn() != null ? request.getTimeIn() : visitLog.getTimeIn();
@@ -136,9 +139,9 @@ public class JobWorkflowStepVisitLogService implements IJobWorkflowStepVisitLogS
             throw new ForbiddenActionException("Not allowed to delete visit logs for other companies");
         }
 
+        visitLogRepository.delete(visitLog);
         stepActivityService.log(visitLog.getStep(), company.getUser(), JobWorkflowStepActivityType.VISIT_DELETED,
                 "Deleted a visit log");
-        visitLogRepository.delete(visitLog);
     }
 
     @Override

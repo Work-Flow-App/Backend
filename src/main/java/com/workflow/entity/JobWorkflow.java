@@ -25,6 +25,7 @@ public class JobWorkflow {
     private Job job;
 
     @CreationTimestamp
+    @Column(nullable = false, updatable = false)
     private LocalDateTime startedAt;
 
     private LocalDateTime completedAt;

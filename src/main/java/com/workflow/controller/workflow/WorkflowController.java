@@ -1,8 +1,7 @@
 package com.workflow.controller.workflow;
 
+import com.workflow.common.util.AuthUtils;
 import com.workflow.dto.workflow.*;
-import com.workflow.entity.Company;
-import com.workflow.entity.User;
 import com.workflow.service.company.ICompanyService;
 import com.workflow.service.workflow.IWorkflowService;
 import lombok.RequiredArgsConstructor;
@@ -25,9 +24,7 @@ public class WorkflowController {
     private final ICompanyService companyService;
 
     private Long companyId(Authentication auth) {
-        User user = (User) auth.getPrincipal();
-        Company company = companyService.findCompanyByUserId(user.getId());
-        return company.getId();
+        return AuthUtils.getCompanyId(auth, companyService);
     }
 
     @PostMapping

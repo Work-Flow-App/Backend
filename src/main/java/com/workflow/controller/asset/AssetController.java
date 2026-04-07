@@ -1,8 +1,7 @@
 package com.workflow.controller.asset;
 
+import com.workflow.common.util.AuthUtils;
 import com.workflow.dto.asset.*;
-import com.workflow.entity.Company;
-import com.workflow.entity.User;
 import com.workflow.service.asset.IAssetService;
 import com.workflow.service.company.ICompanyService;
 import jakarta.validation.Valid;
@@ -15,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 
 @Tag(name = "Assets")
 @RestController
@@ -26,9 +26,7 @@ public class AssetController {
     private final ICompanyService companyService;
 
     private Long getCompanyId(Authentication auth) {
-        User user = (User) auth.getPrincipal();
-        Company company = companyService.findCompanyByUserId(user.getId());
-        return company.getId();
+        return AuthUtils.getCompanyId(auth, companyService);
     }
 
     @PostMapping
@@ -60,7 +58,7 @@ public class AssetController {
         return ResponseEntity.ok(service.listAssets(getCompanyId(auth), page, size, archived, available, sort, dir));
     }
 
-    @PostMapping("/{id}/archive")
+    @PatchMapping("/{id}/archive")
     public ResponseEntity<Void> archive(@PathVariable Long id, Authentication auth) {
         service.archiveAsset(id, getCompanyId(auth));
         return ResponseEntity.noContent().build();
@@ -71,12 +69,19 @@ public class AssetController {
             @PathVariable Long id,
             @RequestParam(required = false) String asOf, // ISO date yyyy-MM-dd
             Authentication auth) {
-        LocalDate date = asOf == null ? null : LocalDate.parse(asOf);
+        LocalDate date = null;
+        if (asOf != null) {
+            try {
+                date = LocalDate.parse(asOf);
+            } catch (DateTimeParseException e) {
+                throw new IllegalArgumentException("Invalid date format. Expected yyyy-MM-dd, got: " + asOf);
+            }
+        }
         return ResponseEntity.ok(service.calculateAssetValue(id, getCompanyId(auth), date));
     }
 
     @GetMapping("/statistics")
-    public ResponseEntity<Object> stats(Authentication auth) {
+    public ResponseEntity<AssetStatistics> stats(Authentication auth) {
         return ResponseEntity.ok(service.getStatistics(getCompanyId(auth)));
     }
 }

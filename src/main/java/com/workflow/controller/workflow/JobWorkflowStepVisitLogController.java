@@ -1,10 +1,9 @@
 package com.workflow.controller.workflow;
 
+import com.workflow.common.util.AuthUtils;
 import com.workflow.dto.workflow.StepVisitLogCreateRequest;
 import com.workflow.dto.workflow.StepVisitLogResponse;
 import com.workflow.dto.workflow.StepVisitLogSummaryResponse;
-import com.workflow.entity.Company;
-import com.workflow.entity.User;
 import com.workflow.service.company.ICompanyService;
 import com.workflow.service.workflow.IJobWorkflowStepVisitLogService;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -25,9 +24,7 @@ public class JobWorkflowStepVisitLogController {
     private final ICompanyService companyService;
 
     private Long getCompanyId(Authentication auth) {
-        User user = (User) auth.getPrincipal();
-        Company company = companyService.findCompanyByUserId(user.getId());
-        return company.getId();
+        return AuthUtils.getCompanyId(auth, companyService);
     }
 
     @PostMapping("/{stepId}/visits")

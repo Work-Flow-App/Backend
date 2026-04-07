@@ -45,27 +45,15 @@ public class AssetService implements IAssetService {
                     return new CompanyNotFoundException("Company not found");
                 });
 
-        // validations
-        if (request.getName() == null || request.getName().trim().length() < 2 || request.getName().length() > 150) {
-            throw new IllegalArgumentException("Asset name is required (2-150 chars)");
-        }
+        // Field-level validations are handled by Bean Validation on AssetCreateRequest.
+        // Cross-field validation (salvageValue vs purchasePrice) is enforced here
+        // because @Valid cannot express cross-field rules.
         if (assetRepository.existsByCompanyIdAndName(companyId, request.getName())) {
             throw new DuplicateNameException("Asset name must be unique within the company");
         }
         if (request.getAssetTag() != null
                 && assetRepository.existsByCompanyIdAndAssetTag(companyId, request.getAssetTag())) {
             throw new DuplicateNameException("Asset tag must be unique within the company");
-        }
-        if (request.getPurchasePrice() == null || request.getPurchasePrice().compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalArgumentException("Purchase price must be greater than 0");
-        }
-        if (request.getPurchaseDate() == null || request.getPurchaseDate().isAfter(LocalDate.now())) {
-            throw new IllegalArgumentException("Purchase date is required and cannot be in the future");
-        }
-        if (request.getDepreciationRate() == null
-                || request.getDepreciationRate().compareTo(BigDecimal.ZERO) < 0
-                || request.getDepreciationRate().compareTo(new BigDecimal("100")) > 0) {
-            throw new IllegalArgumentException("Depreciation rate must be between 0 and 100");
         }
         if (request.getSalvageValue() != null && request.getPurchasePrice().compareTo(request.getSalvageValue()) < 0) {
             throw new IllegalArgumentException("Purchase price must be greater than salvage value");

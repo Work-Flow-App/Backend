@@ -75,10 +75,7 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
 
         private final IStepActivityService stepActivityService;
         private final S3StorageService s3Service;
-
-        // Reuse the mapping logic from JobWorkflowService to maintain consistency
-        // Ideally, this should be in a shared Mapper component, but implemented here
-        // for self-containment.
+        private final JobWorkflowMapper jobWorkflowMapper;
 
         // ==========================================
         // INTERNAL HELPERS
@@ -569,39 +566,19 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
         }
 
         // ==========================================
-        // MAPPERS (Copied/Adapted for independence)
+        // MAPPERS — delegated to shared JobWorkflowMapper
         // ==========================================
 
         private JobWorkflowResponse buildWorkflowResponse(JobWorkflow jw) {
-                List<JobWorkflowStep> steps = stepRepository.findByJobWorkflowIdOrderByOrderIndexAsc(jw.getId());
-                return buildWorkflowResponse(jw, steps);
+                return jobWorkflowMapper.buildWorkflowResponse(jw);
         }
 
         private JobWorkflowResponse buildWorkflowResponse(JobWorkflow jw, List<JobWorkflowStep> steps) {
-                List<JobWorkflowStepResponse> stepResponses = steps.stream()
-                                .map(this::mapStep)
-                                .toList();
-
-                return JobWorkflowResponse.builder()
-                                .id(jw.getId())
-                                .jobId(jw.getJob().getId())
-                                .steps(stepResponses)
-                                .status(jw.getStatus())
-                                .build();
+                return jobWorkflowMapper.buildWorkflowResponse(jw, steps);
         }
 
         private JobWorkflowStepResponse mapStep(JobWorkflowStep step) {
-                return JobWorkflowStepResponse.builder()
-                                .id(step.getId())
-                                .name(step.getName())
-                                .description(step.getDescription())
-                                .orderIndex(step.getOrderIndex())
-                                .status(step.getStatus())
-                                .startedAt(step.getStartedAt())
-                                .completedAt(step.getCompletedAt())
-                                .assignedWorkerIds(step.getAssignedWorkers().stream().map(Worker::getId)
-                                                .collect(Collectors.toSet()))
-                                .build();
+                return jobWorkflowMapper.mapStep(step);
         }
 
         private StepVisitLogResponse mapVisitLog(JobWorkflowStepVisitLog log) {
@@ -653,11 +630,11 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
         }
 
         private AssetAssignmentResponse mapAssetAssignment(AssetJobAssignment a) {
-                long durationDays = a.getReturnedAt() == null
+                long durationDays = a.isActive()
                                 ? nullSafeDaysBetween(a.getAssignedAt(), LocalDateTime.now())
                                 : nullSafeDaysBetween(a.getAssignedAt(), a.getReturnedAt());
 
-                String status = a.getReturnedAt() == null ? "ACTIVE" : "COMPLETED";
+                String status = a.isActive() ? "ACTIVE" : "COMPLETED";
 
                 return AssetAssignmentResponse.builder()
                                 .assignmentId(a.getId())

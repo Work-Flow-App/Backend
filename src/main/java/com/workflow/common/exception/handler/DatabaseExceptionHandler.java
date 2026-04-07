@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
+import java.util.stream.Collectors;
 
 /**
  * Handles database-related exceptions such as constraint violations
@@ -47,7 +48,9 @@ public class DatabaseExceptionHandler {
                 request.getRequestURI(),
                 ex.getMessage());
 
-        String message = "Validation constraint violated: " + ex.getMessage();
+        String message = ex.getConstraintViolations().stream()
+                .map(cv -> cv.getPropertyPath().toString() + ": " + cv.getMessage())
+                .collect(Collectors.joining(", "));
 
         return ResponseBuilder.buildBadRequestResponse(message, request);
     }

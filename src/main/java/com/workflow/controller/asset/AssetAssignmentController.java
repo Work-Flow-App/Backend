@@ -1,8 +1,7 @@
 package com.workflow.controller.asset;
 
+import com.workflow.common.util.AuthUtils;
 import com.workflow.dto.asset.*;
-import com.workflow.entity.Company;
-import com.workflow.entity.User;
 import com.workflow.service.asset.IAssetAssignmentService;
 import com.workflow.service.company.ICompanyService;
 import jakarta.validation.Valid;
@@ -25,9 +24,7 @@ public class AssetAssignmentController {
     private final ICompanyService companyService;
 
     private Long getCompanyId(Authentication auth) {
-        User user = (User) auth.getPrincipal();
-        Company company = companyService.findCompanyByUserId(user.getId());
-        return company.getId();
+        return AuthUtils.getCompanyId(auth, companyService);
     }
 
     @PostMapping("/assign")

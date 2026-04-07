@@ -1,4 +1,4 @@
-name: Deploy to Dev
+name: Deploy to Prod
 
 on:
   workflow_dispatch:
@@ -32,12 +32,12 @@ jobs:
 
       - name: Run integration tests
         run: ./mvnw test -Dtest="**/*IntegrationTest"
-        
+
   deploy-infra:
-    name: Deploy CDK Infra
+    name: Deploy CDK Infra (prod)
     needs: build-and-test
     runs-on: ubuntu-latest
-    environment: dev-deploy
+    environment: prod-deploy
 
     steps:
       - uses: actions/checkout@v4
@@ -64,22 +64,22 @@ jobs:
         id: cdk-diff
         working-directory: infra
         continue-on-error: true
-        run: npx cdk diff WorkflowBackend-dev -c env=dev --fail
+        run: npx cdk diff WorkflowBackend-prod -c env=prod --fail
 
       - name: Deploy CDK stack
         if: steps.cdk-diff.outcome == 'failure'
         working-directory: infra
-        run: npx cdk deploy WorkflowBackend-dev -c env=dev --require-approval never
+        run: npx cdk deploy WorkflowBackend-prod -c env=prod --require-approval never
 
       - name: No infra changes detected
         if: steps.cdk-diff.outcome == 'success'
         run: echo "No infrastructure changes — skipping CDK deploy"
 
-  deploy-dev:
-    name: Deploy to Dev
+  deploy-prod:
+    name: Deploy to Prod
     needs: [build-and-test, deploy-infra]
     runs-on: ubuntu-latest
-    environment: dev-deploy
+    environment: prod-deploy
 
     steps:
       - uses: actions/checkout@v4
@@ -104,7 +104,7 @@ jobs:
           file: ./Dockerfile
           platforms: linux/arm64
           push: true
-          tags: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/work-flow-dev:latest
+          tags: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/work-flow-prod:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
           provenance: false
@@ -120,31 +120,31 @@ jobs:
             set -e
 
             APP_DIR="/home/ubuntu/app"
-            ECR_IMAGE="${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/work-flow-dev:latest"
+            ECR_IMAGE="${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/work-flow-prod:latest"
 
             mkdir -p "$APP_DIR"
             cd "$APP_DIR"
 
-            # Pull latest setup-env.sh, docker-compose and nginx config from repo
+            # Pull latest setup-env.sh from repo
             curl -fsSL -o "$APP_DIR/setup-env.sh" \
               https://raw.githubusercontent.com/${{ github.repository }}/${{ github.ref_name }}/scripts/setup-env.sh
             chmod +x "$APP_DIR/setup-env.sh"
 
-            # Pull all secrets/params from Secrets Manager + SSM → writes .env.dev
-            APP_ENV=dev "$APP_DIR/setup-env.sh"
+            # Pull all secrets/params from Secrets Manager + SSM → writes .env.prod
+            APP_ENV=prod "$APP_DIR/setup-env.sh"
 
             # Inject ECR image URI (known to CI/CD, not stored in AWS)
-            sed -i "s|ECR_IMAGE_URI=.*|ECR_IMAGE_URI=$ECR_IMAGE|" .env.dev
+            sed -i "s|ECR_IMAGE_URI=.*|ECR_IMAGE_URI=$ECR_IMAGE|" .env.prod
 
-            curl -fsSL -o docker-compose.dev.yml \
-              https://raw.githubusercontent.com/${{ github.repository }}/${{ github.ref_name }}/docker-compose.dev.yml
+            curl -fsSL -o docker-compose.prod.yml \
+              https://raw.githubusercontent.com/${{ github.repository }}/${{ github.ref_name }}/docker-compose.prod.yml
             mkdir -p docker/nginx
             curl -fsSL -o docker/nginx/nginx.conf \
               https://raw.githubusercontent.com/${{ github.repository }}/${{ github.ref_name }}/docker/nginx/nginx.conf
             mkdir -p docker/certbot/conf docker/certbot/www
 
             # Domain comes from SSM via setup-env.sh
-            NGINX_DOMAIN=$(grep "^NGINX_DOMAIN=" .env.dev | cut -d= -f2)
+            NGINX_DOMAIN=$(grep "^NGINX_DOMAIN=" .env.prod | cut -d= -f2)
 
             # Issue SSL cert if not present for this domain
             if [ ! -f "docker/certbot/conf/live/$NGINX_DOMAIN/fullchain.pem" ]; then
@@ -165,7 +165,7 @@ jobs:
               "${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com"
 
             docker pull "$ECR_IMAGE"
-            docker-compose -f docker-compose.dev.yml --env-file .env.dev up -d --wait
+            docker-compose -f docker-compose.prod.yml --env-file .env.prod up -d --wait
 
             docker image prune -af --filter "until=24h"
 

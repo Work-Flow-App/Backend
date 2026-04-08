@@ -62,6 +62,7 @@ GOOGLE_CLIENT_ID=$(get_param "/workflow/$ENV_NAME/google-client-id")
   echo "CORS_ALLOWED_ORIGINS=$CORS_ORIGINS"
   echo ""
   echo "# Frontend"
+  echo "FRONTEND_URL=$([ "$ENV_NAME" = "prod" ] && echo "https://workfloow.app" || echo "https://dev.workfloow.app")"
   echo "WORKER_INVITATION_FRONTEND_URL=$WORKER_INVITATION_URL"
   echo ""
   echo "# S3 — EC2 instance role is used; leave access keys empty"

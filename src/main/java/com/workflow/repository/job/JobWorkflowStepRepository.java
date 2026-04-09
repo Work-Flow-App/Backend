@@ -10,12 +10,16 @@ import java.util.List;
 public interface JobWorkflowStepRepository extends JpaRepository<JobWorkflowStep, Long> {
     void deleteByJobWorkflowId(Long jobWorkflowId);
 
-    // Fetch all steps assigned to a specific worker (with eager-loaded workflow and job to avoid lazy chains)
-    @Query("SELECT s FROM JobWorkflowStep s JOIN FETCH s.jobWorkflow jw JOIN FETCH jw.job WHERE :workerId MEMBER OF s.assignedWorkers")
+    // Fetch all steps assigned to a specific worker (with eager-loaded workflow and
+    // job to avoid lazy chains)
+    // Fetch all steps assigned to a specific worker (with eager-loaded workflow and
+    // job to avoid lazy chains)
+    @Query("SELECT s FROM JobWorkflowStep s JOIN FETCH s.jobWorkflow jw JOIN FETCH jw.job JOIN s.assignedWorkers w WHERE w.id = :workerId")
     List<JobWorkflowStep> findByAssignedWorkers_Id(@Param("workerId") Long workerId);
 
     // Batch-load steps for multiple workflows at once; JOIN FETCH jobWorkflow so
-    // callers can group by s.getJobWorkflow().getId() without triggering N+1 lazy loads
+    // callers can group by s.getJobWorkflow().getId() without triggering N+1 lazy
+    // loads
     @Query("SELECT s FROM JobWorkflowStep s JOIN FETCH s.jobWorkflow WHERE s.jobWorkflow.id IN :workflowIds ORDER BY s.orderIndex ASC")
     List<JobWorkflowStep> findByJobWorkflowIdInOrderByOrderIndexAsc(@Param("workflowIds") List<Long> workflowIds);
 

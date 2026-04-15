@@ -7,6 +7,7 @@ import java.util.List;
 
 public interface IInvoiceService {
     InvoiceResponse generateInvoice(Long estimateId, InvoiceCreateRequest request, Long companyId);
+    List<InvoiceResponse> getAllInvoices(Long companyId);
     List<InvoiceResponse> getInvoicesForEstimate(Long estimateId, Long companyId);
     InvoiceResponse getInvoice(Long invoiceId, Long companyId);
 }

@@ -18,6 +18,14 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
     List<Invoice> findByEstimateIdAndCompanyId(@Param("estimateId") Long estimateId,
                                                @Param("companyId") Long companyId);
 
+    @Query("SELECT DISTINCT i FROM Invoice i " +
+           "JOIN FETCH i.estimate " +
+           "JOIN FETCH i.company " +
+           "LEFT JOIN FETCH i.lineItems " +
+           "WHERE i.company.id = :companyId " +
+           "ORDER BY i.id DESC")
+    List<Invoice> findAllByCompanyId(@Param("companyId") Long companyId);
+
     Optional<Invoice> findByIdAndCompanyId(Long id, Long companyId);
 
     long countByCompanyId(Long companyId);

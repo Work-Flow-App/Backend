@@ -6898,6 +6898,100 @@
           ]
         },
         {
+          "name": "Get All Company Invoices",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/estimates/invoices",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "estimates",
+                "invoices"
+              ]
+            },
+            "description": "Get all invoices belonging to the authenticated company, ordered newest first. The company is resolved automatically from the JWT token.\n\n```bash\ncurl -X GET \"{{base_url}}/api/v1/estimates/invoices\" \\\n  -H \"Authorization: Bearer {{jwt_token}}\"\n```"
+          },
+          "response": [
+            {
+              "name": "Get All Company Invoices - Success",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "http://localhost:8080/api/v1/estimates/invoices",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8080",
+                  "path": [
+                    "api",
+                    "v1",
+                    "estimates",
+                    "invoices"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "[\n    {\n        \"id\": 2,\n        \"estimateId\": 2,\n        \"companyId\": 1,\n        \"invoiceNumber\": \"INV-2026-00002\",\n        \"dueDate\": null,\n        \"reference\": null,\n        \"presignedUrl\": \"https://s3.amazonaws.com/workflow-app-bucket/invoices/2/INV-2026-00002.pdf?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=...\",\n        \"lineItems\": [\n            {\n                \"id\": 3,\n                \"description\": \"Labour - Installation\",\n                \"quantity\": 4,\n                \"unitPrice\": 120.00,\n                \"vatRate\": 20.0,\n                \"totalNet\": 480.00,\n                \"totalVat\": 96.00,\n                \"grandTotal\": 576.00\n            }\n        ],\n        \"totalNet\": 480.00,\n        \"totalVat\": 96.00,\n        \"grandTotal\": 576.00,\n        \"createdAt\": \"2026-04-01T09:00:00\",\n        \"updatedAt\": \"2026-04-01T09:00:00\"\n    },\n    {\n        \"id\": 1,\n        \"estimateId\": 1,\n        \"companyId\": 1,\n        \"invoiceNumber\": \"INV-2026-00001\",\n        \"dueDate\": \"2026-04-30\",\n        \"reference\": \"PO-2026-001\",\n        \"presignedUrl\": \"https://s3.amazonaws.com/workflow-app-bucket/invoices/1/INV-2026-00001.pdf?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=...\",\n        \"lineItems\": [\n            {\n                \"id\": 1,\n                \"description\": \"Labour - Site Survey\",\n                \"quantity\": 2,\n                \"unitPrice\": 150.00,\n                \"vatRate\": 5.0,\n                \"totalNet\": 300.00,\n                \"totalVat\": 15.00,\n                \"grandTotal\": 315.00\n            },\n            {\n                \"id\": 2,\n                \"description\": \"Materials - Cabling\",\n                \"quantity\": 1,\n                \"unitPrice\": 600.00,\n                \"vatRate\": 5.0,\n                \"totalNet\": 600.00,\n                \"totalVat\": 30.00,\n                \"grandTotal\": 630.00\n            }\n        ],\n        \"totalNet\": 900.00,\n        \"totalVat\": 45.00,\n        \"grandTotal\": 945.00,\n        \"createdAt\": \"2026-03-29T10:00:00\",\n        \"updatedAt\": \"2026-03-29T10:00:00\"\n    }\n]"
+            },
+            {
+              "name": "Get All Company Invoices - Empty",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "http://localhost:8080/api/v1/estimates/invoices",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "port": "8080",
+                  "path": [
+                    "api",
+                    "v1",
+                    "estimates",
+                    "invoices"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "[]"
+            }
+          ]
+        },
+        {
           "name": "List Invoices for Estimate",
           "request": {
             "auth": {
@@ -8034,7 +8128,7 @@
                   "value": "application/json"
                 }
               ],
-              "body": "{\n    \"id\": 101,\n    \"jobId\": 50,\n    \"status\": \"ONGOING\",\n    \"steps\": [\n        {\n            \"id\": 2,\n            \"name\": \"Installation\",\n            \"description\": \"Install the unit\",\n            \"orderIndex\": 2,\n            \"status\": \"STARTED\",\n            \"startedAt\": \"2025-10-24T09:00:00\",\n            \"assignedWorkerIds\": [5]\n        }\n    ]\n}"
+              "body": "{\n    \"id\": 101,\n    \"jobId\": 50,\n    \"jobRef\": 1001,\n    \"status\": \"ONGOING\",\n    \"steps\": [\n        {\n            \"id\": 2,\n            \"name\": \"Installation\",\n            \"description\": \"Install the unit\",\n            \"orderIndex\": 2,\n            \"status\": \"STARTED\",\n            \"startedAt\": \"2025-10-24T09:00:00\",\n            \"assignedWorkerIds\": [5]\n        }\n    ]\n}"
             }
           ]
         },

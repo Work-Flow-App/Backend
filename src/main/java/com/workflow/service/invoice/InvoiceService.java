@@ -107,6 +107,14 @@ public class InvoiceService implements IInvoiceService {
 
     @Override
     @Transactional(readOnly = true)
+    public List<InvoiceResponse> getAllInvoices(Long companyId) {
+        return invoiceRepository.findAllByCompanyId(companyId).stream()
+                .map(inv -> InvoiceResponse.fromEntity(inv, storageService.generatePresignedUrl(inv.getS3Key())))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public List<InvoiceResponse> getInvoicesForEstimate(Long estimateId, Long companyId) {
         estimateRepository.findByIdAndCompanyId(estimateId, companyId)
                 .orElseThrow(() -> new EstimateNotFoundException("Estimate not found"));

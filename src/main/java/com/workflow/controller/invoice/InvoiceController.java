@@ -24,6 +24,11 @@ public class InvoiceController {
     private final IInvoiceService invoiceService;
     private final ICompanyService companyService;
 
+    @GetMapping("/invoices")
+    public ResponseEntity<List<InvoiceResponse>> listAll(Authentication auth) {
+        return ResponseEntity.ok(invoiceService.getAllInvoices(getCompanyId(auth)));
+    }
+
     @PostMapping("/{estimateId}/invoice")
     public ResponseEntity<InvoiceResponse> generate(
             @PathVariable Long estimateId,

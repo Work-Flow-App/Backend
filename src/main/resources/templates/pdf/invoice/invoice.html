@@ -225,9 +225,9 @@
     <!-- ── 3-column header ── -->
     <table class="header-table">
         <tr>
-            <!-- Col 1: TAX INVOICE + customer info -->
+            <!-- Col 1: INVOICE + customer info -->
             <td class="col-customer">
-                <div class="tax-invoice-title">TAX INVOICE</div>
+                <div class="tax-invoice-title">INVOICE</div>
                 <div th:text="${data.customerName}">Customer Name</div>
                 <div th:each="line : ${data.customerAddressLines}"
                      class="address-line"

@@ -109,10 +109,10 @@ public class InvoiceService implements IInvoiceService {
                 .grandTotal(grandTotal)
                 .build();
 
+        invoice = invoiceRepository.save(invoice);
+
         byte[] pdfBytes = generatePdf(invoice, invoiceNumber, selectedItems, estimate);
         storageService.upload(s3Key, new ByteArrayInputStream(pdfBytes), pdfBytes.length, "application/pdf");
-
-        invoice = invoiceRepository.save(invoice);
 
         List<Long> selectedIds = selectedItems.stream().map(LineItem::getId).toList();
         lineItemRepository.markAsInvoiced(selectedIds);

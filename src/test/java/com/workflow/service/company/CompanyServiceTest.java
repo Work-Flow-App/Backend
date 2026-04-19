@@ -81,6 +81,7 @@ class CompanyServiceTest {
                 "contact@example.com",
                 "ACC456",
                 null,
+                null,
                 null
         );
     }
@@ -139,7 +140,7 @@ class CompanyServiceTest {
         // Arrange
         CompanyProfileUpdateRequest sameNameRequest = new CompanyProfileUpdateRequest(
                 "test company", // Same name, different case
-                null, null, null, null, null, null, null, null, null
+                null, null, null, null, null, null, null, null, null, null
         );
         when(companyRepository.findByUserIdAndNotArchived(1L)).thenReturn(Optional.of(company));
         when(companyRepository.save(any(Company.class))).thenReturn(company);

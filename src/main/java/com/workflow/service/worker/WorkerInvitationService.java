@@ -88,7 +88,6 @@ public class WorkerInvitationService {
 
         return new WorkerInviteResponse(
                 email,
-                token,
                 "Invitation sent successfully",
                 expiresAt
         );

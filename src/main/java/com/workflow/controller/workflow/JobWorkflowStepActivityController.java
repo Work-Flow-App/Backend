@@ -7,6 +7,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -59,7 +60,7 @@ public class JobWorkflowStepActivityController {
         @PostMapping("/{stepId}/comments")
         public ResponseEntity<StepCommentResponse> addComment(
                         @PathVariable Long stepId,
-                        @RequestBody StepCommentCreateRequest request,
+                        @Valid @RequestBody StepCommentCreateRequest request,
                         Authentication auth) {
 
                 StepCommentResponse response = stepActivityService.addComment(
@@ -73,7 +74,7 @@ public class JobWorkflowStepActivityController {
         @PutMapping("/comments/{commentId}")
         public ResponseEntity<StepCommentResponse> updateComment(
                         @PathVariable Long commentId,
-                        @RequestBody StepCommentCreateRequest request,
+                        @Valid @RequestBody StepCommentCreateRequest request,
                         Authentication auth) {
 
                 return ResponseEntity.ok(

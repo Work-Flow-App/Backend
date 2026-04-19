@@ -16,6 +16,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class JobCreateRequest {
+    @NotNull(message = "Template is required")
     private Long templateId;
     private Long clientId;
 

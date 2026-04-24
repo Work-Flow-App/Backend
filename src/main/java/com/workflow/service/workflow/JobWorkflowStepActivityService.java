@@ -33,7 +33,7 @@ import com.workflow.repository.job.JobWorkflowStepActivityRepository;
 import com.workflow.repository.job.JobWorkflowStepAttachmentRepository;
 import com.workflow.repository.job.JobWorkflowStepCommentRepository;
 import com.workflow.repository.job.JobWorkflowStepRepository;
-import com.workflow.service.storage.S3StorageService;
+import com.workflow.service.storage.IStorageService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -51,7 +51,7 @@ public class JobWorkflowStepActivityService
         private final JobWorkflowStepActivityRepository activityRepository;
         private final CompanyRepository companyRepository;
         private final IStepActivityService stepActivityService;
-        private final S3StorageService s3Service;
+        private final IStorageService s3Service;
 
         /*
          * ===========================
@@ -76,10 +76,6 @@ public class JobWorkflowStepActivityService
                         throw new UnauthorizedWorkflowAccessException("Unauthorized access");
                 }
                 return step;
-        }
-
-        private String resolveFileUrl(String key) {
-                return key == null ? null : s3Service.generatePresignedUrl(key);
         }
 
         /*
@@ -313,37 +309,10 @@ public class JobWorkflowStepActivityService
 
                 getStep(stepId, companyId);
 
-                List<StepTimelineItemResponse> comments = commentRepository.findByStepIdOrderByCreatedAtAsc(stepId)
-                                .stream()
-                                .map(c -> StepTimelineItemResponse.builder()
-                                                .id(c.getId())
-                                                .itemType("COMMENT")
-                                                .content(c.getContent())
-                                                .discussionType(c.getType())
-                                                .actorId(c.getAuthor().getId())
-                                                .createdAt(c.getCreatedAt())
-                                                .build())
-                                .toList();
-
-                List<StepTimelineItemResponse> attachments = attachmentRepository
-                                .findByStepIdOrderByCreatedAtAsc(stepId)
-                                .stream()
-                                .map(a -> StepTimelineItemResponse.builder()
-                                                .id(a.getId())
-                                                .itemType("ATTACHMENT")
-                                                .content(a.getFileName())
-                                                .fileUrl(resolveFileUrl(a.getFileUrl()))
-                                                .discussionType(a.getType())
-                                                .description(a.getDescription())
-                                                .actorId(a.getUploadedBy().getId())
-                                                .createdAt(a.getCreatedAt())
-                                                .build())
-                                .toList();
-
-                return java.util.stream.Stream
-                                .concat(comments.stream(), attachments.stream())
-                                .sorted(java.util.Comparator.comparing(StepTimelineItemResponse::getCreatedAt))
-                                .toList();
+                return StepTimelineBuilder.build(
+                                commentRepository.findByStepIdOrderByCreatedAtAsc(stepId),
+                                attachmentRepository.findByStepIdOrderByCreatedAtAsc(stepId),
+                                s3Service::resolveFileUrl);
         }
 
         /*
@@ -386,7 +355,7 @@ public class JobWorkflowStepActivityService
                                 .id(a.getId())
                                 .fileName(a.getFileName())
                                 .fileType(a.getFileType())
-                                .fileUrl(resolveFileUrl(a.getFileUrl()))
+                                .fileUrl(s3Service.resolveFileUrl(a.getFileUrl()))
                                 .description(a.getDescription())
                                 .type(a.getType())
                                 .uploadedBy(a.getUploadedBy().getId())

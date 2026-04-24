@@ -56,6 +56,25 @@ public class StepActivityService implements IStepActivityService {
     }
 
     @Override
+    public void logAll(
+            List<JobWorkflowStep> steps,
+            User actor,
+            JobWorkflowStepActivityType type,
+            String message) {
+
+        List<JobWorkflowStepActivity> entries = steps.stream()
+                .map(step -> JobWorkflowStepActivity.builder()
+                        .step(step)
+                        .actor(actor)
+                        .type(type)
+                        .message(message)
+                        .build())
+                .toList();
+
+        activityRepository.saveAll(entries);
+    }
+
+    @Override
     @Transactional(readOnly = true)
     public List<StepActivityResponse> getTimeline(Long stepId, Long companyId) {
 

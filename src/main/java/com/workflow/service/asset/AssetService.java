@@ -43,11 +43,7 @@ public class AssetService implements IAssetService {
         log.info("Creating asset: name={}, assetTag={}, purchasePrice={}, companyId={}",
                  request.getName(), request.getAssetTag(), request.getPurchasePrice(), companyId);
 
-        Company company = companyRepository.findById(companyId)
-                .orElseThrow(() -> {
-                    log.error("Company not found when creating asset: companyId={}", companyId);
-                    return new CompanyNotFoundException("Company not found");
-                });
+        Company company = companyRepository.getReferenceById(companyId);
 
         // Field-level validations are handled by Bean Validation on AssetCreateRequest.
         // Cross-field validation (salvageValue vs purchasePrice) is enforced here

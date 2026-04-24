@@ -116,7 +116,7 @@ class JobServiceTest {
 
         @Test
         void createJob_ShouldCreateJobSuccessfully() {
-                when(companyRepository.findById(1L)).thenReturn(Optional.of(company));
+                when(companyRepository.getReferenceById(1L)).thenReturn(company);
                 when(templateRepository.findById(3L)).thenReturn(Optional.of(template));
                 when(clientRepository.findById(1L)).thenReturn(Optional.of(client));
                 when(customerRepository.findById(1L)).thenReturn(Optional.of(customer));
@@ -135,7 +135,7 @@ class JobServiceTest {
                 assertThat(response.getId()).isEqualTo(55L);
                 assertThat(response.getStatus()).isEqualTo(JobStatus.NEW);
 
-                verify(companyRepository).findById(1L);
+                verify(companyRepository).getReferenceById(1L);
                 verify(templateRepository).findById(3L);
                 verify(clientRepository).findById(1L);
                 verify(customerRepository).findById(1L);
@@ -146,7 +146,7 @@ class JobServiceTest {
         @Test
         void createJob_ShouldUseDefaultStatus_WhenStatusIsNull() {
                 createRequest.setStatus(null); // status is null
-                when(companyRepository.findById(1L)).thenReturn(Optional.of(company));
+                when(companyRepository.getReferenceById(1L)).thenReturn(company);
                 when(templateRepository.findById(3L)).thenReturn(Optional.of(template));
                 when(clientRepository.findById(1L)).thenReturn(Optional.of(client));
                 when(customerRepository.findById(1L)).thenReturn(Optional.of(customer));
@@ -169,20 +169,11 @@ class JobServiceTest {
                 verify(jobRepository).saveAndFlush(any(Job.class));
         }
 
-        @Test
-        void createJob_ShouldThrowException_WhenCompanyNotFound() {
-                when(companyRepository.findById(1L)).thenReturn(Optional.empty());
-
-                assertThatThrownBy(() -> jobService.createJob(createRequest, 1L))
-                                .isInstanceOf(CompanyNotFoundException.class)
-                                .hasMessageContaining("Company not found");
-
-                verify(jobRepository, never()).saveAndFlush(any());
-        }
-
+        // Company existence is now enforced by FK constraint at commit time, not upfront.
+        // The first service-level validation is the template check.
         @Test
         void createJob_ShouldThrowException_WhenTemplateNotFound() {
-                when(companyRepository.findById(1L)).thenReturn(Optional.of(company));
+                when(companyRepository.getReferenceById(1L)).thenReturn(company);
                 when(templateRepository.findById(3L)).thenReturn(Optional.empty());
 
                 assertThatThrownBy(() -> jobService.createJob(createRequest, 1L))
@@ -194,7 +185,7 @@ class JobServiceTest {
 
         @Test
         void createJob_ShouldThrowException_WhenClientNotFound() {
-                when(companyRepository.findById(1L)).thenReturn(Optional.of(company));
+                when(companyRepository.getReferenceById(1L)).thenReturn(company);
                 when(templateRepository.findById(3L)).thenReturn(Optional.of(template));
                 when(clientRepository.findById(1L)).thenReturn(Optional.empty());
 
@@ -207,7 +198,7 @@ class JobServiceTest {
 
         @Test
         void createJob_ShouldThrowException_WhenWorkerNotFound() {
-                when(companyRepository.findById(1L)).thenReturn(Optional.of(company));
+                when(companyRepository.getReferenceById(1L)).thenReturn(company);
                 when(templateRepository.findById(3L)).thenReturn(Optional.of(template));
                 when(clientRepository.findById(1L)).thenReturn(Optional.of(client));
                 when(customerRepository.findById(1L)).thenReturn(Optional.of(customer));

@@ -13,4 +13,12 @@ public interface IStorageService {
     String generatePresignedUrl(String key);
 
     void delete(String key);
+
+    /**
+     * Returns a presigned URL for the given storage key, or {@code null} if the key is null.
+     * Shared utility to avoid duplicating null-guard logic across services.
+     */
+    default String resolveFileUrl(String key) {
+        return key == null ? null : generatePresignedUrl(key);
+    }
 }

@@ -225,6 +225,15 @@ export class BackendStack extends cdk.Stack {
       keyPair,
     });
 
+    // Enforce IMDSv2 with hop limit 2 so Docker containers on this host
+    // can reach IMDS through the bridge network (requires TTL >= 2).
+    const cfnInstance = instance.node.defaultChild as ec2.CfnInstance;
+    cfnInstance.metadataOptions = {
+      httpTokens: 'required',
+      httpPutResponseHopLimit: 2,
+      httpEndpoint: 'enabled',
+    };
+
     // ──────────────────────────────────────────────
     // Elastic IP
     // ──────────────────────────────────────────────

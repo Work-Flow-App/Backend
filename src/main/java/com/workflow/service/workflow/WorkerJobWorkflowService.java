@@ -7,10 +7,14 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.apache.tika.Tika;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.workflow.common.constant.workflow.JobWorkflowStepActivityType;
@@ -19,11 +23,9 @@ import com.workflow.common.constant.workflow.WorkflowStepStatus;
 import com.workflow.common.exception.business.EmptyFileException;
 import com.workflow.common.exception.business.FileSizeLimitExceededException;
 import com.workflow.common.exception.business.ForbiddenActionException;
+import com.workflow.common.exception.business.InvalidTimeLogException;
 import com.workflow.common.exception.business.JobWorkflowNotFoundException;
 import com.workflow.common.exception.business.WorkerNotFoundException;
-import com.workflow.common.exception.business.InvalidTimeLogException;
-import com.workflow.dto.workflow.StepVisitLogSummaryResponse;
-import com.workflow.dto.workflow.WorkerAssignedStepResponse;
 import com.workflow.dto.asset.AssetAssignmentResponse;
 import com.workflow.dto.customer.CustomerAddressDto;
 import com.workflow.dto.customer.CustomerResponse;
@@ -36,8 +38,10 @@ import com.workflow.dto.workflow.StepCommentResponse;
 import com.workflow.dto.workflow.StepTimelineItemResponse;
 import com.workflow.dto.workflow.StepVisitLogCreateRequest;
 import com.workflow.dto.workflow.StepVisitLogResponse;
-import com.workflow.entity.common.Address;
+import com.workflow.dto.workflow.StepVisitLogSummaryResponse;
+import com.workflow.dto.workflow.WorkerAssignedStepResponse;
 import com.workflow.entity.asset.AssetJobAssignment;
+import com.workflow.entity.common.Address;
 import com.workflow.entity.customer.Customer;
 import com.workflow.entity.customer.CustomerAddress;
 import com.workflow.entity.job.Job;
@@ -72,10 +76,15 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
         private final JobWorkflowStepAttachmentRepository attachmentRepository;
         private final JobWorkflowStepVisitLogRepository visitLogRepository;
         private final AssetJobAssignmentRepository assignmentRepository;
+        private final Tika tika;
 
         private final IStepActivityService stepActivityService;
         private final IStorageService s3Service;
         private final JobWorkflowMapper jobWorkflowMapper;
+
+        // Spring injects the list from application.yml here!
+        @Value("${workflow.security.file.blocked-types}")
+        private List<String> blockedTypes;
 
         // ==========================================
         // INTERNAL HELPERS
@@ -111,7 +120,8 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
         public List<WorkerAssignedStepResponse> getMyAssignedSteps(Long workerUserId) {
                 Worker worker = getWorker(workerUserId);
 
-                // JOIN FETCH ensures jobWorkflow and job are loaded in one query (no lazy chain)
+                // JOIN FETCH ensures jobWorkflow and job are loaded in one query (no lazy
+                // chain)
                 List<JobWorkflowStep> assignedSteps = stepRepository.findByAssignedWorkers_Id(worker.getId());
 
                 // Batch-load all active asset assignments for the relevant jobs in one query
@@ -136,7 +146,8 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
                                                         .jobRef(job.getJobRef())
                                                         .jobAddress(mapJobAddress(job.getAddress()))
                                                         .customer(mapCustomer(job.getCustomer()))
-                                                        .assignedAssets(assetsByJobId.getOrDefault(job.getId(), new ArrayList<>()))
+                                                        .assignedAssets(assetsByJobId.getOrDefault(job.getId(),
+                                                                        new ArrayList<>()))
                                                         .build();
                                 })
                                 .collect(Collectors.toList());
@@ -156,7 +167,8 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
                                 .distinct()
                                 .toList();
 
-                if (workflows.isEmpty()) return new ArrayList<>();
+                if (workflows.isEmpty())
+                        return new ArrayList<>();
 
                 // Batch-load all steps for all workflows in one query, then group by workflowId
                 List<Long> workflowIds = workflows.stream().map(JobWorkflow::getId).collect(Collectors.toList());
@@ -166,7 +178,8 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
                                 .collect(Collectors.groupingBy(s -> s.getJobWorkflow().getId()));
 
                 return workflows.stream()
-                                .map(jw -> buildWorkflowResponse(jw, stepsByWorkflowId.getOrDefault(jw.getId(), new ArrayList<>())))
+                                .map(jw -> buildWorkflowResponse(jw,
+                                                stepsByWorkflowId.getOrDefault(jw.getId(), new ArrayList<>())))
                                 .toList();
         }
 
@@ -459,36 +472,55 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
                                         "Attachment size must not exceed 10 MB");
                 }
 
+                // 1. Detect true file type securely
+                String detectedType = tika.detect(file.getInputStream());
+
+                if (blockedTypes.contains(detectedType)) {
+                        throw new ForbiddenActionException(
+                                        "Upload is blocked for security reasons.");
+                }
+
                 Worker worker = getWorker(workerUserId);
                 JobWorkflowStep step = getAssignedStep(stepId, worker.getId());
 
+                // 2. Safely extract extension and generate UUID for S3 Key
+                String originalFilename = StringUtils.cleanPath(file.getOriginalFilename());
+                String extension = "";
+                if (originalFilename.contains(".")) {
+                        extension = originalFilename.substring(originalFilename.lastIndexOf("."));
+                }
+                String safeUniqueFilename = UUID.randomUUID().toString() + extension;
+
+                // 3. Build S3 key using the UUID and worker-specific path
                 String key = String.format(
                                 "companies/%d/jobs/%d/steps/%d/workers/%d/%s",
                                 step.getJobWorkflow().getJob().getCompany().getId(),
                                 step.getJobWorkflow().getJob().getId(),
                                 step.getId(),
                                 worker.getId(),
-                                file.getOriginalFilename());
+                                safeUniqueFilename); // <-- UUID used here
 
+                // 4. Upload using the secure detectedType
                 s3Service.upload(
                                 key,
                                 file.getInputStream(),
                                 file.getSize(),
-                                file.getContentType());
+                                detectedType); // <-- Secure type used here
 
+                // 5. Save to database
                 JobWorkflowStepAttachment attachment = attachmentRepository.save(
                                 JobWorkflowStepAttachment.builder()
                                                 .step(step)
                                                 .uploadedBy(worker.getUser())
-                                                .fileName(file.getOriginalFilename())
-                                                .fileType(file.getContentType())
-                                                .fileUrl(key)
+                                                .fileName(originalFilename) // <-- Safe original name for UI
+                                                .fileType(detectedType) // <-- Secure type used here
+                                                .fileUrl(key) // <-- UUID path used here
                                                 .type(type)
                                                 .description(description)
                                                 .build());
 
                 stepActivityService.log(step, worker.getUser(), JobWorkflowStepActivityType.ATTACHMENT_ADDED,
-                                "Worker uploaded " + file.getOriginalFilename());
+                                "Worker uploaded " + originalFilename);
 
                 return StepAttachmentResponse.builder()
                                 .id(attachment.getId())

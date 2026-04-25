@@ -164,6 +164,7 @@ class CompanyControllerIntegrationTest {
                 "contact@example.com",
                 "ACC123",
                 null,
+                null,
                 null
         );
 
@@ -192,7 +193,7 @@ class CompanyControllerIntegrationTest {
                 "Test Company",
                 null, null, null, null,
                 "invalid-email",
-                null, null, null, null
+                null, null, null, null, null
         );
 
         mockMvc.perform(post("/api/v1/companies/profile")
@@ -211,7 +212,7 @@ class CompanyControllerIntegrationTest {
                 null, null, null, null,
                 "valid@example.com",
                 "invalid-contact-email",
-                null, null, null
+                null, null, null, null
         );
 
         mockMvc.perform(post("/api/v1/companies/profile")
@@ -226,7 +227,7 @@ class CompanyControllerIntegrationTest {
     void shouldReturn400BadRequestForMissingCompanyName() throws Exception {
         CompanyProfileUpdateRequest request = new CompanyProfileUpdateRequest(
                 "",
-                null, null, null, null, null, null, null, null, null
+                null, null, null, null, null, null, null, null, null, null
         );
 
         mockMvc.perform(post("/api/v1/companies/profile")
@@ -261,7 +262,7 @@ class CompanyControllerIntegrationTest {
         // Try to update first company with the second company's name
         CompanyProfileUpdateRequest request = new CompanyProfileUpdateRequest(
                 "Another Company",
-                null, null, null, null, null, null, null, null, null
+                null, null, null, null, null, null, null, null, null, null
         );
 
         mockMvc.perform(post("/api/v1/companies/profile")
@@ -277,7 +278,7 @@ class CompanyControllerIntegrationTest {
     void shouldAllowUpdatingSameNameWithDifferentCase() throws Exception {
         CompanyProfileUpdateRequest request = new CompanyProfileUpdateRequest(
                 "test company", // lowercase
-                null, null, null, null, null, null, null, null, null
+                null, null, null, null, null, null, null, null, null, null
         );
 
         mockMvc.perform(post("/api/v1/companies/profile")
@@ -294,7 +295,7 @@ class CompanyControllerIntegrationTest {
 
         CompanyProfileUpdateRequest request = new CompanyProfileUpdateRequest(
                 longString, // Exceeds 150 characters
-                null, null, null, null, null, null, null, null, null
+                null, null, null, null, null, null, null, null, null, null
         );
 
         mockMvc.perform(post("/api/v1/companies/profile")
@@ -353,7 +354,7 @@ class CompanyControllerIntegrationTest {
     void shouldHandleNullFieldsInUpdate() throws Exception {
         CompanyProfileUpdateRequest request = new CompanyProfileUpdateRequest(
                 "Only Name Updated",
-                null, null, null, null, null, null, null, null, null
+                null, null, null, null, null, null, null, null, null, null
         );
 
         mockMvc.perform(post("/api/v1/companies/profile")

@@ -1,5 +1,6 @@
 package com.workflow.dto.company;
 
+import com.workflow.common.constant.Currency;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -37,5 +38,7 @@ public record CompanyProfileUpdateRequest(
         String vatNumber,
 
         @Valid
-        CompanyBankDetailsRequest bankDetails
+        CompanyBankDetailsRequest bankDetails,
+
+        Currency currency
 ) {}

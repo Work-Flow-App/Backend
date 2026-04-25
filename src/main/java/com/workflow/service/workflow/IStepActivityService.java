@@ -15,6 +15,16 @@ public interface IStepActivityService {
             JobWorkflowStepActivityType type,
             String message);
 
+    /**
+     * Batch-save activity log entries for multiple steps in a single INSERT.
+     * Use this in place of calling {@link #log} in a loop.
+     */
+    void logAll(
+            List<JobWorkflowStep> steps,
+            User actor,
+            JobWorkflowStepActivityType type,
+            String message);
+
     // ===== TIMELINE =====
     List<StepActivityResponse> getTimeline(
             Long stepId,

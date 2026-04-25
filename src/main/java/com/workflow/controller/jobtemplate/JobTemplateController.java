@@ -31,7 +31,7 @@ public class JobTemplateController {
 
     @PostMapping
     public ResponseEntity<JobTemplateResponse> createTemplate(
-            @RequestBody JobTemplateCreateRequest request,
+            @Valid @RequestBody JobTemplateCreateRequest request,
             Authentication auth) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(service.createTemplate(request, getCompanyId(auth)));
@@ -58,7 +58,7 @@ public class JobTemplateController {
     @PutMapping("/{id}")
     public ResponseEntity<JobTemplateResponse> updateTemplate(
             @PathVariable Long id,
-            @RequestBody JobTemplateCreateRequest request,
+            @Valid @RequestBody JobTemplateCreateRequest request,
             Authentication auth) {
         return ResponseEntity.ok(service.updateTemplate(id, request, getCompanyId(auth)));
     }

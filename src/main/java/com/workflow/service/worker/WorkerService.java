@@ -13,7 +13,7 @@ import com.workflow.entity.auth.User;
 import com.workflow.entity.worker.Worker;
 import com.workflow.repository.auth.UserRepository;
 import com.workflow.repository.worker.WorkerRepository;
-import com.workflow.service.company.CompanyService;
+import com.workflow.service.company.ICompanyService;
 import com.workflow.service.sequence.CompanyCounterService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,7 +32,7 @@ public class WorkerService implements IWorkerService {
 
     private final WorkerRepository workerRepository;
     private final UserRepository userRepository;
-    private final CompanyService companyService;
+    private final ICompanyService companyService;
     private final PasswordEncoder passwordEncoder;
     private final CompanyCounterService companyCounterService;
 

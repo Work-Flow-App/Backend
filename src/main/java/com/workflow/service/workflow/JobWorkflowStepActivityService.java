@@ -2,9 +2,13 @@ package com.workflow.service.workflow;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.UUID;
 
+import org.apache.tika.Tika;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.workflow.common.constant.workflow.JobWorkflowStepActivityType;
@@ -51,7 +55,12 @@ public class JobWorkflowStepActivityService
         private final JobWorkflowStepActivityRepository activityRepository;
         private final CompanyRepository companyRepository;
         private final IStepActivityService stepActivityService;
+        private final Tika tika;
         private final S3StorageService s3Service;
+
+        // Spring injects the list from application.yml here!
+        @Value("${workflow.security.file.blocked-types}")
+        private List<String> blockedTypes;
 
         /*
          * ===========================
@@ -181,7 +190,6 @@ public class JobWorkflowStepActivityService
          * ATTACHMENTS
          * ===========================
          */
-
         @Override
         public StepAttachmentResponse uploadAttachment(
                         Long stepId,
@@ -199,29 +207,47 @@ public class JobWorkflowStepActivityService
                                         "Attachment size must not exceed 10 MB");
                 }
 
+                // 1. Detect true file type securely
+                String detectedType = tika.detect(file.getInputStream());
+
+                if (blockedTypes.contains(detectedType)) {
+                        throw new ForbiddenActionException(
+                                        "Upload is blocked for security reasons.");
+                }
+
                 Company company = getCompany(companyId);
                 JobWorkflowStep step = getStep(stepId, companyId);
 
-                // Build S3 key (you can adjust the structure)
+                // 2. Safely extract extension and generate UUID for S3 Key
+                String originalFilename = StringUtils.cleanPath(file.getOriginalFilename());
+                String extension = "";
+                if (originalFilename.contains(".")) {
+                        extension = originalFilename.substring(originalFilename.lastIndexOf("."));
+                }
+                String safeUniqueFilename = UUID.randomUUID().toString() + extension;
+
+                // 3. Build S3 key using the UUID
                 String key = String.format(
                                 "companies/%d/steps/%d/%s",
                                 companyId,
                                 stepId,
-                                file.getOriginalFilename());
+                                safeUniqueFilename); // <-- UUID used here
 
+                // 4. Upload using the secure detectedType
                 s3Service.upload(
                                 key,
                                 file.getInputStream(),
                                 file.getSize(),
-                                file.getContentType());
+                                detectedType); // <-- Secure type used here
 
+                // 5. Save to database
                 JobWorkflowStepAttachment attachment = attachmentRepository.save(
                                 JobWorkflowStepAttachment.builder()
                                                 .step(step)
                                                 .uploadedBy(company.getUser())
-                                                .fileName(file.getOriginalFilename())
-                                                .fileType(file.getContentType())
-                                                .fileUrl(key)
+                                                .fileName(originalFilename) // <-- Safe original name for UI
+                                                .fileType(detectedType) // <-- Secure type used here
+                                                .fileUrl(key) // <-- UUID path used here
                                                 .type(type)
                                                 .description(description)
                                                 .build());
@@ -230,7 +256,7 @@ public class JobWorkflowStepActivityService
                                 step,
                                 company.getUser(),
                                 JobWorkflowStepActivityType.ATTACHMENT_ADDED,
-                                "Uploaded " + file.getOriginalFilename());
+                                "Uploaded " + originalFilename);
 
                 return map(attachment);
         }

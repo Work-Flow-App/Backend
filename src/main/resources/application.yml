@@ -110,3 +110,9 @@ management:
     health:
       enabled: true
       show-details: never
+
+workflow:
+  security:
+    file:
+      # MUST be a comma-separated string on a single line for @Value to read it properly
+      blocked-types: application/x-msdownload,application/x-sh,application/x-bat,application/x-executable,text/html,image/svg+xml

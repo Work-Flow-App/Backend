@@ -27,6 +27,7 @@ public class SecurityConfig {
 
     private static final String COMPANY = Role.COMPANY.name();
     private static final String WORKER  = Role.WORKER.name();
+    private static final String ADMIN   = Role.ADMIN.name();
 
     @Autowired
     @Qualifier("handlerExceptionResolver")
@@ -100,6 +101,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/line-items/**").hasRole(COMPANY)
                         .requestMatchers("/api/v1/job-templates/**").hasRole(COMPANY)
                         .requestMatchers("/api/v1/worker/**").hasRole(WORKER)
+                        .requestMatchers("/api/v1/admin/**").hasRole(ADMIN)
                         .anyRequest().authenticated())
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

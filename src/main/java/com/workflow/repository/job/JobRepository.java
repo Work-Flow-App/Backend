@@ -1,6 +1,8 @@
 package com.workflow.repository.job;
 
 import com.workflow.entity.job.Job;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -29,4 +31,9 @@ public interface JobRepository extends JpaRepository<Job, Long> {
            "WHERE j.template.id = :templateId AND j.company.id = :companyId")
     List<Job> findByTemplateIdAndCompanyId(@Param("templateId") Long templateId,
                                            @Param("companyId") Long companyId);
+
+    // Admin: paginated across all companies — only fetches company and template to satisfy DTO mapping
+    @Query(value = "SELECT j FROM Job j JOIN FETCH j.company JOIN FETCH j.template",
+           countQuery = "SELECT COUNT(j) FROM Job j")
+    Page<Job> findAllWithCompanyAndTemplate(Pageable pageable);
 }

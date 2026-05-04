@@ -11,7 +11,7 @@ import com.workflow.entity.worker.WorkerInvitation;
 import com.workflow.repository.auth.UserRepository;
 import com.workflow.repository.worker.WorkerInvitationRepository;
 import com.workflow.repository.worker.WorkerRepository;
-import com.workflow.service.company.CompanyService;
+import com.workflow.service.company.ICompanyService;
 import com.workflow.service.email.EmailService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,7 +33,7 @@ public class WorkerInvitationService {
     private final WorkerInvitationRepository invitationRepository;
     private final WorkerRepository workerRepository;
     private final UserRepository userRepository;
-    private final CompanyService companyService;
+    private final ICompanyService companyService;
     private final EmailService emailService;
     private final PasswordEncoder passwordEncoder;
 
@@ -88,7 +88,6 @@ public class WorkerInvitationService {
 
         return new WorkerInviteResponse(
                 email,
-                token,
                 "Invitation sent successfully",
                 expiresAt
         );

@@ -25,6 +25,7 @@ public class LineItemResponse {
     private BigDecimal netAmount;
     private BigDecimal vatAmount;
     private BigDecimal totalAmount;
+    private boolean invoiced;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -42,6 +43,7 @@ public class LineItemResponse {
                 .netAmount(item.getNetAmount())
                 .vatAmount(item.getVatAmount())
                 .totalAmount(item.getTotalAmount())
+                .invoiced(item.isInvoiced())
                 .createdAt(item.getCreatedAt())
                 .updatedAt(item.getUpdatedAt())
                 .build();

@@ -1,7 +1,6 @@
 package com.workflow.service.asset;
 
 import com.workflow.common.exception.business.AssetNotFoundException;
-import com.workflow.common.exception.business.CompanyNotFoundException;
 import com.workflow.common.exception.business.DuplicateNameException;
 import com.workflow.dto.asset.*;
 import com.workflow.entity.asset.Asset;
@@ -108,7 +107,7 @@ class AssetServiceTest {
 
     @Test
     void createAsset_Success() {
-        when(companyRepository.findById(1L)).thenReturn(Optional.of(company));
+        when(companyRepository.getReferenceById(1L)).thenReturn(company);
         when(assetRepository.existsByCompanyIdAndName(1L, "Cordless Drill #42")).thenReturn(false);
         when(assetRepository.existsByCompanyIdAndAssetTag(1L, "TOOL-042")).thenReturn(false);
         when(assetRepository.save(any(Asset.class))).thenAnswer(invocation -> {
@@ -131,16 +130,9 @@ class AssetServiceTest {
         verify(assetRepository).save(any(Asset.class));
     }
 
-    @Test
-    void createAsset_CompanyNotFound_ThrowsException() {
-        when(companyRepository.findById(1L)).thenReturn(Optional.empty());
-
-        assertThatThrownBy(() -> assetService.createAsset(createRequest, 1L))
-                .isInstanceOf(CompanyNotFoundException.class)
-                .hasMessage("Company not found");
-
-        verify(assetRepository, never()).save(any());
-    }
+    // Company existence is now enforced by FK constraint at commit, not upfront.
+    // createAsset_CompanyNotFound_ThrowsException removed: getReferenceById returns a
+    // proxy without a DB hit; the constraint fires at flush in an integration context.
 
     @Test
     void createAsset_NameTooShort_DtoViolation() {
@@ -163,7 +155,7 @@ class AssetServiceTest {
 
     @Test
     void createAsset_DuplicateName_ThrowsException() {
-        when(companyRepository.findById(1L)).thenReturn(Optional.of(company));
+        when(companyRepository.getReferenceById(1L)).thenReturn(company);
         when(assetRepository.existsByCompanyIdAndName(1L, "Cordless Drill #42")).thenReturn(true);
 
         assertThatThrownBy(() -> assetService.createAsset(createRequest, 1L))
@@ -175,7 +167,7 @@ class AssetServiceTest {
 
     @Test
     void createAsset_DuplicateAssetTag_ThrowsException() {
-        when(companyRepository.findById(1L)).thenReturn(Optional.of(company));
+        when(companyRepository.getReferenceById(1L)).thenReturn(company);
         when(assetRepository.existsByCompanyIdAndName(1L, "Cordless Drill #42")).thenReturn(false);
         when(assetRepository.existsByCompanyIdAndAssetTag(1L, "TOOL-042")).thenReturn(true);
 
@@ -243,7 +235,7 @@ class AssetServiceTest {
     void createAsset_SalvageValueGreaterThanPurchasePrice_ThrowsException() {
         createRequest.setPurchasePrice(new BigDecimal("100"));
         createRequest.setSalvageValue(new BigDecimal("200"));
-        when(companyRepository.findById(1L)).thenReturn(Optional.of(company));
+        when(companyRepository.getReferenceById(1L)).thenReturn(company);
         when(assetRepository.existsByCompanyIdAndName(anyLong(), anyString())).thenReturn(false);
 
         assertThatThrownBy(() -> assetService.createAsset(createRequest, 1L))

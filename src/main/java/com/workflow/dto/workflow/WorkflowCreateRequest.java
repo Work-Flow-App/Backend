@@ -1,5 +1,6 @@
 package com.workflow.dto.workflow;
 
+import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 
 @Data
@@ -7,6 +8,7 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class WorkflowCreateRequest {
+    @NotBlank(message = "Workflow name is required")
     private String name;
     private String description;
 }

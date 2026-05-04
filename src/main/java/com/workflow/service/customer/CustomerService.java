@@ -29,8 +29,7 @@ public class CustomerService implements ICustomerService {
 
     @Override
     public CustomerResponse createCustomer(CustomerCreateRequest request, Long companyId) {
-        Company company = companyRepository.findById(companyId)
-                .orElseThrow(() -> new CompanyNotFoundException("Company not found"));
+        Company company = companyRepository.getReferenceById(companyId);
         if (customerRepository.existsByCompanyIdAndName(companyId, request.getName()))
             throw new DuplicateNameException("A customer with this name already exists");
         if (request.getEmail() != null && customerRepository.existsByCompanyIdAndEmail(companyId, request.getEmail()))
@@ -50,6 +49,7 @@ public class CustomerService implements ICustomerService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public CustomerResponse getCustomerById(Long customerId, Long companyId) {
         Customer customer = customerRepository.findById(customerId)
                 .filter(c -> c.getCompany().getId().equals(companyId))
@@ -58,6 +58,7 @@ public class CustomerService implements ICustomerService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<CustomerResponse> getAllCustomers(Long companyId) {
         return customerRepository.findByCompanyId(companyId).stream()
                 .map(this::mapToResponse)

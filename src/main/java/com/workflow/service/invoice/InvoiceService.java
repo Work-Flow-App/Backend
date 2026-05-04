@@ -15,6 +15,7 @@ import com.workflow.entity.financial.Invoice;
 import com.workflow.entity.financial.LineItem;
 import com.workflow.repository.financial.EstimateRepository;
 import com.workflow.repository.financial.InvoiceRepository;
+import com.workflow.repository.financial.LineItemRepository;
 import com.workflow.service.sequence.CompanyCounterService;
 import com.workflow.service.storage.IStorageService;
 import com.workflow.templates.pdf.invoice.InvoicePdfRenderer;
@@ -39,6 +40,7 @@ public class InvoiceService implements IInvoiceService {
 
     private final InvoiceRepository invoiceRepository;
     private final EstimateRepository estimateRepository;
+    private final LineItemRepository lineItemRepository;
     private final IStorageService storageService;
     private final InvoicePdfRenderer pdfRenderer;
     private final CompanyCounterService companyCounterService;
@@ -65,6 +67,17 @@ public class InvoiceService implements IInvoiceService {
         List<LineItem> selectedItems = estimate.getLineItems().stream()
                 .filter(li -> requestedIds.contains(li.getId()))
                 .collect(Collectors.toList());
+
+        List<Long> alreadyInvoicedIds = selectedItems.stream()
+                .filter(LineItem::isInvoiced)
+                .map(LineItem::getId)
+                .toList();
+
+        if (!alreadyInvoicedIds.isEmpty()) {
+            throw new InvalidRequestException(
+                    "Some selected line items have already been invoiced: " + alreadyInvoicedIds +
+                    ". Please remove them from your selection.");
+        }
 
         BigDecimal totalNet = selectedItems.stream()
                 .map(LineItem::getNetAmount)
@@ -96,10 +109,13 @@ public class InvoiceService implements IInvoiceService {
                 .grandTotal(grandTotal)
                 .build();
 
+        invoice = invoiceRepository.save(invoice);
+
         byte[] pdfBytes = generatePdf(invoice, invoiceNumber, selectedItems, estimate);
         storageService.upload(s3Key, new ByteArrayInputStream(pdfBytes), pdfBytes.length, "application/pdf");
 
-        invoice = invoiceRepository.save(invoice);
+        List<Long> selectedIds = selectedItems.stream().map(LineItem::getId).toList();
+        lineItemRepository.markAsInvoiced(selectedIds);
 
         String presignedUrl = storageService.generatePresignedUrl(s3Key);
         return InvoiceResponse.fromEntity(invoice, presignedUrl);

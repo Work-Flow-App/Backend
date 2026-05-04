@@ -58,7 +58,7 @@ import com.workflow.repository.job.JobWorkflowStepCommentRepository;
 import com.workflow.repository.job.JobWorkflowStepRepository;
 import com.workflow.repository.job.JobWorkflowStepVisitLogRepository;
 import com.workflow.repository.worker.WorkerRepository;
-import com.workflow.service.storage.S3StorageService;
+import com.workflow.service.storage.IStorageService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -79,7 +79,7 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
         private final Tika tika;
 
         private final IStepActivityService stepActivityService;
-        private final S3StorageService s3Service;
+        private final IStorageService s3Service;
         private final JobWorkflowMapper jobWorkflowMapper;
 
         // Spring injects the list from application.yml here!
@@ -89,10 +89,6 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
         // ==========================================
         // INTERNAL HELPERS
         // ==========================================
-
-        private String resolveFileUrl(String key) {
-                return key == null ? null : s3Service.generatePresignedUrl(key);
-        }
 
         private Worker getWorker(Long userId) {
                 return workerRepository.findByUserId(userId)
@@ -250,7 +246,7 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
                                                 .id(a.getId())
                                                 .fileName(a.getFileName())
                                                 .fileType(a.getFileType())
-                                                .fileUrl(resolveFileUrl(a.getFileUrl()))
+                                                .fileUrl(s3Service.resolveFileUrl(a.getFileUrl()))
                                                 .description(a.getDescription())
                                                 .type(a.getType())
                                                 .uploadedBy(a.getUploadedBy().getId())
@@ -266,38 +262,10 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
                 // Verify assignment
                 getAssignedStep(stepId, worker.getId());
 
-                // Reusing logic similar to JobWorkflowStepActivityService but secured for
-                // worker
-                List<StepTimelineItemResponse> comments = commentRepository.findByStepIdOrderByCreatedAtAsc(stepId)
-                                .stream()
-                                .map(c -> StepTimelineItemResponse.builder()
-                                                .id(c.getId())
-                                                .itemType("COMMENT")
-                                                .content(c.getContent())
-                                                .discussionType(c.getType())
-                                                .actorId(c.getAuthor().getId())
-                                                .createdAt(c.getCreatedAt())
-                                                .build())
-                                .toList();
-
-                List<StepTimelineItemResponse> attachments = attachmentRepository
-                                .findByStepIdOrderByCreatedAtAsc(stepId)
-                                .stream()
-                                .map(a -> StepTimelineItemResponse.builder()
-                                                .id(a.getId())
-                                                .itemType("ATTACHMENT")
-                                                .content(a.getFileName())
-                                                .fileUrl(resolveFileUrl(a.getFileUrl()))
-                                                .discussionType(a.getType())
-                                                .description(a.getDescription())
-                                                .actorId(a.getUploadedBy().getId())
-                                                .createdAt(a.getCreatedAt())
-                                                .build())
-                                .toList();
-
-                return java.util.stream.Stream.concat(comments.stream(), attachments.stream())
-                                .sorted(java.util.Comparator.comparing(StepTimelineItemResponse::getCreatedAt))
-                                .toList();
+                return StepTimelineBuilder.build(
+                                commentRepository.findByStepIdOrderByCreatedAtAsc(stepId),
+                                attachmentRepository.findByStepIdOrderByCreatedAtAsc(stepId),
+                                s3Service::resolveFileUrl);
         }
 
         @Override
@@ -450,11 +418,10 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
                 if (allCompleted) {
                         jobWorkflow.setStatus(WorkflowStepStatus.COMPLETED);
                         jobWorkflow.setCompletedAt(LocalDateTime.now());
-
-                        // Since we are in a @Transactional method, modifying the attached
-                        // 'jobWorkflow' entity will automatically sync to the DB on commit.
-                        // We don't strictly need to call repository.save(jobWorkflow) here,
-                        // but the state change happens immediately in the persistence context.
+                        // Explicit save makes the intent clear and guards against future
+                        // transaction boundary changes that might move this logic outside a
+                        // managed persistence context.
+                        jobWorkflowRepository.save(jobWorkflow);
                 }
         }
 
@@ -559,7 +526,7 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
                                 .id(attachment.getId())
                                 .fileName(attachment.getFileName())
                                 .fileType(attachment.getFileType())
-                                .fileUrl(resolveFileUrl(attachment.getFileUrl()))
+                                .fileUrl(s3Service.resolveFileUrl(attachment.getFileUrl()))
                                 .description(attachment.getDescription())
                                 .type(attachment.getType())
                                 .uploadedBy(attachment.getUploadedBy().getId())

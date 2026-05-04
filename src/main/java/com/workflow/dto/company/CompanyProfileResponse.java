@@ -1,5 +1,6 @@
 package com.workflow.dto.company;
 
+import com.workflow.common.constant.Currency;
 import com.workflow.entity.company.Company;
 
 import java.time.LocalDateTime;
@@ -16,6 +17,7 @@ public record CompanyProfileResponse(
         String contactNumber,
         String vatNumber,
         CompanyBankDetailsResponse bankDetails,
+        Currency currency,
         boolean archived,
         LocalDateTime createdAt,
         LocalDateTime updatedAt
@@ -33,6 +35,7 @@ public record CompanyProfileResponse(
                 company.getContactNumber(),
                 company.getVatNumber(),
                 CompanyBankDetailsResponse.fromEntity(company.getBankDetails()),
+                company.getCurrency(),
                 company.isArchived(),
                 company.getCreatedAt(),
                 company.getUpdatedAt()

@@ -2,6 +2,14 @@ name: Deploy to Dev
 
 on:
   workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to deploy'
+        required: true
+        default: 'develop'
+        type: choice
+        options:
+          - develop
 
 jobs:
   build-and-test:

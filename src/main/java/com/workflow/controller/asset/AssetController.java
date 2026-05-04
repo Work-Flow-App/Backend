@@ -1,5 +1,6 @@
 package com.workflow.controller.asset;
 
+import com.workflow.common.exception.business.InvalidRequestException;
 import com.workflow.common.util.AuthUtils;
 import com.workflow.dto.asset.*;
 import com.workflow.service.asset.IAssetService;
@@ -74,7 +75,7 @@ public class AssetController {
             try {
                 date = LocalDate.parse(asOf);
             } catch (DateTimeParseException e) {
-                throw new IllegalArgumentException("Invalid date format. Expected yyyy-MM-dd, got: " + asOf);
+                throw new InvalidRequestException("Invalid date format. Expected yyyy-MM-dd, got: " + asOf);
             }
         }
         return ResponseEntity.ok(service.calculateAssetValue(id, getCompanyId(auth), date));

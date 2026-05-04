@@ -128,8 +128,8 @@ public class JobTemplateService implements IJobTemplateService {
             throw new DefaultTemplateDeletionException("Cannot delete the default template. Please set another template as default first.");
         }
 
-        // Delete associated fields
-        fieldRepository.deleteAll(fieldRepository.findByTemplateIdOrderByOrderIndexAsc(templateId));
+        // Bulk-delete associated fields in a single DELETE statement
+        fieldRepository.deleteByTemplateId(templateId);
 
         templateRepository.delete(template);
     }

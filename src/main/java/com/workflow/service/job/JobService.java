@@ -84,8 +84,7 @@ public class JobService implements IJobService {
 
         @Override
         public JobResponse createJob(JobCreateRequest request, Long companyId) {
-                Company company = companyRepository.findById(companyId)
-                                .orElseThrow(() -> new CompanyNotFoundException("Company not found"));
+                Company company = companyRepository.getReferenceById(companyId);
 
                 JobTemplate template = templateRepository.findById(request.getTemplateId())
                                 .filter(t -> t.getCompany().getId().equals(companyId))
@@ -300,6 +299,7 @@ public class JobService implements IJobService {
         }
 
         @Override
+        @Transactional(readOnly = true)
         public JobResponse getJob(Long jobId, Long companyId) {
                 Job job = jobRepository.findById(jobId)
                                 .filter(j -> j.getCompany().getId().equals(companyId))
@@ -309,6 +309,7 @@ public class JobService implements IJobService {
         }
 
         @Override
+        @Transactional(readOnly = true)
         public List<JobResponse> getAllJobs(Long companyId) {
                 List<Job> jobs = jobRepository.findByCompanyId(companyId);
                 if (jobs.isEmpty()) return new ArrayList<>();
@@ -347,14 +348,45 @@ public class JobService implements IJobService {
         }
 
         @Override
+        @Transactional(readOnly = true)
         public List<JobResponse> getJobsByTemplate(Long templateId, Long companyId) {
                 JobTemplate template = templateRepository.findById(templateId)
                                 .filter(t -> t.getCompany().getId().equals(companyId))
                                 .orElseThrow(() -> new TemplateNotFoundException("Template not found"));
 
-                return jobRepository.findByTemplateIdAndCompanyId(templateId, companyId)
+                List<Job> jobs = jobRepository.findByTemplateIdAndCompanyId(templateId, companyId);
+                if (jobs.isEmpty()) return new ArrayList<>();
+
+                List<Long> jobIds = jobs.stream().map(Job::getId).collect(Collectors.toList());
+
+                // Batch-load field values for all jobs in one query
+                Map<Long, Map<Long, FieldValueResponse>> fieldValuesByJob = fieldValueRepository
+                                .findByJobIdIn(jobIds)
                                 .stream()
-                                .map(this::mapToResponse)
+                                .collect(Collectors.groupingBy(
+                                                v -> v.getJob().getId(),
+                                                Collectors.toMap(
+                                                                v -> v.getField().getId(),
+                                                                v -> FieldValueResponse.builder()
+                                                                                .name(v.getField().getName())
+                                                                                .label(v.getField().getLabel())
+                                                                                .type(v.getField().getJobFieldType())
+                                                                                .value(v.getTypedValue())
+                                                                                .build())));
+
+                // Batch-load active asset assignments for all jobs in one query
+                Map<Long, List<Long>> assetIdsByJob = assetJobAssignmentRepository
+                                .findByJobIdInAndReturnedAtIsNull(jobIds)
+                                .stream()
+                                .collect(Collectors.groupingBy(
+                                                a -> a.getJob().getId(),
+                                                Collectors.mapping(a -> a.getAsset().getId(), Collectors.toList())));
+
+                return jobs.stream()
+                                .map(job -> mapToResponse(
+                                                job,
+                                                fieldValuesByJob.getOrDefault(job.getId(), new HashMap<>()),
+                                                assetIdsByJob.getOrDefault(job.getId(), new ArrayList<>())))
                                 .collect(Collectors.toList());
         }
 
@@ -387,21 +419,41 @@ public class JobService implements IJobService {
                 List<AssetJobAssignment> activeAssignments = assetJobAssignmentRepository
                                 .findByJobIdAndReturnedAtIsNull(job.getId());
 
-                for (AssetJobAssignment assignment : activeAssignments) {
-                        assignment.setReturnedAt(LocalDateTime.now());
-                        assetJobAssignmentRepository.save(assignment);
+                if (!activeAssignments.isEmpty()) {
+                        LocalDateTime now = LocalDateTime.now();
 
-                        // Step 2: Mark asset as available only if it has no other active assignments
-                        // This handles the case where an asset might be assigned to multiple jobs
-                        Asset asset = assignment.getAsset();
-                        boolean hasOtherActiveAssignments = assetJobAssignmentRepository
-                                        .findByAssetIdAndReturnedAtIsNull(asset.getId())
+                        // Collect all asset IDs affected by the return so we can batch-check availability
+                        List<Long> returningAssetIds = activeAssignments.stream()
+                                        .map(a -> a.getAsset().getId())
+                                        .collect(Collectors.toList());
+
+                        // Batch-load all OTHER active assignments for those assets in one query
+                        Map<Long, Long> otherActiveAssignmentByAssetId = assetJobAssignmentRepository
+                                        .findByAssetIdInAndReturnedAtIsNull(returningAssetIds)
                                         .stream()
-                                        .anyMatch(a -> !a.getId().equals(assignment.getId()));
+                                        .filter(a -> !a.getJob().getId().equals(job.getId()))
+                                        .collect(Collectors.toMap(
+                                                        a -> a.getAsset().getId(),
+                                                        AssetJobAssignment::getId,
+                                                        (a, b) -> a)); // keep first if duplicates
 
-                        if (!hasOtherActiveAssignments) {
-                                asset.setAvailable(true);
-                                assetRepository.save(asset);
+                        // Mark all assignments as returned
+                        for (AssetJobAssignment assignment : activeAssignments) {
+                                assignment.setReturnedAt(now);
+                        }
+                        assetJobAssignmentRepository.saveAll(activeAssignments);
+
+                        // Step 2: Mark assets as available only if no other active assignments exist
+                        List<Asset> assetsToMarkAvailable = new ArrayList<>();
+                        for (AssetJobAssignment assignment : activeAssignments) {
+                                Asset asset = assignment.getAsset();
+                                if (!otherActiveAssignmentByAssetId.containsKey(asset.getId())) {
+                                        asset.setAvailable(true);
+                                        assetsToMarkAvailable.add(asset);
+                                }
+                        }
+                        if (!assetsToMarkAvailable.isEmpty()) {
+                                assetRepository.saveAll(assetsToMarkAvailable);
                         }
                 }
 
@@ -427,44 +479,57 @@ public class JobService implements IJobService {
                         return;
                 }
 
+                // Batch-load all requested assets in one query
+                Map<Long, Asset> assetMap = assetRepository.findAllById(assetIds)
+                                .stream()
+                                .collect(Collectors.toMap(Asset::getId, a -> a));
+
+                // Batch-load all active assignments for these assets in one query (for conflict
+                // messages)
+                Map<Long, AssetJobAssignment> activeAssignmentByAssetId = assetJobAssignmentRepository
+                                .findByAssetIdInAndReturnedAtIsNull(assetIds)
+                                .stream()
+                                .collect(Collectors.toMap(
+                                                a -> a.getAsset().getId(),
+                                                a -> a,
+                                                (a, b) -> a));
+
+                LocalDateTime now = LocalDateTime.now();
+                List<AssetJobAssignment> newAssignments = new ArrayList<>();
+
                 for (Long assetId : assetIds) {
-                        Asset asset = assetRepository.findById(assetId)
-                                        .filter(a -> a.getCompany().getId().equals(companyId))
-                                        .orElseThrow(() -> new AssetNotFoundException(
-                                                        "Asset not found with id: " + assetId));
+                        Asset asset = assetMap.get(assetId);
+                        if (asset == null || !asset.getCompany().getId().equals(companyId)) {
+                                throw new AssetNotFoundException("Asset not found with id: " + assetId);
+                        }
 
                         if (asset.isArchived()) {
                                 throw new IllegalStateException("Cannot assign archived asset: " + assetId);
                         }
 
                         if (!asset.isAvailable()) {
-                                // Check if asset is assigned to another job
-                                assetJobAssignmentRepository.findByAssetIdAndReturnedAtIsNull(assetId)
-                                                .ifPresent(activeAssignment -> {
-                                                        throw new IllegalStateException(
-                                                                        "Asset " + assetId
-                                                                                        + " is already assigned to job "
-                                                                                        +
-                                                                                        activeAssignment.getJob()
-                                                                                                        .getId()
-                                                                                        +
-                                                                                        ". It must be returned before it can be assigned to another job.");
-                                                });
-
-                                // If not assigned to a job, provide generic unavailable message
+                                AssetJobAssignment activeAssignment = activeAssignmentByAssetId.get(assetId);
+                                if (activeAssignment != null) {
+                                        throw new IllegalStateException(
+                                                        "Asset " + assetId + " is already assigned to job "
+                                                                        + activeAssignment.getJob().getId()
+                                                                        + ". It must be returned before it can be assigned to another job.");
+                                }
                                 throw new IllegalStateException("Asset is not available: " + assetId);
                         }
 
-                        AssetJobAssignment assignment = AssetJobAssignment.builder()
+                        newAssignments.add(AssetJobAssignment.builder()
                                         .asset(asset)
                                         .job(job)
-                                        .assignedAt(LocalDateTime.now())
-                                        .build();
-                        assetJobAssignmentRepository.save(assignment);
+                                        .assignedAt(now)
+                                        .build());
 
                         asset.setAvailable(false);
-                        assetRepository.save(asset);
                 }
+
+                assetJobAssignmentRepository.saveAll(newAssignments);
+                // Save all assets whose available flag was just set to false
+                assetRepository.saveAll(new ArrayList<>(assetMap.values()));
         }
 
         /**

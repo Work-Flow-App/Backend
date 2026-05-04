@@ -206,11 +206,10 @@ public class JobWorkflowService implements IJobWorkflowService {
                 // Single batch insert for all steps
                 List<JobWorkflowStep> savedSteps = jobWorkflowStepRepository.saveAll(newSteps);
 
-                // Batch log activities for all saved steps
+                // Batch log activities for all saved steps in one saveAll call
                 User actor = job.getCompany().getUser();
-                for (JobWorkflowStep step : savedSteps) {
-                        logStep(step, actor, JobWorkflowStepActivityType.STEP_CREATED, "Created workflow step");
-                }
+                stepActivityService.logAll(savedSteps, actor, JobWorkflowStepActivityType.STEP_CREATED,
+                                "Created workflow step");
 
                 return buildResponse(jw);
         }
@@ -256,10 +255,23 @@ public class JobWorkflowService implements IJobWorkflowService {
         }
 
         @Override
+        @Transactional(readOnly = true)
         public List<JobWorkflowResponse> getAllJobWorkflows(Long companyId) {
-                return jobWorkflowRepository.findByJob_Company_Id(companyId)
+                List<JobWorkflow> workflows = jobWorkflowRepository.findByJob_Company_Id(companyId);
+                if (workflows.isEmpty()) return new java.util.ArrayList<>();
+
+                // Batch-load all steps for all workflows in one query, then group by workflowId
+                List<Long> workflowIds = workflows.stream()
+                                .map(JobWorkflow::getId)
+                                .collect(Collectors.toList());
+                Map<Long, List<JobWorkflowStep>> stepsByWorkflowId = jobWorkflowStepRepository
+                                .findByJobWorkflowIdInOrderByOrderIndexAsc(workflowIds)
                                 .stream()
-                                .map(this::buildResponse)
+                                .collect(Collectors.groupingBy(s -> s.getJobWorkflow().getId()));
+
+                return workflows.stream()
+                                .map(jw -> buildResponse(jw,
+                                                stepsByWorkflowId.getOrDefault(jw.getId(), new java.util.ArrayList<>())))
                                 .toList();
         }
 
@@ -669,12 +681,14 @@ public class JobWorkflowService implements IJobWorkflowService {
 
                 for (JobWorkflowStep step : steps) {
                         step.getAssignedWorkers().add(worker);
-                        logStep(
-                                        step,
-                                        jobWorkflow.getJob().getCompany().getUser(),
-                                        JobWorkflowStepActivityType.WORKER_ASSIGNED,
-                                        "Assigned worker ID " + worker.getId());
                 }
+
+                // Batch-save all log entries in one saveAll call
+                stepActivityService.logAll(
+                                steps,
+                                jobWorkflow.getJob().getCompany().getUser(),
+                                JobWorkflowStepActivityType.WORKER_ASSIGNED,
+                                "Assigned worker ID " + worker.getId());
 
                 updateJobWorkflowStatus(jobWorkflow);
                 return buildResponse(jobWorkflow);
@@ -779,5 +793,9 @@ public class JobWorkflowService implements IJobWorkflowService {
 
         private JobWorkflowResponse buildResponse(JobWorkflow jw) {
                 return jobWorkflowMapper.buildWorkflowResponse(jw);
+        }
+
+        private JobWorkflowResponse buildResponse(JobWorkflow jw, List<JobWorkflowStep> steps) {
+                return jobWorkflowMapper.buildWorkflowResponse(jw, steps);
         }
 }

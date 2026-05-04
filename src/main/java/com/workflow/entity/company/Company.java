@@ -1,5 +1,6 @@
 package com.workflow.entity.company;
 
+import com.workflow.common.constant.Currency;
 import com.workflow.entity.auth.User;
 import com.workflow.entity.customer.Client;
 import com.workflow.entity.worker.Worker;
@@ -51,6 +52,11 @@ public class Company {
 
     @Column(name = "vat_number", length = 50)
     private String vatNumber;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 10)
+    @Builder.Default
+    private Currency currency = Currency.GBP;
 
     @OneToOne(mappedBy = "company", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private CompanyBankDetails bankDetails;

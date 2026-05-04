@@ -27,8 +27,7 @@ public class ClientService implements IClientService {
 
     @Override
     public ClientResponse createClient(ClientCreateRequest request, Long companyId) {
-        Company company = companyRepository.findById(companyId)
-                .orElseThrow(() -> new CompanyNotFoundException("Company not found"));
+        Company company = companyRepository.getReferenceById(companyId);
         Client client = Client.builder()
                 .name(request.getName())
                 .company(company)
@@ -44,6 +43,7 @@ public class ClientService implements IClientService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public ClientResponse getClientById(Long clientId, Long companyId) {
         Client client = clientRepository.findById(clientId)
                 .filter(c -> c.getCompany().getId().equals(companyId))
@@ -52,6 +52,7 @@ public class ClientService implements IClientService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<ClientResponse> getAllClients(Long companyId) {
         return clientRepository.findByCompanyId(companyId).stream()
                 .map(this::mapToResponse)

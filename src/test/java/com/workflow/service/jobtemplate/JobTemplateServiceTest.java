@@ -314,8 +314,7 @@ class JobTemplateServiceTest {
     void deleteTemplate_ShouldDeleteTemplateSuccessfully() {
         // Arrange
         when(templateRepository.findById(3L)).thenReturn(Optional.of(template));
-        when(fieldRepository.findByTemplateIdOrderByOrderIndexAsc(3L)).thenReturn(Arrays.asList(field1, field2));
-        doNothing().when(fieldRepository).deleteAll(anyList());
+        doNothing().when(fieldRepository).deleteByTemplateId(3L);
         doNothing().when(templateRepository).delete(any(JobTemplate.class));
 
         // Act
@@ -323,8 +322,9 @@ class JobTemplateServiceTest {
 
         // Assert
         verify(templateRepository).findById(3L);
-        verify(fieldRepository).findByTemplateIdOrderByOrderIndexAsc(3L);
-        verify(fieldRepository).deleteAll(anyList());
+        verify(fieldRepository).deleteByTemplateId(3L);
+        verify(fieldRepository, never()).findByTemplateIdOrderByOrderIndexAsc(anyLong());
+        verify(fieldRepository, never()).deleteAll(anyList());
         verify(templateRepository).delete(template);
         verifyNoInteractions(companyRepository);
     }
@@ -801,15 +801,16 @@ class JobTemplateServiceTest {
                 .build();
 
         when(templateRepository.findById(2L)).thenReturn(Optional.of(nonDefaultTemplate));
-        when(fieldRepository.findByTemplateIdOrderByOrderIndexAsc(2L)).thenReturn(List.of());
+        doNothing().when(fieldRepository).deleteByTemplateId(2L);
 
         // Act
         jobTemplateService.deleteTemplate(2L, 1L);
 
         // Assert
         verify(templateRepository).findById(2L);
-        verify(fieldRepository).findByTemplateIdOrderByOrderIndexAsc(2L);
-        verify(fieldRepository).deleteAll(anyList());
+        verify(fieldRepository).deleteByTemplateId(2L);
+        verify(fieldRepository, never()).findByTemplateIdOrderByOrderIndexAsc(anyLong());
+        verify(fieldRepository, never()).deleteAll(anyList());
         verify(templateRepository).delete(nonDefaultTemplate);
     }
 
@@ -849,13 +850,14 @@ class JobTemplateServiceTest {
 
         // Step 2: Now delete template 1 (no longer default)
         when(templateRepository.findById(1L)).thenReturn(Optional.of(oldDefaultTemplate));
-        when(fieldRepository.findByTemplateIdOrderByOrderIndexAsc(1L)).thenReturn(List.of());
+        doNothing().when(fieldRepository).deleteByTemplateId(1L);
 
         // Act
         jobTemplateService.deleteTemplate(1L, 1L);
 
         // Assert
         verify(templateRepository, times(1)).delete(oldDefaultTemplate); // Should successfully delete
-        verify(fieldRepository).deleteAll(anyList());
+        verify(fieldRepository).deleteByTemplateId(1L);
+        verify(fieldRepository, never()).deleteAll(anyList());
     }
 }

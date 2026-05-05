@@ -1,7 +1,11 @@
 package com.workflow.config.auth;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.workflow.common.constant.Role;
+import com.workflow.config.properties.PaddleConfigProperties;
+import com.workflow.repository.company.CompanySubscriptionRepository;
 import com.workflow.service.auth.JwtFilter;
+import com.workflow.service.company.ICompanyService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -76,6 +80,7 @@ public class SecurityConfig {
             "/api/v1/auth/verify-email",
             "/api/v1/auth/resend-verification",
             "/api/v1/workers/invites/check/**",
+            "/api/v1/webhooks/**",
             "/swagger-ui/**",
             "/swagger-ui.html",
             "/v3/api-docs/**",
@@ -85,7 +90,12 @@ public class SecurityConfig {
     };
 
     @Bean
-    public SecurityFilterChain securityFilterChain (HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(
+            HttpSecurity http,
+            ICompanyService companyService,
+            CompanySubscriptionRepository subscriptionRepository,
+            PaddleConfigProperties paddleConfigProperties,
+            ObjectMapper objectMapper) throws Exception {
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(AbstractHttpConfigurer::disable)
@@ -103,7 +113,14 @@ public class SecurityConfig {
                         .anyRequest().authenticated())
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .addFilterBefore(jwtFilter(), UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtFilter(), UsernamePasswordAuthenticationFilter.class)
+                .addFilterAfter(
+                        new SubscriptionCheckFilter(
+                                companyService,
+                                subscriptionRepository,
+                                paddleConfigProperties,
+                                objectMapper),
+                        JwtFilter.class);
 
         if (rateLimitingEnabled) {
             http.addFilterBefore(new RateLimitingFilter(), UsernamePasswordAuthenticationFilter.class);

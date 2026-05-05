@@ -116,3 +116,14 @@ workflow:
     file:
       # MUST be a comma-separated string on a single line for @Value to read it properly
       blocked-types: application/x-msdownload,application/x-sh,application/x-bat,application/x-executable,text/html,image/svg+xml
+
+paddle:
+  api-key: ${PADDLE_API_KEY}
+  webhook-secret: ${PADDLE_WEBHOOK_SECRET}
+  price-id: ${PADDLE_PRICE_ID}
+  api-base-url: ${PADDLE_API_BASE_URL:https://sandbox-api.paddle.com}
+  trial-days: 14
+  past-due-grace-days: 3
+  webhook-timestamp-tolerance-seconds: 300
+  success-url: ${PADDLE_SUCCESS_URL:http://localhost:5173/subscription/success}
+  cancel-url: ${PADDLE_CANCEL_URL:http://localhost:5173/subscription/cancel}

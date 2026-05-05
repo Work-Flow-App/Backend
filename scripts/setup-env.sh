@@ -26,9 +26,14 @@ MAIL_PASSWORD=$(echo "$MAIL_SECRET"  | jq -r '.password')
 MAIL_FROM=$(echo "$MAIL_SECRET"      | jq -r '.from')
 MAIL_FROM_NAME=$(echo "$MAIL_SECRET" | jq -r '.fromName')
 
+AFFILIATE_SECRET=$(aws secretsmanager get-secret-value --region "$REGION" --secret-id "/workflow/$ENV_NAME/affiliate-tracking" --query SecretString --output text)
+AFFILIATE_API_KEY=$(echo "$AFFILIATE_SECRET"    | jq -r '.apiKey')
+AFFILIATE_ACCOUNT_ID=$(echo "$AFFILIATE_SECRET" | jq -r '.accountId')
+
 # ── SSM Parameter Store ──
 get_param() { aws ssm get-parameter --region "$REGION" --name "$1" --query Parameter.Value --output text; }
 CORS_ORIGINS=$(get_param "/workflow/$ENV_NAME/cors-allowed-origins")
+AFFILIATE_TRACKING_ENABLED=$(get_param "/workflow/$ENV_NAME/affiliate-tracking-enabled")
 WORKER_INVITATION_URL=$(get_param "/workflow/$ENV_NAME/worker-invitation-frontend-url")
 S3_BUCKET=$(get_param "/workflow/$ENV_NAME/s3-bucket-name")
 S3_REGION=$(get_param "/workflow/$ENV_NAME/s3-region")
@@ -70,6 +75,11 @@ GOOGLE_CLIENT_ID=$(get_param "/workflow/$ENV_NAME/google-client-id")
   echo "AWS_SECRET_ACCESS_KEY="
   echo "AWS_S3_REGION=$S3_REGION"
   echo "AWS_S3_BUCKET_NAME=$S3_BUCKET"
+  echo ""
+  echo "# Affiliate tracking"
+  echo "AFFILIATE_TRACKING_ENABLED=$AFFILIATE_TRACKING_ENABLED"
+  echo "AFFILIATE_TRACKING_API_KEY=$AFFILIATE_API_KEY"
+  echo "AFFILIATE_TRACKING_ACCOUNT_ID=$AFFILIATE_ACCOUNT_ID"
   echo ""
   echo "# Google OAuth"
   echo "GOOGLE_CLIENT_ID=$GOOGLE_CLIENT_ID"

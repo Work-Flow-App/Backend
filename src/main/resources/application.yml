@@ -116,3 +116,13 @@ workflow:
     file:
       # MUST be a comma-separated string on a single line for @Value to read it properly
       blocked-types: application/x-msdownload,application/x-sh,application/x-bat,application/x-executable,text/html,image/svg+xml
+
+affiliate:
+  tracking:
+    enabled: ${AFFILIATE_TRACKING_ENABLED:false}
+    api-key: ${AFFILIATE_TRACKING_API_KEY:}
+    account-id: ${AFFILIATE_TRACKING_ACCOUNT_ID:}
+    base-url: ${AFFILIATE_TRACKING_BASE_URL:https://v2.firstpromoter.com}
+    signup-endpoint: ${AFFILIATE_TRACKING_SIGNUP_ENDPOINT:/api/v2/track/signup}
+    connect-timeout-seconds: ${AFFILIATE_TRACKING_CONNECT_TIMEOUT_SECONDS:3}
+    read-timeout-seconds: ${AFFILIATE_TRACKING_READ_TIMEOUT_SECONDS:5}

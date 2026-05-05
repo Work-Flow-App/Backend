@@ -287,6 +287,16 @@ export class BackendStack extends cdk.Stack {
       removalPolicy: config.removalPolicy,
     });
 
+    const affiliateSecret = new secretsmanager.Secret(this, 'AffiliateSecret', {
+      secretName: `/workflow/${config.envName}/affiliate-tracking`,
+      description: 'Affiliate tracking credentials — populate manually after deploy',
+      secretStringValue: cdk.SecretValue.unsafePlainText(JSON.stringify({
+        apiKey: 'POPULATE_ME',
+        accountId: 'POPULATE_ME',
+      })),
+      removalPolicy: config.removalPolicy,
+    });
+
     // ──────────────────────────────────────────────
     // SSM Parameter Store
     // ──────────────────────────────────────────────
@@ -316,6 +326,12 @@ export class BackendStack extends cdk.Stack {
       parameterName: `/workflow/${config.envName}/s3-bucket-name`,
       stringValue: uploadsBucket.bucketName,
       description: 'S3 uploads bucket name',
+    });
+
+    new ssm.StringParameter(this, 'AffiliateTrackingEnabled', {
+      parameterName: `/workflow/${config.envName}/affiliate-tracking-enabled`,
+      stringValue: 'true',
+      description: 'Enable/disable affiliate tracking',
     });
 
     new ssm.StringParameter(this, 'S3RegionParam', {
@@ -416,6 +432,11 @@ export class BackendStack extends cdk.Stack {
     new cdk.CfnOutput(this, 'MailSecretArn', {
       value: mailSecret.secretArn,
       description: 'Mail secret ARN — populate with real credentials',
+    });
+
+    new cdk.CfnOutput(this, 'AffiliateSecretArn', {
+      value: affiliateSecret.secretArn,
+      description: 'Affiliate tracking secret ARN — populate with real apiKey and accountId',
     });
 
     new cdk.CfnOutput(this, 'SecurityGroupId', {

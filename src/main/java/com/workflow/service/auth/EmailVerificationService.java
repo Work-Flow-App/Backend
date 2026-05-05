@@ -7,12 +7,15 @@ import com.workflow.entity.auth.User;
 import com.workflow.repository.auth.EmailVerificationTokenRepository;
 import com.workflow.repository.auth.UserRepository;
 import com.workflow.service.email.EmailService;
+import com.workflow.service.firstpromoter.AffiliateTrackingService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -26,6 +29,7 @@ public class EmailVerificationService {
     private final UserRepository userRepository;
     private final EmailService emailService;
     private final AuthenticationService authenticationService;
+    private final AffiliateTrackingService affiliateTrackingService;
 
     @Value("${email-verification.token.expiration-hours}")
     private int expirationHours;
@@ -55,7 +59,7 @@ public class EmailVerificationService {
     }
 
     @Transactional
-    public AuthenticationResponse verifyEmail(String token, HttpServletRequest httpRequest) {
+    public AuthenticationResponse verifyEmail(String token, String tid, HttpServletRequest httpRequest) {
         EmailVerificationToken verificationToken = tokenRepository.findByToken(token)
                 .orElseThrow(() -> new InvalidEmailVerificationTokenException("Invalid verification token"));
 
@@ -74,6 +78,17 @@ public class EmailVerificationService {
         tokenRepository.save(verificationToken);
 
         log.info("Email verified successfully for user: {}", user.getUsername());
+
+        String capturedEmail = user.getEmail();
+        String capturedTid = tid;
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    affiliateTrackingService.trackSignup(capturedEmail, capturedTid);
+                }
+            });
+        }
 
         return authenticationService.generateJwtToken(user, httpRequest);
     }

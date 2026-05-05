@@ -68,7 +68,7 @@ public class AuthController {
             @Valid @RequestBody VerifyEmailRequest request,
             HttpServletRequest httpRequest
     ) {
-        return ResponseEntity.ok(emailVerificationService.verifyEmail(request.token(), httpRequest));
+        return ResponseEntity.ok(emailVerificationService.verifyEmail(request.token(), request.tid(), httpRequest));
     }
 
     @PostMapping("/resend-verification")

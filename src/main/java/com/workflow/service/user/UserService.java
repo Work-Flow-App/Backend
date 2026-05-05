@@ -3,6 +3,7 @@ package com.workflow.service.user;
 import com.workflow.common.constant.Role;
 import com.workflow.common.exception.business.UserAlreadyExistsException;
 import com.workflow.dto.auth.SignupRequest;
+import com.workflow.dto.auth.UserLookupResult;
 import com.workflow.entity.company.Company;
 import com.workflow.entity.auth.User;
 import com.workflow.repository.company.CompanyRepository;
@@ -65,30 +66,32 @@ public class UserService implements IUserService{
 
     @Override
     @Transactional
-    public User findOrCreateGoogleUser(String googleId, String email, String name) {
+    public UserLookupResult findOrCreateGoogleUser(String googleId, String email, String name) {
         // 1. Exact match by google_id
-        return userRepository.findByGoogleId(googleId).orElseGet(() -> {
-            // 2. Email match — link google_id to existing user
-            return userRepository.findByEmail(email).map(existing -> {
-                existing.setGoogleId(googleId);
-                return userRepository.save(existing);
-            }).orElseGet(() -> {
-                // 3. Brand-new user
-                String username = generateUniqueUsername(email, name);
-                User user = User.builder()
-                        .uuid(UUID.randomUUID().toString())
-                        .username(username)
-                        .password(passwordEncoder.encode(UUID.randomUUID().toString()))
-                        .email(email)
-                        .googleId(googleId)
-                        .role(Role.COMPANY)
-                        .enabled(true)
-                        .build();
-                User saved = userRepository.save(user);
-                createDefaultCompany(saved);
-                return saved;
-            });
-        });
+        return userRepository.findByGoogleId(googleId)
+                .map(existing -> new UserLookupResult(existing, false))
+                .orElseGet(() -> {
+                    // 2. Email match — link google_id to existing user
+                    return userRepository.findByEmail(email).map(existing -> {
+                        existing.setGoogleId(googleId);
+                        return new UserLookupResult(userRepository.save(existing), false);
+                    }).orElseGet(() -> {
+                        // 3. Brand-new user
+                        String username = generateUniqueUsername(email, name);
+                        User user = User.builder()
+                                .uuid(UUID.randomUUID().toString())
+                                .username(username)
+                                .password(passwordEncoder.encode(UUID.randomUUID().toString()))
+                                .email(email)
+                                .googleId(googleId)
+                                .role(Role.COMPANY)
+                                .enabled(true)
+                                .build();
+                        User saved = userRepository.save(user);
+                        createDefaultCompany(saved);
+                        return new UserLookupResult(saved, true);
+                    });
+                });
     }
 
     private String generateUniqueUsername(String email, String name) {

@@ -86,7 +86,8 @@ public class SecurityConfig {
             "/v3/api-docs/**",
             "/api-docs/**",
             "/aggregate/**",
-            "/actuator/**"
+            "/actuator/**",
+            "/checkout-test.html"
     };
 
     @Bean

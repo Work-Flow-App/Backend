@@ -9,6 +9,7 @@ import com.workflow.repository.company.CompanySubscriptionRepository;
 import com.workflow.repository.company.PaddleWebhookEventRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,7 +30,10 @@ public class PaddleWebhookHandler {
         String eventId = payload.eventId();
         String eventType = payload.eventType();
 
-        // Idempotency guard — if we've already processed this event, skip
+        // Idempotency guard — if we've already processed this event, skip.
+        // Note: existsById + save is not atomic. Two concurrent deliveries of the same eventId
+        // can both pass the existsById check. The unique PK on paddle_webhook_events catches this
+        // at the DB level. We catch DataIntegrityViolationException below and treat it as a duplicate.
         if (webhookEventRepository.existsById(eventId)) {
             log.info("Duplicate Paddle webhook event ignored: eventId={}, eventType={}", eventId, eventType);
             return;
@@ -52,11 +56,17 @@ public class PaddleWebhookHandler {
         }
 
         // Save idempotency record AFTER processing — if processing throws, this won't be saved
-        // and Paddle can safely retry (5xx causes retry; we only swallow non-transient errors in controller)
-        webhookEventRepository.save(PaddleWebhookEvent.builder()
-                .eventId(eventId)
-                .eventType(eventType)
-                .build());
+        // and Paddle can safely retry (5xx causes retry; we only swallow non-transient errors in controller).
+        // DataIntegrityViolationException on the PK means a concurrent delivery won the race — safe to ignore.
+        try {
+            webhookEventRepository.save(PaddleWebhookEvent.builder()
+                    .eventId(eventId)
+                    .eventType(eventType)
+                    .build());
+        } catch (DataIntegrityViolationException e) {
+            log.info("Concurrent duplicate Paddle webhook event detected, race resolved by DB constraint: eventId={}", eventId);
+            return;
+        }
 
         log.info("Paddle webhook event processed and recorded: eventId={}", eventId);
     }
@@ -100,7 +110,11 @@ public class PaddleWebhookHandler {
             }
             String paddleStatus = data.path("status").asText(null);
             if (paddleStatus != null) {
-                sub.setStatus(mapPaddleStatus(paddleStatus));
+                SubscriptionStatus mapped = mapPaddleStatus(paddleStatus);
+                if (mapped != null) {
+                    sub.setStatus(mapped);
+                }
+                // If mapped is null, mapPaddleStatus already logged a warning — leave existing status intact
             }
             LocalDateTime periodEnd = extractPeriodEnd(data);
             if (periodEnd != null) {
@@ -189,6 +203,8 @@ public class PaddleWebhookHandler {
 
     /**
      * Maps Paddle's subscription status strings to our internal SubscriptionStatus enum.
+     * Returns null for unknown statuses — callers must guard against null and skip the update
+     * rather than corrupting subscription state with a wrong default.
      */
     private SubscriptionStatus mapPaddleStatus(String paddleStatus) {
         return switch (paddleStatus) {
@@ -197,8 +213,8 @@ public class PaddleWebhookHandler {
             case "paused"    -> SubscriptionStatus.PAUSED;
             case "cancelled" -> SubscriptionStatus.CANCELLED;
             default -> {
-                log.warn("Unknown Paddle subscription status: {}", paddleStatus);
-                yield SubscriptionStatus.ACTIVE; // conservative default
+                log.warn("Unknown Paddle subscription status '{}' — skipping status update to avoid state corruption", paddleStatus);
+                yield null;
             }
         };
     }

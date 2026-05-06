@@ -7,7 +7,7 @@ import java.util.Map;
 
 public record GenerateCheckoutLinkRequest(
         List<CheckoutItem> items,
-        CustomerRef customer,
+        @JsonProperty("customer_id") String customerId,
         @JsonProperty("custom_data") Map<String, String> customData,
         @JsonProperty("success_url") String successUrl,
         @JsonProperty("cancel_url") String cancelUrl
@@ -17,6 +17,4 @@ public record GenerateCheckoutLinkRequest(
             @JsonProperty("price_id") String priceId,
             int quantity
     ) {}
-
-    public record CustomerRef(String id) {}
 }

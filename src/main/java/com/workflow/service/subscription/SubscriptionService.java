@@ -57,12 +57,11 @@ public class SubscriptionService implements ISubscriptionService {
     }
 
     @Override
-    public String createCheckoutSession(Long companyId) {
+    public ISubscriptionService.CheckoutResult createCheckoutSession(Long companyId) {
         CompanySubscription sub = subscriptionRepository.findByCompanyId(companyId)
                 .orElseThrow(() -> new InvalidRequestException(
                         "No subscription record found for company: " + companyId));
 
-        // Create Paddle customer if we don't have one yet
         if (sub.getPaddleCustomerId() == null) {
             Company company = sub.getCompany();
             var customerResponse = paddleService.createCustomer(company.getEmail(), company.getName());
@@ -72,8 +71,10 @@ public class SubscriptionService implements ISubscriptionService {
         }
 
         var session = paddleService.generateCheckoutUrl(sub.getPaddleCustomerId(), companyId);
-        log.info("Checkout session created for companyId={}", companyId);
-        return session.data().url();
+        String txnId = session.data().id();
+        String checkoutUrl = session.data().checkout() != null ? session.data().checkout().url() : null;
+        log.info("Checkout session created for companyId={}, txnId={}", companyId, txnId);
+        return new ISubscriptionService.CheckoutResult(txnId, checkoutUrl);
     }
 
     @Override

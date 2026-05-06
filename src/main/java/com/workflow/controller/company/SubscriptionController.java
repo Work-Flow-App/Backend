@@ -1,7 +1,7 @@
 package com.workflow.controller.company;
 
+import com.workflow.common.util.AuthUtils;
 import com.workflow.config.properties.PaddleConfigProperties;
-import com.workflow.entity.auth.User;
 import com.workflow.entity.company.CompanySubscription;
 import com.workflow.service.company.ICompanyService;
 import com.workflow.service.subscription.ISubscriptionService;
@@ -33,42 +33,33 @@ public class SubscriptionController {
 
     @GetMapping("/status")
     public ResponseEntity<SubscriptionStatusResponse> getStatus(Authentication authentication) {
-        User user = (User) authentication.getPrincipal();
-        Long companyId = companyService.findCompanyByUserId(user.getId()).getId();
+        Long companyId = AuthUtils.getCompanyId(authentication, companyService);
 
         CompanySubscription sub = subscriptionService.getStatus(companyId);
-        SubscriptionStatusResponse response = new SubscriptionStatusResponse(
+        return ResponseEntity.ok(new SubscriptionStatusResponse(
                 sub.getStatus().name(),
                 sub.getTrialEndsAt(),
                 sub.getCurrentPeriodEnd(),
                 sub.isAccessAllowed(paddleProps.getPastDueGraceDays())
-        );
-        return ResponseEntity.ok(response);
+        ));
     }
 
     @PostMapping("/checkout")
     public ResponseEntity<Map<String, String>> createCheckoutSession(Authentication authentication) {
-        User user = (User) authentication.getPrincipal();
-        Long companyId = companyService.findCompanyByUserId(user.getId()).getId();
-
-        String checkoutUrl = subscriptionService.createCheckoutSession(companyId);
-        return ResponseEntity.ok(Map.of("checkoutUrl", checkoutUrl));
+        Long companyId = AuthUtils.getCompanyId(authentication, companyService);
+        var result = subscriptionService.createCheckoutSession(companyId);
+        return ResponseEntity.ok(Map.of("transactionId", result.transactionId()));
     }
 
     @GetMapping("/portal")
     public ResponseEntity<Map<String, String>> getPortalUrl(Authentication authentication) {
-        User user = (User) authentication.getPrincipal();
-        Long companyId = companyService.findCompanyByUserId(user.getId()).getId();
-
-        String portalUrl = subscriptionService.getPortalUrl(companyId);
-        return ResponseEntity.ok(Map.of("portalUrl", portalUrl));
+        Long companyId = AuthUtils.getCompanyId(authentication, companyService);
+        return ResponseEntity.ok(Map.of("portalUrl", subscriptionService.getPortalUrl(companyId)));
     }
 
     @DeleteMapping
     public ResponseEntity<Void> cancelSubscription(Authentication authentication) {
-        User user = (User) authentication.getPrincipal();
-        Long companyId = companyService.findCompanyByUserId(user.getId()).getId();
-
+        Long companyId = AuthUtils.getCompanyId(authentication, companyService);
         subscriptionService.cancelSubscription(companyId);
         return ResponseEntity.noContent().build();
     }

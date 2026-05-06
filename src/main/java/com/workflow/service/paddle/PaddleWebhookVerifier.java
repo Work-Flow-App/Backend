@@ -78,6 +78,9 @@ public class PaddleWebhookVerifier {
 
         // Constant-time comparison — prevent timing attacks
         if (!constantTimeEquals(computed, h1)) {
+            // Do NOT log any part of the webhook secret or computed HMAC — both are security-sensitive.
+            // Log enough to diagnose misconfiguration without leaking key material.
+            log.debug("Sig mismatch. payload_prefix={}", payload.substring(0, Math.min(40, payload.length())));
             throw new SecurityException("Paddle webhook signature verification failed");
         }
     }

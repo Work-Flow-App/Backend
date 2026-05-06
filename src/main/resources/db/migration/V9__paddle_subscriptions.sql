@@ -12,7 +12,8 @@ CREATE TABLE company_subscriptions (
     PRIMARY KEY (id),
     CONSTRAINT uq_cs_company        UNIQUE (company_id),
     CONSTRAINT fk_cs_company        FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE,
-    INDEX idx_cs_status             (status),
-    INDEX idx_cs_trial_ends         (trial_ends_at),
-    INDEX idx_cs_paddle_sub_id      (paddle_subscription_id)
+    INDEX idx_cs_status                 (status),
+    INDEX idx_cs_trial_ends             (trial_ends_at),
+    INDEX idx_cs_paddle_sub_id          (paddle_subscription_id),
+    INDEX idx_cs_paddle_customer_id     (paddle_customer_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

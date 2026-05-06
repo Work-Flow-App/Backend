@@ -8,9 +8,11 @@ public interface ISubscriptionService {
 
     CompanySubscription getStatus(Long companyId);
 
-    String createCheckoutSession(Long companyId);
+    CheckoutResult createCheckoutSession(Long companyId);
 
     String getPortalUrl(Long companyId);
 
     void cancelSubscription(Long companyId);
+
+    record CheckoutResult(String transactionId, String checkoutUrl) {}
 }

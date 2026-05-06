@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 
 @Component
@@ -28,7 +29,8 @@ public class SubscriptionExpiryScheduler {
     @Scheduled(cron = "0 0 2 * * *", zone = "UTC")
     @Transactional
     public void expireTrials() {
-        LocalDateTime now = LocalDateTime.now();
+        // Use UTC explicitly — LocalDateTime.now() picks up JVM default timezone which may not be UTC
+        LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
         List<CompanySubscription> expired = subscriptionRepository
                 .findExpiredByStatus(SubscriptionStatus.TRIAL, now);
 
@@ -52,7 +54,7 @@ public class SubscriptionExpiryScheduler {
     @Scheduled(cron = "0 15 2 * * *", zone = "UTC")
     @Transactional
     public void expirePastDue() {
-        LocalDateTime cutoff = LocalDateTime.now().minusDays(paddleProps.getPastDueGraceDays());
+        LocalDateTime cutoff = LocalDateTime.now(ZoneOffset.UTC).minusDays(paddleProps.getPastDueGraceDays());
         List<CompanySubscription> expired = subscriptionRepository.findExpiredPastDue(cutoff);
 
         if (expired.isEmpty()) {

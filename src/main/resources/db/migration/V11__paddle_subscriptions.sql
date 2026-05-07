@@ -1,5 +1,6 @@
 CREATE TABLE company_subscriptions (
     id                       BIGINT        NOT NULL AUTO_INCREMENT,
+    version                  BIGINT        NOT NULL DEFAULT 0,
     company_id               BIGINT        NOT NULL,
     trial_ends_at            DATETIME(6)   NOT NULL,
     paddle_customer_id       VARCHAR(100)  NULL,

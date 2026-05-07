@@ -1,0 +1,19 @@
+CREATE TABLE company_subscriptions (
+    id                       BIGINT        NOT NULL AUTO_INCREMENT,
+    company_id               BIGINT        NOT NULL,
+    trial_ends_at            DATETIME(6)   NOT NULL,
+    paddle_customer_id       VARCHAR(100)  NULL,
+    paddle_subscription_id   VARCHAR(100)  NULL,
+    status                   VARCHAR(20)   NOT NULL DEFAULT 'TRIAL',
+    current_period_end       DATETIME(6)   NULL,
+    last_event_occurred_at   DATETIME(6)   NULL,
+    created_at               DATETIME(6)   NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+    updated_at               DATETIME(6)            DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP(6),
+    PRIMARY KEY (id),
+    CONSTRAINT uq_cs_company        UNIQUE (company_id),
+    CONSTRAINT fk_cs_company        FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE,
+    INDEX idx_cs_status                 (status),
+    INDEX idx_cs_trial_ends             (trial_ends_at),
+    INDEX idx_cs_paddle_sub_id          (paddle_subscription_id),
+    INDEX idx_cs_paddle_customer_id     (paddle_customer_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

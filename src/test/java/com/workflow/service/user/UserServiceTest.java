@@ -8,6 +8,7 @@ import com.workflow.entity.auth.User;
 import com.workflow.repository.company.CompanyRepository;
 import com.workflow.repository.auth.UserRepository;
 import com.workflow.service.jobtemplate.DefaultTemplateSeederService;
+import com.workflow.service.subscription.ISubscriptionService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -40,6 +41,9 @@ class UserServiceTest {
 
     @Mock
     private DefaultTemplateSeederService defaultTemplateSeederService;
+
+    @Mock
+    private ISubscriptionService subscriptionService;
 
     @InjectMocks
     private UserService userService;

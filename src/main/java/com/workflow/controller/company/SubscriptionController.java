@@ -1,5 +1,6 @@
 package com.workflow.controller.company;
 
+import com.workflow.common.constant.SubscriptionStatus;
 import com.workflow.common.util.AuthUtils;
 import com.workflow.config.properties.PaddleConfigProperties;
 import com.workflow.entity.company.CompanySubscription;
@@ -25,7 +26,7 @@ public class SubscriptionController {
     private final PaddleConfigProperties paddleProps;
 
     record SubscriptionStatusResponse(
-            String status,
+            SubscriptionStatus status,
             LocalDateTime trialEndsAt,
             LocalDateTime currentPeriodEnd,
             boolean accessAllowed
@@ -37,7 +38,7 @@ public class SubscriptionController {
 
         CompanySubscription sub = subscriptionService.getStatus(companyId);
         return ResponseEntity.ok(new SubscriptionStatusResponse(
-                sub.getStatus().name(),
+                sub.getStatus(),
                 sub.getTrialEndsAt(),
                 sub.getCurrentPeriodEnd(),
                 sub.isAccessAllowed(paddleProps.getPastDueGraceDays())

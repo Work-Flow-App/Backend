@@ -56,8 +56,8 @@ public class PaddleWebhookHandler {
         }
 
         // Save idempotency record AFTER processing — if processing throws, this won't be saved
-        // and Paddle can safely retry (5xx causes retry; we only swallow non-transient errors in controller).
-        // DataIntegrityViolationException on the PK means a concurrent delivery won the race — safe to ignore.
+        // and Paddle can safely retry. DataIntegrityViolationException on the PK means a concurrent
+        // delivery won the race — safe to ignore.
         try {
             webhookEventRepository.save(PaddleWebhookEvent.builder()
                     .eventId(eventId)
@@ -80,88 +80,102 @@ public class PaddleWebhookHandler {
         CompanySubscription sub = subOpt.get();
         String paddleSubId = data.path("id").asText(null);
         String paddleCustomerId = data.path("customer_id").asText(null);
-
-        if (paddleSubId != null) sub.setPaddleSubscriptionId(paddleSubId);
-        if (paddleCustomerId != null) sub.setPaddleCustomerId(paddleCustomerId);
-
-        subscriptionRepository.save(sub);
+        subscriptionRepository.updatePaddleIds(sub.getId(), paddleSubId, paddleCustomerId);
         log.info("subscription.created: companyId={}, paddleSubId={}", sub.getCompany().getId(), paddleSubId);
     }
 
     private void handleSubscriptionActivated(JsonNode data, LocalDateTime occurredAt) {
         resolveSubscription(data).ifPresentOrElse(sub -> {
-            if (!sub.isNewerEvent(occurredAt)) {
+            int rows = subscriptionRepository.updateActivated(
+                    sub.getId(), SubscriptionStatus.ACTIVE, extractPeriodEnd(data), occurredAt);
+            if (rows == 0) {
                 log.debug("Skipping stale subscription.activated event for sub={}", sub.getPaddleSubscriptionId());
-                return;
+            } else {
+                log.info("subscription.activated: companyId={}", sub.getCompany().getId());
             }
-            sub.setStatus(SubscriptionStatus.ACTIVE);
-            sub.setCurrentPeriodEnd(extractPeriodEnd(data));
-            sub.setLastEventOccurredAt(occurredAt);
-            subscriptionRepository.save(sub);
-            log.info("subscription.activated: companyId={}", sub.getCompany().getId());
         }, () -> log.warn("Could not resolve subscription for subscription.activated"));
     }
 
     private void handleSubscriptionUpdated(JsonNode data, LocalDateTime occurredAt) {
         resolveSubscription(data).ifPresentOrElse(sub -> {
-            if (!sub.isNewerEvent(occurredAt)) {
-                log.debug("Skipping stale subscription.updated event for sub={}", sub.getPaddleSubscriptionId());
-                return;
-            }
             String paddleStatus = data.path("status").asText(null);
-            if (paddleStatus != null) {
-                SubscriptionStatus mapped = mapPaddleStatus(paddleStatus);
-                if (mapped != null) {
-                    sub.setStatus(mapped);
-                }
-                // If mapped is null, mapPaddleStatus already logged a warning — leave existing status intact
-            }
+            SubscriptionStatus mapped = (paddleStatus != null) ? mapPaddleStatus(paddleStatus) : null;
             LocalDateTime periodEnd = extractPeriodEnd(data);
-            if (periodEnd != null) {
-                sub.setCurrentPeriodEnd(periodEnd);
+
+            int rows;
+            if (mapped != null && periodEnd != null) {
+                rows = subscriptionRepository.updateStatusAndPeriod(sub.getId(), mapped, periodEnd, occurredAt);
+            } else if (mapped != null) {
+                rows = subscriptionRepository.updateStatusOnly(sub.getId(), mapped, occurredAt);
+            } else if (periodEnd != null) {
+                rows = subscriptionRepository.updatePeriodOnly(sub.getId(), periodEnd, occurredAt);
+            } else {
+                // Neither status nor periodEnd is actionable — advance the watermark only.
+                // Happens when Paddle sends an update with an unmapped status and no billing period.
+                log.warn("subscription.updated: no actionable fields — advancing timestamp only for sub={}",
+                        sub.getPaddleSubscriptionId());
+                rows = subscriptionRepository.updateTimestampOnly(sub.getId(), occurredAt);
             }
-            sub.setLastEventOccurredAt(occurredAt);
-            subscriptionRepository.save(sub);
-            log.info("subscription.updated: companyId={}, newStatus={}", sub.getCompany().getId(), sub.getStatus());
+
+            if (rows == 0) {
+                log.debug("Skipping stale subscription.updated event for sub={}", sub.getPaddleSubscriptionId());
+            } else {
+                log.info("subscription.updated: companyId={}, mappedStatus={}, periodEnd={}",
+                        sub.getCompany().getId(), mapped, periodEnd);
+            }
         }, () -> log.warn("Could not resolve subscription for subscription.updated"));
     }
 
     private void handleSubscriptionPastDue(JsonNode data, LocalDateTime occurredAt) {
         resolveSubscription(data).ifPresentOrElse(sub -> {
-            if (!sub.isNewerEvent(occurredAt)) return;
-            sub.setStatus(SubscriptionStatus.PAST_DUE);
-            sub.setLastEventOccurredAt(occurredAt);
-            subscriptionRepository.save(sub);
-            log.info("subscription.past_due: companyId={}", sub.getCompany().getId());
+            int rows = subscriptionRepository.updateStatus(sub.getId(), SubscriptionStatus.PAST_DUE, occurredAt);
+            if (rows == 0) {
+                log.debug("Skipping stale subscription.past_due event for sub={}", sub.getPaddleSubscriptionId());
+            } else {
+                log.info("subscription.past_due: companyId={}", sub.getCompany().getId());
+            }
         }, () -> log.warn("Could not resolve subscription for subscription.past_due"));
     }
 
     private void handleSubscriptionPaused(JsonNode data, LocalDateTime occurredAt) {
         resolveSubscription(data).ifPresentOrElse(sub -> {
-            if (!sub.isNewerEvent(occurredAt)) return;
-            sub.setStatus(SubscriptionStatus.PAUSED);
-            sub.setLastEventOccurredAt(occurredAt);
-            subscriptionRepository.save(sub);
-            log.info("subscription.paused: companyId={}", sub.getCompany().getId());
+            int rows = subscriptionRepository.updateStatus(sub.getId(), SubscriptionStatus.PAUSED, occurredAt);
+            if (rows == 0) {
+                log.debug("Skipping stale subscription.paused event for sub={}", sub.getPaddleSubscriptionId());
+            } else {
+                log.info("subscription.paused: companyId={}", sub.getCompany().getId());
+            }
         }, () -> log.warn("Could not resolve subscription for subscription.paused"));
     }
 
     private void handleSubscriptionCancelled(JsonNode data, LocalDateTime occurredAt) {
         resolveSubscription(data).ifPresentOrElse(sub -> {
-            if (!sub.isNewerEvent(occurredAt)) return;
-            sub.setStatus(SubscriptionStatus.CANCELLED);
-            sub.setLastEventOccurredAt(occurredAt);
-            subscriptionRepository.save(sub);
-            log.info("subscription.cancelled: companyId={}", sub.getCompany().getId());
+            int rows = subscriptionRepository.updateStatus(sub.getId(), SubscriptionStatus.CANCELLED, occurredAt);
+            if (rows == 0) {
+                log.debug("Skipping stale subscription.cancelled event for sub={}", sub.getPaddleSubscriptionId());
+            } else {
+                log.info("subscription.cancelled: companyId={}", sub.getCompany().getId());
+            }
         }, () -> log.warn("Could not resolve subscription for subscription.cancelled"));
     }
 
+    /**
+     * subscription.resumed: set status back to ACTIVE using updateStatus (not updateActivated) so we
+     * never null out an existing currentPeriodEnd when Paddle omits the billing period on resume.
+     * If Paddle does include a new billing period, apply it with a separate updatePeriodOnly call —
+     * no second staleness check needed because the updateStatus call above already proved this event is newer.
+     */
     private void handleSubscriptionResumed(JsonNode data, LocalDateTime occurredAt) {
         resolveSubscription(data).ifPresentOrElse(sub -> {
-            if (!sub.isNewerEvent(occurredAt)) return;
-            sub.setStatus(SubscriptionStatus.ACTIVE);
-            sub.setLastEventOccurredAt(occurredAt);
-            subscriptionRepository.save(sub);
+            int rows = subscriptionRepository.updateStatus(sub.getId(), SubscriptionStatus.ACTIVE, occurredAt);
+            if (rows == 0) {
+                log.debug("Skipping stale subscription.resumed event for sub={}", sub.getPaddleSubscriptionId());
+                return;
+            }
+            LocalDateTime periodEnd = extractPeriodEnd(data);
+            if (periodEnd != null) {
+                subscriptionRepository.updatePeriodOnly(sub.getId(), periodEnd, occurredAt);
+            }
             log.info("subscription.resumed: companyId={}", sub.getCompany().getId());
         }, () -> log.warn("Could not resolve subscription for subscription.resumed"));
     }
@@ -173,7 +187,6 @@ public class PaddleWebhookHandler {
      * 3. data.customer_id — fallback for events where subscription ID is not yet stored
      */
     private Optional<CompanySubscription> resolveSubscription(JsonNode data) {
-        // Priority 1: our companyId embedded in custom_data
         String companyIdStr = data.path("custom_data").path("companyId").asText(null);
         if (companyIdStr != null && !companyIdStr.isBlank()) {
             try {
@@ -184,27 +197,22 @@ public class PaddleWebhookHandler {
                 log.warn("custom_data.companyId is not a valid Long: {}", companyIdStr);
             }
         }
-
-        // Priority 2: Paddle subscription ID
         String paddleSubId = data.path("id").asText(null);
         if (paddleSubId != null && !paddleSubId.isBlank()) {
             Optional<CompanySubscription> sub = subscriptionRepository.findByPaddleSubscriptionId(paddleSubId);
             if (sub.isPresent()) return sub;
         }
-
-        // Priority 3: Paddle customer ID
         String paddleCustomerId = data.path("customer_id").asText(null);
         if (paddleCustomerId != null && !paddleCustomerId.isBlank()) {
             return subscriptionRepository.findByPaddleCustomerId(paddleCustomerId);
         }
-
         return Optional.empty();
     }
 
     /**
      * Maps Paddle's subscription status strings to our internal SubscriptionStatus enum.
-     * Returns null for unknown statuses — callers must guard against null and skip the update
-     * rather than corrupting subscription state with a wrong default.
+     * Returns null for unknown statuses — callers must guard and skip the update rather than
+     * corrupting subscription state with a wrong default.
      */
     private SubscriptionStatus mapPaddleStatus(String paddleStatus) {
         return switch (paddleStatus) {
@@ -213,15 +221,13 @@ public class PaddleWebhookHandler {
             case "paused"    -> SubscriptionStatus.PAUSED;
             case "cancelled" -> SubscriptionStatus.CANCELLED;
             default -> {
-                log.warn("Unknown Paddle subscription status '{}' — skipping status update to avoid state corruption", paddleStatus);
+                log.warn("Unknown Paddle subscription status '{}' — skipping status update to avoid state corruption",
+                        paddleStatus);
                 yield null;
             }
         };
     }
 
-    /**
-     * Extracts current_billing_period.ends_at from the subscription data node.
-     */
     private LocalDateTime extractPeriodEnd(JsonNode data) {
         String endsAt = data.path("current_billing_period").path("ends_at").asText(null);
         if (endsAt == null || endsAt.isBlank()) return null;

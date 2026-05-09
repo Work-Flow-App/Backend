@@ -8,6 +8,7 @@ import com.workflow.entity.auth.User;
 import com.workflow.repository.company.CompanyRepository;
 import com.workflow.repository.auth.UserRepository;
 import com.workflow.service.jobtemplate.DefaultTemplateSeederService;
+import com.workflow.service.subscription.ISubscriptionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -28,6 +29,7 @@ public class UserService implements IUserService{
     private final CompanyRepository companyRepository;
     private final PasswordEncoder passwordEncoder;
     private final DefaultTemplateSeederService defaultTemplateSeederService;
+    private final ISubscriptionService subscriptionService;
 
 
     @Override
@@ -114,6 +116,7 @@ public class UserService implements IUserService{
                 .build();
 
         Company savedCompany = companyRepository.save(company);
+        subscriptionService.initTrial(savedCompany.getId());
         if (TransactionSynchronizationManager.isSynchronizationActive()) {
             TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
                 @Override

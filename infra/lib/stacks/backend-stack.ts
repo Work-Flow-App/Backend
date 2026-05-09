@@ -287,6 +287,17 @@ export class BackendStack extends cdk.Stack {
       removalPolicy: config.removalPolicy,
     });
 
+    const paddleSecret = new secretsmanager.Secret(this, 'PaddleSecret', {
+      secretName: `/workflow/${config.envName}/paddle`,
+      description: 'Paddle payment credentials — populate manually after deploy',
+      secretStringValue: cdk.SecretValue.unsafePlainText(JSON.stringify({
+        apiKey: 'POPULATE_ME',
+        webhookSecret: 'POPULATE_ME',
+        priceId: 'POPULATE_ME',
+      })),
+      removalPolicy: config.removalPolicy,
+    });
+
     // ──────────────────────────────────────────────
     // SSM Parameter Store
     // ──────────────────────────────────────────────
@@ -416,6 +427,11 @@ export class BackendStack extends cdk.Stack {
     new cdk.CfnOutput(this, 'MailSecretArn', {
       value: mailSecret.secretArn,
       description: 'Mail secret ARN — populate with real credentials',
+    });
+
+    new cdk.CfnOutput(this, 'PaddleSecretArn', {
+      value: paddleSecret.secretArn,
+      description: 'Paddle secret ARN — populate with real apiKey, webhookSecret, priceId',
     });
 
     new cdk.CfnOutput(this, 'SecurityGroupId', {

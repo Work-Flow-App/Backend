@@ -26,6 +26,11 @@ MAIL_PASSWORD=$(echo "$MAIL_SECRET"  | jq -r '.password')
 MAIL_FROM=$(echo "$MAIL_SECRET"      | jq -r '.from')
 MAIL_FROM_NAME=$(echo "$MAIL_SECRET" | jq -r '.fromName')
 
+PADDLE_SECRET=$(aws secretsmanager get-secret-value --region "$REGION" --secret-id "/workflow/$ENV_NAME/paddle" --query SecretString --output text)
+PADDLE_API_KEY=$(echo "$PADDLE_SECRET"        | jq -r '.apiKey')
+PADDLE_WEBHOOK_SECRET=$(echo "$PADDLE_SECRET" | jq -r '.webhookSecret')
+PADDLE_PRICE_ID=$(echo "$PADDLE_SECRET"       | jq -r '.priceId')
+
 # ── SSM Parameter Store ──
 get_param() { aws ssm get-parameter --region "$REGION" --name "$1" --query Parameter.Value --output text; }
 CORS_ORIGINS=$(get_param "/workflow/$ENV_NAME/cors-allowed-origins")
@@ -73,6 +78,12 @@ GOOGLE_CLIENT_ID=$(get_param "/workflow/$ENV_NAME/google-client-id")
   echo ""
   echo "# Google OAuth"
   echo "GOOGLE_CLIENT_ID=$GOOGLE_CLIENT_ID"
+  echo ""
+  echo "# Paddle"
+  echo "PADDLE_API_KEY=$PADDLE_API_KEY"
+  echo "PADDLE_WEBHOOK_SECRET=$PADDLE_WEBHOOK_SECRET"
+  echo "PADDLE_PRICE_ID=$PADDLE_PRICE_ID"
+  echo "PADDLE_API_BASE_URL=$([ "$ENV_NAME" = "prod" ] && echo "https://api.paddle.com" || echo "https://sandbox-api.paddle.com")"
   echo ""
   echo "# Spring"
   echo "SPRING_PROFILES_ACTIVE=$ENV_NAME"

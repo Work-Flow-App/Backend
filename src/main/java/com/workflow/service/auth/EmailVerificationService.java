@@ -39,7 +39,11 @@ public class EmailVerificationService {
 
     @Transactional
     public void sendVerificationEmail(User user) {
-        // Invalidate any existing tokens for this user
+        sendVerificationEmail(user, null);
+    }
+
+    @Transactional
+    public void sendVerificationEmail(User user, String tid) {
         tokenRepository.deleteAllByUser(user);
 
         String token = UUID.randomUUID().toString();
@@ -53,6 +57,9 @@ public class EmailVerificationService {
         tokenRepository.save(verificationToken);
 
         String verificationLink = frontendUrl + "/verify-email?token=" + token;
+        if (tid != null && !tid.isBlank()) {
+            verificationLink += "&tid=" + tid;
+        }
         emailService.sendEmailVerificationEmail(user.getEmail(), user.getUsername(), verificationLink, expirationHours);
 
         log.info("Verification email sent to user: {}", user.getUsername());

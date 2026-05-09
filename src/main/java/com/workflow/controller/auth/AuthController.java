@@ -57,7 +57,7 @@ public class AuthController {
             @Valid @RequestBody SignupRequest request
     ) {
         User user = this.userService.createUser(request);
-        emailVerificationService.sendVerificationEmail(user);
+        emailVerificationService.sendVerificationEmail(user, request.tid());
         return ResponseEntity.status(HttpStatus.CREATED).body(
                 new SignupResponse("Registration successful. Please check your email to verify your account.")
         );

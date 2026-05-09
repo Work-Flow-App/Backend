@@ -69,7 +69,7 @@ class AuthControllerIntegrationTest {
                 "newuser",
                 "newuser@example.com",
                 "password123",
-                Role.WORKER
+                Role.WORKER, null
         );
 
         // When/Then
@@ -93,7 +93,7 @@ class AuthControllerIntegrationTest {
                 "existinguser",
                 "another@example.com",
                 "password123",
-                Role.WORKER
+                Role.WORKER, null
         );
 
         // When/Then
@@ -152,7 +152,7 @@ class AuthControllerIntegrationTest {
                 "testuser",
                 "invalid-email",
                 "password123",
-                Role.WORKER
+                Role.WORKER, null
         );
 
         // When/Then
@@ -172,7 +172,7 @@ class AuthControllerIntegrationTest {
                 "ab",
                 "test@example.com",
                 "password123",
-                Role.WORKER
+                Role.WORKER, null
         );
 
         // When/Then
@@ -190,7 +190,7 @@ class AuthControllerIntegrationTest {
                 "testuser",
                 "test@example.com",
                 "pass",
-                Role.WORKER
+                Role.WORKER, null
         );
 
         // When/Then
@@ -210,7 +210,7 @@ class AuthControllerIntegrationTest {
                 "companyuser",
                 "company@example.com",
                 "password123",
-                Role.COMPANY
+                Role.COMPANY, null
         );
 
         mockMvc.perform(post("/api/v1/auth/signup")
@@ -436,7 +436,7 @@ class AuthControllerIntegrationTest {
                 "secureuser",
                 "secure@example.com",
                 "password123",
-                Role.WORKER
+                Role.WORKER, null
         );
 
         // When

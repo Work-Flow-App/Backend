@@ -56,7 +56,7 @@ class JwtRoleIntegrationTest {
                 "adminuser",
                 "admin@example.com",
                 "password123",
-                Role.ADMIN
+                Role.ADMIN, null
         );
 
         // When/Then - Should be rejected with validation error
@@ -74,7 +74,7 @@ class JwtRoleIntegrationTest {
                 "companyuser",
                 "company@example.com",
                 "password123",
-                Role.COMPANY
+                Role.COMPANY, null
         );
 
         // Signup — returns 201 + message, user is disabled pending email verification
@@ -107,7 +107,7 @@ class JwtRoleIntegrationTest {
                 "workeruser",
                 "worker@example.com",
                 "password123",
-                Role.WORKER
+                Role.WORKER, null
         );
 
         // Signup
@@ -140,7 +140,7 @@ class JwtRoleIntegrationTest {
                 "testuser",
                 "test@example.com",
                 "password123",
-                Role.COMPANY
+                Role.COMPANY, null
         );
 
         mockMvc.perform(post("/api/v1/auth/signup")
@@ -171,7 +171,7 @@ class JwtRoleIntegrationTest {
                 "testuser",
                 "test@example.com",
                 "password123",
-                Role.WORKER
+                Role.WORKER, null
         );
 
         mockMvc.perform(post("/api/v1/auth/signup")

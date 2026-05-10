@@ -7,7 +7,8 @@ import com.google.api.client.json.gson.GsonFactory;
 import com.workflow.common.exception.business.InvalidGoogleTokenException;
 import com.workflow.dto.auth.AuthenticationResponse;
 import com.workflow.dto.auth.GoogleAuthRequest;
-import com.workflow.entity.auth.User;
+import com.workflow.dto.auth.UserLookupResult;
+import com.workflow.service.firstpromoter.AffiliateTrackingService;
 import com.workflow.service.user.IUserService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +26,7 @@ public class GoogleAuthService {
 
     private final IUserService userService;
     private final AuthenticationService authenticationService;
+    private final AffiliateTrackingService affiliateTrackingService;
 
     public AuthenticationResponse authenticate(GoogleAuthRequest request, HttpServletRequest httpRequest) {
         GoogleIdToken.Payload payload = verifyToken(request.idToken());
@@ -33,8 +35,15 @@ public class GoogleAuthService {
         String email = payload.getEmail();
         String name = (String) payload.get("name");
 
-        User user = userService.findOrCreateGoogleUser(googleId, email, name);
-        return authenticationService.generateJwtToken(user, httpRequest);
+        // findOrCreateGoogleUser is @Transactional — by the time it returns here,
+        // its transaction has already committed. Calling trackSignup directly is safe
+        // because FirstPromoterService.trackSignup is @Async and dispatches immediately
+        // to the firstPromoterExecutor thread pool.
+        UserLookupResult result = userService.findOrCreateGoogleUser(googleId, email, name);
+        if (result.isNew()) {
+            affiliateTrackingService.trackSignup(email, request.tid());
+        }
+        return authenticationService.generateJwtToken(result.user(), httpRequest);
     }
 
     private GoogleIdToken.Payload verifyToken(String idTokenString) {

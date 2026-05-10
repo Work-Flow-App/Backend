@@ -67,7 +67,7 @@ class UserServiceTest {
                 "newuser",
                 "newuser@example.com",
                 "password123",
-                Role.WORKER
+                Role.WORKER, null
         );
     }
 
@@ -212,9 +212,9 @@ class UserServiceTest {
     @Test
     void shouldAssignCorrectRoleToUser() {
         // Given - Test with different roles
-        SignupRequest adminRequest = new SignupRequest("admin", "admin@test.com", "pass", Role.ADMIN);
-        SignupRequest companyRequest = new SignupRequest("company", "company@test.com", "pass", Role.COMPANY);
-        SignupRequest workerRequest = new SignupRequest("worker", "worker@test.com", "pass", Role.WORKER);
+        SignupRequest adminRequest = new SignupRequest("admin", "admin@test.com", "pass", Role.ADMIN, null);
+        SignupRequest companyRequest = new SignupRequest("company", "company@test.com", "pass", Role.COMPANY, null);
+        SignupRequest workerRequest = new SignupRequest("worker", "worker@test.com", "pass", Role.WORKER, null);
 
         when(userRepository.findByUsername(anyString())).thenReturn(Optional.empty());
         when(passwordEncoder.encode(anyString())).thenReturn("encoded");
@@ -255,8 +255,8 @@ class UserServiceTest {
     @Test
     void shouldCreateMultipleUsersSuccessfully() {
         // Given
-        SignupRequest request1 = new SignupRequest("user1", "user1@test.com", "pass1", Role.WORKER);
-        SignupRequest request2 = new SignupRequest("user2", "user2@test.com", "pass2", Role.COMPANY);
+        SignupRequest request1 = new SignupRequest("user1", "user1@test.com", "pass1", Role.WORKER, null);
+        SignupRequest request2 = new SignupRequest("user2", "user2@test.com", "pass2", Role.COMPANY, null);
 
         when(userRepository.findByUsername(anyString())).thenReturn(Optional.empty());
         when(passwordEncoder.encode(anyString())).thenReturn("encoded");
@@ -283,7 +283,7 @@ class UserServiceTest {
                 "user.name-123",
                 "user@example.com",
                 "password",
-                Role.WORKER
+                Role.WORKER, null
         );
 
         when(userRepository.findByUsername("user.name-123")).thenReturn(Optional.empty());

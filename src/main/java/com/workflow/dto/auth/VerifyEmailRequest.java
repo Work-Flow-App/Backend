@@ -2,4 +2,4 @@ package com.workflow.dto.auth;
 
 import jakarta.validation.constraints.NotBlank;
 
-public record VerifyEmailRequest(@NotBlank String token) {}
+public record VerifyEmailRequest(@NotBlank String token, String tid) {}

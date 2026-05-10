@@ -95,9 +95,10 @@ public class JobService implements IJobService {
                                                 .filter(c -> c.getCompany().getId().equals(companyId))
                                                 .orElseThrow(() -> new ClientNotFoundException("Client not found"));
 
-                Customer customer = customerRepository.findById(request.getCustomerId())
-                                .filter(c -> c.getCompany().getId().equals(companyId))
-                                .orElseThrow(() -> new CustomerNotFoundException("Customer not found"));
+                Customer customer = request.getCustomerId() == null ? null
+                                : customerRepository.findById(request.getCustomerId())
+                                                .filter(c -> c.getCompany().getId().equals(companyId))
+                                                .orElseThrow(() -> new CustomerNotFoundException("Customer not found"));
 
                 Worker worker = request.getAssignedWorkerId() == null ? null
                                 : workerRepository.findById(request.getAssignedWorkerId())
@@ -604,7 +605,7 @@ public class JobService implements IJobService {
                                 .companyId(job.getCompany().getId())
                                 .templateId(job.getTemplate().getId())
                                 .clientId(job.getClient() != null ? job.getClient().getId() : null)
-                                .customerId(job.getCustomer().getId())
+                                .customerId(job.getCustomer() != null ? job.getCustomer().getId() : null)
                                 .assignedWorkerId(job.getAssignedWorker() != null ? job.getAssignedWorker().getId()
                                                 : null)
                                 .workflowId(job.getWorkflow() != null ? job.getWorkflow().getId() : null)

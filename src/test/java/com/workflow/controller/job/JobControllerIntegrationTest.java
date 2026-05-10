@@ -313,6 +313,23 @@ class JobControllerIntegrationTest {
     }
 
     @Test
+    void shouldCreateJobWithoutCustomer() throws Exception {
+        JobCreateRequest request = JobCreateRequest.builder()
+                .templateId(template.getId())
+                .customerId(null)
+                .status(JobStatus.NEW)
+                .fieldValues(new HashMap<>())
+                .build();
+
+        mockMvc.perform(post("/api/v1/jobs")
+                        .header("Authorization", "Bearer " + companyUserToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.customerId").isEmpty());
+    }
+
+    @Test
     void shouldReturn404WhenTemplateNotFound() throws Exception {
         JobCreateRequest request = JobCreateRequest.builder()
                 .templateId(99999L)

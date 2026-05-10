@@ -172,6 +172,28 @@ class JobServiceTest {
         // Company existence is now enforced by FK constraint at commit time, not upfront.
         // The first service-level validation is the template check.
         @Test
+        void createJob_ShouldCreateJobSuccessfully_WhenCustomerIsNull() {
+                createRequest.setCustomerId(null);
+                when(companyRepository.getReferenceById(1L)).thenReturn(company);
+                when(templateRepository.findById(3L)).thenReturn(Optional.of(template));
+                when(clientRepository.findById(1L)).thenReturn(Optional.of(client));
+                when(workerRepository.findById(1L)).thenReturn(Optional.of(worker));
+                when(templateFieldRepository.findByTemplateIdOrderByOrderIndexAsc(3L))
+                                .thenReturn(Collections.emptyList());
+                doAnswer(invocation -> {
+                        Job job = invocation.getArgument(0);
+                        job.setId(55L);
+                        return job;
+                }).when(jobRepository).saveAndFlush(any(Job.class));
+
+                JobResponse response = jobService.createJob(createRequest, 1L);
+
+                assertThat(response).isNotNull();
+                assertThat(response.getCustomerId()).isNull();
+                verify(customerRepository, never()).findById(any());
+        }
+
+        @Test
         void createJob_ShouldThrowException_WhenTemplateNotFound() {
                 when(companyRepository.getReferenceById(1L)).thenReturn(company);
                 when(templateRepository.findById(3L)).thenReturn(Optional.empty());

@@ -21,5 +21,7 @@ public record SignupRequest(
         String password,
 
         @ValidRole
-        Role role
+        Role role,
+
+        String tid
 ) {}

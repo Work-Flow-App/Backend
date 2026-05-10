@@ -2,4 +2,4 @@ package com.workflow.dto.auth;
 
 import jakarta.validation.constraints.NotBlank;
 
-public record GoogleAuthRequest(@NotBlank String idToken) {}
+public record GoogleAuthRequest(@NotBlank String idToken, String tid) {}

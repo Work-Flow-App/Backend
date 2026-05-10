@@ -61,6 +61,9 @@ public class Company {
     @OneToOne(mappedBy = "company", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private CompanyBankDetails bankDetails;
 
+    @OneToOne(mappedBy = "company", fetch = FetchType.LAZY)
+    private CompanySubscription subscription;
+
     @Column(nullable = false, columnDefinition = "BOOLEAN DEFAULT FALSE")
     @Builder.Default
     private boolean archived = false;

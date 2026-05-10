@@ -10,7 +10,6 @@ import com.workflow.dto.estimate.LineItemUpdateRequest;
 import com.workflow.entity.company.Company;
 import com.workflow.entity.financial.LineItem;
 import com.workflow.repository.company.CompanyRepository;
-import com.workflow.repository.financial.InvoiceRepository;
 import com.workflow.repository.financial.LineItemRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -26,7 +25,6 @@ public class LineItemService implements ILineItemService {
 
     private final LineItemRepository lineItemRepository;
     private final CompanyRepository companyRepository;
-    private final InvoiceRepository invoiceRepository;
 
     @Override
     public LineItemResponse createLineItem(LineItemCreateRequest request, Long companyId) {
@@ -87,8 +85,8 @@ public class LineItemService implements ILineItemService {
     public void deleteLineItem(Long id, Long companyId) {
         LineItem item = lineItemRepository.findByIdAndCompanyId(id, companyId)
                 .orElseThrow(() -> new LineItemNotFoundException("Line item not found"));
-        if (invoiceRepository.existsByLineItemsId(id)) {
-            throw new LineItemInUseException("Cannot delete a line item that is part of an invoice");
+        if (item.isInvoiced()) {
+            throw new LineItemInUseException("Cannot delete a line item that has been invoiced");
         }
         lineItemRepository.delete(item);
     }

@@ -39,14 +39,10 @@ public class Invoice {
     @Column(name = "s3_key", nullable = false, length = 500)
     private String s3Key;
 
-    @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(
-            name = "invoice_line_items",
-            joinColumns = @JoinColumn(name = "invoice_id"),
-            inverseJoinColumns = @JoinColumn(name = "line_item_id")
-    )
+    @OneToMany(mappedBy = "invoice", cascade = CascadeType.ALL, orphanRemoval = true,
+               fetch = FetchType.LAZY)
     @Builder.Default
-    private List<LineItem> lineItems = new ArrayList<>();
+    private List<InvoiceLineItemSnapshot> lineItemSnapshots = new ArrayList<>();
 
     @Column(name = "due_date")
     private LocalDate dueDate;

@@ -49,7 +49,7 @@ public class EmailService {
             // Set email properties
             helper.setFrom(String.format("%s <%s>", fromName, fromEmail));
             helper.setTo(toEmail);
-            helper.setSubject("Reset Your Password - WorkFlow App");
+            helper.setSubject("Reset Your Password - Workfloow App");
 
             // Prepare template context
             Context context = new Context();
@@ -84,7 +84,7 @@ public class EmailService {
 
             helper.setFrom(String.format("%s <%s>", fromName, fromEmail));
             helper.setTo(toEmail);
-            helper.setSubject("Verify Your Email - WorkFlow App");
+            helper.setSubject("Verify Your Email - Workfloow App");
 
             Context context = new Context();
             context.setVariable("username", username);
@@ -116,7 +116,7 @@ public class EmailService {
             // Set email properties
             helper.setFrom(String.format("%s <%s>", fromName, fromEmail));
             helper.setTo(toEmail);
-            helper.setSubject("You're Invited to Join " + companyName + " - WorkFlow App");
+            helper.setSubject("You're Invited to Join " + companyName + " - Workfloow App");
 
             // Prepare template context
             String signupLink = frontendUrl + "/signup/worker?token=" + invitationToken;

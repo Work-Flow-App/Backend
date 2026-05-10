@@ -11,33 +11,35 @@ import com.workflow.entity.job.Job;
 import com.workflow.entity.workflow.Workflow;
 
 public interface IJobWorkflowService {
-    JobWorkflowResponse startWorkflow(Job job, Workflow workflow, Long companyId);
+        JobWorkflowResponse startWorkflow(Job job, Workflow workflow, Long companyId);
 
-    JobWorkflowResponse startWorkflowForJob(Long jobId, Long workflowId, Long companyId);
+        JobWorkflowResponse startWorkflowForJob(Long jobId, Long workflowId, Long companyId);
 
-    JobWorkflowResponse getJobWorkflow(Job job, Long companyId);
+        JobWorkflowResponse getJobWorkflow(Job job, Long companyId);
 
-    JobWorkflowResponse getJobWorkflowByJobId(Long jobId, Long companyId);
+        JobWorkflowResponse getJobWorkflowByJobId(Long jobId, Long companyId);
 
-    JobWorkflowStepResponse updateStep(
-            Long jobWorkflowId,
-            Long stepId,
-            JobWorkflowStepUpdateRequest request,
-            Long companyId);
+        JobWorkflowStepResponse updateStep(
+                        Long jobWorkflowId,
+                        Long stepId,
+                        JobWorkflowStepUpdateRequest request,
+                        Long companyId);
 
-    JobWorkflowResponse getJobWorkflowById(Long jobWorkflowId, Long companyId);
+        JobWorkflowResponse getJobWorkflowById(Long jobWorkflowId, Long companyId);
 
-    List<JobWorkflowResponse> getAllJobWorkflows(Long companyId);
+        List<JobWorkflowResponse> getAllJobWorkflows(Long companyId);
 
-    void deleteByJobId(Long jobId, Long companyId);
+        void deleteByJobId(Long jobId, Long companyId);
 
-    JobWorkflowResponse assignAWorkerToAllSteps(Long jobWorkflowId, Long workerId, Long companyId);
+        JobWorkflowResponse assignAWorkerToAllSteps(Long jobWorkflowId, Long workerId, Long companyId);
 
-    JobWorkflowResponse updateJobWorkflowById(Long jobWorkflowId, JobWorkflowUpdateRequest request, Long companyId);
+        JobWorkflowResponse assignWorkersToAllSteps(Long jobWorkflowId, List<Long> workerIds, Long companyId);
 
-    JobWorkflowStepResponse addStep(
-            Long jobWorkflowId,
-            JobWorkflowStepCreateRequest request,
-            Long companyId);
+        JobWorkflowResponse updateJobWorkflowById(Long jobWorkflowId, JobWorkflowUpdateRequest request, Long companyId);
+
+        JobWorkflowStepResponse addStep(
+                        Long jobWorkflowId,
+                        JobWorkflowStepCreateRequest request,
+                        Long companyId);
 
 }

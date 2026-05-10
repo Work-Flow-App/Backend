@@ -21,6 +21,7 @@ import com.workflow.common.exception.business.CustomerNotFoundException;
 import com.workflow.common.exception.business.JobNotFoundException;
 import com.workflow.common.exception.business.TemplateNotFoundException;
 import com.workflow.common.exception.business.WorkerNotFoundException;
+import com.workflow.common.exception.business.InvalidRequestException;
 import com.workflow.common.exception.business.WorkflowNotFoundException;
 import com.workflow.dto.job.AddressRequest;
 import com.workflow.dto.job.AddressResponse;
@@ -36,6 +37,7 @@ import com.workflow.entity.customer.Client;
 import com.workflow.entity.company.Company;
 import com.workflow.entity.customer.Customer;
 import com.workflow.entity.financial.Estimate;
+import com.workflow.entity.financial.Invoice;
 import com.workflow.entity.job.Job;
 import com.workflow.entity.job.JobFieldValue;
 import com.workflow.entity.job.JobTemplate;
@@ -49,11 +51,13 @@ import com.workflow.repository.customer.ClientRepository;
 import com.workflow.repository.company.CompanyRepository;
 import com.workflow.repository.customer.CustomerRepository;
 import com.workflow.repository.financial.EstimateRepository;
+import com.workflow.repository.financial.InvoiceRepository;
 import com.workflow.repository.job.JobFieldValueRepository;
 import com.workflow.repository.job.JobRepository;
 import com.workflow.repository.job.JobTemplateFieldRepository;
 import com.workflow.repository.job.JobTemplateRepository;
 import com.workflow.repository.worker.WorkerRepository;
+import com.workflow.repository.job.JobWorkflowRepository;
 import com.workflow.repository.workflow.WorkflowRepository;
 import com.workflow.service.sequence.CompanyCounterService;
 import com.workflow.service.workflow.IJobWorkflowService;
@@ -77,7 +81,9 @@ public class JobService implements IJobService {
         private final AssetRepository assetRepository;
         private final AssetJobAssignmentRepository assetJobAssignmentRepository;
         private final WorkflowRepository workflowRepository;
+        private final JobWorkflowRepository jobWorkflowRepository;
         private final EstimateRepository estimateRepository;
+        private final InvoiceRepository invoiceRepository;
         private final IJobWorkflowService jobWorkflowService;
         private final AddressRepository addressRepository;
         private final CompanyCounterService companyCounterService;
@@ -397,8 +403,38 @@ public class JobService implements IJobService {
                                 .filter(j -> j.getCompany().getId().equals(companyId))
                                 .orElseThrow(() -> new JobNotFoundException("Job not found"));
 
+                if (!job.isArchived()) {
+                        throw new InvalidRequestException("Job must be archived before it can be deleted");
+                }
+
+                // Remove all asset assignments first — asset_job_assignments.job_id has RESTRICT FK.
+                assetJobAssignmentRepository.deleteByJobId(jobId);
+
+                // Delete any invoices linked to this job's estimate before the job delete triggers
+                // the estimates ON DELETE CASCADE. invoices.estimate_id has RESTRICT FK which would
+                // otherwise block the cascade and kill the entire transaction.
+                estimateRepository.findByJobId(jobId).ifPresent(estimate -> {
+                        List<Invoice> invoices = invoiceRepository.findByEstimateId(estimate.getId());
+                        invoiceRepository.deleteAll(invoices);
+                });
+
+                // Delete the job_workflow record before the job. The FK on job_workflows.job_id
+                // has no ON DELETE clause (RESTRICT). Deleting it here lets DB cascades remove
+                // job_workflow_steps and all child rows (activities, attachments, comments,
+                // visit_logs) via their ON DELETE CASCADE FKs on job_workflow_steps.
+                jobWorkflowRepository.deleteByJobId(jobId);
                 fieldValueRepository.deleteByJobId(jobId);
                 jobRepository.delete(job);
+        }
+
+        @Override
+        public void archiveJob(Long jobId, Long companyId) {
+                Job job = jobRepository.findById(jobId)
+                                .filter(j -> j.getCompany().getId().equals(companyId))
+                                .orElseThrow(() -> new JobNotFoundException("Job not found"));
+
+                job.setArchived(true);
+                jobRepository.save(job);
         }
 
         /**

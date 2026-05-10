@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.workflow.common.exception.business.UnauthorizedWorkflowAccessException;
+import com.workflow.common.exception.business.WorkflowInUseException;
 import com.workflow.common.exception.business.WorkflowNotFoundException;
 import com.workflow.common.exception.business.WorkflowStepNotFoundException;
 import com.workflow.dto.workflow.WorkflowBulkUpdateRequest;
@@ -24,6 +25,7 @@ import com.workflow.entity.company.Company;
 import com.workflow.entity.workflow.Workflow;
 import com.workflow.entity.workflow.WorkflowStep;
 import com.workflow.repository.company.CompanyRepository;
+import com.workflow.repository.job.JobRepository;
 import com.workflow.repository.workflow.WorkflowRepository;
 import com.workflow.repository.workflow.WorkflowStepRepository;
 import com.workflow.service.sequence.CompanyCounterService;
@@ -38,6 +40,7 @@ public class WorkflowService implements IWorkflowService {
         private final WorkflowRepository workflowRepository;
         private final WorkflowStepRepository stepRepository;
         private final CompanyRepository companyRepository;
+        private final JobRepository jobRepository;
         private final CompanyCounterService companyCounterService;
 
         @Override
@@ -72,12 +75,26 @@ public class WorkflowService implements IWorkflowService {
                 Workflow workflow = workflowRepository.findByIdAndCompanyId(id, companyId)
                                 .orElseThrow(() -> new WorkflowNotFoundException("Workflow not found"));
 
+                if (jobRepository.existsByWorkflowIdAndArchivedFalse(id)) {
+                        throw new WorkflowInUseException(
+                                        "Cannot delete workflow: one or more active jobs reference it. " +
+                                        "Archive or reassign those jobs first.");
+                }
+
                 workflowRepository.delete(workflow);
         }
 
         @Override
+        public void archiveWorkflow(Long id, Long companyId) {
+                Workflow workflow = workflowRepository.findByIdAndCompanyId(id, companyId)
+                                .orElseThrow(() -> new WorkflowNotFoundException("Workflow not found"));
+
+                workflow.setArchived(true);
+        }
+
+        @Override
         public List<WorkflowResponse> getAllWorkflows(Long companyId) {
-                return workflowRepository.findByCompanyId(companyId)
+                return workflowRepository.findByCompanyIdAndArchivedFalse(companyId)
                                 .stream().map(this::map).collect(Collectors.toList());
         }
 

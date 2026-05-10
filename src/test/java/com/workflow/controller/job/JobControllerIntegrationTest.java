@@ -535,9 +535,22 @@ class JobControllerIntegrationTest {
 
     @Test
     void shouldDeleteJobSuccessfully() throws Exception {
+        // Archive the job first — delete requires archived=true
+        mockMvc.perform(patch("/api/v1/jobs/" + job.getId() + "/archive")
+                        .header("Authorization", "Bearer " + companyUserToken))
+                .andExpect(status().isNoContent());
+
         mockMvc.perform(delete("/api/v1/jobs/" + job.getId())
                         .header("Authorization", "Bearer " + companyUserToken))
                 .andExpect(status().isNoContent());
+    }
+
+    @Test
+    void shouldReturn400WhenDeletingNonArchivedJob() throws Exception {
+        // job is created with archived=false in setUp — delete must be rejected
+        mockMvc.perform(delete("/api/v1/jobs/" + job.getId())
+                        .header("Authorization", "Bearer " + companyUserToken))
+                .andExpect(status().isBadRequest());
     }
 
     @Test

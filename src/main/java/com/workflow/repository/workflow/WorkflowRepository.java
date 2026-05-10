@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface WorkflowRepository extends JpaRepository<Workflow, Long> {
-    List<Workflow> findByCompanyId(Long companyId);
+    List<Workflow> findByCompanyIdAndArchivedFalse(Long companyId);
     boolean existsByCompanyIdAndName(Long companyId, String name);
     Optional<Workflow> findByIdAndCompanyId(Long id, Long companyId);
 }

@@ -460,14 +460,10 @@ public class JobService implements IJobService {
                 // Bulk-delete all asset assignments for this job (RESTRICT FK — must go before job).
                 assetJobAssignmentRepository.deleteByJobId(jobId);
 
-                // Delete any invoices linked to this job's estimate before the job delete triggers
-                // the estimates ON DELETE CASCADE. invoices.estimate_id has RESTRICT FK which would
-                // otherwise block the cascade and kill the entire transaction.
-                // Invoice.lineItemSnapshots has cascade=ALL + orphanRemoval, so deleteAll handles them.
-                estimateRepository.findByJobId(jobId).ifPresent(estimate -> {
-                        List<Invoice> invoices = invoiceRepository.findByEstimateId(estimate.getId());
-                        invoiceRepository.deleteAll(invoices);
-                });
+                // Bulk-delete invoice line item snapshots and invoices before the job delete
+                // triggers ON DELETE CASCADE on estimates. invoices.estimate_id is RESTRICT.
+                invoiceRepository.deleteLineItemSnapshotsByJobId(jobId);
+                invoiceRepository.deleteByJobId(jobId);
 
                 // Bulk-delete the job_workflow record before the job. The FK on job_workflows.job_id
                 // has no ON DELETE clause (RESTRICT). Deleting it here lets DB cascades remove

@@ -2,6 +2,7 @@ package com.workflow.repository.financial;
 
 import com.workflow.entity.financial.Invoice;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -39,4 +40,12 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
     long countByCompanyId(Long companyId);
 
     boolean existsByLineItemSnapshotsSourceLineItemId(Long sourceLineItemId);
+
+    @Modifying(clearAutomatically = true)
+    @Query("DELETE FROM InvoiceLineItemSnapshot s WHERE s.invoice.estimate.job.id = :jobId")
+    void deleteLineItemSnapshotsByJobId(@Param("jobId") Long jobId);
+
+    @Modifying(clearAutomatically = true)
+    @Query("DELETE FROM Invoice i WHERE i.estimate.job.id = :jobId")
+    void deleteByJobId(@Param("jobId") Long jobId);
 }

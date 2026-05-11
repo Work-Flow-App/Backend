@@ -15,7 +15,7 @@ public interface JobWorkflowRepository extends JpaRepository<JobWorkflow, Long> 
     @Query("SELECT jw FROM JobWorkflow jw JOIN FETCH jw.job WHERE jw.job.company.id = :companyId")
     List<JobWorkflow> findByJob_Company_Id(@Param("companyId") Long companyId);
 
-    @Modifying
+    @Modifying(clearAutomatically = true)
     @Query("DELETE FROM JobWorkflow jw WHERE jw.job.id = :jobId")
     void deleteByJobId(@Param("jobId") Long jobId);
 }

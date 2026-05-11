@@ -20,7 +20,7 @@ public interface AssetJobAssignmentRepository extends JpaRepository<AssetJobAssi
     List<AssetJobAssignment> findByAssetIdInAndReturnedAtIsNull(List<Long> assetIds);
     List<AssetJobAssignment> findByJobId(Long jobId);
 
-    @Modifying
+    @Modifying(clearAutomatically = true)
     @Query("DELETE FROM AssetJobAssignment a WHERE a.job.id = :jobId")
     void deleteByJobId(@Param("jobId") Long jobId);
 }

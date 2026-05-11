@@ -1,5 +1,7 @@
 package com.workflow.controller.invoice;
 
+import com.workflow.AbstractControllerIntegrationTest;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.workflow.common.constant.CoreOrSub;
 import com.workflow.common.constant.Role;
@@ -23,21 +25,14 @@ import com.workflow.repository.financial.LineItemRepository;
 import com.workflow.repository.job.JobRepository;
 import com.workflow.repository.job.JobTemplateRepository;
 import com.workflow.service.auth.JwtService;
-import com.workflow.service.storage.IStorageService;
-import com.workflow.templates.pdf.invoice.InvoicePdfRenderer;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -54,11 +49,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@SpringBootTest
-@AutoConfigureMockMvc
-@ActiveProfiles("test")
-@Transactional
-class InvoiceControllerIntegrationTest {
+class InvoiceControllerIntegrationTest extends AbstractControllerIntegrationTest {
 
     @Autowired private MockMvc mockMvc;
     @Autowired private ObjectMapper objectMapper;
@@ -76,8 +67,6 @@ class InvoiceControllerIntegrationTest {
     @Autowired private LineItemRepository lineItemRepository;
     @Autowired private InvoiceRepository invoiceRepository;
 
-    @MockBean private IStorageService storageService;
-    @MockBean private InvoicePdfRenderer pdfRenderer;
 
     private Company company;
     private Company anotherCompany;

@@ -20,7 +20,6 @@ public class JobCreateRequest {
     private Long templateId;
     private Long clientId;
 
-    @NotNull(message = "Customer is required")
     private Long customerId;
     private Long assignedWorkerId;
     private Long workflowId;

@@ -51,6 +51,14 @@ public class WorkflowController {
         workflowService.deleteWorkflow(id, companyId(auth));
     }
 
+    @PatchMapping("/{id}/archive")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void archive(
+            @PathVariable Long id,
+            Authentication auth) {
+        workflowService.archiveWorkflow(id, companyId(auth));
+    }
+
     @GetMapping
     public List<WorkflowResponse> getAll(Authentication auth) {
         return workflowService.getAllWorkflows(companyId(auth));

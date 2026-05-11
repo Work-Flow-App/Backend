@@ -21,6 +21,7 @@ import com.workflow.common.exception.business.CustomerNotFoundException;
 import com.workflow.common.exception.business.JobNotFoundException;
 import com.workflow.common.exception.business.TemplateNotFoundException;
 import com.workflow.common.exception.business.WorkerNotFoundException;
+import com.workflow.common.exception.business.InvalidRequestException;
 import com.workflow.common.exception.business.WorkflowNotFoundException;
 import com.workflow.dto.job.AddressRequest;
 import com.workflow.dto.job.AddressResponse;
@@ -36,6 +37,7 @@ import com.workflow.entity.customer.Client;
 import com.workflow.entity.company.Company;
 import com.workflow.entity.customer.Customer;
 import com.workflow.entity.financial.Estimate;
+import com.workflow.entity.financial.Invoice;
 import com.workflow.entity.job.Job;
 import com.workflow.entity.job.JobFieldValue;
 import com.workflow.entity.job.JobTemplate;
@@ -49,11 +51,13 @@ import com.workflow.repository.customer.ClientRepository;
 import com.workflow.repository.company.CompanyRepository;
 import com.workflow.repository.customer.CustomerRepository;
 import com.workflow.repository.financial.EstimateRepository;
+import com.workflow.repository.financial.InvoiceRepository;
 import com.workflow.repository.job.JobFieldValueRepository;
 import com.workflow.repository.job.JobRepository;
 import com.workflow.repository.job.JobTemplateFieldRepository;
 import com.workflow.repository.job.JobTemplateRepository;
 import com.workflow.repository.worker.WorkerRepository;
+import com.workflow.repository.job.JobWorkflowRepository;
 import com.workflow.repository.workflow.WorkflowRepository;
 import com.workflow.service.sequence.CompanyCounterService;
 import com.workflow.service.workflow.IJobWorkflowService;
@@ -77,7 +81,9 @@ public class JobService implements IJobService {
         private final AssetRepository assetRepository;
         private final AssetJobAssignmentRepository assetJobAssignmentRepository;
         private final WorkflowRepository workflowRepository;
+        private final JobWorkflowRepository jobWorkflowRepository;
         private final EstimateRepository estimateRepository;
+        private final InvoiceRepository invoiceRepository;
         private final IJobWorkflowService jobWorkflowService;
         private final AddressRepository addressRepository;
         private final CompanyCounterService companyCounterService;
@@ -95,9 +101,10 @@ public class JobService implements IJobService {
                                                 .filter(c -> c.getCompany().getId().equals(companyId))
                                                 .orElseThrow(() -> new ClientNotFoundException("Client not found"));
 
-                Customer customer = customerRepository.findById(request.getCustomerId())
-                                .filter(c -> c.getCompany().getId().equals(companyId))
-                                .orElseThrow(() -> new CustomerNotFoundException("Customer not found"));
+                Customer customer = request.getCustomerId() == null ? null
+                                : customerRepository.findById(request.getCustomerId())
+                                                .filter(c -> c.getCompany().getId().equals(companyId))
+                                                .orElseThrow(() -> new CustomerNotFoundException("Customer not found"));
 
                 Worker worker = request.getAssignedWorkerId() == null ? null
                                 : workerRepository.findById(request.getAssignedWorkerId())
@@ -349,6 +356,43 @@ public class JobService implements IJobService {
 
         @Override
         @Transactional(readOnly = true)
+        public List<JobResponse> getArchivedJobs(Long companyId) {
+                List<Job> jobs = jobRepository.findArchivedByCompanyId(companyId);
+                if (jobs.isEmpty()) return new ArrayList<>();
+
+                List<Long> jobIds = jobs.stream().map(Job::getId).collect(Collectors.toList());
+
+                Map<Long, Map<Long, FieldValueResponse>> fieldValuesByJob = fieldValueRepository
+                                .findByJobIdIn(jobIds)
+                                .stream()
+                                .collect(Collectors.groupingBy(
+                                                v -> v.getJob().getId(),
+                                                Collectors.toMap(
+                                                                v -> v.getField().getId(),
+                                                                v -> FieldValueResponse.builder()
+                                                                                .name(v.getField().getName())
+                                                                                .label(v.getField().getLabel())
+                                                                                .type(v.getField().getJobFieldType())
+                                                                                .value(v.getTypedValue())
+                                                                                .build())));
+
+                Map<Long, List<Long>> assetIdsByJob = assetJobAssignmentRepository
+                                .findByJobIdInAndReturnedAtIsNull(jobIds)
+                                .stream()
+                                .collect(Collectors.groupingBy(
+                                                a -> a.getJob().getId(),
+                                                Collectors.mapping(a -> a.getAsset().getId(), Collectors.toList())));
+
+                return jobs.stream()
+                                .map(job -> mapToResponse(
+                                                job,
+                                                fieldValuesByJob.getOrDefault(job.getId(), new HashMap<>()),
+                                                assetIdsByJob.getOrDefault(job.getId(), new ArrayList<>())))
+                                .collect(Collectors.toList());
+        }
+
+        @Override
+        @Transactional(readOnly = true)
         public List<JobResponse> getJobsByTemplate(Long templateId, Long companyId) {
                 JobTemplate template = templateRepository.findById(templateId)
                                 .filter(t -> t.getCompany().getId().equals(companyId))
@@ -396,8 +440,48 @@ public class JobService implements IJobService {
                                 .filter(j -> j.getCompany().getId().equals(companyId))
                                 .orElseThrow(() -> new JobNotFoundException("Job not found"));
 
+                if (!job.isArchived()) {
+                        throw new InvalidRequestException("Job must be archived before it can be deleted");
+                }
+
+                // Mark assigned assets as available before bulk-deleting the assignment rows.
+                // findByJobIdAndReturnedAtIsNull covers only currently active assignments;
+                // historical (returned) rows have no effect on availability.
+                List<AssetJobAssignment> activeAssignments =
+                                assetJobAssignmentRepository.findByJobIdAndReturnedAtIsNull(jobId);
+                if (!activeAssignments.isEmpty()) {
+                        List<Asset> assetsToRelease = activeAssignments.stream()
+                                        .map(AssetJobAssignment::getAsset)
+                                        .collect(Collectors.toList());
+                        assetsToRelease.forEach(a -> a.setAvailable(true));
+                        assetRepository.saveAll(assetsToRelease);
+                }
+
+                // Bulk-delete all asset assignments for this job (RESTRICT FK — must go before job).
+                assetJobAssignmentRepository.deleteByJobId(jobId);
+
+                // Bulk-delete invoice line item snapshots and invoices before the job delete
+                // triggers ON DELETE CASCADE on estimates. invoices.estimate_id is RESTRICT.
+                invoiceRepository.deleteLineItemSnapshotsByJobId(jobId);
+                invoiceRepository.deleteByJobId(jobId);
+
+                // Bulk-delete the job_workflow record before the job. The FK on job_workflows.job_id
+                // has no ON DELETE clause (RESTRICT). Deleting it here lets DB cascades remove
+                // job_workflow_steps and all child rows (activities, attachments, comments,
+                // visit_logs) via their ON DELETE CASCADE FKs on job_workflow_steps.
+                jobWorkflowRepository.deleteByJobId(jobId);
                 fieldValueRepository.deleteByJobId(jobId);
                 jobRepository.delete(job);
+        }
+
+        @Override
+        public void archiveJob(Long jobId, Long companyId) {
+                Job job = jobRepository.findById(jobId)
+                                .filter(j -> j.getCompany().getId().equals(companyId))
+                                .orElseThrow(() -> new JobNotFoundException("Job not found"));
+
+                job.setArchived(true);
+                jobRepository.save(job);
         }
 
         /**
@@ -604,7 +688,7 @@ public class JobService implements IJobService {
                                 .companyId(job.getCompany().getId())
                                 .templateId(job.getTemplate().getId())
                                 .clientId(job.getClient() != null ? job.getClient().getId() : null)
-                                .customerId(job.getCustomer().getId())
+                                .customerId(job.getCustomer() != null ? job.getCustomer().getId() : null)
                                 .assignedWorkerId(job.getAssignedWorker() != null ? job.getAssignedWorker().getId()
                                                 : null)
                                 .workflowId(job.getWorkflow() != null ? job.getWorkflow().getId() : null)

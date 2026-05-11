@@ -32,4 +32,6 @@ public interface EstimateRepository extends JpaRepository<Estimate, Long> {
     Optional<Estimate> findByIdWithDetailsAndCompanyId(@Param("id") Long id, @Param("companyId") Long companyId);
 
     boolean existsByJobId(Long jobId);
+
+    Optional<Estimate> findByJobId(Long jobId);
 }

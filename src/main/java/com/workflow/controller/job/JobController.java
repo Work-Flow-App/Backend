@@ -60,6 +60,13 @@ public class JobController {
         );
     }
 
+    @GetMapping("/archived")
+    public ResponseEntity<List<JobResponse>> getArchived(Authentication auth) {
+        return ResponseEntity.ok(
+                jobService.getArchivedJobs(getCompanyId(auth))
+        );
+    }
+
     @GetMapping("/templates/{templateId}")
     public ResponseEntity<List<JobResponse>> getJobsByTemplate(
             @PathVariable Long templateId,

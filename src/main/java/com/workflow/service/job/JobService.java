@@ -356,6 +356,43 @@ public class JobService implements IJobService {
 
         @Override
         @Transactional(readOnly = true)
+        public List<JobResponse> getArchivedJobs(Long companyId) {
+                List<Job> jobs = jobRepository.findArchivedByCompanyId(companyId);
+                if (jobs.isEmpty()) return new ArrayList<>();
+
+                List<Long> jobIds = jobs.stream().map(Job::getId).collect(Collectors.toList());
+
+                Map<Long, Map<Long, FieldValueResponse>> fieldValuesByJob = fieldValueRepository
+                                .findByJobIdIn(jobIds)
+                                .stream()
+                                .collect(Collectors.groupingBy(
+                                                v -> v.getJob().getId(),
+                                                Collectors.toMap(
+                                                                v -> v.getField().getId(),
+                                                                v -> FieldValueResponse.builder()
+                                                                                .name(v.getField().getName())
+                                                                                .label(v.getField().getLabel())
+                                                                                .type(v.getField().getJobFieldType())
+                                                                                .value(v.getTypedValue())
+                                                                                .build())));
+
+                Map<Long, List<Long>> assetIdsByJob = assetJobAssignmentRepository
+                                .findByJobIdInAndReturnedAtIsNull(jobIds)
+                                .stream()
+                                .collect(Collectors.groupingBy(
+                                                a -> a.getJob().getId(),
+                                                Collectors.mapping(a -> a.getAsset().getId(), Collectors.toList())));
+
+                return jobs.stream()
+                                .map(job -> mapToResponse(
+                                                job,
+                                                fieldValuesByJob.getOrDefault(job.getId(), new HashMap<>()),
+                                                assetIdsByJob.getOrDefault(job.getId(), new ArrayList<>())))
+                                .collect(Collectors.toList());
+        }
+
+        @Override
+        @Transactional(readOnly = true)
         public List<JobResponse> getJobsByTemplate(Long templateId, Long companyId) {
                 JobTemplate template = templateRepository.findById(templateId)
                                 .filter(t -> t.getCompany().getId().equals(companyId))

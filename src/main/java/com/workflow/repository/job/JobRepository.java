@@ -9,24 +9,22 @@ import java.util.List;
 
 public interface JobRepository extends JpaRepository<Job, Long> {
 
-    @Query("SELECT DISTINCT j FROM Job j " +
-           "JOIN FETCH j.company " +
-           "JOIN FETCH j.template " +
-           "JOIN FETCH j.customer " +
-           "LEFT JOIN FETCH j.client " +
-           "LEFT JOIN FETCH j.assignedWorker " +
-           "LEFT JOIN FETCH j.workflow " +
-           "WHERE j.company.id = :companyId")
-    List<Job> findByCompanyId(@Param("companyId") Long companyId);
+       @Query("SELECT DISTINCT j FROM Job j " +
+                     "JOIN FETCH j.company " +
+                     "JOIN FETCH j.template " +
+                     "JOIN FETCH j.customer " +
+                     "LEFT JOIN FETCH j.client " +
+                     "LEFT JOIN FETCH j.workflow " +
+                     "WHERE j.company.id = :companyId")
+       List<Job> findByCompanyId(@Param("companyId") Long companyId);
 
-    @Query("SELECT DISTINCT j FROM Job j " +
-           "JOIN FETCH j.company " +
-           "JOIN FETCH j.template " +
-           "JOIN FETCH j.customer " +
-           "LEFT JOIN FETCH j.client " +
-           "LEFT JOIN FETCH j.assignedWorker " +
-           "LEFT JOIN FETCH j.workflow " +
-           "WHERE j.template.id = :templateId AND j.company.id = :companyId")
-    List<Job> findByTemplateIdAndCompanyId(@Param("templateId") Long templateId,
-                                           @Param("companyId") Long companyId);
+       @Query("SELECT DISTINCT j FROM Job j " +
+                     "JOIN FETCH j.company " +
+                     "JOIN FETCH j.template " +
+                     "JOIN FETCH j.customer " +
+                     "LEFT JOIN FETCH j.client " +
+                     "LEFT JOIN FETCH j.workflow " +
+                     "WHERE j.template.id = :templateId AND j.company.id = :companyId")
+       List<Job> findByTemplateIdAndCompanyId(@Param("templateId") Long templateId,
+                     @Param("companyId") Long companyId);
 }

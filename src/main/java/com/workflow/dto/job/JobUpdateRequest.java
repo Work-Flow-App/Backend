@@ -13,7 +13,6 @@ import java.util.Map;
 public class JobUpdateRequest {
     private Long clientId;
     private Long customerId;
-    private Long assignedWorkerId;
     private Long workflowId;
     private JobStatus status;
     private boolean archived;

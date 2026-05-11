@@ -37,4 +37,12 @@ public interface JobWorkflowStepRepository extends JpaRepository<JobWorkflowStep
     @Query("SELECT DISTINCT s FROM JobWorkflowStep s LEFT JOIN FETCH s.assignedWorkers WHERE s.jobWorkflow.id = :jobWorkflowId ORDER BY s.orderIndex ASC")
     List<JobWorkflowStep> findByJobWorkflowIdOrderByOrderIndexAsc(@Param("jobWorkflowId") Long jobWorkflowId);
 
+    // Batch load steps (and their workers) for multiple jobs
+    @Query("SELECT DISTINCT s FROM JobWorkflowStep s " +
+            "JOIN FETCH s.jobWorkflow jw " +
+            "JOIN FETCH jw.job " +
+            "LEFT JOIN FETCH s.assignedWorkers " +
+            "WHERE jw.job.id IN :jobIds")
+    List<JobWorkflowStep> findByJobWorkflow_Job_IdIn(@Param("jobIds") List<Long> jobIds);
+
 }

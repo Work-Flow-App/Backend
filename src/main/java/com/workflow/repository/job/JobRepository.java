@@ -31,4 +31,14 @@ public interface JobRepository extends JpaRepository<Job, Long> {
            "WHERE j.template.id = :templateId AND j.company.id = :companyId AND j.archived = false")
     List<Job> findByTemplateIdAndCompanyId(@Param("templateId") Long templateId,
                                            @Param("companyId") Long companyId);
+
+    @Query("SELECT DISTINCT j FROM Job j " +
+           "JOIN FETCH j.company " +
+           "JOIN FETCH j.template " +
+           "LEFT JOIN FETCH j.customer " +
+           "LEFT JOIN FETCH j.client " +
+           "LEFT JOIN FETCH j.assignedWorker " +
+           "LEFT JOIN FETCH j.workflow " +
+           "WHERE j.company.id = :companyId AND j.archived = true")
+    List<Job> findArchivedByCompanyId(@Param("companyId") Long companyId);
 }

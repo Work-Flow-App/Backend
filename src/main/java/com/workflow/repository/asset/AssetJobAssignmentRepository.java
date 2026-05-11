@@ -2,6 +2,10 @@ package com.workflow.repository.asset;
 
 import com.workflow.entity.asset.AssetJobAssignment;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
 import java.util.List;
 import java.util.Optional;
 
@@ -16,5 +20,7 @@ public interface AssetJobAssignmentRepository extends JpaRepository<AssetJobAssi
     List<AssetJobAssignment> findByAssetIdInAndReturnedAtIsNull(List<Long> assetIds);
     List<AssetJobAssignment> findByJobId(Long jobId);
 
-    void deleteByJobId(Long jobId);
+    @Modifying(clearAutomatically = true)
+    @Query("DELETE FROM AssetJobAssignment a WHERE a.job.id = :jobId")
+    void deleteByJobId(@Param("jobId") Long jobId);
 }

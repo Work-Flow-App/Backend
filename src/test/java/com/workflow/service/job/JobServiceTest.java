@@ -255,10 +255,11 @@ class JobServiceTest {
                                 .build();
 
                 when(jobRepository.findById(jobId)).thenReturn(Optional.of(archivedJob));
-                when(estimateRepository.findByJobId(jobId)).thenReturn(Optional.empty());
 
                 jobService.deleteJob(jobId, 1L);
 
+                verify(invoiceRepository).deleteLineItemSnapshotsByJobId(jobId);
+                verify(invoiceRepository).deleteByJobId(jobId);
                 verify(assetJobAssignmentRepository).deleteByJobId(jobId);
                 verify(jobWorkflowRepository).deleteByJobId(jobId);
                 verify(fieldValueRepository).deleteByJobId(jobId);

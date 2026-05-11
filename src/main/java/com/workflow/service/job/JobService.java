@@ -444,18 +444,32 @@ public class JobService implements IJobService {
                         throw new InvalidRequestException("Job must be archived before it can be deleted");
                 }
 
-                // Remove all asset assignments first — asset_job_assignments.job_id has RESTRICT FK.
+                // Mark assigned assets as available before bulk-deleting the assignment rows.
+                // findByJobIdAndReturnedAtIsNull covers only currently active assignments;
+                // historical (returned) rows have no effect on availability.
+                List<AssetJobAssignment> activeAssignments =
+                                assetJobAssignmentRepository.findByJobIdAndReturnedAtIsNull(jobId);
+                if (!activeAssignments.isEmpty()) {
+                        List<Asset> assetsToRelease = activeAssignments.stream()
+                                        .map(AssetJobAssignment::getAsset)
+                                        .collect(Collectors.toList());
+                        assetsToRelease.forEach(a -> a.setAvailable(true));
+                        assetRepository.saveAll(assetsToRelease);
+                }
+
+                // Bulk-delete all asset assignments for this job (RESTRICT FK — must go before job).
                 assetJobAssignmentRepository.deleteByJobId(jobId);
 
                 // Delete any invoices linked to this job's estimate before the job delete triggers
                 // the estimates ON DELETE CASCADE. invoices.estimate_id has RESTRICT FK which would
                 // otherwise block the cascade and kill the entire transaction.
+                // Invoice.lineItemSnapshots has cascade=ALL + orphanRemoval, so deleteAll handles them.
                 estimateRepository.findByJobId(jobId).ifPresent(estimate -> {
                         List<Invoice> invoices = invoiceRepository.findByEstimateId(estimate.getId());
                         invoiceRepository.deleteAll(invoices);
                 });
 
-                // Delete the job_workflow record before the job. The FK on job_workflows.job_id
+                // Bulk-delete the job_workflow record before the job. The FK on job_workflows.job_id
                 // has no ON DELETE clause (RESTRICT). Deleting it here lets DB cascades remove
                 // job_workflow_steps and all child rows (activities, attachments, comments,
                 // visit_logs) via their ON DELETE CASCADE FKs on job_workflow_steps.

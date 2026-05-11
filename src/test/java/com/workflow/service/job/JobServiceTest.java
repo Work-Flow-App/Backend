@@ -16,10 +16,12 @@ import com.workflow.repository.company.CompanyRepository;
 import com.workflow.repository.customer.ClientRepository;
 import com.workflow.repository.customer.CustomerRepository;
 import com.workflow.repository.financial.EstimateRepository;
+import com.workflow.repository.financial.InvoiceRepository;
 import com.workflow.repository.job.JobFieldValueRepository;
 import com.workflow.repository.job.JobRepository;
 import com.workflow.repository.job.JobTemplateFieldRepository;
 import com.workflow.repository.job.JobTemplateRepository;
+import com.workflow.repository.job.JobWorkflowRepository;
 import com.workflow.repository.worker.WorkerRepository;
 import com.workflow.repository.workflow.WorkflowRepository;
 import com.workflow.service.sequence.CompanyCounterService;
@@ -76,6 +78,12 @@ class JobServiceTest {
 
         @Mock
         private EstimateRepository estimateRepository;
+
+        @Mock
+        private InvoiceRepository invoiceRepository;
+
+        @Mock
+        private JobWorkflowRepository jobWorkflowRepository;
 
         @Mock
         private IJobWorkflowService jobWorkflowService;
@@ -172,6 +180,28 @@ class JobServiceTest {
         // Company existence is now enforced by FK constraint at commit time, not upfront.
         // The first service-level validation is the template check.
         @Test
+        void createJob_ShouldCreateJobSuccessfully_WhenCustomerIsNull() {
+                createRequest.setCustomerId(null);
+                when(companyRepository.getReferenceById(1L)).thenReturn(company);
+                when(templateRepository.findById(3L)).thenReturn(Optional.of(template));
+                when(clientRepository.findById(1L)).thenReturn(Optional.of(client));
+                when(workerRepository.findById(1L)).thenReturn(Optional.of(worker));
+                when(templateFieldRepository.findByTemplateIdOrderByOrderIndexAsc(3L))
+                                .thenReturn(Collections.emptyList());
+                doAnswer(invocation -> {
+                        Job job = invocation.getArgument(0);
+                        job.setId(55L);
+                        return job;
+                }).when(jobRepository).saveAndFlush(any(Job.class));
+
+                JobResponse response = jobService.createJob(createRequest, 1L);
+
+                assertThat(response).isNotNull();
+                assertThat(response.getCustomerId()).isNull();
+                verify(customerRepository, never()).findById(any());
+        }
+
+        @Test
         void createJob_ShouldThrowException_WhenTemplateNotFound() {
                 when(companyRepository.getReferenceById(1L)).thenReturn(company);
                 when(templateRepository.findById(3L)).thenReturn(Optional.empty());
@@ -209,5 +239,92 @@ class JobServiceTest {
                                 .hasMessageContaining("Worker not found");
 
                 verify(jobRepository, never()).saveAndFlush(any());
+        }
+
+        // ============= deleteJob Tests =============
+
+        @Test
+        void deleteJob_Success() {
+                Long jobId = 10L;
+                Job archivedJob = Job.builder()
+                                .id(jobId)
+                                .company(company)
+                                .template(template)
+                                .status(JobStatus.COMPLETED)
+                                .archived(true)
+                                .build();
+
+                when(jobRepository.findById(jobId)).thenReturn(Optional.of(archivedJob));
+                when(estimateRepository.findByJobId(jobId)).thenReturn(Optional.empty());
+
+                jobService.deleteJob(jobId, 1L);
+
+                verify(assetJobAssignmentRepository).deleteByJobId(jobId);
+                verify(jobWorkflowRepository).deleteByJobId(jobId);
+                verify(fieldValueRepository).deleteByJobId(jobId);
+                verify(jobRepository).delete(archivedJob);
+        }
+
+        @Test
+        void deleteJob_ThrowsWhenNotArchived() {
+                Long jobId = 11L;
+                Job activeJob = Job.builder()
+                                .id(jobId)
+                                .company(company)
+                                .template(template)
+                                .status(JobStatus.IN_PROGRESS)
+                                .archived(false)
+                                .build();
+
+                when(jobRepository.findById(jobId)).thenReturn(Optional.of(activeJob));
+
+                assertThatThrownBy(() -> jobService.deleteJob(jobId, 1L))
+                                .isInstanceOf(InvalidRequestException.class)
+                                .hasMessageContaining("archived");
+
+                verify(jobRepository, never()).delete(any());
+        }
+
+        @Test
+        void deleteJob_NotFound() {
+                Long jobId = 99L;
+                when(jobRepository.findById(jobId)).thenReturn(Optional.empty());
+
+                assertThatThrownBy(() -> jobService.deleteJob(jobId, 1L))
+                                .isInstanceOf(JobNotFoundException.class);
+
+                verify(jobRepository, never()).delete(any());
+        }
+
+        // ============= archiveJob Tests =============
+
+        @Test
+        void archiveJob_Success() {
+                Long jobId = 20L;
+                Job job = Job.builder()
+                                .id(jobId)
+                                .company(company)
+                                .template(template)
+                                .status(JobStatus.NEW)
+                                .archived(false)
+                                .build();
+
+                when(jobRepository.findById(jobId)).thenReturn(Optional.of(job));
+
+                jobService.archiveJob(jobId, 1L);
+
+                assertThat(job.isArchived()).isTrue();
+                verify(jobRepository).save(job);
+        }
+
+        @Test
+        void archiveJob_NotFound() {
+                Long jobId = 99L;
+                when(jobRepository.findById(jobId)).thenReturn(Optional.empty());
+
+                assertThatThrownBy(() -> jobService.archiveJob(jobId, 1L))
+                                .isInstanceOf(JobNotFoundException.class);
+
+                verify(jobRepository, never()).save(any());
         }
 }

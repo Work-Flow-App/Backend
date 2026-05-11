@@ -29,6 +29,7 @@ spring:
     clean-disabled: ${FLYWAY_CLEAN_DISABLED:true}
     out-of-order: false
     validate-migration-naming: true
+    repair-on-migrate: true
 
   mail:
     host: ${MAIL_HOST:email-smtp.eu-central-1.amazonaws.com}

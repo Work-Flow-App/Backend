@@ -12,6 +12,7 @@ import com.workflow.entity.customer.Customer;
 import com.workflow.entity.customer.CustomerAddress;
 import com.workflow.entity.financial.Estimate;
 import com.workflow.entity.financial.Invoice;
+import com.workflow.entity.financial.InvoiceLineItemSnapshot;
 import com.workflow.entity.financial.LineItem;
 import com.workflow.repository.financial.EstimateRepository;
 import com.workflow.repository.financial.InvoiceRepository;
@@ -91,17 +92,33 @@ public class InvoiceService implements IInvoiceService {
                 .map(LineItem::getTotalAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
+        List<InvoiceLineItemSnapshot> snapshots = selectedItems.stream()
+                .map(li -> InvoiceLineItemSnapshot.builder()
+                        .sourceLineItemId(li.getId())
+                        .productCode(li.getProductCode())
+                        .productDescription(li.getProductDescription())
+                        .additionalDetails(li.getAdditionalDetails())
+                        .unitPrice(li.getUnitPrice())
+                        .coreOrSub(li.getCoreOrSub())
+                        .quantity(li.getQuantity())
+                        .vatRate(li.getVatRate())
+                        .netAmount(li.getNetAmount())
+                        .vatAmount(li.getVatAmount())
+                        .totalAmount(li.getTotalAmount())
+                        .build())
+                .collect(Collectors.toList());
+
         // Generate invoice number first — REQUIRES_NEW transaction guarantees uniqueness
         long invoiceSeq = companyCounterService.nextInvoiceId(companyId);
         String invoiceNumber = String.format("INV-%d-%05d", LocalDate.now().getYear(), invoiceSeq);
         String s3Key = String.format("invoices/%d/%s.pdf", companyId, invoiceNumber);
 
-        Invoice invoice = Invoice.builder()
+        Invoice invoiceToSave = Invoice.builder()
                 .estimate(estimate)
                 .company(estimate.getCompany())
                 .invoiceNumber(invoiceNumber)
                 .s3Key(s3Key)
-                .lineItems(selectedItems)
+                .lineItemSnapshots(snapshots)
                 .dueDate(request.getDueDate())
                 .reference(request.getReference())
                 .totalNet(totalNet)
@@ -109,7 +126,8 @@ public class InvoiceService implements IInvoiceService {
                 .grandTotal(grandTotal)
                 .build();
 
-        invoice = invoiceRepository.save(invoice);
+        snapshots.forEach(s -> s.setInvoice(invoiceToSave));
+        Invoice invoice = invoiceRepository.save(invoiceToSave);
 
         byte[] pdfBytes = generatePdf(invoice, invoiceNumber, selectedItems, estimate);
         storageService.upload(s3Key, new ByteArrayInputStream(pdfBytes), pdfBytes.length, "application/pdf");

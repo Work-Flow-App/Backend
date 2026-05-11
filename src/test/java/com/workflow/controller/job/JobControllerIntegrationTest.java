@@ -313,6 +313,23 @@ class JobControllerIntegrationTest {
     }
 
     @Test
+    void shouldCreateJobWithoutCustomer() throws Exception {
+        JobCreateRequest request = JobCreateRequest.builder()
+                .templateId(template.getId())
+                .customerId(null)
+                .status(JobStatus.NEW)
+                .fieldValues(new HashMap<>())
+                .build();
+
+        mockMvc.perform(post("/api/v1/jobs")
+                        .header("Authorization", "Bearer " + companyUserToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.customerId").isEmpty());
+    }
+
+    @Test
     void shouldReturn404WhenTemplateNotFound() throws Exception {
         JobCreateRequest request = JobCreateRequest.builder()
                 .templateId(99999L)
@@ -518,9 +535,22 @@ class JobControllerIntegrationTest {
 
     @Test
     void shouldDeleteJobSuccessfully() throws Exception {
+        // Archive the job first — delete requires archived=true
+        mockMvc.perform(patch("/api/v1/jobs/" + job.getId() + "/archive")
+                        .header("Authorization", "Bearer " + companyUserToken))
+                .andExpect(status().isNoContent());
+
         mockMvc.perform(delete("/api/v1/jobs/" + job.getId())
                         .header("Authorization", "Bearer " + companyUserToken))
                 .andExpect(status().isNoContent());
+    }
+
+    @Test
+    void shouldReturn400WhenDeletingNonArchivedJob() throws Exception {
+        // job is created with archived=false in setUp — delete must be rejected
+        mockMvc.perform(delete("/api/v1/jobs/" + job.getId())
+                        .header("Authorization", "Bearer " + companyUserToken))
+                .andExpect(status().isBadRequest());
     }
 
     @Test

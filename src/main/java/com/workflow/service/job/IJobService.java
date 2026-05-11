@@ -10,4 +10,6 @@ public interface IJobService {
     List<JobResponse> getAllJobs(Long companyId);
     List<JobResponse> getJobsByTemplate(Long templateId, Long companyId);
     void deleteJob(Long jobId, Long companyId);
+
+    void archiveJob(Long jobId, Long companyId);
 }

@@ -79,6 +79,15 @@ public class JobController {
         return ResponseEntity.noContent().build();
     }
 
+    @PatchMapping("/{id}/archive")
+    public ResponseEntity<Void> archive(
+            @PathVariable Long id,
+            Authentication auth
+    ) {
+        jobService.archiveJob(id, getCompanyId(auth));
+        return ResponseEntity.noContent().build();
+    }
+
     private Long getCompanyId(Authentication auth) {
         return AuthUtils.getCompanyId(auth, companyService);
     }

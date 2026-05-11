@@ -9,6 +9,7 @@ import com.workflow.entity.company.Company;
 import com.workflow.entity.customer.Customer;
 import com.workflow.entity.financial.Estimate;
 import com.workflow.entity.financial.Invoice;
+import com.workflow.entity.financial.InvoiceLineItemSnapshot;
 import com.workflow.entity.financial.LineItem;
 import com.workflow.entity.job.Job;
 import com.workflow.entity.job.JobTemplate;
@@ -150,17 +151,33 @@ class InvoiceControllerIntegrationTest {
         estimate = estimateRepository.save(estimate);
 
         // Pre-existing invoice
-        existingInvoice = invoiceRepository.save(Invoice.builder()
+        InvoiceLineItemSnapshot snap = InvoiceLineItemSnapshot.builder()
+                .sourceLineItemId(linkedLineItem.getId())
+                .productCode(linkedLineItem.getProductCode())
+                .productDescription(linkedLineItem.getProductDescription())
+                .additionalDetails(linkedLineItem.getAdditionalDetails())
+                .unitPrice(linkedLineItem.getUnitPrice())
+                .coreOrSub(linkedLineItem.getCoreOrSub())
+                .quantity(linkedLineItem.getQuantity())
+                .vatRate(linkedLineItem.getVatRate())
+                .netAmount(linkedLineItem.getNetAmount())
+                .vatAmount(linkedLineItem.getVatAmount())
+                .totalAmount(linkedLineItem.getTotalAmount())
+                .build();
+
+        Invoice invoiceToBuild = Invoice.builder()
                 .estimate(estimate)
                 .company(company)
                 .invoiceNumber("INV-000001")
                 .s3Key("invoices/INV-000001.pdf")
-                .lineItems(new ArrayList<>(List.of(linkedLineItem)))
+                .lineItemSnapshots(new ArrayList<>(List.of(snap)))
                 .totalNet(new BigDecimal("200.00"))
                 .totalVat(new BigDecimal("40.00"))
                 .grandTotal(new BigDecimal("240.00"))
                 .dueDate(LocalDate.now().plusDays(30))
-                .build());
+                .build();
+        snap.setInvoice(invoiceToBuild);
+        existingInvoice = invoiceRepository.save(invoiceToBuild);
 
         companyToken = jwtService.generateToken(companyUser);
         anotherCompanyToken = jwtService.generateToken(anotherUser);

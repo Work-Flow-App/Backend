@@ -13,4 +13,5 @@ public interface IWorkerService {
     WorkerResponse updateWorker(Long workerId, WorkerUpdateRequest request, Long companyUserId);
     WorkerResponse patchWorker(Long workerId, WorkerUpdateRequest request, Long companyUserId);
     void deleteWorker(Long workerId, Long companyUserId);
+    void resetWorkerPassword(Long workerId, String newPassword, Long companyUserId);
 }

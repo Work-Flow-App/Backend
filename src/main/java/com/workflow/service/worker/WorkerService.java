@@ -202,4 +202,17 @@ public class WorkerService implements IWorkerService {
         workerRepository.save(worker);
         log.info("Archived worker with ID: {}", workerId);
     }
+
+    @Override
+    @Transactional
+    public void resetWorkerPassword(Long workerId, String newPassword, Long companyUserId) {
+        Company company = companyService.findCompanyByUserId(companyUserId);
+
+        Worker worker = workerRepository.findByIdAndCompanyIdAndNotArchived(workerId, company.getId())
+                .orElseThrow(() -> new WorkerNotFoundException("Worker not found with ID: " + workerId));
+
+        worker.getUser().setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(worker.getUser());
+        log.info("Reset password for worker ID: {} in company: {}", workerId, company.getId());
+    }
 }

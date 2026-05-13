@@ -87,6 +87,17 @@ public class WorkerController {
         return ResponseEntity.noContent().build();
     }
 
+    @PutMapping("/{id}/reset-password")
+    public ResponseEntity<Void> resetWorkerUsernamePassword(
+            @PathVariable Long id,
+            @Valid @RequestBody WorkerPasswordResetRequest request,
+            Authentication authentication
+    ) {
+        User user = (User) authentication.getPrincipal();
+        workerService.resetWorkerUsernamePassword(id, request, user.getId());
+        return ResponseEntity.noContent().build();
+    }
+
     @PostMapping("/invite")
     public ResponseEntity<WorkerInviteResponse> sendInvitation(
             @Valid @RequestBody WorkerInvitationRequest request,

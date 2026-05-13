@@ -1,6 +1,7 @@
 package com.workflow.service.worker;
 
 import com.workflow.dto.worker.WorkerCreateRequest;
+import com.workflow.dto.worker.WorkerPasswordResetRequest;
 import com.workflow.dto.worker.WorkerResponse;
 import com.workflow.dto.worker.WorkerUpdateRequest;
 
@@ -13,5 +14,5 @@ public interface IWorkerService {
     WorkerResponse updateWorker(Long workerId, WorkerUpdateRequest request, Long companyUserId);
     WorkerResponse patchWorker(Long workerId, WorkerUpdateRequest request, Long companyUserId);
     void deleteWorker(Long workerId, Long companyUserId);
-    void resetWorkerPassword(Long workerId, String newPassword, Long companyUserId);
+    void resetWorkerUsernamePassword(Long workerId, WorkerPasswordResetRequest request, Long companyUserId);
 }

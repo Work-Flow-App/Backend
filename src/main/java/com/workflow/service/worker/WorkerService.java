@@ -6,6 +6,7 @@ import com.workflow.common.exception.business.WorkerAlreadyExistsException;
 import com.workflow.common.exception.business.WorkerNotFoundException;
 import com.workflow.dto.worker.WorkerCreateRequest;
 import com.workflow.dto.worker.WorkerInviteResponse;
+import com.workflow.dto.worker.WorkerPasswordResetRequest;
 import com.workflow.dto.worker.WorkerResponse;
 import com.workflow.dto.worker.WorkerUpdateRequest;
 import com.workflow.entity.company.Company;
@@ -205,14 +206,24 @@ public class WorkerService implements IWorkerService {
 
     @Override
     @Transactional
-    public void resetWorkerPassword(Long workerId, String newPassword, Long companyUserId) {
+    public void resetWorkerUsernamePassword(Long workerId, WorkerPasswordResetRequest request, Long companyUserId) {
         Company company = companyService.findCompanyByUserId(companyUserId);
 
         Worker worker = workerRepository.findByIdAndCompanyIdAndNotArchived(workerId, company.getId())
                 .orElseThrow(() -> new WorkerNotFoundException("Worker not found with ID: " + workerId));
 
-        worker.getUser().setPassword(passwordEncoder.encode(newPassword));
+        worker.getUser().setPassword(passwordEncoder.encode(request.newPassword()));
+
+        if (request.newUsername() != null && !request.newUsername().isBlank()) {
+            userRepository.findByUsername(request.newUsername()).ifPresent(existing -> {
+                if (!existing.getId().equals(worker.getUser().getId())) {
+                    throw new UserAlreadyExistsException("Username '" + request.newUsername() + "' is already taken");
+                }
+            });
+            worker.getUser().setUsername(request.newUsername());
+        }
+
         userRepository.save(worker.getUser());
-        log.info("Reset password for worker ID: {} in company: {}", workerId, company.getId());
+        log.info("Reset credentials for worker ID: {} in company: {}", workerId, company.getId());
     }
 }

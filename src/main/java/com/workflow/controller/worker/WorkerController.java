@@ -88,13 +88,13 @@ public class WorkerController {
     }
 
     @PutMapping("/{id}/reset-password")
-    public ResponseEntity<Void> resetWorkerPassword(
+    public ResponseEntity<Void> resetWorkerUsernamePassword(
             @PathVariable Long id,
             @Valid @RequestBody WorkerPasswordResetRequest request,
             Authentication authentication
     ) {
         User user = (User) authentication.getPrincipal();
-        workerService.resetWorkerPassword(id, request.newPassword(), user.getId());
+        workerService.resetWorkerUsernamePassword(id, request, user.getId());
         return ResponseEntity.noContent().build();
     }
 

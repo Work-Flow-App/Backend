@@ -10,7 +10,6 @@ import com.workflow.entity.company.Company;
 import com.workflow.entity.financial.LineItem;
 import com.workflow.common.exception.business.LineItemInUseException;
 import com.workflow.repository.company.CompanyRepository;
-import com.workflow.repository.financial.InvoiceRepository;
 import com.workflow.repository.financial.LineItemRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -33,7 +32,6 @@ class LineItemServiceTest {
 
     @Mock private LineItemRepository lineItemRepository;
     @Mock private CompanyRepository companyRepository;
-    @Mock private InvoiceRepository invoiceRepository;
 
     @InjectMocks
     private LineItemService lineItemService;
@@ -294,7 +292,6 @@ class LineItemServiceTest {
     void deleteLineItem_ShouldDeleteSuccessfully() {
         LineItem item = buildItem(1L);
         when(lineItemRepository.findByIdAndCompanyId(1L, 1L)).thenReturn(Optional.of(item));
-        when(invoiceRepository.existsByLineItemsId(1L)).thenReturn(false);
 
         lineItemService.deleteLineItem(1L, 1L);
         verify(lineItemRepository).delete(item);
@@ -303,8 +300,8 @@ class LineItemServiceTest {
     @Test
     void deleteLineItem_ShouldThrowConflict_WhenUsedInInvoice() {
         LineItem item = buildItem(1L);
+        item.setInvoiced(true);
         when(lineItemRepository.findByIdAndCompanyId(1L, 1L)).thenReturn(Optional.of(item));
-        when(invoiceRepository.existsByLineItemsId(1L)).thenReturn(true);
 
         assertThatThrownBy(() -> lineItemService.deleteLineItem(1L, 1L))
                 .isInstanceOf(LineItemInUseException.class);

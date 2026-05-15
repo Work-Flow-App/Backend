@@ -1,5 +1,7 @@
 package com.workflow.controller.invoice;
 
+import com.workflow.AbstractControllerIntegrationTest;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.workflow.common.constant.CoreOrSub;
 import com.workflow.common.constant.Role;
@@ -9,6 +11,7 @@ import com.workflow.entity.company.Company;
 import com.workflow.entity.customer.Customer;
 import com.workflow.entity.financial.Estimate;
 import com.workflow.entity.financial.Invoice;
+import com.workflow.entity.financial.InvoiceLineItemSnapshot;
 import com.workflow.entity.financial.LineItem;
 import com.workflow.entity.job.Job;
 import com.workflow.entity.job.JobTemplate;
@@ -22,21 +25,14 @@ import com.workflow.repository.financial.LineItemRepository;
 import com.workflow.repository.job.JobRepository;
 import com.workflow.repository.job.JobTemplateRepository;
 import com.workflow.service.auth.JwtService;
-import com.workflow.service.storage.IStorageService;
-import com.workflow.templates.pdf.invoice.InvoicePdfRenderer;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -53,11 +49,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@SpringBootTest
-@AutoConfigureMockMvc
-@ActiveProfiles("test")
-@Transactional
-class InvoiceControllerIntegrationTest {
+class InvoiceControllerIntegrationTest extends AbstractControllerIntegrationTest {
 
     @Autowired private MockMvc mockMvc;
     @Autowired private ObjectMapper objectMapper;
@@ -75,8 +67,6 @@ class InvoiceControllerIntegrationTest {
     @Autowired private LineItemRepository lineItemRepository;
     @Autowired private InvoiceRepository invoiceRepository;
 
-    @MockBean private IStorageService storageService;
-    @MockBean private InvoicePdfRenderer pdfRenderer;
 
     private Company company;
     private Company anotherCompany;
@@ -150,17 +140,33 @@ class InvoiceControllerIntegrationTest {
         estimate = estimateRepository.save(estimate);
 
         // Pre-existing invoice
-        existingInvoice = invoiceRepository.save(Invoice.builder()
+        InvoiceLineItemSnapshot snap = InvoiceLineItemSnapshot.builder()
+                .sourceLineItemId(linkedLineItem.getId())
+                .productCode(linkedLineItem.getProductCode())
+                .productDescription(linkedLineItem.getProductDescription())
+                .additionalDetails(linkedLineItem.getAdditionalDetails())
+                .unitPrice(linkedLineItem.getUnitPrice())
+                .coreOrSub(linkedLineItem.getCoreOrSub())
+                .quantity(linkedLineItem.getQuantity())
+                .vatRate(linkedLineItem.getVatRate())
+                .netAmount(linkedLineItem.getNetAmount())
+                .vatAmount(linkedLineItem.getVatAmount())
+                .totalAmount(linkedLineItem.getTotalAmount())
+                .build();
+
+        Invoice invoiceToBuild = Invoice.builder()
                 .estimate(estimate)
                 .company(company)
                 .invoiceNumber("INV-000001")
                 .s3Key("invoices/INV-000001.pdf")
-                .lineItems(new ArrayList<>(List.of(linkedLineItem)))
+                .lineItemSnapshots(new ArrayList<>(List.of(snap)))
                 .totalNet(new BigDecimal("200.00"))
                 .totalVat(new BigDecimal("40.00"))
                 .grandTotal(new BigDecimal("240.00"))
                 .dueDate(LocalDate.now().plusDays(30))
-                .build());
+                .build();
+        snap.setInvoice(invoiceToBuild);
+        existingInvoice = invoiceRepository.save(invoiceToBuild);
 
         companyToken = jwtService.generateToken(companyUser);
         anotherCompanyToken = jwtService.generateToken(anotherUser);

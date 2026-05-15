@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.workflow.common.exception.business.UnauthorizedWorkflowAccessException;
+import com.workflow.common.exception.business.WorkflowInUseException;
 import com.workflow.common.exception.business.WorkflowNotFoundException;
 import com.workflow.common.exception.business.WorkflowStepNotFoundException;
 import com.workflow.dto.workflow.WorkflowBulkUpdateRequest;
@@ -24,6 +25,7 @@ import com.workflow.entity.company.Company;
 import com.workflow.entity.workflow.Workflow;
 import com.workflow.entity.workflow.WorkflowStep;
 import com.workflow.repository.company.CompanyRepository;
+import com.workflow.repository.job.JobRepository;
 import com.workflow.repository.workflow.WorkflowRepository;
 import com.workflow.repository.workflow.WorkflowStepRepository;
 import com.workflow.service.sequence.CompanyCounterService;
@@ -38,6 +40,7 @@ public class WorkflowService implements IWorkflowService {
         private final WorkflowRepository workflowRepository;
         private final WorkflowStepRepository stepRepository;
         private final CompanyRepository companyRepository;
+        private final JobRepository jobRepository;
         private final CompanyCounterService companyCounterService;
 
         @Override
@@ -171,7 +174,125 @@ public class WorkflowService implements IWorkflowService {
                 }
                 if (request.getDescription() != null) {
                         workflow.setDescription(request.getDescription());
+                if (jobRepository.existsByWorkflowIdAndArchivedFalse(id)) {
+                        throw new WorkflowInUseException(
+                                        "Cannot delete workflow: one or more active jobs reference it. " +
+                                        "Archive or reassign those jobs first.");
                 }
+
+                workflowRepository.delete(workflow);
+        }
+
+        @Override
+        public void archiveWorkflow(Long id, Long companyId) {
+                Workflow workflow = workflowRepository.findByIdAndCompanyId(id, companyId)
+                                .orElseThrow(() -> new WorkflowNotFoundException("Workflow not found"));
+
+                workflow.setArchived(true);
+        }
+
+        @Override
+        public List<WorkflowResponse> getAllWorkflows(Long companyId) {
+                return workflowRepository.findByCompanyIdAndArchivedFalse(companyId)
+                                .stream().map(this::map).collect(Collectors.toList());
+        }
+
+        @Override
+        public WorkflowResponse getWorkflow(Long id, Long companyId) {
+                Workflow workflow = workflowRepository.findByIdAndCompanyId(id, companyId)
+                                .orElseThrow(() -> new WorkflowNotFoundException("Workflow not found"));
+
+                return map(workflow);
+        }
+
+        @Override
+        public WorkflowStepResponse createStep(WorkflowStepCreateRequest request, Long companyId) {
+                Workflow workflow = workflowRepository.findByIdAndCompanyId(request.getWorkflowId(), companyId)
+                                .orElseThrow(() -> new WorkflowNotFoundException("Workflow not found"));
+
+                WorkflowStep step = stepRepository.save(
+                                WorkflowStep.builder()
+                                                .workflow(workflow)
+                                                .name(request.getName())
+                                                .description(request.getDescription())
+                                                .orderIndex(request.getOrderIndex())
+                                                .optional(request.isOptional())
+                                                .build());
+
+                return map(step);
+        }
+
+        @Override
+        public List<WorkflowStepResponse> getSteps(Long workflowId, Long companyId) {
+
+                Workflow workflow = workflowRepository.findByIdAndCompanyId(workflowId, companyId)
+                                .orElseThrow(() -> new UnauthorizedWorkflowAccessException("Unauthorized access"));
+
+                return stepRepository.findByWorkflowIdOrderByOrderIndexAsc(workflow.getId())
+                                .stream()
+                                .map(this::map)
+                                .collect(Collectors.toList());
+        }
+
+        @Override
+        public WorkflowStepResponse updateStep(Long stepId, WorkflowStepCreateRequest request, Long companyId) {
+                WorkflowStep step = stepRepository.findByIdAndWorkflow_CompanyId(stepId, companyId)
+                                .orElseThrow(() -> new WorkflowStepNotFoundException("Workflow step not found"));
+
+                step.setName(request.getName());
+                step.setDescription(request.getDescription());
+                step.setOrderIndex(request.getOrderIndex());
+                step.setOptional(request.isOptional());
+
+                return map(step);
+        }
+
+        @Override
+        public WorkflowStepResponse getStep(Long stepId, Long companyId) {
+                WorkflowStep step = stepRepository.findByIdAndWorkflow_CompanyId(stepId, companyId)
+                                .orElseThrow(() -> new WorkflowStepNotFoundException("Workflow step not found"));
+
+                return map(step);
+        }
+
+        @Override
+        public List<WorkflowStepResponse> getAllSteps(Long companyId) {
+                return stepRepository
+                                .findByWorkflow_Company_IdOrderByWorkflow_IdAscOrderIndexAsc(companyId)
+                                .stream()
+                                .map(this::map)
+                                .collect(Collectors.toList());
+        }
+
+        @Override
+        public void deleteStep(Long stepId, Long companyId) {
+                WorkflowStep step = stepRepository.findByIdAndWorkflow_CompanyId(stepId, companyId)
+                                .orElseThrow(() -> new WorkflowStepNotFoundException("Workflow step not found"));
+
+                stepRepository.delete(step);
+        }
+
+        @Override
+        public WorkflowResponse bulkUpdateWorkflow(
+                        Long workflowId,
+                        WorkflowBulkUpdateRequest request,
+                        Long companyId) {
+
+                Workflow workflow = workflowRepository.findByIdAndCompanyId(workflowId, companyId)
+                                .orElseThrow(() -> new WorkflowNotFoundException("Workflow not found"));
+
+                // 1️⃣ Update workflow fields
+                if (request.getName() != null) {
+                        workflow.setName(request.getName());
+                }
+                if (request.getDescription() != null) {
+                        workflow.setDescription(request.getDescription());
+                }
+
+                // 2️⃣ Fetch existing steps
+                List<WorkflowStep> existingSteps = stepRepository.findByWorkflowIdOrderByOrderIndexAsc(workflowId);
+                Map<Long, WorkflowStep> existingMap = existingSteps.stream()
+                                .collect(Collectors.toMap(WorkflowStep::getId, s -> s));
 
                 // 2️⃣ Fetch existing steps
                 List<WorkflowStep> existingSteps = stepRepository.findByWorkflowIdOrderByOrderIndexAsc(workflowId);

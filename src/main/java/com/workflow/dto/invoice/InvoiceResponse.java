@@ -1,6 +1,5 @@
 package com.workflow.dto.invoice;
 
-import com.workflow.dto.estimate.LineItemResponse;
 import com.workflow.entity.financial.Invoice;
 import lombok.*;
 
@@ -23,7 +22,7 @@ public class InvoiceResponse {
     private LocalDate dueDate;
     private String reference;
     private String presignedUrl;
-    private List<LineItemResponse> lineItems;
+    private List<InvoiceLineItemSnapshotResponse> lineItems;
     private BigDecimal totalNet;
     private BigDecimal totalVat;
     private BigDecimal grandTotal;
@@ -31,8 +30,8 @@ public class InvoiceResponse {
     private LocalDateTime updatedAt;
 
     public static InvoiceResponse fromEntity(Invoice invoice, String presignedUrl) {
-        List<LineItemResponse> items = invoice.getLineItems().stream()
-                .map(LineItemResponse::fromEntity)
+        List<InvoiceLineItemSnapshotResponse> items = invoice.getLineItemSnapshots().stream()
+                .map(InvoiceLineItemSnapshotResponse::fromEntity)
                 .collect(Collectors.toList());
 
         return InvoiceResponse.builder()

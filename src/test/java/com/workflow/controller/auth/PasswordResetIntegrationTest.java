@@ -1,5 +1,7 @@
 package com.workflow.controller.auth;
 
+import com.workflow.AbstractControllerIntegrationTest;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.workflow.common.constant.Role;
 import com.workflow.dto.auth.password.ForgotPasswordRequest;
@@ -13,13 +15,9 @@ import com.workflow.repository.auth.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -29,11 +27,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@SpringBootTest
-@AutoConfigureMockMvc
-@ActiveProfiles("test")
-@Transactional
-class PasswordResetIntegrationTest {
+class PasswordResetIntegrationTest extends AbstractControllerIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;

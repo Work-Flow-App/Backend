@@ -34,6 +34,10 @@ public class Workflow {
     @Column(name = "workflow_ref", nullable = false)
     private Long workflowRef = 0L;
 
+    @Builder.Default
+    @Column(nullable = false, columnDefinition = "BOOLEAN DEFAULT FALSE")
+    private boolean archived = false;
+
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;

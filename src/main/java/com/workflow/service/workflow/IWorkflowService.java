@@ -12,6 +12,8 @@ public interface IWorkflowService {
 
     void deleteWorkflow(Long id, Long companyId);
 
+    void archiveWorkflow(Long id, Long companyId);
+
     List<WorkflowResponse> getAllWorkflows(Long companyId);
 
     WorkflowResponse getWorkflow(Long id, Long companyId);

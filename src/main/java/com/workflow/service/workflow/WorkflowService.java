@@ -1,7 +1,6 @@
 package com.workflow.service.workflow;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -75,109 +74,10 @@ public class WorkflowService implements IWorkflowService {
                 Workflow workflow = workflowRepository.findByIdAndCompanyId(id, companyId)
                                 .orElseThrow(() -> new WorkflowNotFoundException("Workflow not found"));
 
-                workflowRepository.delete(workflow);
-        }
-
-        @Override
-        public List<WorkflowResponse> getAllWorkflows(Long companyId) {
-                return workflowRepository.findByCompanyId(companyId)
-                                .stream().map(this::map).collect(Collectors.toList());
-        }
-
-        @Override
-        public WorkflowResponse getWorkflow(Long id, Long companyId) {
-                Workflow workflow = workflowRepository.findByIdAndCompanyId(id, companyId)
-                                .orElseThrow(() -> new WorkflowNotFoundException("Workflow not found"));
-
-                return map(workflow);
-        }
-
-        @Override
-        public WorkflowStepResponse createStep(WorkflowStepCreateRequest request, Long companyId) {
-                Workflow workflow = workflowRepository.findByIdAndCompanyId(request.getWorkflowId(), companyId)
-                                .orElseThrow(() -> new WorkflowNotFoundException("Workflow not found"));
-
-                WorkflowStep step = stepRepository.save(
-                                WorkflowStep.builder()
-                                                .workflow(workflow)
-                                                .name(request.getName())
-                                                .description(request.getDescription())
-                                                .orderIndex(request.getOrderIndex())
-                                                .optional(request.isOptional())
-                                                .build());
-
-                return map(step);
-        }
-
-        @Override
-        public List<WorkflowStepResponse> getSteps(Long workflowId, Long companyId) {
-
-                Workflow workflow = workflowRepository.findByIdAndCompanyId(workflowId, companyId)
-                                .orElseThrow(() -> new UnauthorizedWorkflowAccessException("Unauthorized access"));
-
-                return stepRepository.findByWorkflowIdOrderByOrderIndexAsc(workflow.getId())
-                                .stream()
-                                .map(this::map)
-                                .collect(Collectors.toList());
-        }
-
-        @Override
-        public WorkflowStepResponse updateStep(Long stepId, WorkflowStepCreateRequest request, Long companyId) {
-                WorkflowStep step = stepRepository.findByIdAndWorkflow_CompanyId(stepId, companyId)
-                                .orElseThrow(() -> new WorkflowStepNotFoundException("Workflow step not found"));
-
-                step.setName(request.getName());
-                step.setDescription(request.getDescription());
-                step.setOrderIndex(request.getOrderIndex());
-                step.setOptional(request.isOptional());
-
-                return map(step);
-        }
-
-        @Override
-        public WorkflowStepResponse getStep(Long stepId, Long companyId) {
-                WorkflowStep step = stepRepository.findByIdAndWorkflow_CompanyId(stepId, companyId)
-                                .orElseThrow(() -> new WorkflowStepNotFoundException("Workflow step not found"));
-
-                return map(step);
-        }
-
-        @Override
-        public List<WorkflowStepResponse> getAllSteps(Long companyId) {
-                return stepRepository
-                                .findByWorkflow_Company_IdOrderByWorkflow_IdAscOrderIndexAsc(companyId)
-                                .stream()
-                                .map(this::map)
-                                .collect(Collectors.toList());
-        }
-
-        @Override
-        public void deleteStep(Long stepId, Long companyId) {
-                WorkflowStep step = stepRepository.findByIdAndWorkflow_CompanyId(stepId, companyId)
-                                .orElseThrow(() -> new WorkflowStepNotFoundException("Workflow step not found"));
-
-                stepRepository.delete(step);
-        }
-
-        @Override
-        public WorkflowResponse bulkUpdateWorkflow(
-                        Long workflowId,
-                        WorkflowBulkUpdateRequest request,
-                        Long companyId) {
-
-                Workflow workflow = workflowRepository.findByIdAndCompanyId(workflowId, companyId)
-                                .orElseThrow(() -> new WorkflowNotFoundException("Workflow not found"));
-
-                // 1️⃣ Update workflow fields
-                if (request.getName() != null) {
-                        workflow.setName(request.getName());
-                }
-                if (request.getDescription() != null) {
-                        workflow.setDescription(request.getDescription());
                 if (jobRepository.existsByWorkflowIdAndArchivedFalse(id)) {
                         throw new WorkflowInUseException(
                                         "Cannot delete workflow: one or more active jobs reference it. " +
-                                        "Archive or reassign those jobs first.");
+                                                        "Archive or reassign those jobs first.");
                 }
 
                 workflowRepository.delete(workflow);
@@ -288,11 +188,6 @@ public class WorkflowService implements IWorkflowService {
                 if (request.getDescription() != null) {
                         workflow.setDescription(request.getDescription());
                 }
-
-                // 2️⃣ Fetch existing steps
-                List<WorkflowStep> existingSteps = stepRepository.findByWorkflowIdOrderByOrderIndexAsc(workflowId);
-                Map<Long, WorkflowStep> existingMap = existingSteps.stream()
-                                .collect(Collectors.toMap(WorkflowStep::getId, s -> s));
 
                 // 2️⃣ Fetch existing steps
                 List<WorkflowStep> existingSteps = stepRepository.findByWorkflowIdOrderByOrderIndexAsc(workflowId);

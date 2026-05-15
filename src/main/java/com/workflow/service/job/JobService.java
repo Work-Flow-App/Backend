@@ -21,7 +21,6 @@ import com.workflow.common.exception.business.ClientNotFoundException;
 import com.workflow.common.exception.business.CustomerNotFoundException;
 import com.workflow.common.exception.business.JobNotFoundException;
 import com.workflow.common.exception.business.TemplateNotFoundException;
-import com.workflow.common.exception.business.WorkerNotFoundException;
 import com.workflow.common.exception.business.InvalidRequestException;
 import com.workflow.common.exception.business.WorkflowNotFoundException;
 import com.workflow.dto.job.AddressRequest;
@@ -38,7 +37,6 @@ import com.workflow.entity.customer.Client;
 import com.workflow.entity.company.Company;
 import com.workflow.entity.customer.Customer;
 import com.workflow.entity.financial.Estimate;
-import com.workflow.entity.financial.Invoice;
 import com.workflow.entity.job.Job;
 import com.workflow.entity.job.JobFieldValue;
 import com.workflow.entity.job.JobTemplate;
@@ -60,7 +58,6 @@ import com.workflow.repository.job.JobTemplateFieldRepository;
 import com.workflow.repository.job.JobTemplateRepository;
 import com.workflow.repository.job.JobWorkflowRepository;
 import com.workflow.repository.job.JobWorkflowStepRepository;
-import com.workflow.repository.worker.WorkerRepository;
 import com.workflow.repository.workflow.WorkflowRepository;
 import com.workflow.service.sequence.CompanyCounterService;
 import com.workflow.service.workflow.IJobWorkflowService;
@@ -86,7 +83,6 @@ public class JobService implements IJobService {
         private final WorkflowRepository workflowRepository;
         private final JobWorkflowRepository jobWorkflowRepository;
         private final EstimateRepository estimateRepository;
-        private final JobWorkflowRepository jobWorkflowRepository;
         private final InvoiceRepository invoiceRepository;
         private final IJobWorkflowService jobWorkflowService;
         private final AddressRepository addressRepository;
@@ -315,37 +311,12 @@ public class JobService implements IJobService {
         @Transactional(readOnly = true)
         public List<JobResponse> getArchivedJobs(Long companyId) {
                 List<Job> jobs = jobRepository.findArchivedByCompanyId(companyId);
-                if (jobs.isEmpty()) return new ArrayList<>();
+                
+                if (jobs.isEmpty()) {
+                        return new ArrayList<>();
+                }
 
-                List<Long> jobIds = jobs.stream().map(Job::getId).collect(Collectors.toList());
-
-                Map<Long, Map<Long, FieldValueResponse>> fieldValuesByJob = fieldValueRepository
-                                .findByJobIdIn(jobIds)
-                                .stream()
-                                .collect(Collectors.groupingBy(
-                                                v -> v.getJob().getId(),
-                                                Collectors.toMap(
-                                                                v -> v.getField().getId(),
-                                                                v -> FieldValueResponse.builder()
-                                                                                .name(v.getField().getName())
-                                                                                .label(v.getField().getLabel())
-                                                                                .type(v.getField().getJobFieldType())
-                                                                                .value(v.getTypedValue())
-                                                                                .build())));
-
-                Map<Long, List<Long>> assetIdsByJob = assetJobAssignmentRepository
-                                .findByJobIdInAndReturnedAtIsNull(jobIds)
-                                .stream()
-                                .collect(Collectors.groupingBy(
-                                                a -> a.getJob().getId(),
-                                                Collectors.mapping(a -> a.getAsset().getId(), Collectors.toList())));
-
-                return jobs.stream()
-                                .map(job -> mapToResponse(
-                                                job,
-                                                fieldValuesByJob.getOrDefault(job.getId(), new HashMap<>()),
-                                                assetIdsByJob.getOrDefault(job.getId(), new ArrayList<>())))
-                                .collect(Collectors.toList());
+                return buildJobResponsesInBatch(jobs);
         }
 
         @Override

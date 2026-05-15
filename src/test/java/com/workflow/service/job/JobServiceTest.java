@@ -9,7 +9,6 @@ import com.workflow.entity.company.Company;
 import com.workflow.entity.customer.Customer;
 import com.workflow.entity.job.Job;
 import com.workflow.entity.job.JobTemplate;
-import com.workflow.entity.worker.Worker;
 import com.workflow.repository.asset.AssetJobAssignmentRepository;
 import com.workflow.repository.asset.AssetRepository;
 import com.workflow.repository.company.CompanyRepository;
@@ -22,7 +21,6 @@ import com.workflow.repository.job.JobRepository;
 import com.workflow.repository.job.JobTemplateFieldRepository;
 import com.workflow.repository.job.JobTemplateRepository;
 import com.workflow.repository.job.JobWorkflowRepository;
-import com.workflow.repository.worker.WorkerRepository;
 import com.workflow.repository.workflow.WorkflowRepository;
 import com.workflow.service.sequence.CompanyCounterService;
 import com.workflow.service.workflow.IJobWorkflowService;
@@ -33,7 +31,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.LocalDateTime;
 import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -60,9 +57,6 @@ class JobServiceTest {
 
         @Mock
         private ClientRepository clientRepository;
-
-        @Mock
-        private WorkerRepository workerRepository;
 
         @Mock
         private CustomerRepository customerRepository;
@@ -98,7 +92,6 @@ class JobServiceTest {
         private JobTemplate template;
         private Client client;
         private Customer customer;
-        private Worker worker;
         private JobCreateRequest createRequest;
 
         @BeforeEach
@@ -107,7 +100,6 @@ class JobServiceTest {
                 template = JobTemplate.builder().id(3L).company(company).name("Maintenance").build();
                 client = Client.builder().id(1L).company(company).name("Test Client").build();
                 customer = Customer.builder().id(1L).company(company).name("Test Customer").build();
-                worker = Worker.builder().id(1L).company(company).name("Test Worker").build();
 
                 Map<Long, Object> fieldValues = new HashMap<>();
                 fieldValues.put(101L, "John Doe");
@@ -116,7 +108,7 @@ class JobServiceTest {
                                 .templateId(3L)
                                 .clientId(1L)
                                 .customerId(1L)
-                                .assignedWorkerId(1L)
+                                .assignedWorkerIds(List.of(1L)) // Updated to use List of IDs
                                 .status(JobStatus.NEW)
                                 .fieldValues(fieldValues)
                                 .build();
@@ -128,7 +120,6 @@ class JobServiceTest {
                 when(templateRepository.findById(3L)).thenReturn(Optional.of(template));
                 when(clientRepository.findById(1L)).thenReturn(Optional.of(client));
                 when(customerRepository.findById(1L)).thenReturn(Optional.of(customer));
-                when(workerRepository.findById(1L)).thenReturn(Optional.of(worker));
                 when(templateFieldRepository.findByTemplateIdOrderByOrderIndexAsc(3L))
                                 .thenReturn(Collections.emptyList());
                 doAnswer(invocation -> {
@@ -147,7 +138,6 @@ class JobServiceTest {
                 verify(templateRepository).findById(3L);
                 verify(clientRepository).findById(1L);
                 verify(customerRepository).findById(1L);
-                verify(workerRepository).findById(1L);
                 verify(jobRepository).saveAndFlush(any(Job.class));
         }
 
@@ -158,7 +148,6 @@ class JobServiceTest {
                 when(templateRepository.findById(3L)).thenReturn(Optional.of(template));
                 when(clientRepository.findById(1L)).thenReturn(Optional.of(client));
                 when(customerRepository.findById(1L)).thenReturn(Optional.of(customer));
-                when(workerRepository.findById(1L)).thenReturn(Optional.of(worker));
                 when(templateFieldRepository.findByTemplateIdOrderByOrderIndexAsc(3L))
                                 .thenReturn(Collections.emptyList());
 
@@ -177,15 +166,12 @@ class JobServiceTest {
                 verify(jobRepository).saveAndFlush(any(Job.class));
         }
 
-        // Company existence is now enforced by FK constraint at commit time, not upfront.
-        // The first service-level validation is the template check.
         @Test
         void createJob_ShouldCreateJobSuccessfully_WhenCustomerIsNull() {
                 createRequest.setCustomerId(null);
                 when(companyRepository.getReferenceById(1L)).thenReturn(company);
                 when(templateRepository.findById(3L)).thenReturn(Optional.of(template));
                 when(clientRepository.findById(1L)).thenReturn(Optional.of(client));
-                when(workerRepository.findById(1L)).thenReturn(Optional.of(worker));
                 when(templateFieldRepository.findByTemplateIdOrderByOrderIndexAsc(3L))
                                 .thenReturn(Collections.emptyList());
                 doAnswer(invocation -> {
@@ -222,21 +208,6 @@ class JobServiceTest {
                 assertThatThrownBy(() -> jobService.createJob(createRequest, 1L))
                                 .isInstanceOf(ClientNotFoundException.class)
                                 .hasMessageContaining("Client not found");
-
-                verify(jobRepository, never()).saveAndFlush(any());
-        }
-
-        @Test
-        void createJob_ShouldThrowException_WhenWorkerNotFound() {
-                when(companyRepository.getReferenceById(1L)).thenReturn(company);
-                when(templateRepository.findById(3L)).thenReturn(Optional.of(template));
-                when(clientRepository.findById(1L)).thenReturn(Optional.of(client));
-                when(customerRepository.findById(1L)).thenReturn(Optional.of(customer));
-                when(workerRepository.findById(1L)).thenReturn(Optional.empty());
-
-                assertThatThrownBy(() -> jobService.createJob(createRequest, 1L))
-                                .isInstanceOf(WorkerNotFoundException.class)
-                                .hasMessageContaining("Worker not found");
 
                 verify(jobRepository, never()).saveAndFlush(any());
         }

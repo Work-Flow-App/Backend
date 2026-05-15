@@ -258,7 +258,8 @@ public class JobWorkflowService implements IJobWorkflowService {
         @Transactional(readOnly = true)
         public List<JobWorkflowResponse> getAllJobWorkflows(Long companyId) {
                 List<JobWorkflow> workflows = jobWorkflowRepository.findByJob_Company_Id(companyId);
-                if (workflows.isEmpty()) return new java.util.ArrayList<>();
+                if (workflows.isEmpty())
+                        return new java.util.ArrayList<>();
 
                 // Batch-load all steps for all workflows in one query, then group by workflowId
                 List<Long> workflowIds = workflows.stream()
@@ -271,7 +272,8 @@ public class JobWorkflowService implements IJobWorkflowService {
 
                 return workflows.stream()
                                 .map(jw -> buildResponse(jw,
-                                                stepsByWorkflowId.getOrDefault(jw.getId(), new java.util.ArrayList<>())))
+                                                stepsByWorkflowId.getOrDefault(jw.getId(),
+                                                                new java.util.ArrayList<>())))
                                 .toList();
         }
 
@@ -532,9 +534,11 @@ public class JobWorkflowService implements IJobWorkflowService {
                                                                 .map(Worker::getId)
                                                                 .collect(Collectors.toSet());
 
-                                                List<Worker> workerList = workerRepository.findAllById(sr.getAssignedWorkerIds());
+                                                List<Worker> workerList = workerRepository
+                                                                .findAllById(sr.getAssignedWorkerIds());
                                                 if (workerList.size() != sr.getAssignedWorkerIds().size()) {
-                                                        throw new WorkerNotFoundException("One or more workers not found");
+                                                        throw new WorkerNotFoundException(
+                                                                        "One or more workers not found");
                                                 }
                                                 for (Worker w : workerList) {
                                                         if (!w.getCompany().getId().equals(companyId)) {
@@ -589,9 +593,11 @@ public class JobWorkflowService implements IJobWorkflowService {
                                                         .build();
 
                                         if (sr.getAssignedWorkerIds() != null) {
-                                                List<Worker> workerList = workerRepository.findAllById(sr.getAssignedWorkerIds());
+                                                List<Worker> workerList = workerRepository
+                                                                .findAllById(sr.getAssignedWorkerIds());
                                                 if (workerList.size() != sr.getAssignedWorkerIds().size()) {
-                                                        throw new WorkerNotFoundException("One or more workers not found");
+                                                        throw new WorkerNotFoundException(
+                                                                        "One or more workers not found");
                                                 }
                                                 for (Worker w : workerList) {
                                                         if (!w.getCompany().getId().equals(companyId)) {
@@ -689,6 +695,65 @@ public class JobWorkflowService implements IJobWorkflowService {
                                 jobWorkflow.getJob().getCompany().getUser(),
                                 JobWorkflowStepActivityType.WORKER_ASSIGNED,
                                 "Assigned worker ID " + worker.getId());
+
+                updateJobWorkflowStatus(jobWorkflow);
+                return buildResponse(jobWorkflow);
+        }
+
+        /*
+         * =======================
+         * ASSIGN MULTIPLE WORKERS TO ALL STEPS
+         * =======================
+         */
+
+        @Override
+        @Transactional
+        public JobWorkflowResponse assignWorkersToAllSteps(
+                        Long jobWorkflowId, List<Long> workerIds, Long companyId) {
+
+                JobWorkflow jobWorkflow = jobWorkflowRepository.findById(jobWorkflowId)
+                                .orElseThrow(() -> new JobWorkflowNotFoundException("Job workflow not found"));
+
+                if (!jobWorkflow.getJob().getCompany().getId().equals(companyId)) {
+                        throw new UnauthorizedWorkflowAccessException("Unauthorized access");
+                }
+
+                // If the list is null or empty, we can just return early
+                if (workerIds == null || workerIds.isEmpty()) {
+                        return buildResponse(jobWorkflow);
+                }
+
+                // Fetch and validate all workers
+                List<Worker> workers = workerRepository.findAllById(workerIds);
+                if (workers.size() != workerIds.size()) {
+                        throw new WorkerNotFoundException("One or more workers not found");
+                }
+
+                for (Worker worker : workers) {
+                        if (!worker.getCompany().getId().equals(companyId)) {
+                                throw new UnauthorizedWorkflowAccessException(
+                                                "Worker ID " + worker.getId() + " does not belong to company");
+                        }
+                }
+
+                List<JobWorkflowStep> steps = jobWorkflowStepRepository.findByJobWorkflowIdOrderByOrderIndexAsc(
+                                jobWorkflow.getId());
+
+                // Assign all workers to all steps
+                for (JobWorkflowStep step : steps) {
+                        step.getAssignedWorkers().addAll(workers);
+                }
+
+                User actor = jobWorkflow.getJob().getCompany().getUser();
+
+                // Batch-save log entries for each worker
+                for (Worker worker : workers) {
+                        stepActivityService.logAll(
+                                        steps,
+                                        actor,
+                                        JobWorkflowStepActivityType.WORKER_ASSIGNED,
+                                        "Assigned worker ID " + worker.getId());
+                }
 
                 updateJobWorkflowStatus(jobWorkflow);
                 return buildResponse(jobWorkflow);

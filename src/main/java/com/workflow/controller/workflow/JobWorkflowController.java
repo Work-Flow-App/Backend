@@ -111,6 +111,15 @@ public class JobWorkflowController {
                                 jobWorkflowId, workerId, getCompanyId(auth)));
         }
 
+        @PutMapping("/{jobWorkflowId}/assign-workers")
+        public ResponseEntity<JobWorkflowResponse> assignWorkersToAllSteps(
+                        @PathVariable Long jobWorkflowId,
+                        @RequestBody List<Long> workerIds,
+                        Authentication auth) {
+                return ResponseEntity.ok(jobWorkflowService.assignWorkersToAllSteps(
+                                jobWorkflowId, workerIds, getCompanyId(auth)));
+        }
+
         @PostMapping("/{jobWorkflowId}/steps")
         public ResponseEntity<JobWorkflowStepResponse> addStep(
                         @PathVariable Long jobWorkflowId,

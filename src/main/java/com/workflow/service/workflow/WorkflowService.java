@@ -1,7 +1,6 @@
 package com.workflow.service.workflow;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -78,7 +77,7 @@ public class WorkflowService implements IWorkflowService {
                 if (jobRepository.existsByWorkflowIdAndArchivedFalse(id)) {
                         throw new WorkflowInUseException(
                                         "Cannot delete workflow: one or more active jobs reference it. " +
-                                        "Archive or reassign those jobs first.");
+                                                        "Archive or reassign those jobs first.");
                 }
 
                 workflowRepository.delete(workflow);

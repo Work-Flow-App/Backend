@@ -5,9 +5,11 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
@@ -16,11 +18,9 @@ import org.springframework.transaction.annotation.Transactional;
 import com.workflow.common.constant.job.JobStatus;
 import com.workflow.common.exception.business.AssetNotFoundException;
 import com.workflow.common.exception.business.ClientNotFoundException;
-import com.workflow.common.exception.business.CompanyNotFoundException;
 import com.workflow.common.exception.business.CustomerNotFoundException;
 import com.workflow.common.exception.business.JobNotFoundException;
 import com.workflow.common.exception.business.TemplateNotFoundException;
-import com.workflow.common.exception.business.WorkerNotFoundException;
 import com.workflow.common.exception.business.InvalidRequestException;
 import com.workflow.common.exception.business.WorkflowNotFoundException;
 import com.workflow.dto.job.AddressRequest;
@@ -37,11 +37,11 @@ import com.workflow.entity.customer.Client;
 import com.workflow.entity.company.Company;
 import com.workflow.entity.customer.Customer;
 import com.workflow.entity.financial.Estimate;
-import com.workflow.entity.financial.Invoice;
 import com.workflow.entity.job.Job;
 import com.workflow.entity.job.JobFieldValue;
 import com.workflow.entity.job.JobTemplate;
 import com.workflow.entity.job.JobTemplateField;
+import com.workflow.entity.job.JobWorkflowStep;
 import com.workflow.entity.worker.Worker;
 import com.workflow.entity.workflow.Workflow;
 import com.workflow.repository.common.AddressRepository;
@@ -56,8 +56,8 @@ import com.workflow.repository.job.JobFieldValueRepository;
 import com.workflow.repository.job.JobRepository;
 import com.workflow.repository.job.JobTemplateFieldRepository;
 import com.workflow.repository.job.JobTemplateRepository;
-import com.workflow.repository.worker.WorkerRepository;
 import com.workflow.repository.job.JobWorkflowRepository;
+import com.workflow.repository.job.JobWorkflowStepRepository;
 import com.workflow.repository.workflow.WorkflowRepository;
 import com.workflow.service.sequence.CompanyCounterService;
 import com.workflow.service.workflow.IJobWorkflowService;
@@ -74,10 +74,10 @@ public class JobService implements IJobService {
         private final JobFieldValueRepository fieldValueRepository;
         private final JobTemplateRepository templateRepository;
         private final JobTemplateFieldRepository templateFieldRepository;
+        private final JobWorkflowStepRepository jobWorkflowStepRepository;
         private final CompanyRepository companyRepository;
         private final ClientRepository clientRepository;
         private final CustomerRepository customerRepository;
-        private final WorkerRepository workerRepository;
         private final AssetRepository assetRepository;
         private final AssetJobAssignmentRepository assetJobAssignmentRepository;
         private final WorkflowRepository workflowRepository;
@@ -105,11 +105,6 @@ public class JobService implements IJobService {
                                 : customerRepository.findById(request.getCustomerId())
                                                 .filter(c -> c.getCompany().getId().equals(companyId))
                                                 .orElseThrow(() -> new CustomerNotFoundException("Customer not found"));
-
-                Worker worker = request.getAssignedWorkerId() == null ? null
-                                : workerRepository.findById(request.getAssignedWorkerId())
-                                                .filter(w -> w.getCompany().getId().equals(companyId))
-                                                .orElseThrow(() -> new WorkerNotFoundException("Worker not found"));
 
                 Workflow workflow = request.getWorkflowId() == null ? null
                                 : workflowRepository.findById(request.getWorkflowId())
@@ -142,7 +137,6 @@ public class JobService implements IJobService {
                                 .template(template)
                                 .client(client)
                                 .customer(customer)
-                                .assignedWorker(worker)
                                 .workflow(workflow)
                                 .address(address)
                                 .status(request.getStatus() != null ? request.getStatus() : JobStatus.NEW)
@@ -160,10 +154,10 @@ public class JobService implements IJobService {
                         JobWorkflowResponse workflowResponse = jobWorkflowService.startWorkflow(job, workflow,
                                         companyId);
 
-                        if (worker != null) {
-                                jobWorkflowService.assignAWorkerToAllSteps(
+                        if (request.getAssignedWorkerIds() != null && !request.getAssignedWorkerIds().isEmpty()) {
+                                jobWorkflowService.assignWorkersToAllSteps(
                                                 workflowResponse.getId(),
-                                                worker.getId(),
+                                                request.getAssignedWorkerIds(),
                                                 companyId);
                         }
                 }
@@ -191,13 +185,6 @@ public class JobService implements IJobService {
                         job.setCustomer(customer);
                 }
 
-                if (request.getAssignedWorkerId() != null) {
-                        Worker worker = workerRepository.findById(request.getAssignedWorkerId())
-                                        .filter(w -> w.getCompany().getId().equals(companyId))
-                                        .orElseThrow(() -> new WorkerNotFoundException("Worker not found"));
-                        job.setAssignedWorker(worker);
-                }
-
                 if (request.getWorkflowId() != null) {
                         if (job.getWorkflow() != null) {
                                 throw new IllegalStateException("Workflow cannot be changed once assigned to a job");
@@ -216,7 +203,6 @@ public class JobService implements IJobService {
 
                 if (request.getAddress() != null) {
                         AddressRequest ar = request.getAddress();
-
                         Address address = job.getAddress();
 
                         if (address == null) {
@@ -245,9 +231,6 @@ public class JobService implements IJobService {
                 fieldValueRepository.deleteByJobId(jobId);
                 saveJobFieldValues(job, request.getFieldValues());
 
-                // Update asset assignments if assetIds is provided
-                // null = don't change assets, empty list = remove all assets, list with IDs =
-                // replace assets
                 if (request.getAssetIds() != null) {
                         updateJobAssetAssignments(job, request.getAssetIds(), companyId);
                 }
@@ -319,98 +302,47 @@ public class JobService implements IJobService {
         @Transactional(readOnly = true)
         public List<JobResponse> getAllJobs(Long companyId) {
                 List<Job> jobs = jobRepository.findByCompanyId(companyId);
-                if (jobs.isEmpty()) return new ArrayList<>();
-
-                List<Long> jobIds = jobs.stream().map(Job::getId).collect(Collectors.toList());
-
-                // Batch-load field values for all jobs in one query
-                Map<Long, Map<Long, FieldValueResponse>> fieldValuesByJob = fieldValueRepository
-                                .findByJobIdIn(jobIds)
-                                .stream()
-                                .collect(Collectors.groupingBy(
-                                                v -> v.getJob().getId(),
-                                                Collectors.toMap(
-                                                                v -> v.getField().getId(),
-                                                                v -> FieldValueResponse.builder()
-                                                                                .name(v.getField().getName())
-                                                                                .label(v.getField().getLabel())
-                                                                                .type(v.getField().getJobFieldType())
-                                                                                .value(v.getTypedValue())
-                                                                                .build())));
-
-                // Batch-load active asset assignments for all jobs in one query
-                Map<Long, List<Long>> assetIdsByJob = assetJobAssignmentRepository
-                                .findByJobIdInAndReturnedAtIsNull(jobIds)
-                                .stream()
-                                .collect(Collectors.groupingBy(
-                                                a -> a.getJob().getId(),
-                                                Collectors.mapping(a -> a.getAsset().getId(), Collectors.toList())));
-
-                return jobs.stream()
-                                .map(job -> mapToResponse(
-                                                job,
-                                                fieldValuesByJob.getOrDefault(job.getId(), new HashMap<>()),
-                                                assetIdsByJob.getOrDefault(job.getId(), new ArrayList<>())))
-                                .collect(Collectors.toList());
+                if (jobs.isEmpty())
+                        return new ArrayList<>();
+                return buildJobResponsesInBatch(jobs); // Use the helper
         }
 
         @Override
         @Transactional(readOnly = true)
         public List<JobResponse> getArchivedJobs(Long companyId) {
                 List<Job> jobs = jobRepository.findArchivedByCompanyId(companyId);
-                if (jobs.isEmpty()) return new ArrayList<>();
+                
+                if (jobs.isEmpty()) {
+                        return new ArrayList<>();
+                }
 
-                List<Long> jobIds = jobs.stream().map(Job::getId).collect(Collectors.toList());
-
-                Map<Long, Map<Long, FieldValueResponse>> fieldValuesByJob = fieldValueRepository
-                                .findByJobIdIn(jobIds)
-                                .stream()
-                                .collect(Collectors.groupingBy(
-                                                v -> v.getJob().getId(),
-                                                Collectors.toMap(
-                                                                v -> v.getField().getId(),
-                                                                v -> FieldValueResponse.builder()
-                                                                                .name(v.getField().getName())
-                                                                                .label(v.getField().getLabel())
-                                                                                .type(v.getField().getJobFieldType())
-                                                                                .value(v.getTypedValue())
-                                                                                .build())));
-
-                Map<Long, List<Long>> assetIdsByJob = assetJobAssignmentRepository
-                                .findByJobIdInAndReturnedAtIsNull(jobIds)
-                                .stream()
-                                .collect(Collectors.groupingBy(
-                                                a -> a.getJob().getId(),
-                                                Collectors.mapping(a -> a.getAsset().getId(), Collectors.toList())));
-
-                return jobs.stream()
-                                .map(job -> mapToResponse(
-                                                job,
-                                                fieldValuesByJob.getOrDefault(job.getId(), new HashMap<>()),
-                                                assetIdsByJob.getOrDefault(job.getId(), new ArrayList<>())))
-                                .collect(Collectors.toList());
+                return buildJobResponsesInBatch(jobs);
         }
 
         @Override
         @Transactional(readOnly = true)
         public List<JobResponse> getJobsByTemplate(Long templateId, Long companyId) {
-                JobTemplate template = templateRepository.findById(templateId)
+                templateRepository.findById(templateId) // Note: you removed the variable assignment here in your code,
+                                                        // keeping it as-is
                                 .filter(t -> t.getCompany().getId().equals(companyId))
                                 .orElseThrow(() -> new TemplateNotFoundException("Template not found"));
 
                 List<Job> jobs = jobRepository.findByTemplateIdAndCompanyId(templateId, companyId);
-                if (jobs.isEmpty()) return new ArrayList<>();
+                if (jobs.isEmpty())
+                        return new ArrayList<>();
+                return buildJobResponsesInBatch(jobs); // Use the helper
+        }
 
-                List<Long> jobIds = jobs.stream().map(Job::getId).collect(Collectors.toList());
+        /**
+         * Helper method to prevent N+1 queries when building multiple Job Responses.
+         */
+        private List<JobResponse> buildJobResponsesInBatch(List<Job> jobs) {
+                List<Long> jobIds = jobs.stream().map(Job::getId).toList();
 
-                // Batch-load field values for all jobs in one query
                 Map<Long, Map<Long, FieldValueResponse>> fieldValuesByJob = fieldValueRepository
-                                .findByJobIdIn(jobIds)
-                                .stream()
-                                .collect(Collectors.groupingBy(
-                                                v -> v.getJob().getId(),
-                                                Collectors.toMap(
-                                                                v -> v.getField().getId(),
+                                .findByJobIdIn(jobIds).stream()
+                                .collect(Collectors.groupingBy(v -> v.getJob().getId(),
+                                                Collectors.toMap(v -> v.getField().getId(),
                                                                 v -> FieldValueResponse.builder()
                                                                                 .name(v.getField().getName())
                                                                                 .label(v.getField().getLabel())
@@ -418,19 +350,31 @@ public class JobService implements IJobService {
                                                                                 .value(v.getTypedValue())
                                                                                 .build())));
 
-                // Batch-load active asset assignments for all jobs in one query
                 Map<Long, List<Long>> assetIdsByJob = assetJobAssignmentRepository
-                                .findByJobIdInAndReturnedAtIsNull(jobIds)
-                                .stream()
-                                .collect(Collectors.groupingBy(
-                                                a -> a.getJob().getId(),
+                                .findByJobIdInAndReturnedAtIsNull(jobIds).stream()
+                                .collect(Collectors.groupingBy(a -> a.getJob().getId(),
                                                 Collectors.mapping(a -> a.getAsset().getId(), Collectors.toList())));
+
+                // Batch-load active workers as a union from all workflow steps
+                Map<Long, List<Long>> workerIdsByJob = new HashMap<>();
+                List<JobWorkflowStep> allSteps = jobWorkflowStepRepository.findByJobWorkflow_Job_IdIn(jobIds);
+
+                for (JobWorkflowStep step : allSteps) {
+                        Long jId = step.getJobWorkflow().getJob().getId();
+                        workerIdsByJob.computeIfAbsent(jId, k -> new ArrayList<>());
+                        for (Worker w : step.getAssignedWorkers()) {
+                                if (!workerIdsByJob.get(jId).contains(w.getId())) {
+                                        workerIdsByJob.get(jId).add(w.getId());
+                                }
+                        }
+                }
 
                 return jobs.stream()
                                 .map(job -> mapToResponse(
                                                 job,
                                                 fieldValuesByJob.getOrDefault(job.getId(), new HashMap<>()),
-                                                assetIdsByJob.getOrDefault(job.getId(), new ArrayList<>())))
+                                                assetIdsByJob.getOrDefault(job.getId(), new ArrayList<>()),
+                                                workerIdsByJob.getOrDefault(job.getId(), new ArrayList<>())))
                                 .collect(Collectors.toList());
         }
 
@@ -506,7 +450,8 @@ public class JobService implements IJobService {
                 if (!activeAssignments.isEmpty()) {
                         LocalDateTime now = LocalDateTime.now();
 
-                        // Collect all asset IDs affected by the return so we can batch-check availability
+                        // Collect all asset IDs affected by the return so we can batch-check
+                        // availability
                         List<Long> returningAssetIds = activeAssignments.stream()
                                         .map(a -> a.getAsset().getId())
                                         .collect(Collectors.toList());
@@ -646,8 +591,7 @@ public class JobService implements IJobService {
         private JobResponse mapToResponse(Job job) {
                 Map<Long, FieldValueResponse> values = fieldValueRepository.findByJobId(job.getId())
                                 .stream()
-                                .collect(Collectors.toMap(
-                                                v -> v.getField().getId(),
+                                .collect(Collectors.toMap(v -> v.getField().getId(),
                                                 v -> FieldValueResponse.builder()
                                                                 .name(v.getField().getName())
                                                                 .label(v.getField().getLabel())
@@ -660,11 +604,23 @@ public class JobService implements IJobService {
                                 .map(assignment -> assignment.getAsset().getId())
                                 .collect(Collectors.toList());
 
-                return mapToResponse(job, values, assetIds);
+                // Dynamically build the union of workers from steps for a single job
+                List<Long> workerIds = new ArrayList<>();
+                jobWorkflowRepository.findByJobId(job.getId()).ifPresent(jw -> {
+                        List<JobWorkflowStep> steps = jobWorkflowStepRepository
+                                        .findByJobWorkflowIdOrderByOrderIndexAsc(jw.getId());
+                        Set<Long> uniqueWorkerIds = new HashSet<>();
+                        for (JobWorkflowStep step : steps) {
+                                step.getAssignedWorkers().forEach(w -> uniqueWorkerIds.add(w.getId()));
+                        }
+                        workerIds.addAll(uniqueWorkerIds);
+                });
+
+                return mapToResponse(job, values, assetIds, workerIds);
         }
 
-        private JobResponse mapToResponse(Job job, Map<Long, FieldValueResponse> values, List<Long> assetIds) {
-
+        private JobResponse mapToResponse(Job job, Map<Long, FieldValueResponse> values, List<Long> assetIds,
+                        List<Long> workerIds) {
                 AddressResponse addressResponse = null;
 
                 if (job.getAddress() != null) {
@@ -689,8 +645,6 @@ public class JobService implements IJobService {
                                 .templateId(job.getTemplate().getId())
                                 .clientId(job.getClient() != null ? job.getClient().getId() : null)
                                 .customerId(job.getCustomer() != null ? job.getCustomer().getId() : null)
-                                .assignedWorkerId(job.getAssignedWorker() != null ? job.getAssignedWorker().getId()
-                                                : null)
                                 .workflowId(job.getWorkflow() != null ? job.getWorkflow().getId() : null)
                                 .status(job.getStatus())
                                 .archived(job.isArchived())
@@ -698,6 +652,7 @@ public class JobService implements IJobService {
                                 .updatedAt(job.getUpdatedAt())
                                 .fieldValues(values)
                                 .assetIds(assetIds)
+                                .assignedWorkerIds(workerIds) // <--- Added the union back here
                                 .address(addressResponse)
                                 .build();
         }

@@ -16,7 +16,6 @@ public interface JobRepository extends JpaRepository<Job, Long> {
            "JOIN FETCH j.template " +
            "LEFT JOIN FETCH j.customer " +
            "LEFT JOIN FETCH j.client " +
-           "LEFT JOIN FETCH j.assignedWorker " +
            "LEFT JOIN FETCH j.workflow " +
            "WHERE j.company.id = :companyId AND j.archived = false")
     List<Job> findByCompanyId(@Param("companyId") Long companyId);
@@ -26,7 +25,6 @@ public interface JobRepository extends JpaRepository<Job, Long> {
            "JOIN FETCH j.template " +
            "LEFT JOIN FETCH j.customer " +
            "LEFT JOIN FETCH j.client " +
-           "LEFT JOIN FETCH j.assignedWorker " +
            "LEFT JOIN FETCH j.workflow " +
            "WHERE j.template.id = :templateId AND j.company.id = :companyId AND j.archived = false")
     List<Job> findByTemplateIdAndCompanyId(@Param("templateId") Long templateId,
@@ -37,7 +35,6 @@ public interface JobRepository extends JpaRepository<Job, Long> {
            "JOIN FETCH j.template " +
            "LEFT JOIN FETCH j.customer " +
            "LEFT JOIN FETCH j.client " +
-           "LEFT JOIN FETCH j.assignedWorker " +
            "LEFT JOIN FETCH j.workflow " +
            "WHERE j.company.id = :companyId AND j.archived = true")
     List<Job> findArchivedByCompanyId(@Param("companyId") Long companyId);

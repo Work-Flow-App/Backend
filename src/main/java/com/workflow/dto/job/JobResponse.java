@@ -18,7 +18,7 @@ public class JobResponse {
     private Long templateId;
     private Long clientId;
     private Long customerId;
-    private Long assignedWorkerId;
+    private List<Long> assignedWorkerIds;
     private Long workflowId;
     private JobStatus status;
     private boolean archived;

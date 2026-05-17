@@ -7,6 +7,11 @@ cors:
 spring:
   application:
     name: Work-Flow-Management
+  servlet:
+      multipart:
+        enabled: true
+        max-file-size: 15MB
+        max-request-size: 15MB
 
   datasource:
     url: jdbc:mysql://${DB_URL}:${DB_PORT}/${DB_NAME}

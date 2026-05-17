@@ -235,6 +235,45 @@
       ]
     },
     {
+      "name": "Assign Multiple Workers to All Steps",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{jwt_token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "[\n  5,\n  6,\n  8\n]"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/job-workflows/10/assign-workers",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "job-workflows", "10", "assign-workers"]
+        }
+      },
+      "response": [
+        {
+          "name": "Assign Multiple Workers - Success",
+          "status": "OK",
+          "code": 200,
+          "body": "{\n  \"id\": 10,\n  \"jobId\": 1,\n  \"status\": \"ONGOING\",\n  \"steps\": [\n    {\n      \"id\": 101,\n      \"name\": \"Inspection\",\n      \"description\": \"Initial inspection\",\n      \"orderIndex\": 1,\n      \"status\": \"STARTED\",\n      \"startedAt\": \"2026-01-07T10:00:00\",\n      \"completedAt\": null,\n      \"assignedWorkerIds\": [5, 6, 8]\n    }\n  ]\n}"
+        }
+      ]
+    },
+    {
       "name": "Delete Job Workflow by Job ID",
       "request": {
         "auth": {

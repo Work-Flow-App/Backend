@@ -24,7 +24,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n    \"templateId\": 3,\n    \"customerId\": 1,\n    \"clientId\": 1,\n    \"assignedWorkerId\": 1,\n    \"status\": \"NEW\",\n    \"fieldValues\": {\n        \"101\": \"John Doe\",\n        \"102\": \"Medium\"\n    },\n    \"assetIds\": [1, 2],\n    \"address\": {\n        \"street\": \"123 Main Street\",\n        \"city\": \"Berlin\",\n        \"state\": \"Berlin\",\n        \"postalCode\": \"10115\",\n        \"country\": \"Germany\",\n        \"additionalInfo\": \"Near main entrance\",\n        \"latitude\": 52.5200,\n        \"longitude\": 13.4050\n    }\n}"
+          "raw": "{\n    \"templateId\": 3,\n    \"customerId\": 1,\n    \"clientId\": 1,\n    \"assignedWorkerIds\": [1],\n    \"status\": \"NEW\",\n    \"fieldValues\": {\n        \"101\": \"John Doe\",\n        \"102\": \"Medium\"\n    },\n    \"assetIds\": [1, 2],\n    \"address\": {\n        \"street\": \"123 Main Street\",\n        \"city\": \"Berlin\",\n        \"state\": \"Berlin\",\n        \"postalCode\": \"10115\",\n        \"country\": \"Germany\",\n        \"additionalInfo\": \"Near main entrance\",\n        \"latitude\": 52.5200,\n        \"longitude\": 13.4050\n    }\n}"
         },
         "url": {
           "raw": "{{base_url}}/api/v1/jobs",
@@ -44,7 +44,7 @@
               "value": "application/json"
             }
           ],
-          "body": "{\n    \"id\": 55,\n    \"jobRef\": 1,\n    \"companyId\": 1,\n    \"templateId\": 3,\n    \"clientId\": 1,\n    \"customerId\": 1,\n    \"assignedWorkerId\": 1,\n    \"status\": \"NEW\",\n    \"archived\": false,\n    \"createdAt\": \"2025-11-14T10:15:00\",\n    \"updatedAt\": \"2025-11-14T10:15:00\",\n    \"fieldValues\": {\n        \"101\": {\"name\": \"customerName\", \"label\": \"Customer Name\", \"type\": \"TEXT\", \"value\": \"John Doe\"},\n        \"102\": {\"name\": \"priority\", \"label\": \"Priority Level\", \"type\": \"DROPDOWN\", \"value\": \"Medium\"}\n    },\n    \"assetIds\": [1, 2],\n    \"address\": {\n        \"id\": 10,\n        \"street\": \"123 Main Street\",\n        \"city\": \"Berlin\",\n        \"state\": \"Berlin\",\n        \"postalCode\": \"10115\",\n        \"country\": \"Germany\",\n        \"additionalInfo\": \"Near main entrance\",\n        \"latitude\": 52.5200,\n        \"longitude\": 13.4050\n    }\n}"
+          "body": "{\n    \"id\": 55,\n    \"jobRef\": 1,\n    \"companyId\": 1,\n    \"templateId\": 3,\n    \"clientId\": 1,\n    \"customerId\": 1,\n    \"assignedWorkerIds\": [1],\n    \"status\": \"NEW\",\n    \"archived\": false,\n    \"createdAt\": \"2025-11-14T10:15:00\",\n    \"updatedAt\": \"2025-11-14T10:15:00\",\n    \"fieldValues\": {\n        \"101\": {\"name\": \"customerName\", \"label\": \"Customer Name\", \"type\": \"TEXT\", \"value\": \"John Doe\"},\n        \"102\": {\"name\": \"priority\", \"label\": \"Priority Level\", \"type\": \"DROPDOWN\", \"value\": \"Medium\"}\n    },\n    \"assetIds\": [1, 2],\n    \"address\": {\n        \"id\": 10,\n        \"street\": \"123 Main Street\",\n        \"city\": \"Berlin\",\n        \"state\": \"Berlin\",\n        \"postalCode\": \"10115\",\n        \"country\": \"Germany\",\n        \"additionalInfo\": \"Near main entrance\",\n        \"latitude\": 52.5200,\n        \"longitude\": 13.4050\n    }\n}"
         }
       ]
     },
@@ -81,7 +81,7 @@
               "value": "application/json"
             }
           ],
-          "body": "[\n    {\n        \"id\": 55,\n        \"jobRef\": 1,\n        \"companyId\": 1,\n        \"templateId\": 3,\n        \"clientId\": 1,\n        \"customerId\": 1,\n        \"assignedWorkerId\": 1,\n        \"status\": \"NEW\",\n        \"archived\": false,\n        \"createdAt\": \"2025-11-14T10:15:00\",\n        \"updatedAt\": \"2025-11-14T10:15:00\",\n        \"fieldValues\": {\n            \"101\": {\"name\": \"customerName\",\"label\": \"Customer Name\",\"type\": \"TEXT\",\"value\": \"John Doe\"},\n            \"102\": {\"name\": \"priority\",\"label\": \"Priority Level\",\"type\": \"DROPDOWN\",\"value\": \"Medium\"}\n        },\n        \"assetIds\": [1, 2],\n        \"address\": {\"id\": 10,\"street\": \"123 Main Street\",\"city\": \"Berlin\",\"state\": \"Berlin\",\"postalCode\": \"10115\",\"country\": \"Germany\",\"additionalInfo\": \"Near main entrance\",\"latitude\": 52.5200,\"longitude\": 13.4050}\n    }\n]"
+          "body": "[\n    {\n        \"id\": 55,\n        \"jobRef\": 1,\n        \"companyId\": 1,\n        \"templateId\": 3,\n        \"clientId\": 1,\n        \"customerId\": 1,\n        \"assignedWorkerIds\": [1],\n        \"status\": \"NEW\",\n        \"archived\": false,\n        \"createdAt\": \"2025-11-14T10:15:00\",\n        \"updatedAt\": \"2025-11-14T10:15:00\",\n        \"fieldValues\": {\n            \"101\": {\"name\": \"customerName\",\"label\": \"Customer Name\",\"type\": \"TEXT\",\"value\": \"John Doe\"},\n            \"102\": {\"name\": \"priority\",\"label\": \"Priority Level\",\"type\": \"DROPDOWN\",\"value\": \"Medium\"}\n        },\n        \"assetIds\": [1, 2],\n        \"address\": {\"id\": 10,\"street\": \"123 Main Street\",\"city\": \"Berlin\",\"state\": \"Berlin\",\"postalCode\": \"10115\",\"country\": \"Germany\",\"additionalInfo\": \"Near main entrance\",\"latitude\": 52.5200,\"longitude\": 13.4050}\n    }\n]"
         }
       ]
     },
@@ -118,7 +118,7 @@
               "value": "application/json"
             }
           ],
-          "body": "{\n    \"id\": 55,\n    \"jobRef\": 1,\n    \"companyId\": 1,\n    \"templateId\": 3,\n    \"clientId\": 1,\n    \"customerId\": 1,\n    \"assignedWorkerId\": 1,\n    \"status\": \"NEW\",\n    \"archived\": false,\n    \"createdAt\": \"2025-11-14T10:15:00\",\n    \"updatedAt\": \"2025-11-14T10:15:00\",\n    \"fieldValues\": {\n        \"101\": {\"name\": \"customerName\",\"label\": \"Customer Name\",\"type\": \"TEXT\",\"value\": \"John Doe\"},\n        \"102\": {\"name\": \"priority\",\"label\": \"Priority Level\",\"type\": \"DROPDOWN\",\"value\": \"Medium\"}\n    },\n    \"assetIds\": [1, 2],\n    \"address\": {\"id\": 10,\"street\": \"123 Main Street\",\"city\": \"Berlin\",\"state\": \"Berlin\",\"postalCode\": \"10115\",\"country\": \"Germany\",\"additionalInfo\": \"Near main entrance\",\"latitude\": 52.5200,\"longitude\": 13.4050}\n}"
+          "body": "{\n    \"id\": 55,\n    \"jobRef\": 1,\n    \"companyId\": 1,\n    \"templateId\": 3,\n    \"clientId\": 1,\n    \"customerId\": 1,\n    \"assignedWorkerIds\": [1],\n    \"status\": \"NEW\",\n    \"archived\": false,\n    \"createdAt\": \"2025-11-14T10:15:00\",\n    \"updatedAt\": \"2025-11-14T10:15:00\",\n    \"fieldValues\": {\n        \"101\": {\"name\": \"customerName\",\"label\": \"Customer Name\",\"type\": \"TEXT\",\"value\": \"John Doe\"},\n        \"102\": {\"name\": \"priority\",\"label\": \"Priority Level\",\"type\": \"DROPDOWN\",\"value\": \"Medium\"}\n    },\n    \"assetIds\": [1, 2],\n    \"address\": {\"id\": 10,\"street\": \"123 Main Street\",\"city\": \"Berlin\",\"state\": \"Berlin\",\"postalCode\": \"10115\",\"country\": \"Germany\",\"additionalInfo\": \"Near main entrance\",\"latitude\": 52.5200,\"longitude\": 13.4050}\n}"
         }
       ]
     },
@@ -144,7 +144,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n    \"customerId\": 1,\n    \"clientId\": 1,\n    \"assignedWorkerId\": 1,\n    \"status\": \"IN_PROGRESS\",\n    \"archived\": false,\n    \"fieldValues\": {\n        \"101\": \"John Doe Updated\",\n        \"102\": \"High\"\n    },\n    \"workflowId\": 2,\n    \"address\": {\n        \"street\": \"456 Updated Street\",\n        \"city\": \"Berlin\",\n        \"state\": \"Berlin\",\n        \"postalCode\": \"10117\",\n        \"country\": \"Germany\",\n        \"additionalInfo\": \"Back entrance\",\n        \"latitude\": 52.5205,\n        \"longitude\": 13.4095\n    }\n}"
+          "raw": "{\n    \"customerId\": 1,\n    \"clientId\": 1,\n    \"status\": \"IN_PROGRESS\",\n    \"archived\": false,\n    \"fieldValues\": {\n        \"101\": \"John Doe Updated\",\n        \"102\": \"High\"\n    },\n    \"workflowId\": 2,\n    \"address\": {\n        \"street\": \"456 Updated Street\",\n        \"city\": \"Berlin\",\n        \"state\": \"Berlin\",\n        \"postalCode\": \"10117\",\n        \"country\": \"Germany\",\n        \"additionalInfo\": \"Back entrance\",\n        \"latitude\": 52.5205,\n        \"longitude\": 13.4095\n    }\n}"
         },
         "url": {
           "raw": "{{base_url}}/api/v1/jobs/55",
@@ -164,7 +164,7 @@
               "value": "application/json"
             }
           ],
-          "body": "{\n    \"id\": 55,\n    \"jobRef\": 1,\n    \"companyId\": 1,\n    \"templateId\": 3,\n    \"clientId\": 1,\n    \"customerId\": 1,\n    \"assignedWorkerId\": 1,\n    \"status\": \"IN_PROGRESS\",\n    \"archived\": false,\n    \"workflowId\": 2,\n    \"createdAt\": \"2025-11-14T10:15:00\",\n    \"updatedAt\": \"2025-11-14T10:20:00\",\n    \"fieldValues\": {\n        \"101\": {\"name\": \"customerName\",\"label\": \"Customer Name\",\"type\": \"TEXT\",\"value\": \"John Doe Updated\"},\n        \"102\": {\"name\": \"priority\",\"label\": \"Priority Level\",\"type\": \"DROPDOWN\",\"value\": \"High\"}\n    },\n    \"assetIds\": [1, 2],\n    \"address\": {\"id\": 11,\"street\": \"456 Updated Street\",\"city\": \"Berlin\",\"state\": \"Berlin\",\"postalCode\": \"10117\",\"country\": \"Germany\",\"additionalInfo\": \"Back entrance\",\"latitude\": 52.5205,\"longitude\": 13.4095}\n}"
+          "body": "{\n    \"id\": 55,\n    \"jobRef\": 1,\n    \"companyId\": 1,\n    \"templateId\": 3,\n    \"clientId\": 1,\n    \"customerId\": 1,\n    \"assignedWorkerIds\": [1],\n    \"status\": \"IN_PROGRESS\",\n    \"archived\": false,\n    \"workflowId\": 2,\n    \"createdAt\": \"2025-11-14T10:15:00\",\n    \"updatedAt\": \"2025-11-14T10:20:00\",\n    \"fieldValues\": {\n        \"101\": {\"name\": \"customerName\",\"label\": \"Customer Name\",\"type\": \"TEXT\",\"value\": \"John Doe Updated\"},\n        \"102\": {\"name\": \"priority\",\"label\": \"Priority Level\",\"type\": \"DROPDOWN\",\"value\": \"High\"}\n    },\n    \"assetIds\": [1, 2],\n    \"address\": {\"id\": 11,\"street\": \"456 Updated Street\",\"city\": \"Berlin\",\"state\": \"Berlin\",\"postalCode\": \"10117\",\"country\": \"Germany\",\"additionalInfo\": \"Back entrance\",\"latitude\": 52.5205,\"longitude\": 13.4095}\n}"
         }
       ]
     }

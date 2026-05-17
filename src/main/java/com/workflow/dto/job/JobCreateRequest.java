@@ -21,7 +21,7 @@ public class JobCreateRequest {
     private Long clientId;
 
     private Long customerId;
-    private Long assignedWorkerId;
+    private List<Long> assignedWorkerIds;
     private Long workflowId;
     private JobStatus status;
     // key = fieldId, value = actual object (String, Number, Boolean, Date, Map,

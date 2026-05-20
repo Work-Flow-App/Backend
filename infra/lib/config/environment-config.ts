@@ -43,7 +43,7 @@ export const devConfig: EnvironmentConfig = {
   maxAzs: 2,
   natGateways: 0,
 
-  instanceType: ec2.InstanceType.of(ec2.InstanceClass.T4G, ec2.InstanceSize.MICRO),
+  instanceType: ec2.InstanceType.of(ec2.InstanceClass.T4G, ec2.InstanceSize.SMALL),
   ebsVolumeSize: 20,
 
   domainName: 'api.dev2.workfloow.app',

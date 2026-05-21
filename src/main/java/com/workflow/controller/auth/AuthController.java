@@ -4,6 +4,8 @@ import com.workflow.dto.auth.*;
 import com.workflow.dto.auth.password.ForgotPasswordRequest;
 import com.workflow.dto.auth.password.PasswordResetResponse;
 import com.workflow.dto.auth.password.ResetPasswordRequest;
+import com.workflow.dto.company.MemberSignupRequest;
+import com.workflow.dto.company.MemberSignupResponse;
 import com.workflow.dto.worker.WorkerSignupRequest;
 import com.workflow.dto.worker.WorkerSignupResponse;
 import com.workflow.entity.auth.User;
@@ -11,6 +13,7 @@ import com.workflow.service.auth.AuthenticationService;
 import com.workflow.service.auth.EmailVerificationService;
 import com.workflow.service.auth.GoogleAuthService;
 import com.workflow.service.auth.PasswordResetService;
+import com.workflow.service.company.ICompanyMemberService;
 import com.workflow.service.user.IUserService;
 import com.workflow.service.worker.WorkerInvitationService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -35,6 +38,7 @@ public class AuthController {
     private final EmailVerificationService emailVerificationService;
     private final PasswordResetService passwordResetService;
     private final WorkerInvitationService workerInvitationService;
+    private final ICompanyMemberService companyMemberService;
 
     @PostMapping("/google")
     public ResponseEntity<AuthenticationResponse> googleLogin(
@@ -131,6 +135,14 @@ public class AuthController {
             @Valid @RequestBody WorkerSignupRequest request
     ) {
         WorkerSignupResponse response = this.workerInvitationService.validateAndAcceptInvitation(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @PostMapping("/signup/company-member")
+    public ResponseEntity<MemberSignupResponse> signupCompanyMember(
+            @Valid @RequestBody MemberSignupRequest request
+    ) {
+        MemberSignupResponse response = this.companyMemberService.validateAndAcceptInvitation(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 }

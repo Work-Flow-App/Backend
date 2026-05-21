@@ -1,5 +1,6 @@
 package com.workflow.service.email;
 
+import com.workflow.common.constant.CompanyRole;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
@@ -137,6 +138,37 @@ public class EmailService {
         } catch (MessagingException e) {
             log.error("Failed to send worker invitation email to: {}", toEmail, e);
             // Don't throw exception - email failure shouldn't break the flow
+        }
+    }
+
+    @Async
+    public void sendCompanyMemberInvitationEmail(String toEmail, String companyName, CompanyRole companyRole, String invitationToken) {
+        try {
+            log.info("Sending member invitation email to: {} for company: {}", toEmail, companyName);
+
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setFrom(String.format("%s <%s>", fromName, fromEmail));
+            helper.setTo(toEmail);
+            helper.setSubject("You're Invited to Join " + companyName + " - Workfloow App");
+
+            String signupLink = frontendUrl + "/signup/company-member?token=" + invitationToken;
+            Context context = new Context();
+            context.setVariable("companyName", companyName);
+            context.setVariable("companyRole", companyRole.name());
+            context.setVariable("signupLink", signupLink);
+            context.setVariable("expiryDays", 7);
+            context.setVariable("email", toEmail);
+
+            String htmlContent = templateEngine.process("email/member-invitation", context);
+            helper.setText(htmlContent, true);
+
+            mailSender.send(message);
+            log.info("Member invitation email sent successfully to: {}", toEmail);
+
+        } catch (MessagingException e) {
+            log.error("Failed to send member invitation email to: {}", toEmail, e);
         }
     }
 }

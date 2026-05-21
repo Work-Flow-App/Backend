@@ -3,6 +3,7 @@ package com.workflow.controller.asset;
 import com.workflow.AbstractControllerIntegrationTest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.workflow.common.constant.CompanyRole;
 import com.workflow.common.constant.Role;
 import com.workflow.common.constant.job.JobStatus;
 import com.workflow.dto.asset.AssetAssignmentCreateRequest;
@@ -96,6 +97,9 @@ class AssetAssignmentControllerIntegrationTest extends AbstractControllerIntegra
 
         anotherCompany = companyRepository.save(Company.builder()
                 .name("Another Company").user(anotherUser).email("anotherassign@test.com").archived(false).build());
+
+        createCompanyMember(company, companyUser, CompanyRole.COMPANY_ADMIN);
+        createCompanyMember(anotherCompany, anotherUser, CompanyRole.COMPANY_ADMIN);
 
         availableAsset = assetRepository.save(Asset.builder()
                 .company(company)
@@ -235,9 +239,8 @@ class AssetAssignmentControllerIntegrationTest extends AbstractControllerIntegra
     }
 
     @Test
-    void shouldReturn404ForWorkerRoleOnAssignBecauseNoCompany() throws Exception {
-        // /api/v1/asset-assignments/** is not restricted to COMPANY role in SecurityConfig;
-        // getCompanyId() throws CompanyNotFoundException (404) for worker users
+    void shouldReturn403ForWorkerRoleOnAssign() throws Exception {
+        // WORKER users have no company context; CompanyRoleAspect rejects with 403
         AssetAssignmentCreateRequest request = AssetAssignmentCreateRequest.builder()
                 .assetId(availableAsset.getId())
                 .build();
@@ -246,7 +249,7 @@ class AssetAssignmentControllerIntegrationTest extends AbstractControllerIntegra
                         .header("Authorization", "Bearer " + workerToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isNotFound());
+                .andExpect(status().isForbidden());
     }
 
     // ============= POST /api/v1/asset-assignments/return =============

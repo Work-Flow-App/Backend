@@ -16,17 +16,19 @@ import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.validation.Valid;
 
+import com.workflow.common.security.RequireCompanyRole;
 import com.workflow.common.util.AuthUtils;
 import com.workflow.dto.workflow.JobWorkflowResponse;
 import com.workflow.dto.workflow.JobWorkflowStepCreateRequest;
 import com.workflow.dto.workflow.JobWorkflowStepResponse;
 import com.workflow.dto.workflow.JobWorkflowStepUpdateRequest;
 import com.workflow.dto.workflow.JobWorkflowUpdateRequest;
-import com.workflow.service.company.ICompanyService;
 import com.workflow.service.workflow.IJobWorkflowService;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+
+import static com.workflow.common.constant.CompanyRole.*;
 
 @Tag(name = "Job Workflows")
 @RestController
@@ -35,39 +37,40 @@ import lombok.RequiredArgsConstructor;
 public class JobWorkflowController {
 
         private final IJobWorkflowService jobWorkflowService;
-        private final ICompanyService companyService;
 
-        private Long getCompanyId(Authentication auth) {
-                return AuthUtils.getCompanyId(auth, companyService);
+        private Long getCompanyId() {
+                return AuthUtils.getCompanyId();
         }
 
+        @RequireCompanyRole({COMPANY_ADMIN, MANAGER, EDITOR})
         @PostMapping("/jobs/{jobId}/workflows/{workflowId}/start")
         public ResponseEntity<JobWorkflowResponse> startWorkflow(
                         @PathVariable Long jobId,
                         @PathVariable Long workflowId,
                         Authentication auth) {
-                Long companyId = getCompanyId(auth);
                 return ResponseEntity.status(HttpStatus.CREATED)
-                                .body(jobWorkflowService.startWorkflowForJob(jobId, workflowId, companyId));
+                                .body(jobWorkflowService.startWorkflowForJob(jobId, workflowId, getCompanyId()));
         }
 
+        @RequireCompanyRole({COMPANY_ADMIN, MANAGER, EDITOR})
         @PutMapping("/{jobWorkflowId}")
         public ResponseEntity<JobWorkflowResponse> updateJobWorkflow(
                         @PathVariable Long jobWorkflowId,
                         @Valid @RequestBody JobWorkflowUpdateRequest request,
                         Authentication auth) {
                 return ResponseEntity.ok(jobWorkflowService.updateJobWorkflowById(
-                                jobWorkflowId, request, getCompanyId(auth)));
+                                jobWorkflowId, request, getCompanyId()));
         }
 
+        @RequireCompanyRole({COMPANY_ADMIN, MANAGER, EDITOR, VIEWER})
         @GetMapping("/jobs/{jobId}")
         public ResponseEntity<JobWorkflowResponse> getJobWorkflow(
                         @PathVariable Long jobId,
                         Authentication auth) {
-                Long companyId = getCompanyId(auth);
-                return ResponseEntity.ok(jobWorkflowService.getJobWorkflowByJobId(jobId, companyId));
+                return ResponseEntity.ok(jobWorkflowService.getJobWorkflowByJobId(jobId, getCompanyId()));
         }
 
+        @RequireCompanyRole({COMPANY_ADMIN, MANAGER, EDITOR})
         @PutMapping("/{jobWorkflowId}/steps/{stepId}")
         public ResponseEntity<JobWorkflowStepResponse> updateStep(
                         @PathVariable Long jobWorkflowId,
@@ -75,62 +78,59 @@ public class JobWorkflowController {
                         @Valid @RequestBody JobWorkflowStepUpdateRequest request,
                         Authentication auth) {
                 return ResponseEntity.ok(jobWorkflowService.updateStep(
-                                jobWorkflowId, stepId, request, getCompanyId(auth)));
+                                jobWorkflowId, stepId, request, getCompanyId()));
         }
 
+        @RequireCompanyRole({COMPANY_ADMIN, MANAGER, EDITOR, VIEWER})
         @GetMapping("/{jobWorkflowId}")
         public ResponseEntity<JobWorkflowResponse> getJobWorkflowById(
                         @PathVariable Long jobWorkflowId,
                         Authentication auth) {
-
-                Long companyId = getCompanyId(auth);
-                return ResponseEntity.ok(
-                                jobWorkflowService.getJobWorkflowById(jobWorkflowId, companyId));
+                return ResponseEntity.ok(jobWorkflowService.getJobWorkflowById(jobWorkflowId, getCompanyId()));
         }
 
+        @RequireCompanyRole({COMPANY_ADMIN, MANAGER, EDITOR, VIEWER})
         @GetMapping
         public ResponseEntity<List<JobWorkflowResponse>> getAllJobWorkflows(Authentication auth) {
-                Long companyId = getCompanyId(auth);
-                return ResponseEntity.ok(jobWorkflowService.getAllJobWorkflows(companyId));
+                return ResponseEntity.ok(jobWorkflowService.getAllJobWorkflows(getCompanyId()));
         }
 
+        @RequireCompanyRole({COMPANY_ADMIN, MANAGER})
         @DeleteMapping("/jobs/{jobId}")
         public ResponseEntity<Void> deleteByJobId(
                         @PathVariable Long jobId,
                         Authentication auth) {
-                jobWorkflowService.deleteByJobId(jobId, getCompanyId(auth));
+                jobWorkflowService.deleteByJobId(jobId, getCompanyId());
                 return ResponseEntity.noContent().build();
         }
 
+        @RequireCompanyRole({COMPANY_ADMIN, MANAGER, EDITOR})
         @PutMapping("/{jobWorkflowId}/assign-worker/{workerId}")
         public ResponseEntity<JobWorkflowResponse> assignWorkerToAllSteps(
                         @PathVariable Long jobWorkflowId,
                         @PathVariable Long workerId,
                         Authentication auth) {
                 return ResponseEntity.ok(jobWorkflowService.assignAWorkerToAllSteps(
-                                jobWorkflowId, workerId, getCompanyId(auth)));
+                                jobWorkflowId, workerId, getCompanyId()));
         }
 
+        @RequireCompanyRole({COMPANY_ADMIN, MANAGER, EDITOR})
         @PutMapping("/{jobWorkflowId}/assign-workers")
         public ResponseEntity<JobWorkflowResponse> assignWorkersToAllSteps(
                         @PathVariable Long jobWorkflowId,
                         @RequestBody List<Long> workerIds,
                         Authentication auth) {
                 return ResponseEntity.ok(jobWorkflowService.assignWorkersToAllSteps(
-                                jobWorkflowId, workerIds, getCompanyId(auth)));
+                                jobWorkflowId, workerIds, getCompanyId()));
         }
 
+        @RequireCompanyRole({COMPANY_ADMIN, MANAGER, EDITOR})
         @PostMapping("/{jobWorkflowId}/steps")
         public ResponseEntity<JobWorkflowStepResponse> addStep(
                         @PathVariable Long jobWorkflowId,
                         @Valid @RequestBody JobWorkflowStepCreateRequest request,
                         Authentication auth) {
-
                 return ResponseEntity.status(HttpStatus.CREATED)
-                                .body(jobWorkflowService.addStep(
-                                                jobWorkflowId,
-                                                request,
-                                                getCompanyId(auth)));
+                                .body(jobWorkflowService.addStep(jobWorkflowId, request, getCompanyId()));
         }
-
 }

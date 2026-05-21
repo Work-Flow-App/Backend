@@ -3,6 +3,7 @@ package com.workflow.controller.worker;
 import com.workflow.AbstractControllerIntegrationTest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.workflow.common.constant.CompanyRole;
 import com.workflow.common.constant.Role;
 import com.workflow.dto.worker.WorkerCreateRequest;
 import com.workflow.dto.worker.WorkerUpdateRequest;
@@ -81,6 +82,8 @@ class WorkerControllerIntegrationTest extends AbstractControllerIntegrationTest 
                 .archived(false)
                 .build();
         company = companyRepository.save(company);
+
+        createCompanyMember(company, companyUser, CompanyRole.COMPANY_ADMIN);
 
         // Create existing worker
         existingWorkerUser = User.builder()

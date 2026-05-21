@@ -3,6 +3,7 @@ package com.workflow.controller.workflow;
 import com.workflow.AbstractControllerIntegrationTest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.workflow.common.constant.CompanyRole;
 import com.workflow.common.constant.Role;
 import com.workflow.dto.workflow.WorkflowBulkUpdateRequest;
 import com.workflow.dto.workflow.WorkflowCreateRequest;
@@ -78,6 +79,9 @@ class WorkflowControllerIntegrationTest extends AbstractControllerIntegrationTes
         anotherCompany = companyRepository.save(Company.builder()
                 .name("Another Company").user(anotherUser).email("anotherworkflow@test.com").archived(false).build());
 
+        createCompanyMember(company, companyUser, CompanyRole.COMPANY_ADMIN);
+        createCompanyMember(anotherCompany, anotherUser, CompanyRole.COMPANY_ADMIN);
+
         existingWorkflow = workflowRepository.save(Workflow.builder()
                 .company(company)
                 .name("Test Workflow")
@@ -141,16 +145,15 @@ class WorkflowControllerIntegrationTest extends AbstractControllerIntegrationTes
     }
 
     @Test
-    void shouldReturn404ForWorkerRoleOnCreateWorkflowBecauseNoCompany() throws Exception {
-        // /api/v1/workflows/** is not restricted to COMPANY role in SecurityConfig;
-        // getCompanyId() throws CompanyNotFoundException (404) for worker users
+    void shouldReturn403ForWorkerRoleOnCreateWorkflow() throws Exception {
+        // WORKER users have no company context; CompanyRoleAspect rejects with 403
         WorkflowCreateRequest request = WorkflowCreateRequest.builder().name("Workflow Name").build();
 
         mockMvc.perform(post("/api/v1/workflows")
                         .header("Authorization", "Bearer " + workerToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isNotFound());
+                .andExpect(status().isForbidden());
     }
 
     // ============= PUT /api/v1/workflows/{id} =============

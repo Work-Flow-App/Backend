@@ -20,17 +20,19 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.workflow.common.constant.workflow.StepDiscussionType;
+import com.workflow.common.security.RequireCompanyRole;
 import com.workflow.common.util.AuthUtils;
 import com.workflow.dto.workflow.StepAttachmentResponse;
 import com.workflow.dto.workflow.StepAttachmentUpdateRequest;
 import com.workflow.dto.workflow.StepCommentCreateRequest;
 import com.workflow.dto.workflow.StepCommentResponse;
 import com.workflow.dto.workflow.StepTimelineItemResponse;
-import com.workflow.service.company.ICompanyService;
 import com.workflow.service.workflow.IJobWorkflowStepActivityService;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+
+import static com.workflow.common.constant.CompanyRole.*;
 
 @Tag(name = "Workflow Step Activities")
 @RestController
@@ -39,75 +41,48 @@ import lombok.RequiredArgsConstructor;
 public class JobWorkflowStepActivityController {
 
         private final IJobWorkflowStepActivityService stepActivityService;
-        private final ICompanyService companyService;
 
-        /*
-         * ===========================
-         * HELPERS
-         * ===========================
-         */
-
-        private Long getCompanyId(Authentication auth) {
-                return AuthUtils.getCompanyId(auth, companyService);
+        private Long getCompanyId() {
+                return AuthUtils.getCompanyId();
         }
 
-        /*
-         * ===========================
-         * COMMENTS
-         * ===========================
-         */
-
+        @RequireCompanyRole({COMPANY_ADMIN, MANAGER, EDITOR})
         @PostMapping("/{stepId}/comments")
         public ResponseEntity<StepCommentResponse> addComment(
                         @PathVariable Long stepId,
                         @Valid @RequestBody StepCommentCreateRequest request,
                         Authentication auth) {
-
-                StepCommentResponse response = stepActivityService.addComment(
-                                stepId,
-                                request,
-                                getCompanyId(auth));
-
-                return ResponseEntity.status(HttpStatus.CREATED).body(response);
+                return ResponseEntity.status(HttpStatus.CREATED)
+                                .body(stepActivityService.addComment(stepId, request, getCompanyId()));
         }
 
+        @RequireCompanyRole({COMPANY_ADMIN, MANAGER, EDITOR})
         @PutMapping("/comments/{commentId}")
         public ResponseEntity<StepCommentResponse> updateComment(
                         @PathVariable Long commentId,
                         @Valid @RequestBody StepCommentCreateRequest request,
                         Authentication auth) {
-
-                return ResponseEntity.ok(
-                                stepActivityService.updateComment(
-                                                commentId,
-                                                request,
-                                                getCompanyId(auth)));
+                return ResponseEntity.ok(stepActivityService.updateComment(commentId, request, getCompanyId()));
         }
 
+        @RequireCompanyRole({COMPANY_ADMIN, MANAGER})
         @DeleteMapping("/comments/{commentId}")
         public ResponseEntity<Void> deleteComment(
                         @PathVariable Long commentId,
                         Authentication auth) {
-
-                stepActivityService.deleteComment(commentId, getCompanyId(auth));
+                stepActivityService.deleteComment(commentId, getCompanyId());
                 return ResponseEntity.noContent().build();
         }
 
+        @RequireCompanyRole({COMPANY_ADMIN, MANAGER, EDITOR, VIEWER})
         @GetMapping("/{stepId}/comments")
         public ResponseEntity<List<StepCommentResponse>> getComments(
                         @PathVariable Long stepId,
                         Authentication auth) {
-
-                return ResponseEntity.ok(
-                                stepActivityService.getComments(stepId, getCompanyId(auth)));
+                return ResponseEntity.ok(stepActivityService.getComments(stepId, getCompanyId()));
         }
 
-        /*
-         * ===========================
-         * ATTACHMENTS
-         * ===========================
-         */
-
+        @RequireCompanyRole({COMPANY_ADMIN, MANAGER, EDITOR})
         @PostMapping(value = "/{stepId}/attachments", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
         public ResponseEntity<StepAttachmentResponse> uploadAttachment(
                         @PathVariable Long stepId,
@@ -115,60 +90,41 @@ public class JobWorkflowStepActivityController {
                         @RequestParam("type") StepDiscussionType type,
                         @RequestParam(value = "description", required = false) String description,
                         Authentication auth) throws IOException {
-
-                StepAttachmentResponse response = stepActivityService.uploadAttachment(
-                                stepId,
-                                file,
-                                type,
-                                description,
-                                getCompanyId(auth));
-
-                return ResponseEntity.status(HttpStatus.CREATED).body(response);
+                return ResponseEntity.status(HttpStatus.CREATED)
+                                .body(stepActivityService.uploadAttachment(stepId, file, type, description, getCompanyId()));
         }
 
+        @RequireCompanyRole({COMPANY_ADMIN, MANAGER, EDITOR})
         @PutMapping("/attachments/{attachmentId}")
         public ResponseEntity<StepAttachmentResponse> updateAttachment(
                         @PathVariable Long attachmentId,
                         @RequestBody StepAttachmentUpdateRequest request,
                         Authentication auth) {
-
-                return ResponseEntity.ok(
-                                stepActivityService.updateAttachment(
-                                                attachmentId,
-                                                request,
-                                                getCompanyId(auth)));
+                return ResponseEntity.ok(stepActivityService.updateAttachment(attachmentId, request, getCompanyId()));
         }
 
+        @RequireCompanyRole({COMPANY_ADMIN, MANAGER})
         @DeleteMapping("/attachments/{attachmentId}")
         public ResponseEntity<Void> deleteAttachment(
                         @PathVariable Long attachmentId,
                         Authentication auth) {
-
-                stepActivityService.deleteAttachment(
-                                attachmentId,
-                                getCompanyId(auth));
-
+                stepActivityService.deleteAttachment(attachmentId, getCompanyId());
                 return ResponseEntity.noContent().build();
         }
 
+        @RequireCompanyRole({COMPANY_ADMIN, MANAGER, EDITOR, VIEWER})
         @GetMapping("/{stepId}/attachments")
         public ResponseEntity<List<StepAttachmentResponse>> getAttachments(
                         @PathVariable Long stepId,
                         Authentication auth) {
-
-                return ResponseEntity.ok(
-                                stepActivityService.getAttachments(stepId, getCompanyId(auth)));
+                return ResponseEntity.ok(stepActivityService.getAttachments(stepId, getCompanyId()));
         }
 
+        @RequireCompanyRole({COMPANY_ADMIN, MANAGER, EDITOR, VIEWER})
         @GetMapping("/{stepId}/discussion")
         public ResponseEntity<List<StepTimelineItemResponse>> getDiscussionTimeline(
                         @PathVariable Long stepId,
                         Authentication auth) {
-
-                return ResponseEntity.ok(
-                                stepActivityService.getCommentsAndAttachmentsTimeline(
-                                                stepId,
-                                                getCompanyId(auth)));
+                return ResponseEntity.ok(stepActivityService.getCommentsAndAttachmentsTimeline(stepId, getCompanyId()));
         }
-
 }

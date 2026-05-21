@@ -8,6 +8,7 @@ import com.workflow.common.constant.Role;
 import com.workflow.common.constant.job.JobStatus;
 import com.workflow.dto.estimate.EstimateUpdateRequest;
 import com.workflow.dto.estimate.LineItemCreateRequest;
+import com.workflow.common.constant.CompanyRole;
 import com.workflow.entity.company.Company;
 import com.workflow.entity.customer.Customer;
 import com.workflow.entity.financial.Estimate;
@@ -96,6 +97,9 @@ class EstimateControllerIntegrationTest extends AbstractControllerIntegrationTes
 
         anotherCompany = companyRepository.save(Company.builder()
                 .name("Another Company").user(anotherUser).email("another@test.com").archived(false).build());
+
+        createCompanyMember(company, companyUser, CompanyRole.COMPANY_ADMIN);
+        createCompanyMember(anotherCompany, anotherUser, CompanyRole.COMPANY_ADMIN);
 
         JobTemplate template = jobTemplateRepository.save(JobTemplate.builder()
                 .name("Default Template").company(company).build());

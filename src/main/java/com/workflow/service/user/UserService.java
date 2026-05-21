@@ -1,11 +1,14 @@
 package com.workflow.service.user;
 
+import com.workflow.common.constant.CompanyRole;
 import com.workflow.common.constant.Role;
 import com.workflow.common.exception.business.UserAlreadyExistsException;
 import com.workflow.dto.auth.SignupRequest;
 import com.workflow.dto.auth.UserLookupResult;
 import com.workflow.entity.company.Company;
+import com.workflow.entity.company.CompanyMember;
 import com.workflow.entity.auth.User;
+import com.workflow.repository.company.CompanyMemberRepository;
 import com.workflow.repository.company.CompanyRepository;
 import com.workflow.repository.auth.UserRepository;
 import com.workflow.service.jobtemplate.DefaultTemplateSeederService;
@@ -28,6 +31,7 @@ public class UserService implements IUserService{
 
     private final UserRepository userRepository;
     private final CompanyRepository companyRepository;
+    private final CompanyMemberRepository companyMemberRepository;
     private final PasswordEncoder passwordEncoder;
     private final DefaultTemplateSeederService defaultTemplateSeederService;
     private final ISubscriptionService subscriptionService;
@@ -119,6 +123,14 @@ public class UserService implements IUserService{
                 .build();
 
         Company savedCompany = companyRepository.save(company);
+
+        companyMemberRepository.save(CompanyMember.builder()
+                .company(savedCompany)
+                .user(user)
+                .companyRole(CompanyRole.COMPANY_ADMIN)
+                .active(true)
+                .build());
+
         subscriptionService.initTrial(savedCompany.getId());
         if (TransactionSynchronizationManager.isSynchronizationActive()) {
             TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {

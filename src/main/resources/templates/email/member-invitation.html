@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Team Member Invitation - Workfloow App</title>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333333; margin: 0; padding: 0; background-color: #f5f5f5;">
+    <div style="max-width: 600px; margin: 20px auto; padding: 0 20px;">
+        <div style="background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+
+            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); background-color: #6f72c5; padding: 40px 30px; text-align: center;">
+                <h1 style="margin: 0; font-size: 28px; font-weight: 600; letter-spacing: 0.5px; color: #ffffff; font-family: Arial, Helvetica, sans-serif;">Workfloow App</h1>
+            </div>
+
+            <div style="padding: 40px 30px;">
+                <h2 style="color: #333333 !important; font-size: 24px; margin: 0 0 20px 0; font-weight: 600; font-family: Arial, Helvetica, sans-serif;">You're Invited to Join the Team!</h2>
+                <p style="margin: 15px 0; color: #555555; font-size: 15px;">You've been invited to join <span th:text="${companyName}" style="display: inline-block; padding: 6px 14px; background-color: #f3f4f6; color: #667eea; border-radius: 6px; font-weight: 600; font-size: 14px;">Company Name</span> on Workfloow App as a <strong th:text="${companyRole}">Team Member</strong>.</p>
+                <p style="margin: 15px 0; color: #555555; font-size: 15px;">Click the button below to create your account and start collaborating with the team:</p>
+
+                <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 35px 0;">
+                    <tr>
+                        <td align="center">
+                            <a th:href="${signupLink}" style="display: inline-block; padding: 16px 40px; background-color: #667eea; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; font-family: Arial, Helvetica, sans-serif;">Create Your Account</a>
+                        </td>
+                    </tr>
+                </table>
+
+                <p style="color: #888888; font-size: 13px; text-align: center;">
+                    Or copy and paste this link into your browser:<br>
+                    <span th:text="${signupLink}" style="word-break: break-all; display: inline-block; margin-top: 8px;">signup-link</span>
+                </p>
+
+                <div style="background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 18px; margin: 25px 0; border-radius: 4px;">
+                    <span style="font-size: 20px; margin-right: 8px; vertical-align: middle;">&#9200;</span>
+                    <strong style="color: #856404; font-size: 15px;">This invitation expires in <span th:text="${expiryDays}">7</span> days</strong>
+                    <span style="color: #856404; font-size: 14px; margin-top: 8px; display: block;">For security reasons, this invitation link will only work once and will expire after <span th:text="${expiryDays}">7</span> days.</span>
+                </div>
+
+                <div style="background-color: #f0f9ff; border-left: 4px solid #3b82f6; padding: 18px; margin: 25px 0; border-radius: 4px;">
+                    <strong style="color: #1e40af; display: block; margin-bottom: 8px; font-size: 15px;">Security Notice</strong>
+                    <p style="margin: 0; color: #1e3a8a; font-size: 14px;">This invitation was sent to <strong th:text="${email}">email@example.com</strong>. You must use this email address to complete your signup. The email cannot be changed during registration.</p>
+                </div>
+
+                <p style="margin-top: 30px; color: #666666; font-size: 14px;">
+                    If you weren't expecting this invitation or have any questions, please contact the company administrator.
+                </p>
+            </div>
+
+            <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color: #f8f9fa; border-top: 1px solid #e9ecef;">
+                <tr>
+                    <td align="center" style="padding: 25px 30px;">
+                        <p style="margin: 5px 0; font-size: 13px; color: #6c757d; font-family: Arial, Helvetica, sans-serif;">This is an automated message, please do not reply to this email.</p>
+                        <p style="margin: 5px 0; font-size: 13px; color: #6c757d; font-family: Arial, Helvetica, sans-serif;">&copy; 2026 <a href="https://www.workfloow.app/" style="color: #667eea; text-decoration: underline; font-weight: 600;">Workfloow App</a>. All rights reserved.</p>
+                        <table cellpadding="0" cellspacing="0" border="0" align="center" style="margin-top: 14px;">
+                            <tr>
+                                <td>
+                                    <a href="https://www.linkedin.com/company/workfloowapp/" target="_blank" style="display: inline-block; background-color: #0a66c2; color: #ffffff; text-decoration: none; border-radius: 5px; padding: 5px 10px; font-family: Arial, Helvetica, sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 0.5px;">in LinkedIn</a>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+
+        </div>
+    </div>
+</body>
+</html>

@@ -3,6 +3,7 @@ package com.workflow.controller.lineitem;
 import com.workflow.AbstractControllerIntegrationTest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.workflow.common.constant.CompanyRole;
 import com.workflow.common.constant.CoreOrSub;
 import com.workflow.common.constant.Role;
 import com.workflow.dto.estimate.LineItemCreateRequest;
@@ -71,6 +72,9 @@ class LineItemControllerIntegrationTest extends AbstractControllerIntegrationTes
 
         anotherCompany = companyRepository.save(Company.builder()
                 .name("Another Company").user(anotherUser).email("anotherline@test.com").archived(false).build());
+
+        createCompanyMember(company, companyUser, CompanyRole.COMPANY_ADMIN);
+        createCompanyMember(anotherCompany, anotherUser, CompanyRole.COMPANY_ADMIN);
 
         existingLineItem = lineItemRepository.save(LineItem.builder()
                 .company(company)

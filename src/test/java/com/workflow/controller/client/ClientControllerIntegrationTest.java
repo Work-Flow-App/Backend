@@ -3,6 +3,7 @@ package com.workflow.controller.client;
 import com.workflow.AbstractControllerIntegrationTest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.workflow.common.constant.CompanyRole;
 import com.workflow.common.constant.Role;
 import com.workflow.dto.client.ClientCreateRequest;
 import com.workflow.dto.client.ClientUpdateRequest;
@@ -69,6 +70,9 @@ class ClientControllerIntegrationTest extends AbstractControllerIntegrationTest 
 
         anotherCompany = companyRepository.save(Company.builder()
                 .name("Another Company").user(anotherUser).email("anotherclient@test.com").archived(false).build());
+
+        createCompanyMember(company, companyUser, CompanyRole.COMPANY_ADMIN);
+        createCompanyMember(anotherCompany, anotherUser, CompanyRole.COMPANY_ADMIN);
 
         existingClient = clientRepository.save(Client.builder()
                 .name("Existing Client")

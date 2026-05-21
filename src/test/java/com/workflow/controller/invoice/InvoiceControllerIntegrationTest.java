@@ -3,6 +3,7 @@ package com.workflow.controller.invoice;
 import com.workflow.AbstractControllerIntegrationTest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.workflow.common.constant.CompanyRole;
 import com.workflow.common.constant.CoreOrSub;
 import com.workflow.common.constant.Role;
 import com.workflow.common.constant.job.JobStatus;
@@ -115,6 +116,9 @@ class InvoiceControllerIntegrationTest extends AbstractControllerIntegrationTest
 
         anotherCompany = companyRepository.save(Company.builder()
                 .name("Another Company").user(anotherUser).email("anotherinvoice@test.com").archived(false).build());
+
+        createCompanyMember(company, companyUser, CompanyRole.COMPANY_ADMIN);
+        createCompanyMember(anotherCompany, anotherUser, CompanyRole.COMPANY_ADMIN);
 
         JobTemplate template = jobTemplateRepository.save(JobTemplate.builder()
                 .name("Default Template").company(company).build());

@@ -3,6 +3,7 @@ package com.workflow.controller.workflow;
 import com.workflow.AbstractControllerIntegrationTest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.workflow.common.constant.CompanyRole;
 import com.workflow.common.constant.Role;
 import com.workflow.common.constant.job.JobStatus;
 import com.workflow.common.constant.workflow.StepDiscussionType;
@@ -120,6 +121,8 @@ class WorkerJobWorkflowControllerIntegrationTest extends AbstractControllerInteg
 
         Company company = companyRepository.save(Company.builder()
                 .name("Test Company").user(companyUser).email("workerworkflowco@test.com").archived(false).build());
+
+        createCompanyMember(company, companyUser, CompanyRole.COMPANY_ADMIN);
 
         worker = workerRepository.save(Worker.builder()
                 .name("Assigned Worker").company(company).user(workerUser)

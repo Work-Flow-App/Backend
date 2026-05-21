@@ -3,6 +3,7 @@ package com.workflow.controller.company;
 import com.workflow.AbstractControllerIntegrationTest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.workflow.common.constant.CompanyRole;
 import com.workflow.common.constant.Role;
 import com.workflow.dto.company.CompanyAddressRequest;
 import com.workflow.dto.company.CompanyProfileUpdateRequest;
@@ -88,6 +89,8 @@ class CompanyControllerIntegrationTest extends AbstractControllerIntegrationTest
                 .build();
         company = companyRepository.save(company);
 
+        createCompanyMember(company, companyUser, CompanyRole.COMPANY_ADMIN);
+
         // Generate JWT tokens
         companyUserToken = jwtService.generateToken(companyUser);
         workerUserToken = jwtService.generateToken(workerUser);
@@ -124,8 +127,8 @@ class CompanyControllerIntegrationTest extends AbstractControllerIntegrationTest
     }
 
     @Test
-    void shouldReturn404WhenCompanyNotFound() throws Exception {
-        // Create another company user without company
+    void shouldReturn403WhenNoCompanyMembership() throws Exception {
+        // A COMPANY-role user with no company_members row is rejected by CompanyMembershipFilter
         User anotherUser = User.builder()
                 .uuid(UUID.randomUUID().toString())
                 .username("nocompany")
@@ -139,9 +142,7 @@ class CompanyControllerIntegrationTest extends AbstractControllerIntegrationTest
 
         mockMvc.perform(get("/api/v1/companies/profile")
                         .header("Authorization", "Bearer " + token))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.status").value(404))
-                .andExpect(jsonPath("$.message").value(containsString("No active company found")));
+                .andExpect(status().isForbidden());
     }
 
     // ============= POST /api/v1/companies/profile Tests =============

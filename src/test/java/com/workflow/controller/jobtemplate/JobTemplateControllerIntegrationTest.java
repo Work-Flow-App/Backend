@@ -3,6 +3,7 @@ package com.workflow.controller.jobtemplate;
 import com.workflow.AbstractControllerIntegrationTest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.workflow.common.constant.CompanyRole;
 import com.workflow.common.constant.Role;
 import com.workflow.common.constant.job.JobFieldType;
 import com.workflow.dto.jobtemplate.JobTemplateCreateRequest;
@@ -124,6 +125,9 @@ class JobTemplateControllerIntegrationTest extends AbstractControllerIntegration
                 .archived(false)
                 .build();
         anotherCompany = companyRepository.save(anotherCompany);
+
+        createCompanyMember(company, companyUser, CompanyRole.COMPANY_ADMIN);
+        createCompanyMember(anotherCompany, anotherCompanyUser, CompanyRole.COMPANY_ADMIN);
 
         // Create job template
         template = JobTemplate.builder()

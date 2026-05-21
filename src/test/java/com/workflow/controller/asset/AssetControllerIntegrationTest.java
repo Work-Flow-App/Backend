@@ -3,6 +3,7 @@ package com.workflow.controller.asset;
 import com.workflow.AbstractControllerIntegrationTest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.workflow.common.constant.CompanyRole;
 import com.workflow.common.constant.Role;
 import com.workflow.dto.asset.AssetCreateRequest;
 import com.workflow.dto.asset.AssetUpdateRequest;
@@ -74,6 +75,9 @@ class AssetControllerIntegrationTest extends AbstractControllerIntegrationTest {
 
         anotherCompany = companyRepository.save(Company.builder()
                 .name("Another Company").user(anotherUser).email("anotherasset@test.com").archived(false).build());
+
+        createCompanyMember(company, companyUser, CompanyRole.COMPANY_ADMIN);
+        createCompanyMember(anotherCompany, anotherUser, CompanyRole.COMPANY_ADMIN);
 
         existingAsset = assetRepository.save(Asset.builder()
                 .company(company)
@@ -189,9 +193,8 @@ class AssetControllerIntegrationTest extends AbstractControllerIntegrationTest {
     }
 
     @Test
-    void shouldReturn404ForWorkerRoleOnCreateBecauseNoCompany() throws Exception {
-        // /api/v1/assets/** is not restricted to COMPANY role in SecurityConfig;
-        // getCompanyId() throws CompanyNotFoundException (404) for worker users
+    void shouldReturn403ForWorkerRoleOnCreate() throws Exception {
+        // WORKER users have no company context; CompanyRoleAspect rejects with 403
         AssetCreateRequest request = AssetCreateRequest.builder()
                 .name("Asset Name")
                 .purchasePrice(new BigDecimal("1000.00"))
@@ -203,7 +206,7 @@ class AssetControllerIntegrationTest extends AbstractControllerIntegrationTest {
                         .header("Authorization", "Bearer " + workerToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isNotFound());
+                .andExpect(status().isForbidden());
     }
 
     // ============= PUT /api/v1/assets/{id} =============

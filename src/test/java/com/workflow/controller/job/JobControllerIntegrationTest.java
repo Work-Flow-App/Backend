@@ -3,6 +3,7 @@ package com.workflow.controller.job;
 import com.workflow.AbstractControllerIntegrationTest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.workflow.common.constant.CompanyRole;
 import com.workflow.common.constant.Role;
 import com.workflow.common.constant.job.JobFieldType;
 import com.workflow.common.constant.job.JobStatus;
@@ -162,6 +163,9 @@ class JobControllerIntegrationTest extends AbstractControllerIntegrationTest {
                                 .archived(false)
                                 .build();
                 anotherCompany = companyRepository.save(anotherCompany);
+
+                createCompanyMember(company, companyUser, CompanyRole.COMPANY_ADMIN);
+                createCompanyMember(anotherCompany, anotherCompanyUser, CompanyRole.COMPANY_ADMIN);
 
                 // Create client
                 client = Client.builder()

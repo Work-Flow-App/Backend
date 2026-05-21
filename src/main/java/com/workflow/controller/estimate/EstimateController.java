@@ -1,10 +1,10 @@
 package com.workflow.controller.estimate;
 
+import com.workflow.common.security.RequireCompanyRole;
 import com.workflow.common.util.AuthUtils;
 import com.workflow.dto.estimate.EstimateResponse;
 import com.workflow.dto.estimate.EstimateUpdateRequest;
 import com.workflow.dto.estimate.LineItemCreateRequest;
-import com.workflow.service.company.ICompanyService;
 import com.workflow.service.estimate.IEstimateService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -14,6 +14,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import static com.workflow.common.constant.CompanyRole.*;
+
 @Tag(name = "Estimates")
 @RestController
 @RequestMapping("/api/v1/estimates")
@@ -21,43 +23,46 @@ import org.springframework.web.bind.annotation.*;
 public class EstimateController {
 
     private final IEstimateService estimateService;
-    private final ICompanyService companyService;
 
+    @RequireCompanyRole({COMPANY_ADMIN, MANAGER, EDITOR, VIEWER})
     @GetMapping("/{id}")
     public ResponseEntity<EstimateResponse> get(
             @PathVariable Long id,
             Authentication auth
     ) {
-        return ResponseEntity.ok(estimateService.getEstimate(id, getCompanyId(auth)));
+        return ResponseEntity.ok(estimateService.getEstimate(id, getCompanyId()));
     }
 
+    @RequireCompanyRole({COMPANY_ADMIN, MANAGER, EDITOR, VIEWER})
     @GetMapping("/job/{jobId}")
     public ResponseEntity<EstimateResponse> getByJob(
             @PathVariable Long jobId,
             Authentication auth
     ) {
-        return ResponseEntity.ok(estimateService.getEstimateByJob(jobId, getCompanyId(auth)));
+        return ResponseEntity.ok(estimateService.getEstimateByJob(jobId, getCompanyId()));
     }
 
+    @RequireCompanyRole({COMPANY_ADMIN, MANAGER})
     @PutMapping("/{id}")
     public ResponseEntity<EstimateResponse> update(
             @PathVariable Long id,
             @Valid @RequestBody EstimateUpdateRequest request,
             Authentication auth
     ) {
-        return ResponseEntity.ok(estimateService.updateEstimate(id, request, getCompanyId(auth)));
+        return ResponseEntity.ok(estimateService.updateEstimate(id, request, getCompanyId()));
     }
 
+    @RequireCompanyRole({COMPANY_ADMIN, MANAGER})
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(
             @PathVariable Long id,
             Authentication auth
     ) {
-        estimateService.deleteEstimate(id, getCompanyId(auth));
+        estimateService.deleteEstimate(id, getCompanyId());
         return ResponseEntity.noContent().build();
     }
 
-    /** Create a brand-new line item and immediately attach it to this estimate. */
+    @RequireCompanyRole({COMPANY_ADMIN, MANAGER})
     @PostMapping("/{estimateId}/line-items")
     public ResponseEntity<EstimateResponse> createAndLink(
             @PathVariable Long estimateId,
@@ -65,30 +70,30 @@ public class EstimateController {
             Authentication auth
     ) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(estimateService.createAndLinkLineItem(estimateId, request, getCompanyId(auth)));
+                .body(estimateService.createAndLinkLineItem(estimateId, request, getCompanyId()));
     }
 
-    /** Attach an existing line item (by ID) to this estimate. */
+    @RequireCompanyRole({COMPANY_ADMIN, MANAGER})
     @PutMapping("/{estimateId}/line-items/{lineItemId}")
     public ResponseEntity<EstimateResponse> linkExisting(
             @PathVariable Long estimateId,
             @PathVariable Long lineItemId,
             Authentication auth
     ) {
-        return ResponseEntity.ok(estimateService.linkExistingLineItem(estimateId, lineItemId, getCompanyId(auth)));
+        return ResponseEntity.ok(estimateService.linkExistingLineItem(estimateId, lineItemId, getCompanyId()));
     }
 
-    /** Remove a line item from this estimate (line item itself is NOT deleted). */
+    @RequireCompanyRole({COMPANY_ADMIN, MANAGER})
     @DeleteMapping("/{estimateId}/line-items/{lineItemId}")
     public ResponseEntity<EstimateResponse> unlink(
             @PathVariable Long estimateId,
             @PathVariable Long lineItemId,
             Authentication auth
     ) {
-        return ResponseEntity.ok(estimateService.unlinkLineItem(estimateId, lineItemId, getCompanyId(auth)));
+        return ResponseEntity.ok(estimateService.unlinkLineItem(estimateId, lineItemId, getCompanyId()));
     }
 
-    private Long getCompanyId(Authentication auth) {
-        return AuthUtils.getCompanyId(auth, companyService);
+    private Long getCompanyId() {
+        return AuthUtils.getCompanyId();
     }
 }

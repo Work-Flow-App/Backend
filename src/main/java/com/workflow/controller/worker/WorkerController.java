@@ -1,5 +1,6 @@
 package com.workflow.controller.worker;
 
+import com.workflow.common.security.RequireCompanyRole;
 import com.workflow.dto.worker.*;
 import com.workflow.dto.worker.validators.PatchValidation;
 import com.workflow.dto.worker.validators.PutValidation;
@@ -19,6 +20,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 
 import java.util.List;
 
+import static com.workflow.common.constant.CompanyRole.*;
+
 @Tag(name = "Workers")
 @RequiredArgsConstructor
 @RestController
@@ -28,33 +31,35 @@ public class WorkerController {
     private final IWorkerService workerService;
     private final WorkerInvitationService workerInvitationService;
 
+    @RequireCompanyRole({COMPANY_ADMIN, MANAGER})
     @PostMapping
     public ResponseEntity<WorkerResponse> createWorker(
             @Valid @RequestBody WorkerCreateRequest request,
             Authentication authentication
     ) {
         User user = (User) authentication.getPrincipal();
-        WorkerResponse response = workerService.createWorker(request, user.getId());
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(workerService.createWorker(request, user.getId()));
     }
 
+    @RequireCompanyRole({COMPANY_ADMIN, MANAGER, EDITOR, VIEWER})
     @GetMapping
     public ResponseEntity<List<WorkerResponse>> getAllWorkers(Authentication authentication) {
         User user = (User) authentication.getPrincipal();
-        List<WorkerResponse> workers = workerService.getAllWorkers(user.getId());
-        return ResponseEntity.ok(workers);
+        return ResponseEntity.ok(workerService.getAllWorkers(user.getId()));
     }
 
+    @RequireCompanyRole({COMPANY_ADMIN, MANAGER, EDITOR, VIEWER})
     @GetMapping("/{id}")
     public ResponseEntity<WorkerResponse> getWorkerById(
             @PathVariable Long id,
             Authentication authentication
     ) {
         User user = (User) authentication.getPrincipal();
-        WorkerResponse response = workerService.getWorkerById(id, user.getId());
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(workerService.getWorkerById(id, user.getId()));
     }
 
+    @RequireCompanyRole({COMPANY_ADMIN, MANAGER})
     @PutMapping("/{id}")
     public ResponseEntity<WorkerResponse> updateWorker(
             @PathVariable Long id,
@@ -62,10 +67,10 @@ public class WorkerController {
             Authentication authentication
     ) {
         User user = (User) authentication.getPrincipal();
-        WorkerResponse response = workerService.updateWorker(id, request, user.getId());
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(workerService.updateWorker(id, request, user.getId()));
     }
 
+    @RequireCompanyRole({COMPANY_ADMIN, MANAGER})
     @PatchMapping("/{id}")
     public ResponseEntity<WorkerResponse> patchWorker(
             @PathVariable Long id,
@@ -73,10 +78,10 @@ public class WorkerController {
             Authentication authentication
     ) {
         User user = (User) authentication.getPrincipal();
-        WorkerResponse response = workerService.patchWorker(id, request, user.getId());
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(workerService.patchWorker(id, request, user.getId()));
     }
 
+    @RequireCompanyRole({COMPANY_ADMIN, MANAGER})
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteWorker(
             @PathVariable Long id,
@@ -87,6 +92,7 @@ public class WorkerController {
         return ResponseEntity.noContent().build();
     }
 
+    @RequireCompanyRole({COMPANY_ADMIN, MANAGER})
     @PutMapping("/{id}/reset-password")
     public ResponseEntity<Void> resetWorkerUsernamePassword(
             @PathVariable Long id,
@@ -98,34 +104,29 @@ public class WorkerController {
         return ResponseEntity.noContent().build();
     }
 
+    @RequireCompanyRole({COMPANY_ADMIN, MANAGER})
     @PostMapping("/invite")
     public ResponseEntity<WorkerInviteResponse> sendInvitation(
             @Valid @RequestBody WorkerInvitationRequest request,
             Authentication authentication
     ) {
         User user = (User) authentication.getPrincipal();
-        WorkerInviteResponse response = workerInvitationService.createInvitation(
-                request.email(),
-                user.getId()
-        );
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(workerInvitationService.createInvitation(request.email(), user.getId()));
     }
 
+    @RequireCompanyRole({COMPANY_ADMIN, MANAGER, EDITOR, VIEWER})
     @GetMapping("/invites")
     public ResponseEntity<List<WorkerInvitationStatusResponse>> getInvitationStatus(
             Authentication authentication
     ) {
         User user = (User) authentication.getPrincipal();
-        List<WorkerInvitationStatusResponse> invitations =
-                workerInvitationService.getInvitationsByCompany(user.getId());
-        return ResponseEntity.ok(invitations);
+        return ResponseEntity.ok(workerInvitationService.getInvitationsByCompany(user.getId()));
     }
 
     @GetMapping("/invites/check/{token}")
     public ResponseEntity<WorkerInvitationCheckResponse> checkInvitation(
             @PathVariable String token
     ) {
-        WorkerInvitationCheckResponse response = workerInvitationService.checkInvitation(token);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(workerInvitationService.checkInvitation(token));
     }
 }

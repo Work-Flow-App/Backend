@@ -1,11 +1,11 @@
 package com.workflow.controller.client;
 
+import com.workflow.common.security.RequireCompanyRole;
 import com.workflow.common.util.AuthUtils;
 import com.workflow.dto.client.ClientCreateRequest;
 import com.workflow.dto.client.ClientUpdateRequest;
 import com.workflow.dto.client.ClientResponse;
 import com.workflow.service.client.IClientService;
-import com.workflow.service.company.ICompanyService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -17,6 +17,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 
 import java.util.List;
 
+import static com.workflow.common.constant.CompanyRole.*;
+
 @Tag(name = "Clients")
 @RestController
 @RequestMapping("/api/v1/clients")
@@ -24,53 +26,53 @@ import java.util.List;
 public class ClientController {
 
     private final IClientService clientService;
-    private final ICompanyService companyService;
 
+    @RequireCompanyRole({COMPANY_ADMIN, MANAGER, EDITOR})
     @PostMapping
     public ResponseEntity<ClientResponse> createClient(
             @Valid @RequestBody ClientCreateRequest request,
             Authentication auth
     ) {
-        ClientResponse response = clientService.createClient(request, getCompanyId(auth));
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(clientService.createClient(request, getCompanyId()));
     }
 
+    @RequireCompanyRole({COMPANY_ADMIN, MANAGER, EDITOR, VIEWER})
     @GetMapping
     public ResponseEntity<List<ClientResponse>> getAllClients(Authentication auth) {
-        List<ClientResponse> clients = clientService.getAllClients(getCompanyId(auth));
-        return ResponseEntity.ok(clients);
+        return ResponseEntity.ok(clientService.getAllClients(getCompanyId()));
     }
 
+    @RequireCompanyRole({COMPANY_ADMIN, MANAGER, EDITOR, VIEWER})
     @GetMapping("/{id}")
     public ResponseEntity<ClientResponse> getClientById(
             @PathVariable Long id,
             Authentication auth
     ) {
-        ClientResponse response = clientService.getClientById(id, getCompanyId(auth));
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(clientService.getClientById(id, getCompanyId()));
     }
 
+    @RequireCompanyRole({COMPANY_ADMIN, MANAGER, EDITOR})
     @PutMapping("/{id}")
     public ResponseEntity<ClientResponse> updateClient(
             @PathVariable Long id,
             @Valid @RequestBody ClientUpdateRequest request,
             Authentication auth
     ) {
-        ClientResponse response = clientService.updateClient(id, request, getCompanyId(auth));
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(clientService.updateClient(id, request, getCompanyId()));
     }
 
+    @RequireCompanyRole({COMPANY_ADMIN, MANAGER})
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteClient(
             @PathVariable Long id,
             Authentication auth
     ) {
-        clientService.deleteClient(id, getCompanyId(auth));
+        clientService.deleteClient(id, getCompanyId());
         return ResponseEntity.noContent().build();
     }
 
-    private Long getCompanyId(Authentication auth) {
-        return AuthUtils.getCompanyId(auth, companyService);
+    private Long getCompanyId() {
+        return AuthUtils.getCompanyId();
     }
-
 }

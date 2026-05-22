@@ -19,4 +19,7 @@ public interface CompanyMemberRepository extends JpaRepository<CompanyMember, Lo
     List<CompanyMember> findActiveByCompanyId(@Param("companyId") Long companyId);
 
     boolean existsByCompanyIdAndUserId(Long companyId, Long userId);
+
+    @Query("SELECT cm FROM CompanyMember cm JOIN FETCH cm.user WHERE cm.company.id = :companyId AND cm.user.id = :userId AND cm.active = false")
+    Optional<CompanyMember> findInactiveByCompanyIdAndUserId(@Param("companyId") Long companyId, @Param("userId") Long userId);
 }

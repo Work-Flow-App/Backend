@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Re-added to Team - Workfloow App</title>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333333; margin: 0; padding: 0; background-color: #f5f5f5;">
+    <div style="max-width: 600px; margin: 20px auto; padding: 0 20px;">
+        <div style="background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+
+            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); background-color: #6f72c5; padding: 40px 30px; text-align: center;">
+                <h1 style="margin: 0; font-size: 28px; font-weight: 600; letter-spacing: 0.5px; color: #ffffff; font-family: Arial, Helvetica, sans-serif;">Workfloow App</h1>
+            </div>
+
+            <div style="padding: 40px 30px;">
+                <h2 style="color: #333333 !important; font-size: 24px; margin: 0 0 20px 0; font-weight: 600; font-family: Arial, Helvetica, sans-serif;">You've Been Re-added to the Team!</h2>
+                <p style="margin: 15px 0; color: #555555; font-size: 15px;">You've been re-added to <span th:text="${companyName}" style="display: inline-block; padding: 6px 14px; background-color: #f3f4f6; color: #667eea; border-radius: 6px; font-weight: 600; font-size: 14px;">Company Name</span> with the role <strong th:text="${companyRole}">Team Member</strong>.</p>
+                <p style="margin: 15px 0; color: #555555; font-size: 15px;">Log in to continue. If you've forgotten your password, use the password reset option on the login page.</p>
+
+                <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 35px 0;">
+                    <tr>
+                        <td align="center">
+                            <a th:href="${loginUrl}" style="display: inline-block; padding: 16px 40px; background-color: #667eea; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; font-family: Arial, Helvetica, sans-serif;">Log In</a>
+                        </td>
+                    </tr>
+                </table>
+
+                <p style="color: #888888; font-size: 13px; text-align: center;">
+                    Or copy and paste this link into your browser:<br>
+                    <span th:text="${loginUrl}" style="word-break: break-all; display: inline-block; margin-top: 8px;">login-link</span>
+                </p>
+
+                <p style="margin-top: 30px; color: #666666; font-size: 14px;">
+                    If you weren't expecting this or have any questions, please contact the company administrator.
+                </p>
+            </div>
+
+            <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color: #f8f9fa; border-top: 1px solid #e9ecef;">
+                <tr>
+                    <td align="center" style="padding: 25px 30px;">
+                        <p style="margin: 5px 0; font-size: 13px; color: #6c757d; font-family: Arial, Helvetica, sans-serif;">This is an automated message, please do not reply to this email.</p>
+                        <p style="margin: 5px 0; font-size: 13px; color: #6c757d; font-family: Arial, Helvetica, sans-serif;">&copy; 2026 <a href="https://www.workfloow.app/" style="color: #667eea; text-decoration: underline; font-weight: 600;">Workfloow App</a>. All rights reserved.</p>
+                        <table cellpadding="0" cellspacing="0" border="0" align="center" style="margin-top: 14px;">
+                            <tr>
+                                <td>
+                                    <a href="https://www.linkedin.com/company/workfloowapp/" target="_blank" style="display: inline-block; background-color: #0a66c2; color: #ffffff; text-decoration: none; border-radius: 5px; padding: 5px 10px; font-family: Arial, Helvetica, sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 0.5px;">in LinkedIn</a>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+
+        </div>
+    </div>
+</body>
+</html>

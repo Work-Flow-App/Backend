@@ -3,6 +3,7 @@ package com.workflow.controller.workflow;
 import com.workflow.AbstractControllerIntegrationTest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.workflow.common.constant.CompanyRole;
 import com.workflow.common.constant.Role;
 import com.workflow.common.constant.job.JobStatus;
 import com.workflow.common.constant.workflow.WorkflowStepStatus;
@@ -98,8 +99,11 @@ class JobWorkflowStepVisitLogControllerIntegrationTest extends AbstractControlle
         Company company = companyRepository.save(Company.builder()
                 .name("Test Company").user(companyUser).email("visitlogowner@test.com").archived(false).build());
 
-        companyRepository.save(Company.builder()
+        Company anotherCompany = companyRepository.save(Company.builder()
                 .name("Another Company").user(anotherUser).email("anothervisit@test.com").archived(false).build());
+
+        createCompanyMember(company, companyUser, CompanyRole.COMPANY_ADMIN);
+        createCompanyMember(anotherCompany, anotherUser, CompanyRole.COMPANY_ADMIN);
 
         JobTemplate template = jobTemplateRepository.save(JobTemplate.builder()
                 .name("Template").company(company).build());
@@ -202,9 +206,8 @@ class JobWorkflowStepVisitLogControllerIntegrationTest extends AbstractControlle
     }
 
     @Test
-    void shouldReturn404ForWorkerRoleOnAddVisitLogBecauseNoCompany() throws Exception {
-        // /api/v1/job-workflow-steps/** is not restricted to COMPANY role in SecurityConfig;
-        // getCompanyId() throws CompanyNotFoundException (404) for worker users
+    void shouldReturn403ForWorkerRoleOnAddVisitLog() throws Exception {
+        // WORKER users have no company context; CompanyRoleAspect rejects with 403
         StepVisitLogCreateRequest request = new StepVisitLogCreateRequest();
         request.setVisitDate(LocalDate.now());
         request.setTimeIn(LocalTime.of(9, 0));
@@ -214,7 +217,7 @@ class JobWorkflowStepVisitLogControllerIntegrationTest extends AbstractControlle
                         .header("Authorization", "Bearer " + workerToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isNotFound());
+                .andExpect(status().isForbidden());
     }
 
     // ============= PUT /api/v1/job-workflow-steps/visits/{visitLogId} =============

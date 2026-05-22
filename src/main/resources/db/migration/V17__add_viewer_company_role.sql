@@ -1,0 +1,5 @@
+ALTER TABLE company_members
+    MODIFY COLUMN company_role ENUM('COMPANY_ADMIN','MANAGER','EDITOR','VIEWER') NOT NULL;
+
+ALTER TABLE company_members
+    ADD COLUMN name VARCHAR(100) NULL;

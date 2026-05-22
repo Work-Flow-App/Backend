@@ -3,6 +3,7 @@ package com.workflow.config.auth;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.workflow.common.constant.Role;
 import com.workflow.config.properties.PaddleConfigProperties;
+import com.workflow.repository.company.CompanyMemberRepository;
 import com.workflow.repository.company.CompanySubscriptionRepository;
 import com.workflow.service.auth.JwtFilter;
 import com.workflow.service.company.ICompanyService;
@@ -73,6 +74,7 @@ public class SecurityConfig {
             "/api/v1/auth/login",
             "/api/v1/auth/signup",
             "/api/v1/auth/signup/worker",
+            "/api/v1/auth/signup/company-member",
             "/api/v1/auth/refresh",
             "/api/v1/auth/forgot-password",
             "/api/v1/auth/reset-password",
@@ -80,6 +82,7 @@ public class SecurityConfig {
             "/api/v1/auth/verify-email",
             "/api/v1/auth/resend-verification",
             "/api/v1/workers/invites/check/**",
+            "/api/v1/companies/members/invitations/check",
             "/api/v1/webhooks/**",
             "/swagger-ui/**",
             "/swagger-ui.html",
@@ -94,6 +97,7 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(
             HttpSecurity http,
             ICompanyService companyService,
+            CompanyMemberRepository companyMemberRepository,
             CompanySubscriptionRepository subscriptionRepository,
             PaddleConfigProperties paddleConfigProperties,
             ObjectMapper objectMapper) throws Exception {
@@ -110,18 +114,25 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/estimates/**").hasRole(COMPANY)
                         .requestMatchers("/api/v1/line-items/**").hasRole(COMPANY)
                         .requestMatchers("/api/v1/job-templates/**").hasRole(COMPANY)
+                        .requestMatchers("/api/v1/assets/**").hasRole(COMPANY)
+                        .requestMatchers("/api/v1/asset-assignments/**").hasRole(COMPANY)
+                        .requestMatchers("/api/v1/workflows/**").hasRole(COMPANY)
+                        .requestMatchers("/api/v1/job-workflows/**").hasRole(COMPANY)
+                        .requestMatchers("/api/v1/job-workflow-steps/**").hasRole(COMPANY)
+                        .requestMatchers("/api/v1/customers/**").hasRole(COMPANY)
                         .requestMatchers("/api/v1/worker/**").hasRole(WORKER)
                         .anyRequest().authenticated())
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(jwtFilter(), UsernamePasswordAuthenticationFilter.class)
+                .addFilterAfter(new CompanyMembershipFilter(companyMemberRepository), JwtFilter.class)
                 .addFilterAfter(
                         new SubscriptionCheckFilter(
                                 companyService,
                                 subscriptionRepository,
                                 paddleConfigProperties,
                                 objectMapper),
-                        JwtFilter.class);
+                        CompanyMembershipFilter.class);
 
         if (rateLimitingEnabled) {
             http.addFilterBefore(new RateLimitingFilter(), UsernamePasswordAuthenticationFilter.class);

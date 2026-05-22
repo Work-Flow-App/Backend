@@ -5,6 +5,7 @@ import com.workflow.common.exception.business.UserAlreadyExistsException;
 import com.workflow.dto.auth.SignupRequest;
 import com.workflow.entity.company.Company;
 import com.workflow.entity.auth.User;
+import com.workflow.repository.company.CompanyMemberRepository;
 import com.workflow.repository.company.CompanyRepository;
 import com.workflow.repository.auth.UserRepository;
 import com.workflow.service.jobtemplate.DefaultTemplateSeederService;
@@ -35,6 +36,9 @@ class UserServiceTest {
 
     @Mock
     private CompanyRepository companyRepository;
+
+    @Mock
+    private CompanyMemberRepository companyMemberRepository;
 
     @Mock
     private PasswordEncoder passwordEncoder;

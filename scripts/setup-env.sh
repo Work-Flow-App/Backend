@@ -38,6 +38,7 @@ AFFILIATE_ACCOUNT_ID=$(echo "$AFFILIATE_SECRET" | jq -r '.accountId')
 # ── SSM Parameter Store ──
 get_param() { aws ssm get-parameter --region "$REGION" --name "$1" --query Parameter.Value --output text; }
 CORS_ORIGINS=$(get_param "/workflow/$ENV_NAME/cors-allowed-origins")
+FRONTEND_URL=$(get_param "/workflow/$ENV_NAME/frontend-url")
 AFFILIATE_TRACKING_ENABLED=$(get_param "/workflow/$ENV_NAME/affiliate-tracking-enabled")
 WORKER_INVITATION_URL=$(get_param "/workflow/$ENV_NAME/worker-invitation-frontend-url")
 S3_BUCKET=$(get_param "/workflow/$ENV_NAME/s3-bucket-name")
@@ -72,7 +73,7 @@ GOOGLE_CLIENT_ID=$(get_param "/workflow/$ENV_NAME/google-client-id")
   echo "CORS_ALLOWED_ORIGINS=$CORS_ORIGINS"
   echo ""
   echo "# Frontend"
-  echo "FRONTEND_URL=$([ "$ENV_NAME" = "prod" ] && echo "https://workfloow.app" || echo "https://dev.workfloow.app")"
+  echo "FRONTEND_URL=$FRONTEND_URL"
   echo "WORKER_INVITATION_FRONTEND_URL=$WORKER_INVITATION_URL"
   echo ""
   echo "# S3 — EC2 instance role is used; leave access keys empty"

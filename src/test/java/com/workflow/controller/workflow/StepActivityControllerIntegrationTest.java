@@ -2,6 +2,7 @@ package com.workflow.controller.workflow;
 
 import com.workflow.AbstractControllerIntegrationTest;
 
+import com.workflow.common.constant.CompanyRole;
 import com.workflow.common.constant.Role;
 import com.workflow.common.constant.job.JobStatus;
 import com.workflow.common.constant.workflow.JobWorkflowStepActivityType;
@@ -88,8 +89,11 @@ class StepActivityControllerIntegrationTest extends AbstractControllerIntegratio
         Company company = companyRepository.save(Company.builder()
                 .name("Test Company").user(companyUser).email("timelineowner@test.com").archived(false).build());
 
-        companyRepository.save(Company.builder()
+        Company anotherCompany = companyRepository.save(Company.builder()
                 .name("Another Company").user(anotherUser).email("anothertimeline@test.com").archived(false).build());
+
+        createCompanyMember(company, companyUser, CompanyRole.COMPANY_ADMIN);
+        createCompanyMember(anotherCompany, anotherUser, CompanyRole.COMPANY_ADMIN);
 
         JobTemplate template = jobTemplateRepository.save(JobTemplate.builder()
                 .name("Template").company(company).build());
@@ -176,11 +180,10 @@ class StepActivityControllerIntegrationTest extends AbstractControllerIntegratio
     }
 
     @Test
-    void shouldReturn404ForWorkerRoleOnTimelineBecauseNoCompany() throws Exception {
-        // /api/v1/job-workflow-steps/** is not restricted to COMPANY role in SecurityConfig;
-        // getCompanyId() throws CompanyNotFoundException (404) for worker users
+    void shouldReturn403ForWorkerRoleOnTimeline() throws Exception {
+        // WORKER users have no company context; CompanyRoleAspect rejects with 403
         mockMvc.perform(get("/api/v1/job-workflow-steps/" + step.getId() + "/timeline")
                         .header("Authorization", "Bearer " + workerToken))
-                .andExpect(status().isNotFound());
+                .andExpect(status().isForbidden());
     }
 }

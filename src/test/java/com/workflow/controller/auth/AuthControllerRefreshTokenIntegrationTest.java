@@ -3,6 +3,7 @@ package com.workflow.controller.auth;
 import com.workflow.AbstractControllerIntegrationTest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.workflow.common.constant.CompanyRole;
 import com.workflow.common.constant.Role;
 import com.workflow.dto.auth.AuthenticationResponse;
 import com.workflow.dto.auth.LoginRequest;
@@ -10,8 +11,10 @@ import com.workflow.dto.auth.LogoutRequest;
 import com.workflow.dto.auth.RefreshTokenRequest;
 import com.workflow.entity.auth.RefreshToken;
 import com.workflow.entity.auth.User;
+import com.workflow.entity.company.Company;
 import com.workflow.repository.auth.RefreshTokenRepository;
 import com.workflow.repository.auth.UserRepository;
+import com.workflow.repository.company.CompanyRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,6 +47,9 @@ class AuthControllerRefreshTokenIntegrationTest extends AbstractControllerIntegr
     private RefreshTokenRepository refreshTokenRepository;
 
     @Autowired
+    private CompanyRepository companyRepository;
+
+    @Autowired
     private PasswordEncoder passwordEncoder;
 
     private User testUser;
@@ -51,6 +57,7 @@ class AuthControllerRefreshTokenIntegrationTest extends AbstractControllerIntegr
     @BeforeEach
     void setUp() {
         refreshTokenRepository.deleteAll();
+        companyRepository.deleteAll();
         userRepository.deleteAll();
 
         testUser = User.builder()
@@ -62,6 +69,11 @@ class AuthControllerRefreshTokenIntegrationTest extends AbstractControllerIntegr
                 .enabled(true)
                 .build();
         userRepository.save(testUser);
+
+        Company company = companyRepository.save(Company.builder()
+                .name("Test Company").user(testUser).email("test@example.com").archived(false).build());
+
+        createCompanyMember(company, testUser, CompanyRole.COMPANY_ADMIN);
     }
 
     // ============= Login Tests with Refresh Token =============

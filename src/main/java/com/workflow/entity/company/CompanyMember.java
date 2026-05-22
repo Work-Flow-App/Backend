@@ -31,6 +31,9 @@ public class CompanyMember {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
+    @Column(length = 100)
+    private String name;
+
     // Role of this user inside this company (different from global Role)
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)

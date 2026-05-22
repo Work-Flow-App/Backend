@@ -3,6 +3,7 @@ package com.workflow.controller.customer;
 import com.workflow.AbstractControllerIntegrationTest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.workflow.common.constant.CompanyRole;
 import com.workflow.common.constant.Role;
 import com.workflow.dto.customer.CustomerAddressDto;
 import com.workflow.dto.customer.CustomerCreateRequest;
@@ -70,6 +71,9 @@ class CustomerControllerIntegrationTest extends AbstractControllerIntegrationTes
 
         anotherCompany = companyRepository.save(Company.builder()
                 .name("Another Company").user(anotherUser).email("anothercustomer@test.com").archived(false).build());
+
+        createCompanyMember(company, companyUser, CompanyRole.COMPANY_ADMIN);
+        createCompanyMember(anotherCompany, anotherUser, CompanyRole.COMPANY_ADMIN);
 
         existingCustomer = customerRepository.save(Customer.builder()
                 .name("Existing Customer")
@@ -180,16 +184,15 @@ class CustomerControllerIntegrationTest extends AbstractControllerIntegrationTes
     }
 
     @Test
-    void shouldReturn404ForWorkerRoleOnCreateBecauseNoCompany() throws Exception {
-        // WORKER tokens pass Spring Security (not restricted), but getCompanyId() returns 404
-        // because workers have no associated company record
+    void shouldReturn403ForWorkerRoleOnCreate() throws Exception {
+        // WORKER users have no company context set, so CompanyRoleAspect rejects with 403
         CustomerCreateRequest request = CustomerCreateRequest.builder().name("Customer Name").build();
 
         mockMvc.perform(post("/api/v1/customers")
                         .header("Authorization", "Bearer " + workerToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isNotFound());
+                .andExpect(status().isForbidden());
     }
 
     // ============= GET /api/v1/customers =============

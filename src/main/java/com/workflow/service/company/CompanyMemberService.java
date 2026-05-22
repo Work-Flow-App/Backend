@@ -52,8 +52,21 @@ public class CompanyMemberService implements ICompanyMemberService {
 
         Company company = findActiveCompany(companyId);
 
-        if (userRepository.findByEmail(email).isPresent()) {
-            throw new UserAlreadyExistsException("Email already registered");
+        User existingUser = userRepository.findByEmail(email).orElse(null);
+        if (existingUser != null) {
+            CompanyMember inactiveMember = memberRepository
+                    .findInactiveByCompanyIdAndUserId(companyId, existingUser.getId())
+                    .orElseThrow(() -> new UserAlreadyExistsException("Email already registered"));
+
+            inactiveMember.setActive(true);
+            inactiveMember.setCompanyRole(companyRole);
+            memberRepository.save(inactiveMember);
+
+            emailService.sendMemberReactivationEmail(email, company.getName(), companyRole);
+
+            log.info("Member reactivated: userId={}, company={}, role={}", existingUser.getId(), company.getName(), companyRole);
+
+            return new MemberInviteResponse(email, companyRole, "Member reactivated successfully", null);
         }
 
         invitationRepository.invalidatePreviousInvitations(email, companyId);

@@ -41,6 +41,7 @@ class StepTimelineBuilder {
                         .content(c.getContent())
                         .discussionType(c.getType())
                         .actorId(c.getAuthor().getId())
+                        .actorUsername(c.getAuthor().getUsername())
                         .createdAt(c.getCreatedAt())
                         .build())
                 .toList();
@@ -54,6 +55,7 @@ class StepTimelineBuilder {
                         .discussionType(a.getType())
                         .description(a.getDescription())
                         .actorId(a.getUploadedBy().getId())
+                        .actorUsername(a.getUploadedBy().getUsername())
                         .createdAt(a.getCreatedAt())
                         .build())
                 .toList();

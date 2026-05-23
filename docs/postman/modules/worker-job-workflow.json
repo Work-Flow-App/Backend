@@ -50,7 +50,7 @@
               "value": "application/json"
             }
           ],
-          "body": "[\n  {\n    \"step\": {\n      \"id\": 2,\n      \"name\": \"Installation\",\n      \"description\": \"Install the unit\",\n      \"orderIndex\": 2,\n      \"status\": \"STARTED\",\n      \"startedAt\": \"2025-10-24T09:00:00\",\n      \"completedAt\": null,\n      \"assignedWorkerIds\": [\n        5\n      ]\n    },\n    \"jobId\": 50,\n    \"jobAddress\": {\n      \"id\": 10,\n      \"street\": \"Industrial Area रोड\",\n      \"city\": \"Delhi\",\n      \"state\": \"Delhi\",\n      \"postalCode\": \"110001\",\n      \"country\": \"India\",\n      \"additionalInfo\": \"Near Metro Station\",\n      \"latitude\": 28.6139,\n      \"longitude\": 77.2090\n    },\n    \"customer\": {\n      \"id\": 1,\n      \"name\": \"Acme Corp\",\n      \"email\": \"contact@acmecorp.com\",\n      \"telephone\": \"555-0100\",\n      \"mobile\": \"555-0101\",\n      \"address\": {\n        \"houseNumber\": \"100\",\n        \"street\": \"Main St\",\n        \"city\": \"Metropolis\",\n        \"county\": \"AnyCounty\",\n        \"postalCode\": \"12345\",\n        \"country\": \"USA\"\n      },\n      \"archived\": false,\n      \"createdAt\": \"2025-10-01T10:00:00\",\n      \"updatedAt\": \"2025-10-01T10:00:00\"\n    },\n    \"assignedAssets\": [\n      {\n        \"assignmentId\": 10,\n        \"assetId\": 3,\n        \"jobId\": 50,\n        \"assignedWorkerId\": 5,\n        \"notes\": \"Drill for installation\",\n        \"assignedAt\": \"2025-10-24T08:30:00\",\n        \"returnedAt\": null,\n        \"durationDays\": 0,\n        \"status\": \"ACTIVE\"\n      }\n    ]\n  }\n]"
+          "body": "[\n  {\n    \"step\": {\n      \"id\": 2,\n      \"name\": \"Installation\",\n      \"description\": \"Install the unit\",\n      \"orderIndex\": 2,\n      \"status\": \"STARTED\",\n      \"startedAt\": \"2025-10-24T09:00:00\",\n      \"completedAt\": null,\n      \"assignedWorkerIds\": [\n        5\n      ]\n    },\n    \"jobId\": 50,\n    \"jobAddress\": {\n      \"id\": 10,\n      \"street\": \"Industrial Area \\u0930\\u094b\\u0921\",\n      \"city\": \"Delhi\",\n      \"state\": \"Delhi\",\n      \"postalCode\": \"110001\",\n      \"country\": \"India\",\n      \"additionalInfo\": \"Near Metro Station\",\n      \"latitude\": 28.6139,\n      \"longitude\": 77.209\n    },\n    \"customer\": {\n      \"id\": 1,\n      \"name\": \"Acme Corp\",\n      \"email\": \"contact@acmecorp.com\",\n      \"telephone\": \"555-0100\",\n      \"mobile\": \"555-0101\",\n      \"address\": {\n        \"houseNumber\": \"100\",\n        \"street\": \"Main St\",\n        \"city\": \"Metropolis\",\n        \"county\": \"AnyCounty\",\n        \"postalCode\": \"12345\",\n        \"country\": \"USA\"\n      },\n      \"archived\": false,\n      \"createdAt\": \"2025-10-01T10:00:00\",\n      \"updatedAt\": \"2025-10-01T10:00:00\"\n    },\n    \"assignedAssets\": [\n      {\n        \"assignmentId\": 10,\n        \"assetId\": 3,\n        \"jobId\": 50,\n        \"assignedWorkerId\": 5,\n        \"notes\": \"Drill for installation\",\n        \"assignedAt\": \"2025-10-24T08:30:00\",\n        \"returnedAt\": null,\n        \"durationDays\": 0,\n        \"status\": \"ACTIVE\"\n      }\n    ]\n  }\n]"
         }
       ]
     },
@@ -103,7 +103,7 @@
               "value": "application/json"
             }
           ],
-          "body": "[\n    {\n        \"id\": 101,\n        \"jobId\": 50,\n        \"status\": \"ONGOING\",\n        \"steps\": [\n            {\n                \"id\": 1,\n                \"name\": \"Site Preparation\",\n                \"description\": \"Clear the area\",\n                \"orderIndex\": 1,\n                \"status\": \"COMPLETED\",\n                \"assignedWorkerIds\": [5]\n            },\n            {\n                \"id\": 2,\n                \"name\": \"Installation\",\n                \"description\": \"Install the unit\",\n                \"orderIndex\": 2,\n                \"status\": \"STARTED\",\n                \"assignedWorkerIds\": [5]\n            }\n        ]\n    }\n]"
+          "body": "[\n  {\n    \"id\": 101,\n    \"jobId\": 50,\n    \"status\": \"ONGOING\",\n    \"steps\": [\n      {\n        \"id\": 1,\n        \"name\": \"Site Preparation\",\n        \"description\": \"Clear the area\",\n        \"orderIndex\": 1,\n        \"status\": \"COMPLETED\",\n        \"assignedWorkerIds\": [\n          5\n        ]\n      },\n      {\n        \"id\": 2,\n        \"name\": \"Installation\",\n        \"description\": \"Install the unit\",\n        \"orderIndex\": 2,\n        \"status\": \"STARTED\",\n        \"assignedWorkerIds\": [\n          5\n        ]\n      }\n    ]\n  }\n]"
         }
       ]
     },
@@ -156,7 +156,7 @@
               "value": "application/json"
             }
           ],
-          "body": "{\n    \"id\": 101,\n    \"jobId\": 50,\n    \"jobRef\": 1001,\n    \"status\": \"ONGOING\",\n    \"steps\": [\n        {\n            \"id\": 2,\n            \"name\": \"Installation\",\n            \"description\": \"Install the unit\",\n            \"orderIndex\": 2,\n            \"status\": \"STARTED\",\n            \"startedAt\": \"2025-10-24T09:00:00\",\n            \"assignedWorkerIds\": [5]\n        }\n    ]\n}"
+          "body": "{\n  \"id\": 101,\n  \"jobId\": 50,\n  \"jobRef\": 1001,\n  \"status\": \"ONGOING\",\n  \"steps\": [\n    {\n      \"id\": 2,\n      \"name\": \"Installation\",\n      \"description\": \"Install the unit\",\n      \"orderIndex\": 2,\n      \"status\": \"STARTED\",\n      \"startedAt\": \"2025-10-24T09:00:00\",\n      \"assignedWorkerIds\": [\n        5\n      ]\n    }\n  ]\n}"
         }
       ]
     },
@@ -209,7 +209,7 @@
               "value": "application/json"
             }
           ],
-          "body": "{\n    \"id\": 2,\n    \"name\": \"Installation\",\n    \"description\": \"Install the unit\",\n    \"orderIndex\": 2,\n    \"status\": \"STARTED\",\n    \"startedAt\": \"2025-10-24T09:00:00\",\n    \"assignedWorkerIds\": [5]\n}"
+          "body": "{\n  \"id\": 2,\n  \"name\": \"Installation\",\n  \"description\": \"Install the unit\",\n  \"orderIndex\": 2,\n  \"status\": \"STARTED\",\n  \"startedAt\": \"2025-10-24T09:00:00\",\n  \"assignedWorkerIds\": [\n    5\n  ]\n}"
         }
       ]
     },
@@ -269,7 +269,7 @@
               "value": "application/json"
             }
           ],
-          "body": "{\n    \"id\": 2,\n    \"name\": \"Installation\",\n    \"status\": \"STARTED\",\n    \"startedAt\": \"2025-10-24T09:00:00\"\n}"
+          "body": "{\n  \"id\": 2,\n  \"name\": \"Installation\",\n  \"status\": \"STARTED\",\n  \"startedAt\": \"2025-10-24T09:00:00\"\n}"
         }
       ]
     },
@@ -329,7 +329,7 @@
               "value": "application/json"
             }
           ],
-          "body": "{\n    \"id\": 2,\n    \"name\": \"Installation\",\n    \"status\": \"COMPLETED\",\n    \"completedAt\": \"2025-10-24T14:30:00\"\n}"
+          "body": "{\n  \"id\": 2,\n  \"name\": \"Installation\",\n  \"status\": \"COMPLETED\",\n  \"completedAt\": \"2025-10-24T14:30:00\"\n}"
         }
       ]
     },
@@ -389,7 +389,7 @@
               "value": "application/json"
             }
           ],
-          "body": "{\n    \"id\": 2,\n    \"name\": \"Installation\",\n    \"status\": \"ONGOING\",\n    \"startedAt\": \"2025-10-24T09:00:00\"\n}"
+          "body": "{\n  \"id\": 2,\n  \"name\": \"Installation\",\n  \"status\": \"ONGOING\",\n  \"startedAt\": \"2025-10-24T09:00:00\"\n}"
         }
       ]
     },
@@ -456,7 +456,7 @@
               "value": "application/json"
             }
           ],
-          "body": "{\n    \"id\": 2,\n    \"name\": \"Installation\",\n    \"status\": \"COMPLETED\",\n    \"completedAt\": \"2025-10-24T14:30:00\"\n}"
+          "body": "{\n  \"id\": 2,\n  \"name\": \"Installation\",\n  \"status\": \"COMPLETED\",\n  \"completedAt\": \"2025-10-24T14:30:00\"\n}"
         }
       ]
     },
@@ -516,7 +516,7 @@
               "value": "application/json"
             }
           ],
-          "body": "[\n    {\n        \"id\": 12,\n        \"content\": \"Work in progress, waiting for materials.\",\n        \"type\": \"GENERAL\",\n        \"authorId\": 5,\n        \"createdAt\": \"2025-10-24T10:00:00\",\n        \"updatedAt\": \"2025-10-24T10:00:00\"\n    }\n]"
+          "body": "[\n  {\n    \"id\": 12,\n    \"content\": \"Work in progress, waiting for materials.\",\n    \"type\": \"GENERAL\",\n    \"authorId\": 5,\n    \"authorUsername\": \"worker.user\",\n    \"createdAt\": \"2025-10-24T10:00:00\",\n    \"updatedAt\": \"2025-10-24T10:00:00\"\n  }\n]"
         }
       ]
     },
@@ -583,7 +583,7 @@
               "value": "application/json"
             }
           ],
-          "body": "[\n    {\n        \"id\": 13,\n        \"fileName\": \"site_photo.jpg\",\n        \"fileType\": \"image/jpeg\",\n        \"fileUrl\": \"https://s3.bucket/path/site_photo.jpg\",\n        \"description\": \"Photo of the site before start\",\n        \"type\": \"GENERAL\",\n        \"uploadedBy\": 5,\n        \"createdAt\": \"2025-10-24T10:05:00\"\n    }\n]"
+          "body": "[\n  {\n    \"id\": 13,\n    \"fileName\": \"site_photo.jpg\",\n    \"fileType\": \"image/jpeg\",\n    \"fileUrl\": \"https://s3.bucket/path/site_photo.jpg\",\n    \"description\": \"Photo of the site before start\",\n    \"type\": \"GENERAL\",\n    \"uploadedBy\": 5,\n    \"uploadedByUsername\": \"worker.user\",\n    \"createdAt\": \"2025-10-24T10:05:00\"\n  }\n]"
         }
       ]
     },
@@ -650,7 +650,7 @@
               "value": "application/json"
             }
           ],
-          "body": "[\n    {\n        \"id\": 10,\n        \"itemType\": \"COMMENT\",\n        \"content\": \"Arrived at location.\",\n        \"discussionType\": \"GENERAL\",\n        \"actorId\": 5,\n        \"createdAt\": \"2025-10-24T09:05:00\"\n    },\n    {\n        \"id\": 11,\n        \"itemType\": \"ATTACHMENT\",\n        \"content\": \"before_work.jpg\",\n        \"fileUrl\": \"https://s3.bucket/path/img.jpg\",\n        \"discussionType\": \"ISSUE\",\n        \"description\": \"Cracked screen\",\n        \"actorId\": 5,\n        \"createdAt\": \"2025-10-24T09:10:00\"\n    }\n]"
+          "body": "[\n  {\n    \"id\": 10,\n    \"itemType\": \"COMMENT\",\n    \"content\": \"Arrived at location.\",\n    \"discussionType\": \"GENERAL\",\n    \"actorId\": 5,\n    \"actorUsername\": \"worker.user\",\n    \"createdAt\": \"2025-10-24T09:05:00\"\n  },\n  {\n    \"id\": 11,\n    \"itemType\": \"ATTACHMENT\",\n    \"content\": \"before_work.jpg\",\n    \"fileUrl\": \"https://s3.bucket/path/img.jpg\",\n    \"discussionType\": \"ISSUE\",\n    \"description\": \"Cracked screen\",\n    \"actorId\": 5,\n    \"actorUsername\": \"worker.user\",\n    \"createdAt\": \"2025-10-24T09:10:00\"\n  }\n]"
         }
       ]
     },
@@ -710,7 +710,7 @@
               "value": "application/json"
             }
           ],
-          "body": "{\n    \"visitLogs\": [\n        {\n            \"id\": 34,\n            \"visitDate\": \"2025-10-24\",\n            \"timeIn\": \"09:00:00\",\n            \"timeOut\": \"17:00:00\",\n            \"workedMinutes\": 480,\n            \"description\": \"Routine inspection and setup.\",\n            \"loggedById\": 5,\n            \"createdAt\": \"2025-10-24T17:15:00\",\n            \"updatedAt\": \"2025-10-24T17:15:00\"\n        }\n    ],\n    \"totalWorkedMinutes\": 480\n}"
+          "body": "{\n  \"visitLogs\": [\n    {\n      \"id\": 34,\n      \"visitDate\": \"2025-10-24\",\n      \"timeIn\": \"09:00:00\",\n      \"timeOut\": \"17:00:00\",\n      \"workedMinutes\": 480,\n      \"description\": \"Routine inspection and setup.\",\n      \"loggedById\": 5,\n      \"createdAt\": \"2025-10-24T17:15:00\",\n      \"updatedAt\": \"2025-10-24T17:15:00\"\n    }\n  ],\n  \"totalWorkedMinutes\": 480\n}"
         }
       ]
     },
@@ -787,7 +787,7 @@
               "value": "application/json"
             }
           ],
-          "body": "{\n    \"id\": 34,\n    \"visitDate\": \"2025-10-24\",\n    \"timeIn\": \"09:00:00\",\n    \"timeOut\": \"17:00:00\",\n    \"workedMinutes\": 480,\n    \"description\": \"Routine inspection and setup.\",\n    \"loggedById\": 5,\n    \"createdAt\": \"2025-10-24T17:15:00\",\n    \"updatedAt\": \"2025-10-24T17:15:00\"\n}"
+          "body": "{\n  \"id\": 34,\n  \"visitDate\": \"2025-10-24\",\n  \"timeIn\": \"09:00:00\",\n  \"timeOut\": \"17:00:00\",\n  \"workedMinutes\": 480,\n  \"description\": \"Routine inspection and setup.\",\n  \"loggedById\": 5,\n  \"createdAt\": \"2025-10-24T17:15:00\",\n  \"updatedAt\": \"2025-10-24T17:15:00\"\n}"
         }
       ]
     },
@@ -894,7 +894,7 @@
               "value": "application/json"
             }
           ],
-          "body": "{\n    \"id\": 13,\n    \"fileName\": \"site_photo.jpg\",\n    \"fileType\": \"image/jpeg\",\n    \"fileUrl\": \"https://s3.bucket/path/site_photo.jpg\",\n    \"description\": \"Photo of the site\",\n    \"type\": \"GENERAL\",\n    \"uploadedBy\": 5,\n    \"createdAt\": \"2025-10-24T10:05:00\"\n}"
+          "body": "{\n  \"id\": 13,\n  \"fileName\": \"site_photo.jpg\",\n  \"fileType\": \"image/jpeg\",\n  \"fileUrl\": \"https://s3.bucket/path/site_photo.jpg\",\n  \"description\": \"Photo of the site\",\n  \"type\": \"GENERAL\",\n  \"uploadedBy\": 5,\n  \"uploadedByUsername\": \"worker.user\",\n  \"createdAt\": \"2025-10-24T10:05:00\"\n}"
         }
       ]
     },
@@ -971,7 +971,7 @@
               "value": "application/json"
             }
           ],
-          "body": "{\n    \"id\": 34,\n    \"visitDate\": \"2025-10-24\",\n    \"timeIn\": \"09:00:00\",\n    \"timeOut\": \"17:00:00\",\n    \"description\": \"Routine inspection and setup.\",\n    \"loggedById\": 5,\n    \"createdAt\": \"2025-10-24T17:15:00\",\n    \"updatedAt\": \"2025-10-24T17:15:00\"\n}"
+          "body": "{\n  \"id\": 34,\n  \"visitDate\": \"2025-10-24\",\n  \"timeIn\": \"09:00:00\",\n  \"timeOut\": \"17:00:00\",\n  \"description\": \"Routine inspection and setup.\",\n  \"loggedById\": 5,\n  \"createdAt\": \"2025-10-24T17:15:00\",\n  \"updatedAt\": \"2025-10-24T17:15:00\"\n}"
         }
       ]
     }

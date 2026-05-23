@@ -226,6 +226,7 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
                                                 .content(c.getContent())
                                                 .type(c.getType())
                                                 .authorId(c.getAuthor().getId())
+                                                .authorUsername(c.getAuthor().getUsername())
                                                 .createdAt(c.getCreatedAt())
                                                 .updatedAt(c.getUpdatedAt())
                                                 .build())
@@ -250,6 +251,7 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
                                                 .description(a.getDescription())
                                                 .type(a.getType())
                                                 .uploadedBy(a.getUploadedBy().getId())
+                                                .uploadedByUsername(a.getUploadedBy().getUsername())
                                                 .createdAt(a.getCreatedAt())
                                                 .build())
                                 .toList();
@@ -450,6 +452,7 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
                                 .content(comment.getContent())
                                 .type(comment.getType())
                                 .authorId(comment.getAuthor().getId())
+                                .authorUsername(comment.getAuthor().getUsername())
                                 .createdAt(comment.getCreatedAt())
                                 .updatedAt(comment.getUpdatedAt())
                                 .build();
@@ -530,6 +533,7 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
                                 .description(attachment.getDescription())
                                 .type(attachment.getType())
                                 .uploadedBy(attachment.getUploadedBy().getId())
+                                .uploadedByUsername(attachment.getUploadedBy().getUsername())
                                 .createdAt(attachment.getCreatedAt())
                                 .build();
         }

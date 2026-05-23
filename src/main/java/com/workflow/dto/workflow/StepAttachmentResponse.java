@@ -17,5 +17,6 @@ public class StepAttachmentResponse {
     private String description;
     private StepDiscussionType type;
     private Long uploadedBy;
+    private String uploadedByUsername;
     private LocalDateTime createdAt;
 }

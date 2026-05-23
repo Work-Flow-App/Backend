@@ -371,6 +371,7 @@ public class JobWorkflowStepActivityService
                                 .content(c.getContent())
                                 .type(c.getType())
                                 .authorId(c.getAuthor().getId())
+                                .authorUsername(c.getAuthor().getUsername())
                                 .createdAt(c.getCreatedAt())
                                 .updatedAt(c.getUpdatedAt())
                                 .build();
@@ -385,6 +386,7 @@ public class JobWorkflowStepActivityService
                                 .description(a.getDescription())
                                 .type(a.getType())
                                 .uploadedBy(a.getUploadedBy().getId())
+                                .uploadedByUsername(a.getUploadedBy().getUsername())
                                 .createdAt(a.getCreatedAt())
                                 .build();
         }
@@ -395,6 +397,7 @@ public class JobWorkflowStepActivityService
                                 .type(a.getType().name())
                                 .message(a.getMessage())
                                 .actorId(a.getActor().getId())
+                                .actorUsername(a.getActor().getUsername())
                                 .createdAt(a.getCreatedAt())
                                 .build();
         }

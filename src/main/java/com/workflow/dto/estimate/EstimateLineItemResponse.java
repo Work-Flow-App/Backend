@@ -1,6 +1,7 @@
 package com.workflow.dto.estimate;
 
-import com.workflow.entity.financial.LineItem;
+import com.workflow.common.constant.financial.LineItemStatus;
+import com.workflow.entity.financial.EstimateLineItem;
 import lombok.*;
 
 import java.math.BigDecimal;
@@ -10,10 +11,12 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class LineItemResponse {
+public class EstimateLineItemResponse {
 
     private Long id;
-    private Long companyId;
+    private Long estimateId;
+    private LineItemStatus status;
+    private Long sourceLineItemId;
     private String productCode;
     private String productDescription;
     private String additionalDetails;
@@ -26,10 +29,12 @@ public class LineItemResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    public static LineItemResponse fromEntity(LineItem item) {
-        return LineItemResponse.builder()
+    public static EstimateLineItemResponse fromEntity(EstimateLineItem item) {
+        return EstimateLineItemResponse.builder()
                 .id(item.getId())
-                .companyId(item.getCompany().getId())
+                .estimateId(item.getEstimate().getId())
+                .status(item.getStatus())
+                .sourceLineItemId(item.getSourceLineItemId())
                 .productCode(item.getProductCode())
                 .productDescription(item.getProductDescription())
                 .additionalDetails(item.getAdditionalDetails())

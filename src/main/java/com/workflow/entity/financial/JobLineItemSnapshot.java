@@ -1,10 +1,9 @@
 package com.workflow.entity.financial;
 
-import com.workflow.entity.company.Company;
+import com.workflow.common.constant.financial.SnapshotType;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -15,16 +14,27 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 @Entity
-@Table(name = "line_items")
-public class LineItem {
+@Table(name = "job_line_item_snapshots")
+public class JobLineItemSnapshot {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private SnapshotType type;
+
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "company_id", nullable = false)
-    private Company company;
+    @JoinColumn(name = "invoice_id")
+    private Invoice invoice;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "estimate_document_id")
+    private EstimateDocument estimateDocument;
+
+    @Column(name = "source_line_item_id", nullable = false)
+    private Long sourceLineItemId;
 
     @Column(name = "product_code", nullable = false, length = 50)
     private String productCode;
@@ -56,8 +66,4 @@ public class LineItem {
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
-
-    @UpdateTimestamp
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
 }

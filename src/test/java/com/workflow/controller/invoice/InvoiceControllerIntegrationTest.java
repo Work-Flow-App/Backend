@@ -4,25 +4,26 @@ import com.workflow.AbstractControllerIntegrationTest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.workflow.common.constant.CompanyRole;
-import com.workflow.common.constant.CoreOrSub;
 import com.workflow.common.constant.Role;
+import com.workflow.common.constant.financial.LineItemStatus;
+import com.workflow.common.constant.financial.SnapshotType;
 import com.workflow.common.constant.job.JobStatus;
 import com.workflow.dto.invoice.InvoiceCreateRequest;
 import com.workflow.entity.company.Company;
 import com.workflow.entity.customer.Customer;
 import com.workflow.entity.financial.Estimate;
+import com.workflow.entity.financial.EstimateLineItem;
 import com.workflow.entity.financial.Invoice;
-import com.workflow.entity.financial.InvoiceLineItemSnapshot;
-import com.workflow.entity.financial.LineItem;
+import com.workflow.entity.financial.JobLineItemSnapshot;
 import com.workflow.entity.job.Job;
 import com.workflow.entity.job.JobTemplate;
 import com.workflow.entity.auth.User;
 import com.workflow.repository.auth.UserRepository;
 import com.workflow.repository.company.CompanyRepository;
 import com.workflow.repository.customer.CustomerRepository;
+import com.workflow.repository.financial.EstimateLineItemRepository;
 import com.workflow.repository.financial.EstimateRepository;
 import com.workflow.repository.financial.InvoiceRepository;
-import com.workflow.repository.financial.LineItemRepository;
 import com.workflow.repository.job.JobRepository;
 import com.workflow.repository.job.JobTemplateRepository;
 import com.workflow.service.auth.JwtService;
@@ -65,14 +66,13 @@ class InvoiceControllerIntegrationTest extends AbstractControllerIntegrationTest
     @Autowired private JobTemplateRepository jobTemplateRepository;
     @Autowired private CustomerRepository customerRepository;
     @Autowired private EstimateRepository estimateRepository;
-    @Autowired private LineItemRepository lineItemRepository;
+    @Autowired private EstimateLineItemRepository estimateLineItemRepository;
     @Autowired private InvoiceRepository invoiceRepository;
-
 
     private Company company;
     private Company anotherCompany;
     private Estimate estimate;
-    private LineItem linkedLineItem;
+    private EstimateLineItem linkedEstimateLineItem;
     private Invoice existingInvoice;
 
     private String companyToken;
@@ -82,7 +82,7 @@ class InvoiceControllerIntegrationTest extends AbstractControllerIntegrationTest
     @BeforeEach
     void setUp() {
         invoiceRepository.deleteAll();
-        lineItemRepository.deleteAll();
+        estimateLineItemRepository.deleteAll();
         estimateRepository.deleteAll();
         jobRepository.deleteAll();
         jobTemplateRepository.deleteAll();
@@ -90,7 +90,6 @@ class InvoiceControllerIntegrationTest extends AbstractControllerIntegrationTest
         companyRepository.deleteAll();
         userRepository.deleteAll();
 
-        // Mock S3 and PDF renderer
         when(pdfRenderer.render(any())).thenReturn(new byte[]{1, 2, 3});
         doNothing().when(storageService).upload(anyString(), any(), anyLong(), anyString());
         when(storageService.generatePresignedUrl(anyString())).thenReturn("https://fake-s3.test/invoice.pdf");
@@ -130,32 +129,33 @@ class InvoiceControllerIntegrationTest extends AbstractControllerIntegrationTest
                 .template(template).company(company).customer(customer)
                 .status(JobStatus.NEW).archived(false).build());
 
-        // Linked line item (part of the estimate)
-        linkedLineItem = lineItemRepository.save(LineItem.builder()
-                .company(company).productCode("INV-001").productDescription("Invoice Item")
-                .unitPrice(new BigDecimal("100.00")).coreOrSub(CoreOrSub.CORE)
-                .quantity(new BigDecimal("2.0000")).vatRate(new BigDecimal("20.00"))
-                .netAmount(new BigDecimal("200.00")).vatAmount(new BigDecimal("40.00"))
-                .totalAmount(new BigDecimal("240.00")).invoiced(false).build());
-
         estimate = estimateRepository.save(Estimate.builder()
                 .job(job).company(company).notes("Estimate for invoice test").build());
-        estimate.getLineItems().add(linkedLineItem);
-        estimate = estimateRepository.save(estimate);
 
-        // Pre-existing invoice
-        InvoiceLineItemSnapshot snap = InvoiceLineItemSnapshot.builder()
-                .sourceLineItemId(linkedLineItem.getId())
-                .productCode(linkedLineItem.getProductCode())
-                .productDescription(linkedLineItem.getProductDescription())
-                .additionalDetails(linkedLineItem.getAdditionalDetails())
-                .unitPrice(linkedLineItem.getUnitPrice())
-                .coreOrSub(linkedLineItem.getCoreOrSub())
-                .quantity(linkedLineItem.getQuantity())
-                .vatRate(linkedLineItem.getVatRate())
-                .netAmount(linkedLineItem.getNetAmount())
-                .vatAmount(linkedLineItem.getVatAmount())
-                .totalAmount(linkedLineItem.getTotalAmount())
+        // EstimateLineItem associated with the estimate (status AVAILABLE — not yet INVOICED)
+        linkedEstimateLineItem = estimateLineItemRepository.save(EstimateLineItem.builder()
+                .estimate(estimate)
+                .status(LineItemStatus.AVAILABLE)
+                .productCode("INV-001").productDescription("Invoice Item")
+                .unitPrice(new BigDecimal("100.00"))
+                .quantity(new BigDecimal("2.0000")).vatRate(new BigDecimal("20.00"))
+                .netAmount(new BigDecimal("200.00")).vatAmount(new BigDecimal("40.00"))
+                .totalAmount(new BigDecimal("240.00"))
+                .build());
+
+        // Pre-existing invoice (created directly, bypassing service — status not updated)
+        JobLineItemSnapshot snap = JobLineItemSnapshot.builder()
+                .type(SnapshotType.INVOICE)
+                .sourceLineItemId(linkedEstimateLineItem.getId())
+                .productCode(linkedEstimateLineItem.getProductCode())
+                .productDescription(linkedEstimateLineItem.getProductDescription())
+                .additionalDetails(linkedEstimateLineItem.getAdditionalDetails())
+                .unitPrice(linkedEstimateLineItem.getUnitPrice())
+                .quantity(linkedEstimateLineItem.getQuantity())
+                .vatRate(linkedEstimateLineItem.getVatRate())
+                .netAmount(linkedEstimateLineItem.getNetAmount())
+                .vatAmount(linkedEstimateLineItem.getVatAmount())
+                .totalAmount(linkedEstimateLineItem.getTotalAmount())
                 .build();
 
         Invoice invoiceToBuild = Invoice.builder()
@@ -227,7 +227,7 @@ class InvoiceControllerIntegrationTest extends AbstractControllerIntegrationTest
         entityManager.clear();
 
         InvoiceCreateRequest request = new InvoiceCreateRequest();
-        request.setLineItemIds(List.of(linkedLineItem.getId()));
+        request.setLineItemIds(List.of(linkedEstimateLineItem.getId()));
         request.setDueDate(LocalDate.now().plusDays(30));
         request.setReference("PO-12345");
 
@@ -258,7 +258,7 @@ class InvoiceControllerIntegrationTest extends AbstractControllerIntegrationTest
     @Test
     void shouldReturn404WhenGeneratingInvoiceForNonExistentEstimate() throws Exception {
         InvoiceCreateRequest request = new InvoiceCreateRequest();
-        request.setLineItemIds(List.of(linkedLineItem.getId()));
+        request.setLineItemIds(List.of(linkedEstimateLineItem.getId()));
 
         mockMvc.perform(post("/api/v1/estimates/99999/invoice")
                         .header("Authorization", "Bearer " + companyToken)
@@ -270,7 +270,7 @@ class InvoiceControllerIntegrationTest extends AbstractControllerIntegrationTest
     @Test
     void shouldReturn404WhenGeneratingInvoiceForAnotherCompanyEstimate() throws Exception {
         InvoiceCreateRequest request = new InvoiceCreateRequest();
-        request.setLineItemIds(List.of(linkedLineItem.getId()));
+        request.setLineItemIds(List.of(linkedEstimateLineItem.getId()));
 
         mockMvc.perform(post("/api/v1/estimates/" + estimate.getId() + "/invoice")
                         .header("Authorization", "Bearer " + anotherCompanyToken)
@@ -294,7 +294,6 @@ class InvoiceControllerIntegrationTest extends AbstractControllerIntegrationTest
 
     @Test
     void shouldReturnEmptyListForEstimateWithNoInvoices() throws Exception {
-        // Create a second estimate with no invoices
         Customer anotherCustomer = customerRepository.save(Customer.builder()
                 .name("Another Customer").company(company).email("another@test.com").build());
         Job anotherJob = jobRepository.save(Job.builder()

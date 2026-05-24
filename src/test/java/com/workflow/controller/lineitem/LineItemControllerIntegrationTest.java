@@ -4,7 +4,6 @@ import com.workflow.AbstractControllerIntegrationTest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.workflow.common.constant.CompanyRole;
-import com.workflow.common.constant.CoreOrSub;
 import com.workflow.common.constant.Role;
 import com.workflow.dto.estimate.LineItemCreateRequest;
 import com.workflow.dto.estimate.LineItemUpdateRequest;
@@ -82,13 +81,11 @@ class LineItemControllerIntegrationTest extends AbstractControllerIntegrationTes
                 .productDescription("Labour Hours")
                 .additionalDetails("Additional notes")
                 .unitPrice(new BigDecimal("50.00"))
-                .coreOrSub(CoreOrSub.CORE)
                 .quantity(new BigDecimal("2.0000"))
                 .vatRate(new BigDecimal("20.00"))
                 .netAmount(new BigDecimal("100.00"))
                 .vatAmount(new BigDecimal("20.00"))
                 .totalAmount(new BigDecimal("120.00"))
-                .invoiced(false)
                 .build());
 
         companyToken = jwtService.generateToken(companyUser);
@@ -105,7 +102,6 @@ class LineItemControllerIntegrationTest extends AbstractControllerIntegrationTes
                 .productDescription("New Service")
                 .additionalDetails("Some details")
                 .unitPrice(new BigDecimal("75.00"))
-                .coreOrSub(CoreOrSub.CORE)
                 .quantity(new BigDecimal("3"))
                 .vatRate(new BigDecimal("20.00"))
                 .build();
@@ -122,8 +118,7 @@ class LineItemControllerIntegrationTest extends AbstractControllerIntegrationTes
                 .andExpect(jsonPath("$.quantity").value(3.0))
                 .andExpect(jsonPath("$.netAmount").value(225.00))
                 .andExpect(jsonPath("$.vatAmount").value(45.00))
-                .andExpect(jsonPath("$.totalAmount").value(270.00))
-                .andExpect(jsonPath("$.invoiced").value(false));
+                .andExpect(jsonPath("$.totalAmount").value(270.00));
     }
 
     @Test
@@ -132,7 +127,6 @@ class LineItemControllerIntegrationTest extends AbstractControllerIntegrationTes
                 .productCode("")
                 .productDescription("Service")
                 .unitPrice(new BigDecimal("50.00"))
-                .coreOrSub(CoreOrSub.CORE)
                 .quantity(new BigDecimal("1"))
                 .vatRate(new BigDecimal("20.00"))
                 .build();
@@ -150,7 +144,6 @@ class LineItemControllerIntegrationTest extends AbstractControllerIntegrationTes
                 .productCode("P001")
                 .productDescription("")
                 .unitPrice(new BigDecimal("50.00"))
-                .coreOrSub(CoreOrSub.CORE)
                 .quantity(new BigDecimal("1"))
                 .vatRate(new BigDecimal("20.00"))
                 .build();
@@ -168,7 +161,6 @@ class LineItemControllerIntegrationTest extends AbstractControllerIntegrationTes
                 .productCode("P001")
                 .productDescription("Service")
                 .unitPrice(new BigDecimal("50.00"))
-                .coreOrSub(CoreOrSub.CORE)
                 .quantity(new BigDecimal("0"))
                 .vatRate(new BigDecimal("20.00"))
                 .build();
@@ -184,7 +176,7 @@ class LineItemControllerIntegrationTest extends AbstractControllerIntegrationTes
     void shouldReturn403WhenCreatingLineItemWithoutToken() throws Exception {
         LineItemCreateRequest request = LineItemCreateRequest.builder()
                 .productCode("P001").productDescription("Service")
-                .unitPrice(new BigDecimal("50")).coreOrSub(CoreOrSub.CORE)
+                .unitPrice(new BigDecimal("50"))
                 .quantity(new BigDecimal("1")).vatRate(new BigDecimal("20")).build();
 
         mockMvc.perform(post("/api/v1/line-items")
@@ -197,7 +189,7 @@ class LineItemControllerIntegrationTest extends AbstractControllerIntegrationTes
     void shouldReturn403ForWorkerRoleOnCreate() throws Exception {
         LineItemCreateRequest request = LineItemCreateRequest.builder()
                 .productCode("P001").productDescription("Service")
-                .unitPrice(new BigDecimal("50")).coreOrSub(CoreOrSub.CORE)
+                .unitPrice(new BigDecimal("50"))
                 .quantity(new BigDecimal("1")).vatRate(new BigDecimal("20")).build();
 
         mockMvc.perform(post("/api/v1/line-items")
@@ -270,7 +262,6 @@ class LineItemControllerIntegrationTest extends AbstractControllerIntegrationTes
                 .productCode("UPDATED-001")
                 .productDescription("Updated Service")
                 .unitPrice(new BigDecimal("60.00"))
-                .coreOrSub(CoreOrSub.SUB)
                 .quantity(new BigDecimal("4"))
                 .vatRate(new BigDecimal("20.00"))
                 .build();

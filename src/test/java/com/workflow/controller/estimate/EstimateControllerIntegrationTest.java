@@ -3,7 +3,6 @@ package com.workflow.controller.estimate;
 import com.workflow.AbstractControllerIntegrationTest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.workflow.common.constant.CoreOrSub;
 import com.workflow.common.constant.Role;
 import com.workflow.common.constant.job.JobStatus;
 import com.workflow.dto.estimate.EstimateUpdateRequest;
@@ -32,6 +31,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 
 import java.math.BigDecimal;
 import java.util.UUID;
@@ -111,10 +111,9 @@ class EstimateControllerIntegrationTest extends AbstractControllerIntegrationTes
                 .template(template).company(company).customer(customer)
                 .status(JobStatus.NEW).archived(false).build());
 
-        // A standalone line item (not yet linked to any estimate)
         existingLineItem = lineItemRepository.save(LineItem.builder()
                 .company(company).productCode("P-EXISTING").productDescription("Existing Item")
-                .unitPrice(new BigDecimal("100.00")).coreOrSub(CoreOrSub.CORE)
+                .unitPrice(new BigDecimal("100.00"))
                 .quantity(new BigDecimal("1.0000")).vatRate(new BigDecimal("0.1900"))
                 .netAmount(new BigDecimal("100.00")).vatAmount(new BigDecimal("19.00"))
                 .totalAmount(new BigDecimal("119.00")).build());
@@ -196,10 +195,9 @@ class EstimateControllerIntegrationTest extends AbstractControllerIntegrationTes
 
     @Test
     void shouldCreateNewLineItemAndLinkToEstimate() throws Exception {
-        // net = 50 × 2 = 100, vat = 100 × 19% = 19, total = 119
         LineItemCreateRequest request = LineItemCreateRequest.builder()
                 .productCode("P001").productDescription("Labour")
-                .unitPrice(new BigDecimal("50.00")).coreOrSub(CoreOrSub.CORE)
+                .unitPrice(new BigDecimal("50.00"))
                 .quantity(new BigDecimal("2")).vatRate(new BigDecimal("19.00")).build();
 
         mockMvc.perform(post("/api/v1/estimates/" + estimate.getId() + "/line-items")
@@ -229,7 +227,7 @@ class EstimateControllerIntegrationTest extends AbstractControllerIntegrationTes
     void shouldReturn404WhenCreatingLineItemForAnotherCompanyEstimate() throws Exception {
         LineItemCreateRequest request = LineItemCreateRequest.builder()
                 .productCode("P001").productDescription("Labour")
-                .unitPrice(new BigDecimal("50")).coreOrSub(CoreOrSub.CORE)
+                .unitPrice(new BigDecimal("50"))
                 .quantity(new BigDecimal("1")).vatRate(new BigDecimal("0.19")).build();
 
         mockMvc.perform(post("/api/v1/estimates/" + estimate.getId() + "/line-items")
@@ -239,7 +237,7 @@ class EstimateControllerIntegrationTest extends AbstractControllerIntegrationTes
                 .andExpect(status().isNotFound());
     }
 
-    // ============= PUT /{estimateId}/line-items/{lineItemId} — link existing =============
+    // ============= PUT /{estimateId}/line-items/{libraryLineItemId} — link existing =============
 
     @Test
     void shouldLinkExistingLineItemToEstimate() throws Exception {
@@ -256,29 +254,7 @@ class EstimateControllerIntegrationTest extends AbstractControllerIntegrationTes
     }
 
     @Test
-    void shouldBeLinkIdempotent_WhenLineItemAlreadyLinked() throws Exception {
-        // Link it first
-        entityManager.flush();
-        entityManager.clear();
-
-        mockMvc.perform(put("/api/v1/estimates/" + estimate.getId() + "/line-items/" + existingLineItem.getId())
-                        .header("Authorization", "Bearer " + companyToken))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.lineItems", hasSize(1)));
-
-        entityManager.flush();
-        entityManager.clear();
-
-        // Link it again — should still be 1 item, not 2
-        mockMvc.perform(put("/api/v1/estimates/" + estimate.getId() + "/line-items/" + existingLineItem.getId())
-                        .header("Authorization", "Bearer " + companyToken))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.lineItems", hasSize(1)));
-    }
-
-    @Test
     void shouldReturn404WhenLinkingLineItemFromAnotherCompany() throws Exception {
-        // existingLineItem belongs to `company`, but we're authenticating as `anotherCompany`
         mockMvc.perform(put("/api/v1/estimates/" + estimate.getId() + "/line-items/" + existingLineItem.getId())
                         .header("Authorization", "Bearer " + anotherCompanyToken))
                 .andExpect(status().isNotFound());
@@ -291,29 +267,34 @@ class EstimateControllerIntegrationTest extends AbstractControllerIntegrationTes
                 .andExpect(status().isForbidden());
     }
 
-    // ============= DELETE /{estimateId}/line-items/{lineItemId} — unlink only =============
+    // ============= DELETE /{estimateId}/line-items/{estimateLineItemId} — unlink only =============
 
     @Test
     void shouldUnlinkLineItemWithoutDeletingIt() throws Exception {
-        // Link the item first so we can unlink it
         entityManager.flush();
         entityManager.clear();
 
-        mockMvc.perform(put("/api/v1/estimates/" + estimate.getId() + "/line-items/" + existingLineItem.getId())
+        // Link — response contains the EstimateLineItem with its own id
+        MvcResult linkResult = mockMvc.perform(
+                put("/api/v1/estimates/" + estimate.getId() + "/line-items/" + existingLineItem.getId())
                         .header("Authorization", "Bearer " + companyToken))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andReturn();
+
+        Long estimateLineItemId = objectMapper.readTree(linkResult.getResponse().getContentAsString())
+                .path("lineItems").get(0).path("id").asLong();
 
         entityManager.flush();
         entityManager.clear();
 
-        // Now unlink
-        mockMvc.perform(delete("/api/v1/estimates/" + estimate.getId() + "/line-items/" + existingLineItem.getId())
+        // Unlink using the EstimateLineItem id
+        mockMvc.perform(delete("/api/v1/estimates/" + estimate.getId() + "/line-items/" + estimateLineItemId)
                         .header("Authorization", "Bearer " + companyToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.lineItems", hasSize(0)))
                 .andExpect(jsonPath("$.grandTotal").value(0));
 
-        // Line item still exists in the DB
+        // Library line item still exists
         mockMvc.perform(get("/api/v1/line-items/" + existingLineItem.getId())
                         .header("Authorization", "Bearer " + companyToken))
                 .andExpect(status().isOk())
@@ -321,22 +302,21 @@ class EstimateControllerIntegrationTest extends AbstractControllerIntegrationTes
     }
 
     @Test
-    void shouldReturn404WhenUnlinkingLineItemNotLinkedToEstimate() throws Exception {
-        // existingLineItem has never been linked
+    void shouldReturn404WhenUnlinkingEstimateLineItemThatDoesNotExist() throws Exception {
         entityManager.flush();
         entityManager.clear();
 
-        mockMvc.perform(delete("/api/v1/estimates/" + estimate.getId() + "/line-items/" + existingLineItem.getId())
+        mockMvc.perform(delete("/api/v1/estimates/" + estimate.getId() + "/line-items/99999")
                         .header("Authorization", "Bearer " + companyToken))
                 .andExpect(status().isNotFound());
     }
 
     @Test
-    void shouldDeleteEstimateAndLeaveLineItemIntact() throws Exception {
-        // Link item, delete estimate, verify line item survives
+    void shouldDeleteEstimateAndLeaveLibraryLineItemIntact() throws Exception {
         entityManager.flush();
         entityManager.clear();
 
+        // Link item to estimate
         mockMvc.perform(put("/api/v1/estimates/" + estimate.getId() + "/line-items/" + existingLineItem.getId())
                         .header("Authorization", "Bearer " + companyToken))
                 .andExpect(status().isOk());
@@ -344,11 +324,12 @@ class EstimateControllerIntegrationTest extends AbstractControllerIntegrationTes
         entityManager.flush();
         entityManager.clear();
 
+        // Delete estimate
         mockMvc.perform(delete("/api/v1/estimates/" + estimate.getId())
                         .header("Authorization", "Bearer " + companyToken))
                 .andExpect(status().isNoContent());
 
-        // Line item must still exist
+        // Library line item must still exist
         mockMvc.perform(get("/api/v1/line-items/" + existingLineItem.getId())
                         .header("Authorization", "Bearer " + companyToken))
                 .andExpect(status().isOk())

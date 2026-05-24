@@ -39,10 +39,12 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
 
     long countByCompanyId(Long companyId);
 
-    boolean existsByLineItemSnapshotsSourceLineItemId(Long sourceLineItemId);
-
     @Modifying(clearAutomatically = true)
-    @Query("DELETE FROM InvoiceLineItemSnapshot s WHERE s.invoice.estimate.job.id = :jobId")
+    @Query("""
+            DELETE FROM JobLineItemSnapshot s
+            WHERE (s.invoice IS NOT NULL AND s.invoice.estimate.job.id = :jobId)
+               OR (s.estimateDocument IS NOT NULL AND s.estimateDocument.estimate.job.id = :jobId)
+            """)
     void deleteLineItemSnapshotsByJobId(@Param("jobId") Long jobId);
 
     @Modifying(clearAutomatically = true)

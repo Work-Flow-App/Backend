@@ -26,7 +26,7 @@ public interface EstimateRepository extends JpaRepository<Estimate, Long> {
     @Query("SELECT e FROM Estimate e " +
            "JOIN FETCH e.company " +
            "JOIN FETCH e.job j " +
-           "JOIN FETCH j.customer " +
+           "LEFT JOIN FETCH j.customer " +
            "LEFT JOIN FETCH e.lineItems " +
            "WHERE e.id = :id AND e.company.id = :companyId")
     Optional<Estimate> findByIdWithDetailsAndCompanyId(@Param("id") Long id, @Param("companyId") Long companyId);
@@ -34,4 +34,31 @@ public interface EstimateRepository extends JpaRepository<Estimate, Long> {
     boolean existsByJobId(Long jobId);
 
     Optional<Estimate> findByJobId(Long jobId);
+
+    @Query(value = """
+            SELECT COALESCE(SUM(eli.total_amount), 0)
+            FROM estimate_line_items eli
+            JOIN estimates e ON e.id = eli.estimate_id
+            JOIN jobs j ON j.id = e.job_id
+            WHERE e.company_id = :companyId AND eli.status = 'WAITING_APPROVAL' AND j.archived = false
+            """, nativeQuery = true)
+    java.math.BigDecimal sumWaitingApprovalByCompanyId(@Param("companyId") Long companyId);
+
+    @Query(value = """
+            SELECT COALESCE(SUM(eli.total_amount), 0)
+            FROM estimate_line_items eli
+            JOIN estimates e ON e.id = eli.estimate_id
+            JOIN jobs j ON j.id = e.job_id
+            WHERE e.company_id = :companyId AND eli.status = 'APPROVED' AND j.archived = false
+            """, nativeQuery = true)
+    java.math.BigDecimal sumApprovedByCompanyId(@Param("companyId") Long companyId);
+
+    @Query(value = """
+            SELECT COALESCE(SUM(eli.total_amount), 0)
+            FROM estimate_line_items eli
+            JOIN estimates e ON e.id = eli.estimate_id
+            JOIN jobs j ON j.id = e.job_id
+            WHERE e.company_id = :companyId AND eli.status = 'INVOICED' AND j.archived = false
+            """, nativeQuery = true)
+    java.math.BigDecimal sumInvoicedByCompanyId(@Param("companyId") Long companyId);
 }

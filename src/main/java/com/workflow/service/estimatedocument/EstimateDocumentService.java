@@ -1,28 +1,27 @@
-package com.workflow.service.invoice;
+package com.workflow.service.estimatedocument;
 
+import com.workflow.common.exception.business.EstimateDocumentNotFoundException;
 import com.workflow.common.exception.business.EstimateNotFoundException;
 import com.workflow.common.exception.business.InvalidRequestException;
-import com.workflow.common.exception.business.InvoiceNotFoundException;
-import com.workflow.dto.invoice.InvoiceCreateRequest;
-import com.workflow.dto.invoice.InvoiceResponse;
+import com.workflow.dto.estimatedocument.EstimateDocumentCreateRequest;
+import com.workflow.dto.estimatedocument.EstimateDocumentResponse;
 import com.workflow.entity.company.Company;
 import com.workflow.entity.company.CompanyAddress;
-import com.workflow.entity.company.CompanyBankDetails;
 import com.workflow.entity.customer.Customer;
 import com.workflow.entity.customer.CustomerAddress;
 import com.workflow.common.constant.financial.LineItemStatus;
 import com.workflow.common.constant.financial.SnapshotType;
 import com.workflow.entity.financial.Estimate;
+import com.workflow.entity.financial.EstimateDocument;
 import com.workflow.entity.financial.EstimateLineItem;
-import com.workflow.entity.financial.Invoice;
 import com.workflow.entity.financial.JobLineItemSnapshot;
+import com.workflow.repository.financial.EstimateDocumentRepository;
 import com.workflow.repository.financial.EstimateLineItemRepository;
 import com.workflow.repository.financial.EstimateRepository;
-import com.workflow.repository.financial.InvoiceRepository;
 import com.workflow.service.sequence.CompanyCounterService;
 import com.workflow.service.storage.IStorageService;
-import com.workflow.templates.pdf.invoice.InvoicePdfRenderer;
-import com.workflow.templates.pdf.invoice.InvoiceTemplateData;
+import com.workflow.templates.pdf.estimate.EstimatePdfRenderer;
+import com.workflow.templates.pdf.estimate.EstimateTemplateData;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,17 +38,19 @@ import java.util.stream.Collectors;
 @Service
 @Transactional
 @RequiredArgsConstructor
-public class InvoiceService implements IInvoiceService {
+public class EstimateDocumentService implements IEstimateDocumentService {
 
-    private final InvoiceRepository invoiceRepository;
+    private final EstimateDocumentRepository estimateDocumentRepository;
     private final EstimateRepository estimateRepository;
     private final EstimateLineItemRepository estimateLineItemRepository;
     private final IStorageService storageService;
-    private final InvoicePdfRenderer pdfRenderer;
+    private final EstimatePdfRenderer pdfRenderer;
     private final CompanyCounterService companyCounterService;
 
     @Override
-    public InvoiceResponse generateInvoice(Long estimateId, InvoiceCreateRequest request, Long companyId) {
+    public EstimateDocumentResponse generateEstimateDocument(Long estimateId,
+                                                              EstimateDocumentCreateRequest request,
+                                                              Long companyId) {
         Estimate estimate = estimateRepository.findByIdWithDetailsAndCompanyId(estimateId, companyId)
                 .orElseThrow(() -> new EstimateNotFoundException("Estimate not found"));
 
@@ -71,16 +72,6 @@ public class InvoiceService implements IInvoiceService {
                 .filter(eli -> requestedIds.contains(eli.getId()))
                 .collect(Collectors.toList());
 
-        List<Long> conflicts = selectedItems.stream()
-                .filter(eli -> eli.getStatus() == LineItemStatus.INVOICED)
-                .map(EstimateLineItem::getId)
-                .toList();
-
-        if (!conflicts.isEmpty()) {
-            throw new InvalidRequestException(
-                    "Some selected line items have already been invoiced: " + conflicts);
-        }
-
         BigDecimal totalNet = selectedItems.stream()
                 .map(EstimateLineItem::getNetAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
@@ -95,7 +86,7 @@ public class InvoiceService implements IInvoiceService {
 
         List<JobLineItemSnapshot> snapshots = selectedItems.stream()
                 .map(eli -> JobLineItemSnapshot.builder()
-                        .type(SnapshotType.INVOICE)
+                        .type(SnapshotType.ESTIMATE_DOCUMENT)
                         .sourceLineItemId(eli.getId())
                         .productCode(eli.getProductCode())
                         .productDescription(eli.getProductDescription())
@@ -109,82 +100,82 @@ public class InvoiceService implements IInvoiceService {
                         .build())
                 .collect(Collectors.toList());
 
-        // Generate invoice number first — REQUIRES_NEW transaction guarantees uniqueness
-        long invoiceSeq = companyCounterService.nextInvoiceId(companyId);
-        String invoiceNumber = String.format("INV-%d-%05d", LocalDate.now().getYear(), invoiceSeq);
-        String s3Key = String.format("invoices/%d/%s.pdf", companyId, invoiceNumber);
+        // REQUIRES_NEW transaction guarantees uniqueness of the sequence counter
+        long docSeq = companyCounterService.nextEstimateDocumentId(companyId);
+        String documentNumber = String.format("EST-%d-%05d", LocalDate.now().getYear(), docSeq);
+        String s3Key = String.format("estimate-documents/%d/%s.pdf", companyId, documentNumber);
 
-        Invoice invoiceToSave = Invoice.builder()
+        EstimateDocument docToSave = EstimateDocument.builder()
                 .estimate(estimate)
                 .company(estimate.getCompany())
-                .invoiceNumber(invoiceNumber)
+                .documentNumber(documentNumber)
                 .s3Key(s3Key)
                 .lineItemSnapshots(snapshots)
-                .dueDate(request.getDueDate())
-                .reference(request.getReference())
                 .totalNet(totalNet)
                 .totalVat(totalVat)
                 .grandTotal(grandTotal)
+                .validUntil(request.getValidUntil())
+                .reference(request.getReference())
+                .notes(request.getNotes() != null ? request.getNotes() : estimate.getNotes())
                 .build();
 
-        snapshots.forEach(s -> s.setInvoice(invoiceToSave));
-        Invoice invoice = invoiceRepository.save(invoiceToSave);
+        // Generate PDF before any DB writes — rendering failure must not commit the document record.
+        byte[] pdfBytes = generatePdf(docToSave, documentNumber, selectedItems, estimate);
 
+        snapshots.forEach(s -> s.setEstimateDocument(docToSave));
+        EstimateDocument savedDoc = estimateDocumentRepository.save(docToSave);
+
+        // Transition AVAILABLE line items to WAITING_APPROVAL after successful PDF generation.
         List<Long> selectedIds = selectedItems.stream().map(EstimateLineItem::getId).toList();
-        estimateLineItemRepository.markAsInvoiced(selectedIds);
+        estimateLineItemRepository.updateStatusForIdsIfAvailable(selectedIds, LineItemStatus.WAITING_APPROVAL);
 
-        byte[] pdfBytes = generatePdf(invoice, invoiceNumber, selectedItems, estimate);
         storageService.upload(s3Key, new ByteArrayInputStream(pdfBytes), pdfBytes.length, "application/pdf");
 
         String presignedUrl = storageService.generatePresignedUrl(s3Key);
-        return InvoiceResponse.fromEntity(invoice, presignedUrl);
+        return EstimateDocumentResponse.fromEntity(savedDoc, presignedUrl);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<InvoiceResponse> getAllInvoices(Long companyId) {
-        return invoiceRepository.findAllByCompanyId(companyId).stream()
-                .map(inv -> InvoiceResponse.fromEntity(inv, storageService.generatePresignedUrl(inv.getS3Key())))
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<InvoiceResponse> getInvoicesForEstimate(Long estimateId, Long companyId) {
+    public List<EstimateDocumentResponse> getEstimateDocuments(Long estimateId, Long companyId) {
         estimateRepository.findByIdAndCompanyId(estimateId, companyId)
                 .orElseThrow(() -> new EstimateNotFoundException("Estimate not found"));
 
-        return invoiceRepository.findByEstimateIdAndCompanyId(estimateId, companyId).stream()
-                .map(inv -> InvoiceResponse.fromEntity(inv, storageService.generatePresignedUrl(inv.getS3Key())))
+        return estimateDocumentRepository.findByEstimateIdAndCompanyId(estimateId, companyId).stream()
+                .map(doc -> EstimateDocumentResponse.fromEntity(
+                        doc, storageService.generatePresignedUrl(doc.getS3Key())))
                 .collect(Collectors.toList());
     }
 
     @Override
     @Transactional(readOnly = true)
-    public InvoiceResponse getInvoice(Long invoiceId, Long companyId) {
-        Invoice invoice = invoiceRepository.findByIdAndCompanyId(invoiceId, companyId)
-                .orElseThrow(() -> new InvoiceNotFoundException("Invoice not found"));
-        String presignedUrl = storageService.generatePresignedUrl(invoice.getS3Key());
-        return InvoiceResponse.fromEntity(invoice, presignedUrl);
+    public EstimateDocumentResponse getEstimateDocument(Long documentId, Long companyId) {
+        EstimateDocument doc = estimateDocumentRepository.findByIdAndCompanyId(documentId, companyId)
+                .orElseThrow(() -> new EstimateDocumentNotFoundException("Estimate document not found"));
+        String presignedUrl = storageService.generatePresignedUrl(doc.getS3Key());
+        return EstimateDocumentResponse.fromEntity(doc, presignedUrl);
     }
 
-    private byte[] generatePdf(Invoice invoice, String invoiceNumber, List<EstimateLineItem> items, Estimate estimate) {
+    private byte[] generatePdf(EstimateDocument doc, String documentNumber,
+                                List<EstimateLineItem> items, Estimate estimate) {
         Company company = estimate.getCompany();
         Customer customer = estimate.getJob().getCustomer();
-        CompanyBankDetails bankDetails = company.getBankDetails();
         DateTimeFormatter dateFmt = DateTimeFormatter.ofPattern("dd MMM yyyy");
 
-        InvoiceTemplateData data = InvoiceTemplateData.builder()
-                .invoiceNumber(invoiceNumber)
-                .invoiceDate(LocalDate.now().format(dateFmt))
-                .dueDate(invoice.getDueDate() != null ? invoice.getDueDate().format(dateFmt) : null)
-                .reference(invoice.getReference())
+        EstimateTemplateData data = EstimateTemplateData.builder()
+                .documentNumber(documentNumber)
+                .estimateDate(LocalDate.now().format(dateFmt))
+                .validUntil(doc.getValidUntil() != null ? doc.getValidUntil().format(dateFmt) : null)
+                .reference(doc.getReference())
                 .companyName(company.getName())
                 .companyAddressLines(companyAddressLines(company))
                 .vatNumber(company.getVatNumber())
+                .companyEmail(company.getEmail() != null ? company.getEmail() : company.getContactEmail())
+                .companyPhone(company.getTelephone() != null ? company.getTelephone() : company.getMobile())
                 .customerName(customer != null ? customer.getName() : null)
                 .customerAddressLines(customer != null ? customerAddressLines(customer) : List.of())
-                .lineItems(items.stream().map(eli -> InvoiceTemplateData.LineItemRow.builder()
+                .lineItems(items.stream().map(eli -> EstimateTemplateData.LineItemRow.builder()
+                        .name(eli.getProductCode())
                         .description(eli.getProductDescription())
                         .additionalDetails(eli.getAdditionalDetails())
                         .quantity(eli.getQuantity().stripTrailingZeros().toPlainString())
@@ -194,17 +185,11 @@ public class InvoiceService implements IInvoiceService {
                                 : eli.getVatRate().stripTrailingZeros().toPlainString() + "%")
                         .amount(formatAmount(eli.getTotalAmount()))
                         .build()).collect(Collectors.toList()))
-                .subtotal(formatAmount(invoice.getTotalNet()))
-                .vatLabel(invoice.getTotalVat().compareTo(BigDecimal.ZERO) == 0 ? "TOTAL  NO VAT" : "TOTAL VAT")
-                .totalVat(formatAmount(invoice.getTotalVat()))
-                .grandTotal(formatAmount(invoice.getGrandTotal()))
-                .bankDetails(bankDetails != null ? InvoiceTemplateData.BankDetailsRow.builder()
-                        .bankName(nullSafe(bankDetails.getBankName()))
-                        .accountName(nullSafe(bankDetails.getAccountName()))
-                        .accountNo(nullSafe(bankDetails.getAccountNo()))
-                        .sortCode(nullSafe(bankDetails.getSortCode()))
-                        .build() : null)
-                .notes(estimate.getNotes())
+                .subtotal(formatAmount(doc.getTotalNet()))
+                .vatLabel(doc.getTotalVat().compareTo(BigDecimal.ZERO) == 0 ? "TOTAL  NO VAT" : "TOTAL VAT")
+                .totalVat(formatAmount(doc.getTotalVat()))
+                .grandTotal(formatAmount(doc.getGrandTotal()))
+                .notes(doc.getNotes())
                 .footerAddress(String.join(", ", companyAddressLines(company)))
                 .build();
 
@@ -243,10 +228,6 @@ public class InvoiceService implements IInvoiceService {
 
     private void addIfPresent(List<String> list, String value) {
         if (value != null && !value.isBlank()) list.add(value);
-    }
-
-    private String nullSafe(String value) {
-        return value != null ? value : "";
     }
 
     private String formatAmount(BigDecimal amount) {

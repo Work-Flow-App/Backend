@@ -40,6 +40,17 @@ public class JobWorkflowStep {
     private LocalDateTime startedAt;
     private LocalDateTime completedAt;
 
+    // SLA Execution Fields (Copied from Blueprint at start)
+    @Column(name = "expected_duration_minutes")
+    private Integer expectedDurationMinutes;
+
+    @Column(name = "maximum_duration_minutes")
+    private Integer maximumDurationMinutes;
+
+    @Builder.Default
+    @Column(name = "sla_breached", nullable = false, columnDefinition = "BOOLEAN DEFAULT FALSE")
+    private boolean slaBreached = false;
+
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "job_workflow_step_workers", joinColumns = @JoinColumn(name = "job_workflow_step_id"), inverseJoinColumns = @JoinColumn(name = "worker_id"))
     @Builder.Default

@@ -29,4 +29,7 @@ public class JobWorkflowStepCreateRequest {
      * Workers assigned to this step
      */
     private Set<Long> assignedWorkerIds;
+
+    private Integer expectedDurationMinutes;
+    private Integer maximumDurationMinutes;
 }

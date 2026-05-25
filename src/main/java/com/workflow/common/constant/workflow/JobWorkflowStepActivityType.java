@@ -14,5 +14,6 @@ public enum JobWorkflowStepActivityType {
     STEP_UPDATED,
     VISIT_LOGGED,
     VISIT_UPDATED,
-    VISIT_DELETED
+    VISIT_DELETED,
+    SLA_BREACHED
 }

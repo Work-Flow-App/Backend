@@ -13,4 +13,6 @@ public class WorkflowStepResponse {
     private String description;
     private Integer orderIndex;
     private boolean optional;
+    private Integer expectedDurationMinutes;
+    private Integer maximumDurationMinutes;
 }

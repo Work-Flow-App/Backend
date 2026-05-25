@@ -200,6 +200,8 @@ public class JobWorkflowService implements IJobWorkflowService {
                                         .description(ts.getDescription())
                                         .orderIndex(index++)
                                         .status(WorkflowStepStatus.NOT_STARTED)
+                                        .expectedDurationMinutes(ts.getExpectedDurationMinutes())
+                                        .maximumDurationMinutes(ts.getMaximumDurationMinutes())
                                         .build());
                 }
 
@@ -330,29 +332,57 @@ public class JobWorkflowService implements IJobWorkflowService {
 
                 }
 
+                if (request.getExpectedDurationMinutes() != null) {
+                        step.setExpectedDurationMinutes(request.getExpectedDurationMinutes());
+                        logStep(step, actor, JobWorkflowStepActivityType.STEP_UPDATED,
+                                        "Updated step expected duration");
+                }
+                if (request.getMaximumDurationMinutes() != null) {
+                        step.setMaximumDurationMinutes(request.getMaximumDurationMinutes());
+                        step.setSlaBreached(false);
+                        logStep(step, actor, JobWorkflowStepActivityType.STEP_UPDATED, "Updated step maximum duration");
+                }
+
                 if (request.getOrderIndex() != null &&
                                 !request.getOrderIndex().equals(step.getOrderIndex())) {
                         reorderStep1Based(step, request.getOrderIndex());
                 }
 
-                if (request.getStatus() != null &&
-                                request.getStatus() != step.getStatus()) {
-
+                if (request.getStatus() != null && request.getStatus() != step.getStatus()) {
                         WorkflowStepStatus oldStatus = step.getStatus();
-                        step.setStatus(request.getStatus());
+                        WorkflowStepStatus newStatus = request.getStatus();
 
-                        if (request.getStatus() == WorkflowStepStatus.STARTED) {
-                                step.setStartedAt(LocalDateTime.now());
+                        step.setStatus(newStatus);
+
+                        // 1. If moving to an ACTIVE state (Timer should be ticking)
+                        if (newStatus == WorkflowStepStatus.STARTED || newStatus == WorkflowStepStatus.ONGOING) {
+                                // Start the clock if it hasn't started yet
+                                if (step.getStartedAt() == null) {
+                                        step.setStartedAt(LocalDateTime.now());
+                                }
+                                // CRITICAL FIX: If they re-open a COMPLETED step, erase the completion time!
+                                step.setCompletedAt(null);
                         }
-                        if (request.getStatus() == WorkflowStepStatus.COMPLETED) {
+                        // 2. If moving to a FINISHED state (Timer stops)
+                        else if (newStatus == WorkflowStepStatus.COMPLETED || newStatus == WorkflowStepStatus.SKIPPED) {
+                                // Set completion time
                                 step.setCompletedAt(LocalDateTime.now());
+
+                                // Edge Case: If they instantly jump to COMPLETED without ever clicking STARTED
+                                if (step.getStartedAt() == null) {
+                                        step.setStartedAt(LocalDateTime.now());
+                                }
+                        }
+                        // 3. (Optional) If moving back to a PRE-WORK state (Resetting the step)
+                        else if (newStatus == WorkflowStepStatus.NOT_STARTED
+                                        || newStatus == WorkflowStepStatus.INITIATED) {
+                                step.setStartedAt(null);
+                                step.setCompletedAt(null);
+                                step.setSlaBreached(false); // Reset the breach flag so it can trigger again if needed
                         }
 
-                        logStep(
-                                        step,
-                                        actor,
-                                        JobWorkflowStepActivityType.STATUS_CHANGED,
-                                        "Status changed from " + oldStatus + " to " + request.getStatus());
+                        logStep(step, actor, JobWorkflowStepActivityType.STATUS_CHANGED,
+                                        "Status changed from " + oldStatus + " to " + newStatus);
                 }
 
                 if (request.getAssignedWorkerIds() != null) {
@@ -399,12 +429,12 @@ public class JobWorkflowService implements IJobWorkflowService {
                 updateJobWorkflowStatus(jw);
                 return mapStep(step);
         }
+
         /*
          * =======================
          * UPDATE WORKFLOW (BULK)
          * =======================
          */
-
         @Override
         @Transactional
         public JobWorkflowResponse updateJobWorkflowById(
@@ -436,16 +466,9 @@ public class JobWorkflowService implements IJobWorkflowService {
                 if (request.getSteps() != null) {
                         for (JobWorkflowStepUpdateRequest sr : request.getSteps()) {
 
-                                WorkflowStepStatus status = sr.getStatus() != null ? sr.getStatus()
+                                // Fallback to NOT_STARTED if null
+                                WorkflowStepStatus requestedStatus = sr.getStatus() != null ? sr.getStatus()
                                                 : WorkflowStepStatus.NOT_STARTED;
-                                LocalDateTime startedAt = null;
-                                LocalDateTime completedAt = null;
-                                if (status == WorkflowStepStatus.STARTED) {
-                                        startedAt = LocalDateTime.now();
-                                }
-                                if (status == WorkflowStepStatus.COMPLETED) {
-                                        completedAt = LocalDateTime.now();
-                                }
 
                                 /*
                                  * ============================
@@ -462,77 +485,81 @@ public class JobWorkflowService implements IJobWorkflowService {
 
                                         if (sr.getName() != null) {
                                                 step.setName(sr.getName());
-                                                stepActivityService.log(
-                                                                step,
-                                                                actor,
+                                                stepActivityService.log(step, actor,
                                                                 JobWorkflowStepActivityType.STEP_UPDATED,
                                                                 "Updated step name");
                                         }
 
                                         if (sr.getDescription() != null) {
                                                 step.setDescription(sr.getDescription());
-                                                stepActivityService.log(
-                                                                step,
-                                                                actor,
+                                                stepActivityService.log(step, actor,
                                                                 JobWorkflowStepActivityType.STEP_UPDATED,
                                                                 "Updated step description");
                                         }
 
-                                        // 🔹 Order
-                                        if (sr.getOrderIndex() != null &&
-                                                        !sr.getOrderIndex().equals(step.getOrderIndex())) {
+                                        if (sr.getExpectedDurationMinutes() != null) {
+                                                step.setExpectedDurationMinutes(sr.getExpectedDurationMinutes());
+                                                stepActivityService.log(step, actor,
+                                                                JobWorkflowStepActivityType.STEP_UPDATED,
+                                                                "Updated step expected duration");
+                                        }
 
+                                        if (sr.getMaximumDurationMinutes() != null) {
+                                                step.setMaximumDurationMinutes(sr.getMaximumDurationMinutes());
+                                                step.setSlaBreached(false);
+                                                stepActivityService.log(step, actor,
+                                                                JobWorkflowStepActivityType.STEP_UPDATED,
+                                                                "Updated step maximum duration");
+                                        }
+
+                                        // 🔹 Order
+                                        if (sr.getOrderIndex() != null
+                                                        && !sr.getOrderIndex().equals(step.getOrderIndex())) {
                                                 int oldIndex = step.getOrderIndex();
                                                 step.setOrderIndex(sr.getOrderIndex());
-
-                                                stepActivityService.log(
-                                                                step,
-                                                                actor,
+                                                stepActivityService.log(step, actor,
                                                                 JobWorkflowStepActivityType.STEP_REORDERED,
                                                                 "Reordered step from " + oldIndex + " to "
                                                                                 + sr.getOrderIndex());
                                         }
 
-                                        // 🔹 Status
-                                        if (sr.getStatus() != null &&
-                                                        sr.getStatus() != step.getStatus()) {
-
+                                        // 🔹 Status & Timestamp Universal Logic
+                                        if (sr.getStatus() != null && sr.getStatus() != step.getStatus()) {
                                                 WorkflowStepStatus oldStatus = step.getStatus();
-                                                LocalDateTime oldStartedAt = step.getStartedAt();
-                                                LocalDateTime oldCompletedAt = step.getCompletedAt();
+                                                WorkflowStepStatus newStatus = sr.getStatus();
 
-                                                step.setStatus(status);
-                                                step.setStartedAt(startedAt);
-                                                step.setCompletedAt(completedAt);
+                                                step.setStatus(newStatus);
 
-                                                stepActivityService.log(
-                                                                step,
-                                                                actor,
+                                                if (newStatus == WorkflowStepStatus.STARTED
+                                                                || newStatus == WorkflowStepStatus.ONGOING) {
+                                                        if (step.getStartedAt() == null) {
+                                                                step.setStartedAt(LocalDateTime.now());
+                                                        }
+                                                        step.setCompletedAt(null); // Clear if re-opened
+                                                } else if (newStatus == WorkflowStepStatus.COMPLETED
+                                                                || newStatus == WorkflowStepStatus.SKIPPED) {
+                                                        step.setCompletedAt(LocalDateTime.now());
+                                                        if (step.getStartedAt() == null) {
+                                                                step.setStartedAt(LocalDateTime.now());
+                                                        }
+                                                } else if (newStatus == WorkflowStepStatus.NOT_STARTED
+                                                                || newStatus == WorkflowStepStatus.INITIATED
+                                                                || newStatus == WorkflowStepStatus.PENDING) {
+                                                        step.setStartedAt(null);
+                                                        step.setCompletedAt(null);
+                                                        step.setSlaBreached(false);
+                                                }
+
+                                                stepActivityService.log(step, actor,
                                                                 JobWorkflowStepActivityType.STATUS_CHANGED,
-                                                                "Status changed from " + oldStatus + " to " + status);
-                                                if (oldStartedAt == null && startedAt != null) {
-                                                        stepActivityService.log(
-                                                                        step,
-                                                                        actor,
-                                                                        JobWorkflowStepActivityType.STEP_DATA_UPDATED,
-                                                                        "Step started");
-                                                }
-
-                                                if (oldCompletedAt == null && completedAt != null) {
-                                                        stepActivityService.log(
-                                                                        step,
-                                                                        actor,
-                                                                        JobWorkflowStepActivityType.STEP_DATA_UPDATED,
-                                                                        "Step completed");
-                                                }
+                                                                "Status changed from " + oldStatus + " to "
+                                                                                + newStatus);
                                         }
 
                                         // 🔹 Workers
                                         if (sr.getAssignedWorkerIds() != null) {
-
                                                 Set<Long> previous = step.getAssignedWorkers().stream()
-                                                                .map(Worker::getId)
-                                                                .collect(Collectors.toSet());
+                                                                .map(Worker::getId).collect(Collectors.toSet());
 
                                                 List<Worker> workerList = workerRepository
                                                                 .findAllById(sr.getAssignedWorkerIds());
@@ -546,16 +573,14 @@ public class JobWorkflowService implements IJobWorkflowService {
                                                                                 "Worker does not belong to company");
                                                         }
                                                 }
-                                                Set<Worker> workers = new HashSet<>(workerList);
 
+                                                Set<Worker> workers = new HashSet<>(workerList);
                                                 step.getAssignedWorkers().clear();
                                                 step.getAssignedWorkers().addAll(workers);
 
                                                 for (Worker w : workers) {
                                                         if (!previous.contains(w.getId())) {
-                                                                stepActivityService.log(
-                                                                                step,
-                                                                                actor,
+                                                                stepActivityService.log(step, actor,
                                                                                 JobWorkflowStepActivityType.WORKER_ASSIGNED,
                                                                                 "Assigned worker ID " + w.getId());
                                                         }
@@ -563,9 +588,7 @@ public class JobWorkflowService implements IJobWorkflowService {
 
                                                 for (Long oldId : previous) {
                                                         if (workers.stream().noneMatch(w -> w.getId().equals(oldId))) {
-                                                                stepActivityService.log(
-                                                                                step,
-                                                                                actor,
+                                                                stepActivityService.log(step, actor,
                                                                                 JobWorkflowStepActivityType.WORKER_REMOVED,
                                                                                 "Removed worker ID " + oldId);
                                                         }
@@ -581,15 +604,29 @@ public class JobWorkflowService implements IJobWorkflowService {
                                  * ============================
                                  */
                                 else {
+                                        // Calculate initial timestamps based on requested status
+                                        LocalDateTime newStartedAt = null;
+                                        LocalDateTime newCompletedAt = null;
+
+                                        if (requestedStatus == WorkflowStepStatus.STARTED
+                                                        || requestedStatus == WorkflowStepStatus.ONGOING) {
+                                                newStartedAt = LocalDateTime.now();
+                                        } else if (requestedStatus == WorkflowStepStatus.COMPLETED
+                                                        || requestedStatus == WorkflowStepStatus.SKIPPED) {
+                                                newStartedAt = LocalDateTime.now();
+                                                newCompletedAt = LocalDateTime.now();
+                                        }
 
                                         JobWorkflowStep newStep = JobWorkflowStep.builder()
                                                         .jobWorkflow(jw)
                                                         .name(sr.getName())
                                                         .description(sr.getDescription())
                                                         .orderIndex(sr.getOrderIndex())
-                                                        .status(status)
-                                                        .startedAt(startedAt)
-                                                        .completedAt(completedAt)
+                                                        .status(requestedStatus)
+                                                        .startedAt(newStartedAt)
+                                                        .completedAt(newCompletedAt)
+                                                        .expectedDurationMinutes(sr.getExpectedDurationMinutes())
+                                                        .maximumDurationMinutes(sr.getMaximumDurationMinutes())
                                                         .build();
 
                                         if (sr.getAssignedWorkerIds() != null) {
@@ -610,9 +647,7 @@ public class JobWorkflowService implements IJobWorkflowService {
 
                                         jobWorkflowStepRepository.save(newStep);
 
-                                        stepActivityService.log(
-                                                        newStep,
-                                                        actor,
+                                        stepActivityService.log(newStep, actor,
                                                         JobWorkflowStepActivityType.STEP_CREATED,
                                                         "Created workflow step");
                                 }
@@ -624,21 +659,8 @@ public class JobWorkflowService implements IJobWorkflowService {
                  * DELETE REMOVED STEPS
                  * ============================
                  */
-                for (
-
-                JobWorkflowStep step : existingSteps) {
+                for (JobWorkflowStep step : existingSteps) {
                         if (!incomingIds.contains(step.getId())) {
-
-                                /*
-                                 * classic Hibernate flush-order /
-                                 * transient reference problem
-                                 * stepActivityService.log(
-                                 * step,
-                                 * actor,
-                                 * JobWorkflowStepActivityType.STEP_UPDATED,
-                                 * "Deleted workflow step");
-                                 */
-
                                 jobWorkflowStepRepository.delete(step);
                         }
                 }
@@ -659,6 +681,7 @@ public class JobWorkflowService implements IJobWorkflowService {
 
                 return buildResponse(jw);
         }
+
         /*
          * =======================
          * ASSIGN WORKER TO ALL STEPS
@@ -815,6 +838,8 @@ public class JobWorkflowService implements IJobWorkflowService {
                                 .status(status)
                                 .startedAt(startedAt)
                                 .completedAt(completedAt)
+                                .expectedDurationMinutes(request.getExpectedDurationMinutes())
+                                .maximumDurationMinutes(request.getMaximumDurationMinutes())
                                 .build();
 
                 // Assign workers

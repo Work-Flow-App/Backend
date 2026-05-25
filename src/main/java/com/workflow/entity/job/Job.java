@@ -10,7 +10,6 @@ import com.workflow.entity.common.Address;
 import com.workflow.entity.company.Company;
 import com.workflow.entity.customer.Client;
 import com.workflow.entity.customer.Customer;
-import com.workflow.entity.worker.Worker;
 import com.workflow.entity.workflow.Workflow;
 
 import jakarta.persistence.*;

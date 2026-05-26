@@ -117,6 +117,8 @@ public class WorkflowService implements IWorkflowService {
                                                 .description(request.getDescription())
                                                 .orderIndex(request.getOrderIndex())
                                                 .optional(request.isOptional())
+                                                .expectedDurationMinutes(request.getExpectedDurationMinutes())
+                                                .maximumDurationMinutes(request.getMaximumDurationMinutes())
                                                 .build());
 
                 return map(step);
@@ -124,7 +126,6 @@ public class WorkflowService implements IWorkflowService {
 
         @Override
         public List<WorkflowStepResponse> getSteps(Long workflowId, Long companyId) {
-
                 Workflow workflow = workflowRepository.findByIdAndCompanyId(workflowId, companyId)
                                 .orElseThrow(() -> new UnauthorizedWorkflowAccessException("Unauthorized access"));
 
@@ -143,6 +144,8 @@ public class WorkflowService implements IWorkflowService {
                 step.setDescription(request.getDescription());
                 step.setOrderIndex(request.getOrderIndex());
                 step.setOptional(request.isOptional());
+                step.setExpectedDurationMinutes(request.getExpectedDurationMinutes());
+                step.setMaximumDurationMinutes(request.getMaximumDurationMinutes());
 
                 return map(step);
         }
@@ -181,7 +184,6 @@ public class WorkflowService implements IWorkflowService {
                 Workflow workflow = workflowRepository.findByIdAndCompanyId(workflowId, companyId)
                                 .orElseThrow(() -> new WorkflowNotFoundException("Workflow not found"));
 
-                // 1️⃣ Update workflow fields
                 if (request.getName() != null) {
                         workflow.setName(request.getName());
                 }
@@ -189,7 +191,6 @@ public class WorkflowService implements IWorkflowService {
                         workflow.setDescription(request.getDescription());
                 }
 
-                // 2️⃣ Fetch existing steps
                 List<WorkflowStep> existingSteps = stepRepository.findByWorkflowIdOrderByOrderIndexAsc(workflowId);
                 Map<Long, WorkflowStep> existingMap = existingSteps.stream()
                                 .collect(Collectors.toMap(WorkflowStep::getId, s -> s));
@@ -199,7 +200,6 @@ public class WorkflowService implements IWorkflowService {
                                 .map(WorkflowStepBulkRequest::getId)
                                 .collect(Collectors.toSet());
 
-                // 3️⃣ DELETE removed steps first to free up space
                 List<WorkflowStep> stepsToDelete = existingSteps.stream()
                                 .filter(step -> !incomingIds.contains(step.getId()))
                                 .collect(Collectors.toList());
@@ -208,25 +208,17 @@ public class WorkflowService implements IWorkflowService {
                         stepRepository.deleteAllInBatch(stepsToDelete);
                 }
 
-                // 🔥 THE FIX: Temporarily shift all remaining existing steps to a safe index
-                // range
-                // This prevents the unique constraint violation when overlapping indexes during
-                // the update.
                 for (WorkflowStep step : existingMap.values()) {
                         if (incomingIds.contains(step.getId())) {
                                 step.setOrderIndex(step.getOrderIndex() + 10000);
                         }
                 }
-                // Flush immediately to push these temporary indexes to the database
                 stepRepository.flush();
 
-                // 4️⃣ Apply the new 1-based sequence
                 List<WorkflowStep> stepsToCreate = new ArrayList<>();
                 int currentIndex = 1;
 
                 for (WorkflowStepBulkRequest stepReq : request.getSteps()) {
-
-                        // 🔹 UPDATE
                         if (stepReq.getId() != null) {
                                 WorkflowStep step = existingMap.get(stepReq.getId());
                                 if (step == null) {
@@ -237,24 +229,26 @@ public class WorkflowService implements IWorkflowService {
                                 step.setName(stepReq.getName());
                                 step.setDescription(stepReq.getDescription());
                                 step.setOptional(stepReq.isOptional());
-                                step.setOrderIndex(currentIndex); // Now safe to set because previous indexes are
-                                                                  // shifted out
-                        }
-                        // 🔹 CREATE
-                        else {
+                                step.setExpectedDurationMinutes(stepReq.getExpectedDurationMinutes());
+                                step.setMaximumDurationMinutes(stepReq.getMaximumDurationMinutes());
+                                step.setOrderIndex(currentIndex);
+                        } else {
                                 stepsToCreate.add(
                                                 WorkflowStep.builder()
                                                                 .workflow(workflow)
                                                                 .name(stepReq.getName())
                                                                 .description(stepReq.getDescription())
                                                                 .optional(stepReq.isOptional())
+                                                                .expectedDurationMinutes(
+                                                                                stepReq.getExpectedDurationMinutes())
+                                                                .maximumDurationMinutes(
+                                                                                stepReq.getMaximumDurationMinutes())
                                                                 .orderIndex(currentIndex)
                                                                 .build());
                         }
                         currentIndex++;
                 }
 
-                // 5️⃣ Insert new steps
                 if (!stepsToCreate.isEmpty()) {
                         stepRepository.saveAll(stepsToCreate);
                 }
@@ -264,7 +258,6 @@ public class WorkflowService implements IWorkflowService {
 
         @Override
         public WorkflowWithStepsResponse getWorkflowWithSteps(Long workflowId, Long companyId) {
-
                 Workflow workflow = workflowRepository.findByIdAndCompanyId(workflowId, companyId)
                                 .orElseThrow(() -> new WorkflowNotFoundException("Workflow not found"));
 
@@ -301,7 +294,8 @@ public class WorkflowService implements IWorkflowService {
                                 .description(s.getDescription())
                                 .orderIndex(s.getOrderIndex())
                                 .optional(s.isOptional())
+                                .expectedDurationMinutes(s.getExpectedDurationMinutes())
+                                .maximumDurationMinutes(s.getMaximumDurationMinutes())
                                 .build();
         }
-
 }

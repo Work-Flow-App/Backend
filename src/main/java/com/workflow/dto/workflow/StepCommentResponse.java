@@ -14,6 +14,7 @@ public class StepCommentResponse {
     private String content;
     private StepDiscussionType type;
     private Long authorId;
+    private String authorUsername;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

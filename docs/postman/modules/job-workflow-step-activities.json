@@ -11,11 +11,20 @@
             "auth": {
               "type": "bearer",
               "bearer": [
-                { "key": "token", "value": "{{jwt_token}}", "type": "string" }
+                {
+                  "key": "token",
+                  "value": "{{jwt_token}}",
+                  "type": "string"
+                }
               ]
             },
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"content\": \"This step needs additional review before proceeding.\",\n  \"type\": \"GENERAL\"\n}"
@@ -32,7 +41,7 @@
               "status": "Created",
               "code": 201,
               "_postman_previewlanguage": "json",
-              "body": "{\n  \"id\": 1,\n  \"content\": \"This step needs additional review before proceeding.\",\n  \"type\": \"GENERAL\",\n  \"authorId\": 15,\n  \"createdAt\": \"2026-01-22T10:00:00\",\n  \"updatedAt\": \"2026-01-22T10:00:00\"\n}"
+              "body": "{\n  \"id\": 1,\n  \"content\": \"This step needs additional review before proceeding.\",\n  \"type\": \"GENERAL\",\n  \"authorId\": 15,\n  \"authorUsername\": \"manager.user\",\n  \"createdAt\": \"2026-01-22T10:00:00\",\n  \"updatedAt\": \"2026-01-22T10:00:00\"\n}"
             }
           ]
         },
@@ -42,11 +51,20 @@
             "auth": {
               "type": "bearer",
               "bearer": [
-                { "key": "token", "value": "{{jwt_token}}", "type": "string" }
+                {
+                  "key": "token",
+                  "value": "{{jwt_token}}",
+                  "type": "string"
+                }
               ]
             },
             "method": "PUT",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"content\": \"Updated comment content with more details.\",\n  \"type\": \"ISSUE\"\n}"
@@ -63,7 +81,7 @@
               "status": "OK",
               "code": 200,
               "_postman_previewlanguage": "json",
-              "body": "{\n  \"id\": 1,\n  \"content\": \"Updated comment content with more details.\",\n  \"type\": \"ISSUE\",\n  \"authorId\": 15,\n  \"createdAt\": \"2026-01-22T10:00:00\",\n  \"updatedAt\": \"2026-01-22T10:30:00\"\n}"
+              "body": "{\n  \"id\": 1,\n  \"content\": \"Updated comment content with more details.\",\n  \"type\": \"ISSUE\",\n  \"authorId\": 15,\n  \"authorUsername\": \"manager.user\",\n  \"createdAt\": \"2026-01-22T10:00:00\",\n  \"updatedAt\": \"2026-01-22T10:30:00\"\n}"
             }
           ]
         },
@@ -73,7 +91,11 @@
             "auth": {
               "type": "bearer",
               "bearer": [
-                { "key": "token", "value": "{{jwt_token}}", "type": "string" }
+                {
+                  "key": "token",
+                  "value": "{{jwt_token}}",
+                  "type": "string"
+                }
               ]
             },
             "method": "DELETE",
@@ -97,7 +119,11 @@
             "auth": {
               "type": "bearer",
               "bearer": [
-                { "key": "token", "value": "{{jwt_token}}", "type": "string" }
+                {
+                  "key": "token",
+                  "value": "{{jwt_token}}",
+                  "type": "string"
+                }
               ]
             },
             "method": "GET",
@@ -113,7 +139,7 @@
               "status": "OK",
               "code": 200,
               "_postman_previewlanguage": "json",
-              "body": "[\n  {\n    \"id\": 1,\n    \"content\": \"Review started.\",\n    \"type\": \"GENERAL\",\n    \"authorId\": 15,\n    \"createdAt\": \"2026-01-22T10:00:00\",\n    \"updatedAt\": \"2026-01-22T10:00:00\"\n  }\n]"
+              "body": "[\n  {\n    \"id\": 1,\n    \"content\": \"Review started.\",\n    \"type\": \"GENERAL\",\n    \"authorId\": 15,\n    \"authorUsername\": \"manager.user\",\n    \"createdAt\": \"2026-01-22T10:00:00\",\n    \"updatedAt\": \"2026-01-22T10:00:00\"\n  }\n]"
             }
           ]
         }
@@ -128,7 +154,11 @@
             "auth": {
               "type": "bearer",
               "bearer": [
-                { "key": "token", "value": "{{jwt_token}}", "type": "string" }
+                {
+                  "key": "token",
+                  "value": "{{jwt_token}}",
+                  "type": "string"
+                }
               ]
             },
             "method": "POST",
@@ -136,8 +166,16 @@
             "body": {
               "mode": "formdata",
               "formdata": [
-                { "key": "file", "type": "file", "src": "" },
-                { "key": "type", "value": "GENERAL", "type": "text" },
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": ""
+                },
+                {
+                  "key": "type",
+                  "value": "GENERAL",
+                  "type": "text"
+                },
                 {
                   "key": "description",
                   "value": "Initial inspection report",
@@ -157,7 +195,7 @@
               "status": "Created",
               "code": 201,
               "_postman_previewlanguage": "json",
-              "body": "{\n  \"id\": 1,\n  \"fileName\": \"inspection-report.pdf\",\n  \"fileType\": \"application/pdf\",\n  \"fileUrl\": \"https://s3.amazonaws.com/bucket/attachments/123-inspection-report.pdf\",\n  \"description\": \"Initial inspection report\",\n  \"type\": \"GENERAL\",\n  \"uploadedBy\": 15,\n  \"createdAt\": \"2026-01-22T10:00:00\"\n}"
+              "body": "{\n  \"id\": 1,\n  \"fileName\": \"inspection-report.pdf\",\n  \"fileType\": \"application/pdf\",\n  \"fileUrl\": \"https://s3.amazonaws.com/bucket/attachments/123-inspection-report.pdf\",\n  \"description\": \"Initial inspection report\",\n  \"type\": \"GENERAL\",\n  \"uploadedBy\": 15,\n  \"uploadedByUsername\": \"manager.user\",\n  \"createdAt\": \"2026-01-22T10:00:00\"\n}"
             }
           ]
         },
@@ -167,11 +205,20 @@
             "auth": {
               "type": "bearer",
               "bearer": [
-                { "key": "token", "value": "{{jwt_token}}", "type": "string" }
+                {
+                  "key": "token",
+                  "value": "{{jwt_token}}",
+                  "type": "string"
+                }
               ]
             },
             "method": "PUT",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"fileName\": \"updated-report.pdf\",\n  \"description\": \"Updated after review\",\n  \"type\": \"ISSUE\"\n}"
@@ -188,7 +235,7 @@
               "status": "OK",
               "code": 200,
               "_postman_previewlanguage": "json",
-              "body": "{\n  \"id\": 1,\n  \"fileName\": \"updated-report.pdf\",\n  \"fileType\": \"application/pdf\",\n  \"fileUrl\": \"https://s3.amazonaws.com/bucket/attachments/123-inspection-report.pdf\",\n  \"description\": \"Updated after review\",\n  \"type\": \"ISSUE\",\n  \"uploadedBy\": 15,\n  \"createdAt\": \"2026-01-22T10:00:00\"\n}"
+              "body": "{\n  \"id\": 1,\n  \"fileName\": \"updated-report.pdf\",\n  \"fileType\": \"application/pdf\",\n  \"fileUrl\": \"https://s3.amazonaws.com/bucket/attachments/123-inspection-report.pdf\",\n  \"description\": \"Updated after review\",\n  \"type\": \"ISSUE\",\n  \"uploadedBy\": 15,\n  \"uploadedByUsername\": \"manager.user\",\n  \"createdAt\": \"2026-01-22T10:00:00\"\n}"
             }
           ]
         },
@@ -198,7 +245,11 @@
             "auth": {
               "type": "bearer",
               "bearer": [
-                { "key": "token", "value": "{{jwt_token}}", "type": "string" }
+                {
+                  "key": "token",
+                  "value": "{{jwt_token}}",
+                  "type": "string"
+                }
               ]
             },
             "method": "DELETE",
@@ -222,7 +273,11 @@
             "auth": {
               "type": "bearer",
               "bearer": [
-                { "key": "token", "value": "{{jwt_token}}", "type": "string" }
+                {
+                  "key": "token",
+                  "value": "{{jwt_token}}",
+                  "type": "string"
+                }
               ]
             },
             "method": "GET",
@@ -238,7 +293,7 @@
               "status": "OK",
               "code": 200,
               "_postman_previewlanguage": "json",
-              "body": "[\n  {\n    \"id\": 1,\n    \"fileName\": \"inspection-report.pdf\",\n    \"fileType\": \"application/pdf\",\n    \"fileUrl\": \"https://s3.amazonaws.com/bucket/attachments/123-inspection-report.pdf\",\n    \"description\": \"Initial inspection report\",\n    \"type\": \"GENERAL\",\n    \"uploadedBy\": 15,\n    \"createdAt\": \"2026-01-22T10:00:00\"\n  }\n]"
+              "body": "[\n  {\n    \"id\": 1,\n    \"fileName\": \"inspection-report.pdf\",\n    \"fileType\": \"application/pdf\",\n    \"fileUrl\": \"https://s3.amazonaws.com/bucket/attachments/123-inspection-report.pdf\",\n    \"description\": \"Initial inspection report\",\n    \"type\": \"GENERAL\",\n    \"uploadedBy\": 15,\n    \"uploadedByUsername\": \"manager.user\",\n    \"createdAt\": \"2026-01-22T10:00:00\"\n  }\n]"
             }
           ]
         }
@@ -253,7 +308,11 @@
             "auth": {
               "type": "bearer",
               "bearer": [
-                { "key": "token", "value": "{{jwt_token}}", "type": "string" }
+                {
+                  "key": "token",
+                  "value": "{{jwt_token}}",
+                  "type": "string"
+                }
               ]
             },
             "method": "GET",
@@ -269,7 +328,7 @@
               "status": "OK",
               "code": 200,
               "_postman_previewlanguage": "json",
-              "body": "[\n  {\n    \"id\": 1,\n    \"itemType\": \"COMMENT\",\n    \"content\": \"Starting inspection process.\",\n    \"discussionType\": \"GENERAL\",\n    \"actorId\": 15,\n    \"createdAt\": \"2026-01-22T10:00:00\"\n  },\n  {\n    \"id\": 2,\n    \"itemType\": \"ATTACHMENT\",\n    \"content\": \"inspection-report.pdf\",\n    \"fileUrl\": \"https://s3.amazonaws.com/bucket/...\",\n    \"discussionType\": \"GENERAL\",\n    \"description\": \"Initial inspection report\",\n    \"actorId\": 15,\n    \"createdAt\": \"2026-01-22T10:15:00\"\n  }\n]"
+              "body": "[\n  {\n    \"id\": 1,\n    \"itemType\": \"COMMENT\",\n    \"content\": \"Starting inspection process.\",\n    \"discussionType\": \"GENERAL\",\n    \"actorId\": 15,\n    \"actorUsername\": \"manager.user\",\n    \"createdAt\": \"2026-01-22T10:00:00\"\n  },\n  {\n    \"id\": 2,\n    \"itemType\": \"ATTACHMENT\",\n    \"content\": \"inspection-report.pdf\",\n    \"fileUrl\": \"https://s3.amazonaws.com/bucket/...\",\n    \"discussionType\": \"GENERAL\",\n    \"description\": \"Initial inspection report\",\n    \"actorId\": 15,\n    \"actorUsername\": \"manager.user\",\n    \"createdAt\": \"2026-01-22T10:15:00\"\n  }\n]"
             }
           ]
         }

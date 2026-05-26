@@ -11,5 +11,6 @@ public class StepActivityResponse {
     private String type;
     private String message;
     private Long actorId;
+    private String actorUsername;
     private LocalDateTime createdAt;
 }

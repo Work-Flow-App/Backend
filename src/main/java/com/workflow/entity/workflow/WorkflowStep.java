@@ -30,4 +30,11 @@ public class WorkflowStep {
 
     @Builder.Default
     private boolean optional = false;
+
+    // SLA Fields (Stored in minutes: 4 Days = 5760 minutes)
+    @Column(name = "expected_duration_minutes")
+    private Integer expectedDurationMinutes; // Triggers Attention Needed
+
+    @Column(name = "maximum_duration_minutes")
+    private Integer maximumDurationMinutes;  // Triggers Breached
 }

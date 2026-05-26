@@ -1,17 +1,23 @@
 package com.workflow.service.estimate;
 
+import com.workflow.common.constant.financial.LineItemStatus;
 import com.workflow.common.exception.business.*;
 import com.workflow.common.util.LineItemCalculator;
 import com.workflow.dto.estimate.*;
 import com.workflow.entity.company.Company;
 import com.workflow.entity.financial.Estimate;
+import com.workflow.entity.financial.EstimateLineItem;
 import com.workflow.entity.financial.LineItem;
 import com.workflow.repository.company.CompanyRepository;
+import com.workflow.repository.financial.EstimateLineItemRepository;
 import com.workflow.repository.financial.EstimateRepository;
 import com.workflow.repository.financial.LineItemRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -19,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class EstimateService implements IEstimateService {
 
     private final EstimateRepository estimateRepository;
+    private final EstimateLineItemRepository estimateLineItemRepository;
     private final LineItemRepository lineItemRepository;
     private final CompanyRepository companyRepository;
 
@@ -27,7 +34,7 @@ public class EstimateService implements IEstimateService {
     public EstimateResponse getEstimate(Long estimateId, Long companyId) {
         Estimate estimate = estimateRepository.findByIdAndCompanyId(estimateId, companyId)
                 .orElseThrow(() -> new EstimateNotFoundException("Estimate not found"));
-        return EstimateResponse.fromEntity(estimate);
+        return toResponse(estimate);
     }
 
     @Override
@@ -35,7 +42,7 @@ public class EstimateService implements IEstimateService {
     public EstimateResponse getEstimateByJob(Long jobId, Long companyId) {
         Estimate estimate = estimateRepository.findByJobIdAndCompanyId(jobId, companyId)
                 .orElseThrow(() -> new EstimateNotFoundException("Estimate not found for this job"));
-        return EstimateResponse.fromEntity(estimate);
+        return toResponse(estimate);
     }
 
     @Override
@@ -45,7 +52,7 @@ public class EstimateService implements IEstimateService {
 
         estimate.setNotes(request.getNotes());
         estimateRepository.save(estimate);
-        return EstimateResponse.fromEntity(estimate);
+        return toResponse(estimate);
     }
 
     @Override
@@ -63,23 +70,38 @@ public class EstimateService implements IEstimateService {
         Company company = companyRepository.findById(companyId)
                 .orElseThrow(() -> new CompanyNotFoundException("Company not found"));
 
-        LineItem item = LineItem.builder()
+        // Save to library
+        LineItem libraryItem = LineItem.builder()
                 .company(company)
                 .productCode(request.getProductCode())
                 .productDescription(request.getProductDescription())
                 .additionalDetails(request.getAdditionalDetails())
                 .unitPrice(request.getUnitPrice())
-                .coreOrSub(request.getCoreOrSub())
                 .quantity(request.getQuantity())
                 .vatRate(request.getVatRate())
                 .build();
+        LineItemCalculator.recalculate(libraryItem);
+        lineItemRepository.save(libraryItem);
 
-        LineItemCalculator.recalculate(item);
-        lineItemRepository.save(item);
-        estimate.getLineItems().add(item);
+        // Create job-scoped copy
+        EstimateLineItem estimateLineItem = EstimateLineItem.builder()
+                .estimate(estimate)
+                .sourceLineItemId(libraryItem.getId())
+                .productCode(libraryItem.getProductCode())
+                .productDescription(libraryItem.getProductDescription())
+                .additionalDetails(libraryItem.getAdditionalDetails())
+                .unitPrice(libraryItem.getUnitPrice())
+                .quantity(libraryItem.getQuantity())
+                .vatRate(libraryItem.getVatRate())
+                .netAmount(libraryItem.getNetAmount())
+                .vatAmount(libraryItem.getVatAmount())
+                .totalAmount(libraryItem.getTotalAmount())
+                .build();
+
+        estimate.getLineItems().add(estimateLineItem);
         estimateRepository.save(estimate);
 
-        return EstimateResponse.fromEntity(estimate);
+        return toResponse(estimate);
     }
 
     @Override
@@ -87,33 +109,106 @@ public class EstimateService implements IEstimateService {
         Estimate estimate = estimateRepository.findByIdAndCompanyId(estimateId, companyId)
                 .orElseThrow(() -> new EstimateNotFoundException("Estimate not found"));
 
-        LineItem lineItem = lineItemRepository.findByIdAndCompanyId(lineItemId, companyId)
+        LineItem libraryItem = lineItemRepository.findByIdAndCompanyId(lineItemId, companyId)
                 .orElseThrow(() -> new LineItemNotFoundException("Line item not found"));
 
-        boolean alreadyLinked = estimate.getLineItems().stream()
-                .anyMatch(l -> l.getId().equals(lineItemId));
+        // Create isolated job-scoped copy
+        EstimateLineItem estimateLineItem = EstimateLineItem.builder()
+                .estimate(estimate)
+                .sourceLineItemId(libraryItem.getId())
+                .productCode(libraryItem.getProductCode())
+                .productDescription(libraryItem.getProductDescription())
+                .additionalDetails(libraryItem.getAdditionalDetails())
+                .unitPrice(libraryItem.getUnitPrice())
+                .quantity(libraryItem.getQuantity())
+                .vatRate(libraryItem.getVatRate())
+                .netAmount(libraryItem.getNetAmount())
+                .vatAmount(libraryItem.getVatAmount())
+                .totalAmount(libraryItem.getTotalAmount())
+                .build();
 
-        if (!alreadyLinked) {
-            estimate.getLineItems().add(lineItem);
-            estimateRepository.save(estimate);
-        }
+        estimate.getLineItems().add(estimateLineItem);
+        estimateRepository.save(estimate);
 
-        return EstimateResponse.fromEntity(estimate);
+        return toResponse(estimate);
     }
 
     @Override
-    public EstimateResponse unlinkLineItem(Long estimateId, Long lineItemId, Long companyId) {
+    public EstimateResponse updateEstimateLineItem(Long estimateId, Long estimateLineItemId,
+                                                    LineItemUpdateRequest request, Long companyId) {
         Estimate estimate = estimateRepository.findByIdAndCompanyId(estimateId, companyId)
                 .orElseThrow(() -> new EstimateNotFoundException("Estimate not found"));
 
-        boolean removed = estimate.getLineItems().removeIf(l -> l.getId().equals(lineItemId));
+        EstimateLineItem item = estimate.getLineItems().stream()
+                .filter(eli -> eli.getId().equals(estimateLineItemId))
+                .findFirst()
+                .orElseThrow(() -> new LineItemNotFoundException("Line item not found on this estimate"));
 
-        if (!removed) {
-            throw new LineItemNotFoundException("Line item not linked to this estimate");
-        }
+        if (request.getProductCode() != null) item.setProductCode(request.getProductCode());
+        if (request.getProductDescription() != null) item.setProductDescription(request.getProductDescription());
+        if (request.getAdditionalDetails() != null) item.setAdditionalDetails(request.getAdditionalDetails());
+        if (request.getUnitPrice() != null) item.setUnitPrice(request.getUnitPrice());
+        if (request.getQuantity() != null) item.setQuantity(request.getQuantity());
+        if (request.getVatRate() != null) item.setVatRate(request.getVatRate());
 
+        LineItemCalculator.recalculate(item);
         estimateRepository.save(estimate);
-        return EstimateResponse.fromEntity(estimate);
+        return toResponse(estimate);
     }
 
+    @Override
+    public EstimateResponse unlinkLineItem(Long estimateId, Long estimateLineItemId, Long companyId) {
+        Estimate estimate = estimateRepository.findByIdAndCompanyId(estimateId, companyId)
+                .orElseThrow(() -> new EstimateNotFoundException("Estimate not found"));
+
+        EstimateLineItem toRemove = estimate.getLineItems().stream()
+                .filter(eli -> eli.getId().equals(estimateLineItemId))
+                .findFirst()
+                .orElseThrow(() -> new LineItemNotFoundException("Line item not found on this estimate"));
+
+        if (toRemove.getStatus() == LineItemStatus.INVOICED) {
+            throw new InvalidRequestException("Cannot remove an invoiced line item");
+        }
+        if (toRemove.getStatus() == LineItemStatus.WAITING_APPROVAL) {
+            throw new InvalidRequestException("Cannot remove a line item pending approval");
+        }
+
+        estimate.getLineItems().remove(toRemove);
+
+        estimateRepository.save(estimate);
+        return toResponse(estimate);
+    }
+
+    @Override
+    public EstimateResponse updateEstimateLineItemStatus(Long estimateId, Long estimateLineItemId,
+                                                          LineItemStatusUpdateRequest request, Long companyId) {
+        estimateRepository.findByIdAndCompanyId(estimateId, companyId)
+                .orElseThrow(() -> new EstimateNotFoundException("Estimate not found"));
+
+        EstimateLineItem item = estimateLineItemRepository
+                .findByIdAndEstimateId(estimateLineItemId, estimateId)
+                .orElseThrow(() -> new LineItemNotFoundException("Line item not found on this estimate"));
+
+        if (request.getStatus() != LineItemStatus.APPROVED) {
+            throw new InvalidRequestException("Only APPROVED can be set via this endpoint");
+        }
+        if (item.getStatus() == LineItemStatus.INVOICED) {
+            throw new InvalidRequestException("Cannot change status of an invoiced line item");
+        }
+
+        item.setStatus(request.getStatus());
+        estimateLineItemRepository.save(item);
+
+        Estimate estimate = estimateRepository.findByIdAndCompanyId(estimateId, companyId)
+                .orElseThrow(() -> new EstimateNotFoundException("Estimate not found"));
+        return toResponse(estimate);
+    }
+
+    private EstimateResponse toResponse(Estimate estimate) {
+        Set<Long> invoicedIds = estimate.getLineItems().stream()
+                .filter(eli -> eli.getStatus() == LineItemStatus.INVOICED)
+                .map(EstimateLineItem::getId)
+                .collect(Collectors.toSet());
+        return EstimateResponse.fromEntity(estimate, invoicedIds);
+    }
 }

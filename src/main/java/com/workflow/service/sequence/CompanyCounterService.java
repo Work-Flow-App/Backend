@@ -85,6 +85,15 @@ public class CompanyCounterService {
         return next;
     }
 
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public long nextEstimateDocumentId(Long companyId) {
+        CompanyCounters c = getOrCreate(companyId);
+        long next = c.getNextEstimateDocumentId();
+        c.setNextEstimateDocumentId(next + 1);
+        countersRepository.save(c);
+        return next;
+    }
+
     private CompanyCounters getOrCreate(Long companyId) {
         return countersRepository.findByIdWithLock(companyId)
                 .orElseGet(() -> CompanyCounters.builder()

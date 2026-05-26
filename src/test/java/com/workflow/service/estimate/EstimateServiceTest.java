@@ -1,13 +1,15 @@
 package com.workflow.service.estimate;
 
-import com.workflow.common.constant.CoreOrSub;
+import com.workflow.common.constant.financial.LineItemStatus;
 import com.workflow.common.exception.business.*;
 import com.workflow.dto.estimate.*;
 import com.workflow.entity.company.Company;
 import com.workflow.entity.financial.Estimate;
+import com.workflow.entity.financial.EstimateLineItem;
 import com.workflow.entity.job.Job;
 import com.workflow.entity.financial.LineItem;
 import com.workflow.repository.company.CompanyRepository;
+import com.workflow.repository.financial.EstimateLineItemRepository;
 import com.workflow.repository.financial.EstimateRepository;
 import com.workflow.repository.financial.LineItemRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -30,6 +32,7 @@ import static org.mockito.Mockito.*;
 class EstimateServiceTest {
 
     @Mock private EstimateRepository estimateRepository;
+    @Mock private EstimateLineItemRepository estimateLineItemRepository;
     @Mock private LineItemRepository lineItemRepository;
     @Mock private CompanyRepository companyRepository;
 
@@ -98,7 +101,7 @@ class EstimateServiceTest {
         // net = 50 × 2 = 100, vat = 100 × 19% = 19, total = 119
         LineItemCreateRequest request = LineItemCreateRequest.builder()
                 .productCode("P001").productDescription("Labour")
-                .unitPrice(new BigDecimal("50.00")).coreOrSub(CoreOrSub.CORE)
+                .unitPrice(new BigDecimal("50.00"))
                 .quantity(new BigDecimal("2.0000")).vatRate(new BigDecimal("19.00"))
                 .build();
 
@@ -110,7 +113,7 @@ class EstimateServiceTest {
         EstimateResponse response = estimateService.createAndLinkLineItem(100L, request, 1L);
 
         assertThat(response.getLineItems()).hasSize(1);
-        LineItemResponse item = response.getLineItems().get(0);
+        EstimateLineItemResponse item = response.getLineItems().get(0);
         assertThat(item.getNetAmount()).isEqualByComparingTo("100.00");
         assertThat(item.getVatAmount()).isEqualByComparingTo("19.00");
         assertThat(item.getTotalAmount()).isEqualByComparingTo("119.00");
@@ -123,7 +126,7 @@ class EstimateServiceTest {
         when(estimateRepository.findByIdAndCompanyId(999L, 1L)).thenReturn(Optional.empty());
         assertThatThrownBy(() -> estimateService.createAndLinkLineItem(999L,
                 LineItemCreateRequest.builder().productCode("P").productDescription("D")
-                        .unitPrice(BigDecimal.TEN).coreOrSub(CoreOrSub.CORE)
+                        .unitPrice(BigDecimal.TEN)
                         .quantity(BigDecimal.ONE).vatRate(new BigDecimal("0.19")).build(), 1L))
                 .isInstanceOf(EstimateNotFoundException.class);
         verify(lineItemRepository, never()).save(any());
@@ -134,6 +137,9 @@ class EstimateServiceTest {
     @Test
     void linkExistingLineItem_ShouldLinkSuccessfully() {
         LineItem lineItem = LineItem.builder().id(200L).company(company)
+                .productCode("P001").productDescription("Labour")
+                .unitPrice(new BigDecimal("100.00"))
+                .quantity(new BigDecimal("1.0000")).vatRate(new BigDecimal("19.00"))
                 .netAmount(new BigDecimal("100.00")).vatAmount(new BigDecimal("19.00"))
                 .totalAmount(new BigDecimal("119.00")).build();
 
@@ -145,21 +151,6 @@ class EstimateServiceTest {
 
         assertThat(response.getLineItems()).hasSize(1);
         assertThat(response.getGrandTotal()).isEqualByComparingTo("119.00");
-    }
-
-    @Test
-    void linkExistingLineItem_ShouldBeIdempotent_WhenAlreadyLinked() {
-        LineItem lineItem = LineItem.builder().id(200L).company(company)
-                .netAmount(BigDecimal.ZERO).vatAmount(BigDecimal.ZERO).totalAmount(BigDecimal.ZERO).build();
-        estimate.getLineItems().add(lineItem); // already linked
-
-        when(estimateRepository.findByIdAndCompanyId(100L, 1L)).thenReturn(Optional.of(estimate));
-        when(lineItemRepository.findByIdAndCompanyId(200L, 1L)).thenReturn(Optional.of(lineItem));
-
-        EstimateResponse response = estimateService.linkExistingLineItem(100L, 200L, 1L);
-
-        assertThat(response.getLineItems()).hasSize(1); // not duplicated
-        verify(estimateRepository, never()).save(any()); // no redundant save
     }
 
     @Test
@@ -175,10 +166,16 @@ class EstimateServiceTest {
 
     @Test
     void unlinkLineItem_ShouldRemoveFromEstimateOnly() {
-        LineItem lineItem = LineItem.builder().id(200L).company(company)
+        EstimateLineItem estimateLineItem = EstimateLineItem.builder()
+                .id(200L).estimate(estimate)
+                .productCode("P001").productDescription("Labour")
+                .unitPrice(new BigDecimal("100.00"))
+                .quantity(new BigDecimal("1.0000")).vatRate(new BigDecimal("19.00"))
                 .netAmount(new BigDecimal("100.00")).vatAmount(new BigDecimal("19.00"))
-                .totalAmount(new BigDecimal("119.00")).build();
-        estimate.getLineItems().add(lineItem);
+                .totalAmount(new BigDecimal("119.00"))
+                .status(LineItemStatus.AVAILABLE)
+                .build();
+        estimate.getLineItems().add(estimateLineItem);
 
         when(estimateRepository.findByIdAndCompanyId(100L, 1L)).thenReturn(Optional.of(estimate));
         when(estimateRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
@@ -187,7 +184,6 @@ class EstimateServiceTest {
 
         assertThat(response.getLineItems()).isEmpty();
         assertThat(response.getGrandTotal()).isEqualByComparingTo(BigDecimal.ZERO);
-        // Line item itself must NOT be deleted
         verify(lineItemRepository, never()).delete(any());
     }
 
@@ -196,18 +192,23 @@ class EstimateServiceTest {
         when(estimateRepository.findByIdAndCompanyId(100L, 1L)).thenReturn(Optional.of(estimate));
 
         assertThatThrownBy(() -> estimateService.unlinkLineItem(100L, 999L, 1L))
-                .isInstanceOf(LineItemNotFoundException.class)
-                .hasMessageContaining("not linked");
+                .isInstanceOf(LineItemNotFoundException.class);
     }
 
     // ============= Aggregate totals =============
 
     @Test
     void aggregateTotals_ShouldSumAcrossAllLinkedItems() {
-        LineItem item1 = LineItem.builder().id(1L).company(company)
+        EstimateLineItem item1 = EstimateLineItem.builder()
+                .id(1L).estimate(estimate).status(LineItemStatus.AVAILABLE)
+                .productCode("P001").productDescription("Labour")
+                .unitPrice(new BigDecimal("100.00")).quantity(new BigDecimal("1.0000")).vatRate(new BigDecimal("19.00"))
                 .netAmount(new BigDecimal("100.00")).vatAmount(new BigDecimal("19.00"))
                 .totalAmount(new BigDecimal("119.00")).build();
-        LineItem item2 = LineItem.builder().id(2L).company(company)
+        EstimateLineItem item2 = EstimateLineItem.builder()
+                .id(2L).estimate(estimate).status(LineItemStatus.AVAILABLE)
+                .productCode("P002").productDescription("Materials")
+                .unitPrice(new BigDecimal("200.00")).quantity(new BigDecimal("1.0000")).vatRate(new BigDecimal("19.00"))
                 .netAmount(new BigDecimal("200.00")).vatAmount(new BigDecimal("38.00"))
                 .totalAmount(new BigDecimal("238.00")).build();
         estimate.getLineItems().add(item1);

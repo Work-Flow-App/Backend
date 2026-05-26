@@ -50,6 +50,7 @@ import com.workflow.repository.asset.AssetRepository;
 import com.workflow.repository.customer.ClientRepository;
 import com.workflow.repository.company.CompanyRepository;
 import com.workflow.repository.customer.CustomerRepository;
+import com.workflow.repository.financial.EstimateDocumentRepository;
 import com.workflow.repository.financial.EstimateRepository;
 import com.workflow.repository.financial.InvoiceRepository;
 import com.workflow.repository.job.JobFieldValueRepository;
@@ -82,6 +83,7 @@ public class JobService implements IJobService {
         private final AssetJobAssignmentRepository assetJobAssignmentRepository;
         private final WorkflowRepository workflowRepository;
         private final JobWorkflowRepository jobWorkflowRepository;
+        private final EstimateDocumentRepository estimateDocumentRepository;
         private final EstimateRepository estimateRepository;
         private final InvoiceRepository invoiceRepository;
         private final IJobWorkflowService jobWorkflowService;
@@ -404,7 +406,11 @@ public class JobService implements IJobService {
                 // Bulk-delete all asset assignments for this job (RESTRICT FK — must go before job).
                 assetJobAssignmentRepository.deleteByJobId(jobId);
 
-                // Bulk-delete invoice line item snapshots and invoices before the job delete
+                // estimate_documents.estimate_id is RESTRICT — must delete before estimate cascade.
+                // Snapshots inside EstimateDocument cascade via fk_jlis_estimate_document ON DELETE CASCADE.
+                estimateDocumentRepository.deleteByEstimateJobId(jobId);
+
+                // Bulk-delete invoice snapshots and invoices before the job delete
                 // triggers ON DELETE CASCADE on estimates. invoices.estimate_id is RESTRICT.
                 invoiceRepository.deleteLineItemSnapshotsByJobId(jobId);
                 invoiceRepository.deleteByJobId(jobId);

@@ -35,14 +35,9 @@ public class Estimate {
     @Column(length = 500)
     private String notes;
 
-    @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(
-            name = "estimate_line_items",
-            joinColumns = @JoinColumn(name = "estimate_id"),
-            inverseJoinColumns = @JoinColumn(name = "line_item_id")
-    )
+    @OneToMany(mappedBy = "estimate", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
-    private List<LineItem> lineItems = new ArrayList<>();
+    private List<EstimateLineItem> lineItems = new ArrayList<>();
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)

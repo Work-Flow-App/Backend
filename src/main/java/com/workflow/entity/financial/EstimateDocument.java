@@ -18,8 +18,8 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 @Entity
-@Table(name = "invoices")
-public class Invoice {
+@Table(name = "estimate_documents")
+public class EstimateDocument {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -33,22 +33,16 @@ public class Invoice {
     @JoinColumn(name = "company_id", nullable = false)
     private Company company;
 
-    @Column(name = "invoice_number", nullable = false, length = 50)
-    private String invoiceNumber;
+    @Column(name = "document_number", nullable = false, length = 50)
+    private String documentNumber;
 
     @Column(name = "s3_key", nullable = false, length = 500)
     private String s3Key;
 
-    @OneToMany(mappedBy = "invoice", cascade = CascadeType.ALL, orphanRemoval = true,
+    @OneToMany(mappedBy = "estimateDocument", cascade = CascadeType.ALL, orphanRemoval = true,
                fetch = FetchType.LAZY)
     @Builder.Default
     private List<JobLineItemSnapshot> lineItemSnapshots = new ArrayList<>();
-
-    @Column(name = "due_date")
-    private LocalDate dueDate;
-
-    @Column(name = "reference", length = 100)
-    private String reference;
 
     @Column(name = "total_net", nullable = false, precision = 10, scale = 2)
     private BigDecimal totalNet;
@@ -58,6 +52,15 @@ public class Invoice {
 
     @Column(name = "grand_total", nullable = false, precision = 10, scale = 2)
     private BigDecimal grandTotal;
+
+    @Column(name = "valid_until")
+    private LocalDate validUntil;
+
+    @Column(name = "reference", length = 100)
+    private String reference;
+
+    @Column(name = "notes", length = 500)
+    private String notes;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)

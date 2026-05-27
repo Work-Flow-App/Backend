@@ -1,6 +1,5 @@
 package com.workflow.dto.estimate;
 
-import com.workflow.common.constant.CoreOrSub;
 import com.workflow.entity.financial.LineItem;
 import lombok.*;
 
@@ -19,13 +18,11 @@ public class LineItemResponse {
     private String productDescription;
     private String additionalDetails;
     private BigDecimal unitPrice;
-    private CoreOrSub coreOrSub;
     private BigDecimal quantity;
     private BigDecimal vatRate;
     private BigDecimal netAmount;
     private BigDecimal vatAmount;
     private BigDecimal totalAmount;
-    private boolean invoiced;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -37,13 +34,11 @@ public class LineItemResponse {
                 .productDescription(item.getProductDescription())
                 .additionalDetails(item.getAdditionalDetails())
                 .unitPrice(item.getUnitPrice())
-                .coreOrSub(item.getCoreOrSub())
                 .quantity(item.getQuantity())
                 .vatRate(item.getVatRate())
                 .netAmount(item.getNetAmount())
                 .vatAmount(item.getVatAmount())
                 .totalAmount(item.getTotalAmount())
-                .invoiced(item.isInvoiced())
                 .createdAt(item.getCreatedAt())
                 .updatedAt(item.getUpdatedAt())
                 .build();

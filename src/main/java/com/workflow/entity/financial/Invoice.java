@@ -42,7 +42,7 @@ public class Invoice {
     @OneToMany(mappedBy = "invoice", cascade = CascadeType.ALL, orphanRemoval = true,
                fetch = FetchType.LAZY)
     @Builder.Default
-    private List<InvoiceLineItemSnapshot> lineItemSnapshots = new ArrayList<>();
+    private List<JobLineItemSnapshot> lineItemSnapshots = new ArrayList<>();
 
     @Column(name = "due_date")
     private LocalDate dueDate;

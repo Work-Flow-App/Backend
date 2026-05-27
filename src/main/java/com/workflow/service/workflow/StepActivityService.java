@@ -92,6 +92,7 @@ public class StepActivityService implements IStepActivityService {
                 .type(a.getType().name())
                 .message(a.getMessage())
                 .actorId(a.getActor().getId())
+                .actorUsername(a.getActor().getUsername())
                 .createdAt(a.getCreatedAt())
                 .build();
     }

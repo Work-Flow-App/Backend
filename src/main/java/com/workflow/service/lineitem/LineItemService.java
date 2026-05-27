@@ -1,7 +1,6 @@
 package com.workflow.service.lineitem;
 
 import com.workflow.common.exception.business.CompanyNotFoundException;
-import com.workflow.common.exception.business.LineItemInUseException;
 import com.workflow.common.exception.business.LineItemNotFoundException;
 import com.workflow.common.util.LineItemCalculator;
 import com.workflow.dto.estimate.LineItemCreateRequest;
@@ -37,7 +36,6 @@ public class LineItemService implements ILineItemService {
                 .productDescription(request.getProductDescription())
                 .additionalDetails(request.getAdditionalDetails())
                 .unitPrice(request.getUnitPrice())
-                .coreOrSub(request.getCoreOrSub())
                 .quantity(request.getQuantity())
                 .vatRate(request.getVatRate())
                 .build();
@@ -72,7 +70,6 @@ public class LineItemService implements ILineItemService {
         if (request.getProductDescription() != null) item.setProductDescription(request.getProductDescription());
         if (request.getAdditionalDetails() != null) item.setAdditionalDetails(request.getAdditionalDetails());
         if (request.getUnitPrice() != null) item.setUnitPrice(request.getUnitPrice());
-        if (request.getCoreOrSub() != null) item.setCoreOrSub(request.getCoreOrSub());
         if (request.getQuantity() != null) item.setQuantity(request.getQuantity());
         if (request.getVatRate() != null) item.setVatRate(request.getVatRate());
 
@@ -85,9 +82,6 @@ public class LineItemService implements ILineItemService {
     public void deleteLineItem(Long id, Long companyId) {
         LineItem item = lineItemRepository.findByIdAndCompanyId(id, companyId)
                 .orElseThrow(() -> new LineItemNotFoundException("Line item not found"));
-        if (item.isInvoiced()) {
-            throw new LineItemInUseException("Cannot delete a line item that has been invoiced");
-        }
         lineItemRepository.delete(item);
     }
 }

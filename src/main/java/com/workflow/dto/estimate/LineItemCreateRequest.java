@@ -1,6 +1,5 @@
 package com.workflow.dto.estimate;
 
-import com.workflow.common.constant.CoreOrSub;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
@@ -26,9 +25,6 @@ public class LineItemCreateRequest {
     @NotNull(message = "Unit price is required")
     @DecimalMin(value = "0", message = "Unit price must be zero or greater")
     private BigDecimal unitPrice;
-
-    @NotNull(message = "Core or Sub is required")
-    private CoreOrSub coreOrSub;
 
     @NotNull(message = "Quantity is required")
     @DecimalMin(value = "0", inclusive = false, message = "Quantity must be greater than zero")

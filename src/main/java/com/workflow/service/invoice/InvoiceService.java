@@ -10,13 +10,15 @@ import com.workflow.entity.company.CompanyAddress;
 import com.workflow.entity.company.CompanyBankDetails;
 import com.workflow.entity.customer.Customer;
 import com.workflow.entity.customer.CustomerAddress;
+import com.workflow.common.constant.financial.LineItemStatus;
+import com.workflow.common.constant.financial.SnapshotType;
 import com.workflow.entity.financial.Estimate;
+import com.workflow.entity.financial.EstimateLineItem;
 import com.workflow.entity.financial.Invoice;
-import com.workflow.entity.financial.InvoiceLineItemSnapshot;
-import com.workflow.entity.financial.LineItem;
+import com.workflow.entity.financial.JobLineItemSnapshot;
+import com.workflow.repository.financial.EstimateLineItemRepository;
 import com.workflow.repository.financial.EstimateRepository;
 import com.workflow.repository.financial.InvoiceRepository;
-import com.workflow.repository.financial.LineItemRepository;
 import com.workflow.service.sequence.CompanyCounterService;
 import com.workflow.service.storage.IStorageService;
 import com.workflow.templates.pdf.invoice.InvoicePdfRenderer;
@@ -41,7 +43,7 @@ public class InvoiceService implements IInvoiceService {
 
     private final InvoiceRepository invoiceRepository;
     private final EstimateRepository estimateRepository;
-    private final LineItemRepository lineItemRepository;
+    private final EstimateLineItemRepository estimateLineItemRepository;
     private final IStorageService storageService;
     private final InvoicePdfRenderer pdfRenderer;
     private final CompanyCounterService companyCounterService;
@@ -52,7 +54,7 @@ public class InvoiceService implements IInvoiceService {
                 .orElseThrow(() -> new EstimateNotFoundException("Estimate not found"));
 
         Set<Long> estimateLineItemIds = estimate.getLineItems().stream()
-                .map(LineItem::getId)
+                .map(EstimateLineItem::getId)
                 .collect(Collectors.toSet());
 
         List<Long> requestedIds = request.getLineItemIds();
@@ -65,46 +67,45 @@ public class InvoiceService implements IInvoiceService {
                     "Some selected line items do not belong to this estimate. Please verify your selection.");
         }
 
-        List<LineItem> selectedItems = estimate.getLineItems().stream()
-                .filter(li -> requestedIds.contains(li.getId()))
+        List<EstimateLineItem> selectedItems = estimate.getLineItems().stream()
+                .filter(eli -> requestedIds.contains(eli.getId()))
                 .collect(Collectors.toList());
 
-        List<Long> alreadyInvoicedIds = selectedItems.stream()
-                .filter(LineItem::isInvoiced)
-                .map(LineItem::getId)
+        List<Long> conflicts = selectedItems.stream()
+                .filter(eli -> eli.getStatus() == LineItemStatus.INVOICED)
+                .map(EstimateLineItem::getId)
                 .toList();
 
-        if (!alreadyInvoicedIds.isEmpty()) {
+        if (!conflicts.isEmpty()) {
             throw new InvalidRequestException(
-                    "Some selected line items have already been invoiced: " + alreadyInvoicedIds +
-                    ". Please remove them from your selection.");
+                    "Some selected line items have already been invoiced: " + conflicts);
         }
 
         BigDecimal totalNet = selectedItems.stream()
-                .map(LineItem::getNetAmount)
+                .map(EstimateLineItem::getNetAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         BigDecimal totalVat = selectedItems.stream()
-                .map(LineItem::getVatAmount)
+                .map(EstimateLineItem::getVatAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         BigDecimal grandTotal = selectedItems.stream()
-                .map(LineItem::getTotalAmount)
+                .map(EstimateLineItem::getTotalAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        List<InvoiceLineItemSnapshot> snapshots = selectedItems.stream()
-                .map(li -> InvoiceLineItemSnapshot.builder()
-                        .sourceLineItemId(li.getId())
-                        .productCode(li.getProductCode())
-                        .productDescription(li.getProductDescription())
-                        .additionalDetails(li.getAdditionalDetails())
-                        .unitPrice(li.getUnitPrice())
-                        .coreOrSub(li.getCoreOrSub())
-                        .quantity(li.getQuantity())
-                        .vatRate(li.getVatRate())
-                        .netAmount(li.getNetAmount())
-                        .vatAmount(li.getVatAmount())
-                        .totalAmount(li.getTotalAmount())
+        List<JobLineItemSnapshot> snapshots = selectedItems.stream()
+                .map(eli -> JobLineItemSnapshot.builder()
+                        .type(SnapshotType.INVOICE)
+                        .sourceLineItemId(eli.getId())
+                        .productCode(eli.getProductCode())
+                        .productDescription(eli.getProductDescription())
+                        .additionalDetails(eli.getAdditionalDetails())
+                        .unitPrice(eli.getUnitPrice())
+                        .quantity(eli.getQuantity())
+                        .vatRate(eli.getVatRate())
+                        .netAmount(eli.getNetAmount())
+                        .vatAmount(eli.getVatAmount())
+                        .totalAmount(eli.getTotalAmount())
                         .build())
                 .collect(Collectors.toList());
 
@@ -129,11 +130,11 @@ public class InvoiceService implements IInvoiceService {
         snapshots.forEach(s -> s.setInvoice(invoiceToSave));
         Invoice invoice = invoiceRepository.save(invoiceToSave);
 
+        List<Long> selectedIds = selectedItems.stream().map(EstimateLineItem::getId).toList();
+        estimateLineItemRepository.markAsInvoiced(selectedIds);
+
         byte[] pdfBytes = generatePdf(invoice, invoiceNumber, selectedItems, estimate);
         storageService.upload(s3Key, new ByteArrayInputStream(pdfBytes), pdfBytes.length, "application/pdf");
-
-        List<Long> selectedIds = selectedItems.stream().map(LineItem::getId).toList();
-        lineItemRepository.markAsInvoiced(selectedIds);
 
         String presignedUrl = storageService.generatePresignedUrl(s3Key);
         return InvoiceResponse.fromEntity(invoice, presignedUrl);
@@ -167,7 +168,7 @@ public class InvoiceService implements IInvoiceService {
         return InvoiceResponse.fromEntity(invoice, presignedUrl);
     }
 
-    private byte[] generatePdf(Invoice invoice, String invoiceNumber, List<LineItem> items, Estimate estimate) {
+    private byte[] generatePdf(Invoice invoice, String invoiceNumber, List<EstimateLineItem> items, Estimate estimate) {
         Company company = estimate.getCompany();
         Customer customer = estimate.getJob().getCustomer();
         CompanyBankDetails bankDetails = company.getBankDetails();
@@ -181,17 +182,17 @@ public class InvoiceService implements IInvoiceService {
                 .companyName(company.getName())
                 .companyAddressLines(companyAddressLines(company))
                 .vatNumber(company.getVatNumber())
-                .customerName(customer.getName())
-                .customerAddressLines(customerAddressLines(customer))
-                .lineItems(items.stream().map(li -> InvoiceTemplateData.LineItemRow.builder()
-                        .description(li.getProductDescription())
-                        .additionalDetails(li.getAdditionalDetails())
-                        .quantity(li.getQuantity().stripTrailingZeros().toPlainString())
-                        .unitPrice(formatAmount(li.getUnitPrice()))
-                        .vatDisplay(li.getVatRate().compareTo(BigDecimal.ZERO) == 0
+                .customerName(customer != null ? customer.getName() : null)
+                .customerAddressLines(customer != null ? customerAddressLines(customer) : List.of())
+                .lineItems(items.stream().map(eli -> InvoiceTemplateData.LineItemRow.builder()
+                        .description(eli.getProductDescription())
+                        .additionalDetails(eli.getAdditionalDetails())
+                        .quantity(eli.getQuantity().stripTrailingZeros().toPlainString())
+                        .unitPrice(formatAmount(eli.getUnitPrice()))
+                        .vatDisplay(eli.getVatRate().compareTo(BigDecimal.ZERO) == 0
                                 ? "No VAT"
-                                : li.getVatRate().stripTrailingZeros().toPlainString() + "%")
-                        .amount(formatAmount(li.getTotalAmount()))
+                                : eli.getVatRate().stripTrailingZeros().toPlainString() + "%")
+                        .amount(formatAmount(eli.getTotalAmount()))
                         .build()).collect(Collectors.toList()))
                 .subtotal(formatAmount(invoice.getTotalNet()))
                 .vatLabel(invoice.getTotalVat().compareTo(BigDecimal.ZERO) == 0 ? "TOTAL  NO VAT" : "TOTAL VAT")

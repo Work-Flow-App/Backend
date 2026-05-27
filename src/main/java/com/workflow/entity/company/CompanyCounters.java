@@ -40,4 +40,8 @@ public class CompanyCounters {
     @Column(name = "next_invoice_id", nullable = false)
     @Builder.Default
     private Long nextInvoiceId = 1L;
+
+    @Column(name = "next_estimate_document_id", nullable = false)
+    @Builder.Default
+    private Long nextEstimateDocumentId = 1L;
 }

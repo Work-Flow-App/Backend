@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <style>
+
+        @page {
+            size: A4;
+            margin: 15mm 15mm 15mm 15mm;
+        }
+
+        body {
+            font-family: Helvetica, Arial, sans-serif;
+            font-size: 9pt;
+            color: #000000;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* ── 3-column header table ── */
+        .header-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 22pt;
+        }
+        .header-table td {
+            vertical-align: top;
+            border: none;
+            padding: 0 8pt 0 0;
+        }
+        .col-customer { width: 40%; }
+        .col-meta     { width: 30%; }
+        .col-company  { width: 30%; padding-right: 0 !important; }
+
+        .tax-invoice-title {
+            font-size: 28pt;
+            font-weight: bold;
+            margin-bottom: 10pt;
+        }
+        .meta-label {
+            font-weight: bold;
+            margin-top: 6pt;
+            margin-bottom: 1pt;
+        }
+        .col-company-name {
+            font-weight: bold;
+            margin-bottom: 1pt;
+        }
+        .address-line {
+            margin: 0;
+            padding: 0;
+        }
+        .contact-line {
+            margin: 0;
+            padding: 0;
+            margin-top: 4pt;
+        }
+
+        /* ── Line items table ── */
+        .line-items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 0;
+        }
+        .line-items-table thead tr th {
+            border-top: 1pt solid #000000;
+            border-bottom: 1pt solid #000000;
+            padding: 5pt;
+            font-size: 9pt;
+            font-weight: bold;
+            text-align: left;
+        }
+        .line-items-table thead tr th.align-right {
+            text-align: right;
+        }
+        .line-items-table tbody tr td {
+            border-bottom: 1pt solid #cccccc;
+            padding: 5pt;
+            vertical-align: top;
+        }
+        .line-items-table tbody tr td.align-right {
+            text-align: right;
+        }
+        .item-name {
+            font-weight: bold;
+            margin-bottom: 1pt;
+        }
+        .additional-details {
+            font-size: 8pt;
+            color: #505050;
+            margin-top: 2pt;
+        }
+
+        /* ── Totals ── */
+        .totals-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 2pt;
+            margin-bottom: 22pt;
+        }
+        .totals-table td {
+            border: none;
+            padding: 4pt 5pt;
+        }
+        .totals-spacer {
+            width: 60%;
+        }
+        .totals-label {
+            text-align: right;
+            width: 22%;
+        }
+        .totals-value {
+            text-align: right;
+            width: 18%;
+        }
+        .grand-total td {
+            border-top: 1pt solid #000000;
+            font-weight: bold;
+        }
+
+        /* ── Valid Until ── */
+        .valid-until-section {
+            margin-top: 0;
+            margin-bottom: 18pt;
+            line-height: 1.7;
+        }
+        .valid-until-line {
+            font-size: 10pt;
+            font-weight: bold;
+            margin-bottom: 3pt;
+        }
+
+        /* ── Notes ── */
+        .notes-section {
+            margin-bottom: 18pt;
+        }
+        .notes-title {
+            font-weight: bold;
+            margin-bottom: 3pt;
+        }
+
+        /* ── Footer ── */
+        .footer {
+            padding-top: 8pt;
+            font-size: 8pt;
+            color: #505050;
+            border: none;
+        }
+
+        .footer-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 24pt;
+        }
+        .footer-table td {
+            border: none;
+            padding: 0;
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- ── 3-column header ── -->
+    <table class="header-table">
+        <tr>
+            <!-- Col 1: ESTIMATION + customer info -->
+            <td class="col-customer">
+                <div class="tax-invoice-title">ESTIMATION</div>
+                <div th:text="${data.customerName}">Customer Name</div>
+                <div th:each="line : ${data.customerAddressLines}"
+                     class="address-line"
+                     th:text="${line}">Address Line</div>
+            </td>
+
+            <!-- Col 2: Estimate metadata -->
+            <td class="col-meta">
+                <div class="meta-label">Estimate Date</div>
+                <div th:text="${data.estimateDate}">01 Jan 2026</div>
+
+                <div class="meta-label">Estimate No</div>
+                <div th:text="${data.documentNumber}">EST-2026-00001</div>
+
+                <div th:if="${data.validUntil != null and !#strings.isEmpty(data.validUntil)}">
+                    <div class="meta-label">Valid Until</div>
+                    <div th:text="${data.validUntil}">01 Apr 2026</div>
+                </div>
+
+                <div th:if="${data.reference != null and !#strings.isEmpty(data.reference)}">
+                    <div class="meta-label">Reference</div>
+                    <div th:text="${data.reference}">REF-001</div>
+                </div>
+
+                <div th:if="${data.vatNumber != null and !#strings.isEmpty(data.vatNumber)}">
+                    <div class="meta-label">VAT Number</div>
+                    <div th:text="${data.vatNumber}">GB123456789</div>
+                </div>
+            </td>
+
+            <!-- Col 3: Company address + contact -->
+            <td class="col-company">
+                <div class="col-company-name" th:text="${data.companyName}">Company Name</div>
+                <div th:each="line : ${data.companyAddressLines}"
+                     class="address-line"
+                     th:text="${line}">Address Line</div>
+                <div th:if="${data.companyEmail != null and !#strings.isEmpty(data.companyEmail)}"
+                     class="contact-line"
+                     th:text="${data.companyEmail}">email@company.com</div>
+                <div th:if="${data.companyPhone != null and !#strings.isEmpty(data.companyPhone)}"
+                     class="contact-line"
+                     th:text="${data.companyPhone}">+44 000 000 0000</div>
+            </td>
+        </tr>
+    </table>
+
+    <!-- ── Line items table ── -->
+    <table class="line-items-table">
+        <thead>
+            <tr>
+                <th>Item</th>
+                <th class="align-right">Quantity</th>
+                <th class="align-right">Unit Price</th>
+                <th class="align-right">VAT</th>
+                <th class="align-right">Amount GBP</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr th:each="item : ${data.lineItems}">
+                <td>
+                    <div th:if="${item.name != null and !#strings.isEmpty(item.name)}"
+                         class="item-name"
+                         th:text="${item.name}">Product Code</div>
+                    <span th:text="${item.description}">Description</span>
+                    <div class="additional-details"
+                         th:if="${item.additionalDetails != null and !#strings.isEmpty(item.additionalDetails)}"
+                         th:text="${item.additionalDetails}">Additional details</div>
+                </td>
+                <td class="align-right" th:text="${item.quantity}">1.00</td>
+                <td class="align-right" th:text="${item.unitPrice}">100.00</td>
+                <td class="align-right" th:text="${item.vatDisplay}">No VAT</td>
+                <td class="align-right" th:text="${item.amount}">100.00</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- ── Totals ── -->
+    <table class="totals-table">
+        <tr>
+            <td class="totals-spacer"></td>
+            <td class="totals-label">Subtotal</td>
+            <td class="totals-value" th:text="${data.subtotal}">0.00</td>
+        </tr>
+        <tr>
+            <td class="totals-spacer"></td>
+            <td class="totals-label" th:text="${data.vatLabel}">TOTAL  NO VAT</td>
+            <td class="totals-value" th:text="${data.totalVat}">0.00</td>
+        </tr>
+        <tr class="grand-total">
+            <td class="totals-spacer"></td>
+            <td class="totals-label">TOTAL GBP</td>
+            <td class="totals-value" th:text="${data.grandTotal}">0.00</td>
+        </tr>
+    </table>
+
+    <!-- ── Valid Until ── -->
+    <div class="valid-until-section"
+         th:if="${data.validUntil != null and !#strings.isEmpty(data.validUntil)}">
+        <div class="valid-until-line">
+            Valid Until: <span th:text="${data.validUntil}">01 Apr 2026</span>
+        </div>
+    </div>
+
+    <!-- ── Notes ── -->
+    <div class="notes-section"
+         th:if="${data.notes != null and !#strings.isEmpty(data.notes)}">
+        <div class="notes-title">Notes</div>
+        <div th:text="${data.notes}">Notes content</div>
+    </div>
+
+    <!-- ── Footer ── -->
+    <table class="footer-table"
+           th:if="${(data.vatNumber != null and !#strings.isEmpty(data.vatNumber)) or (data.footerAddress != null and !#strings.isEmpty(data.footerAddress))}">
+        <tr>
+            <td class="footer">
+                <span th:if="${data.vatNumber != null and !#strings.isEmpty(data.vatNumber)}">
+                    VAT Number: <span th:text="${data.vatNumber}">GB123456789</span>.&#160;&#160;
+                </span>
+                <span th:if="${data.footerAddress != null and !#strings.isEmpty(data.footerAddress)}">
+                    Registered Office: <span th:text="${data.footerAddress}">Address</span>.
+                </span>
+            </td>
+        </tr>
+    </table>
+
+</body>
+</html>

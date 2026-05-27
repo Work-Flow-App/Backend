@@ -25,5 +25,7 @@ public class StepTimelineItemResponse {
 
     private Long actorId;
 
+    private String actorUsername;
+
     private LocalDateTime createdAt;
 }

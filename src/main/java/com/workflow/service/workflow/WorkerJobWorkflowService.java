@@ -226,6 +226,7 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
                                                 .content(c.getContent())
                                                 .type(c.getType())
                                                 .authorId(c.getAuthor().getId())
+                                                .authorUsername(c.getAuthor().getUsername())
                                                 .createdAt(c.getCreatedAt())
                                                 .updatedAt(c.getUpdatedAt())
                                                 .build())
@@ -250,6 +251,7 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
                                                 .description(a.getDescription())
                                                 .type(a.getType())
                                                 .uploadedBy(a.getUploadedBy().getId())
+                                                .uploadedByUsername(a.getUploadedBy().getUsername())
                                                 .createdAt(a.getCreatedAt())
                                                 .build())
                                 .toList();
@@ -293,7 +295,6 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
         // ==========================================
         // STATUS ACTIONS
         // ==========================================
-
         @Override
         public JobWorkflowStepResponse startStep(Long stepId, Long workerUserId) {
                 Worker worker = getWorker(workerUserId);
@@ -302,11 +303,13 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
                 checkStepStatusTransition(step, WorkflowStepStatus.NOT_STARTED);
 
                 step.setStatus(WorkflowStepStatus.STARTED);
-                step.setStartedAt(LocalDateTime.now());
 
-                // If the parent workflow was NOT_STARTED, it should technically become STARTED
-                // now.
-                // We can update parent status:
+                // Start clock only if null, clear completedAt just in case of a reset
+                if (step.getStartedAt() == null) {
+                        step.setStartedAt(LocalDateTime.now());
+                }
+                step.setCompletedAt(null);
+
                 if (step.getJobWorkflow().getStatus() == WorkflowStepStatus.NOT_STARTED) {
                         step.getJobWorkflow().setStatus(WorkflowStepStatus.STARTED);
                 }
@@ -324,25 +327,22 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
                 Worker worker = getWorker(workerUserId);
                 JobWorkflowStep step = getAssignedStep(stepId, worker.getId());
 
-                // 1. Validate transition: Must be INITIATED to become ONGOING
                 checkStepStatusTransition(step, WorkflowStepStatus.INITIATED);
 
-                // 2. Update Step Status
                 step.setStatus(WorkflowStepStatus.ONGOING);
 
-                // Assuming you want to track when it actually became active
+                // SLA FIX: Start clock only if null, clear completedAt
                 if (step.getStartedAt() == null) {
                         step.setStartedAt(LocalDateTime.now());
                 }
+                step.setCompletedAt(null);
 
-                // Optional: Update parent workflow status if it's also INITIATED
                 if (step.getJobWorkflow().getStatus() == WorkflowStepStatus.INITIATED) {
                         step.getJobWorkflow().setStatus(WorkflowStepStatus.ONGOING);
                 }
 
                 stepRepository.save(step);
 
-                // 3. Log Activity
                 stepActivityService.log(step, worker.getUser(), JobWorkflowStepActivityType.STATUS_CHANGED,
                                 "Worker " + worker.getName() + " marked the step as ONGOING.");
 
@@ -354,47 +354,46 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
                 Worker worker = getWorker(workerUserId);
                 JobWorkflowStep step = getAssignedStep(stepId, worker.getId());
 
-                // 1. Validate transition: Must be ONGOING to become COMPLETED
                 checkStepStatusTransition(step, WorkflowStepStatus.ONGOING);
 
-                // 2. Update Step Status
                 step.setStatus(WorkflowStepStatus.COMPLETED);
                 step.setCompletedAt(LocalDateTime.now());
+
+                // SLA FIX: Edge case catch
+                if (step.getStartedAt() == null) {
+                        step.setStartedAt(LocalDateTime.now());
+                }
+
                 stepRepository.save(step);
 
-                // 3. Log Activity
                 stepActivityService.log(step, worker.getUser(), JobWorkflowStepActivityType.STATUS_CHANGED,
                                 "Worker " + worker.getName() + " marked the ongoing step as COMPLETED.");
 
-                // 4. Auto-complete Parent Workflow Check
                 checkAndUpdateParentWorkflowStatus(step.getJobWorkflow());
 
                 return mapStep(step);
         }
-
-        // ==========================================
-        // STATUS ACTIONS
-        // ==========================================
 
         @Override
         public JobWorkflowStepResponse completeStep(Long stepId, Long workerUserId) {
                 Worker worker = getWorker(workerUserId);
                 JobWorkflowStep step = getAssignedStep(stepId, worker.getId());
 
-                // 1. Validate transition
                 checkStepStatusTransition(step, WorkflowStepStatus.STARTED);
 
-                // 2. Update Step Status
                 step.setStatus(WorkflowStepStatus.COMPLETED);
                 step.setCompletedAt(LocalDateTime.now());
+
+                // SLA FIX: Edge case catch
+                if (step.getStartedAt() == null) {
+                        step.setStartedAt(LocalDateTime.now());
+                }
+
                 stepRepository.save(step);
 
-                // 3. Log Activity
                 stepActivityService.log(step, worker.getUser(), JobWorkflowStepActivityType.STATUS_CHANGED,
                                 "Worker " + worker.getName() + " completed the step.");
 
-                // 4. Auto-complete Parent Workflow Check
-                // We pass the parent workflow entity associated with this step
                 checkAndUpdateParentWorkflowStatus(step.getJobWorkflow());
 
                 return mapStep(step);
@@ -450,6 +449,7 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
                                 .content(comment.getContent())
                                 .type(comment.getType())
                                 .authorId(comment.getAuthor().getId())
+                                .authorUsername(comment.getAuthor().getUsername())
                                 .createdAt(comment.getCreatedAt())
                                 .updatedAt(comment.getUpdatedAt())
                                 .build();
@@ -530,6 +530,7 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
                                 .description(attachment.getDescription())
                                 .type(attachment.getType())
                                 .uploadedBy(attachment.getUploadedBy().getId())
+                                .uploadedByUsername(attachment.getUploadedBy().getUsername())
                                 .createdAt(attachment.getCreatedAt())
                                 .build();
         }

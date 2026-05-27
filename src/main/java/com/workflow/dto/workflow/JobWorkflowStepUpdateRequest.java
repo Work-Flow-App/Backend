@@ -32,4 +32,6 @@ public class JobWorkflowStepUpdateRequest {
      * empty set → remove all workers
      */
     private Set<Long> assignedWorkerIds;
+    private Integer expectedDurationMinutes;
+    private Integer maximumDurationMinutes;
 }

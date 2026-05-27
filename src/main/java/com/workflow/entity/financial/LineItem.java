@@ -1,6 +1,5 @@
 package com.workflow.entity.financial;
 
-import com.workflow.common.constant.CoreOrSub;
 import com.workflow.entity.company.Company;
 import jakarta.persistence.*;
 import lombok.*;
@@ -39,10 +38,6 @@ public class LineItem {
     @Column(name = "unit_price", nullable = false, precision = 10, scale = 2)
     private BigDecimal unitPrice;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "core_or_sub", nullable = false, length = 10)
-    private CoreOrSub coreOrSub;
-
     @Column(nullable = false, precision = 10, scale = 4)
     private BigDecimal quantity;
 
@@ -57,9 +52,6 @@ public class LineItem {
 
     @Column(name = "total_amount", nullable = false, precision = 10, scale = 2)
     private BigDecimal totalAmount;
-
-    @Column(nullable = false)
-    private boolean invoiced = false;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)

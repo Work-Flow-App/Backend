@@ -14,6 +14,7 @@ import com.workflow.repository.asset.AssetRepository;
 import com.workflow.repository.company.CompanyRepository;
 import com.workflow.repository.customer.ClientRepository;
 import com.workflow.repository.customer.CustomerRepository;
+import com.workflow.repository.financial.EstimateDocumentRepository;
 import com.workflow.repository.financial.EstimateRepository;
 import com.workflow.repository.financial.InvoiceRepository;
 import com.workflow.repository.job.JobFieldValueRepository;
@@ -21,6 +22,8 @@ import com.workflow.repository.job.JobRepository;
 import com.workflow.repository.job.JobTemplateFieldRepository;
 import com.workflow.repository.job.JobTemplateRepository;
 import com.workflow.repository.job.JobWorkflowRepository;
+import com.workflow.repository.job.JobWorkflowStepRepository;
+import com.workflow.repository.common.AddressRepository;
 import com.workflow.repository.workflow.WorkflowRepository;
 import com.workflow.service.sequence.CompanyCounterService;
 import com.workflow.service.workflow.IJobWorkflowService;
@@ -71,6 +74,9 @@ class JobServiceTest {
         private WorkflowRepository workflowRepository;
 
         @Mock
+        private EstimateDocumentRepository estimateDocumentRepository;
+
+        @Mock
         private EstimateRepository estimateRepository;
 
         @Mock
@@ -78,6 +84,12 @@ class JobServiceTest {
 
         @Mock
         private JobWorkflowRepository jobWorkflowRepository;
+
+        @Mock
+        private JobWorkflowStepRepository jobWorkflowStepRepository;
+
+        @Mock
+        private AddressRepository addressRepository;
 
         @Mock
         private IJobWorkflowService jobWorkflowService;

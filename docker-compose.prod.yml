@@ -55,7 +55,7 @@ services:
     env_file:
       - .env.prod
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:mysql://${DB_URL}:${DB_PORT}/${DB_NAME}
+      - SPRING_DATASOURCE_URL=jdbc:mysql://${DB_URL}:${DB_PORT}/${DB_NAME}?serverTimezone=UTC
       - SPRING_DATASOURCE_USERNAME=${DB_USERNAME}
       - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
       - JWT_SECRET=${JWT_SECRET}

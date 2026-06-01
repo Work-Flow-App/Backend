@@ -4,6 +4,8 @@ import com.workflow.common.constant.CompanyRole;
 
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+
 public record MemberResponse(
         Long memberId,
         Long userId,
@@ -12,5 +14,6 @@ public record MemberResponse(
         String name,
         CompanyRole companyRole,
         boolean active,
+        @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'", timezone = "UTC")
         LocalDateTime joinedAt
 ) {}

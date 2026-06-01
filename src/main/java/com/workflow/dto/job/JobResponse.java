@@ -4,6 +4,9 @@ import com.workflow.common.constant.job.JobStatus;
 
 import lombok.*;
 import java.time.LocalDateTime;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
+
 import java.util.List;
 import java.util.Map;
 
@@ -22,7 +25,9 @@ public class JobResponse {
     private Long workflowId;
     private JobStatus status;
     private boolean archived;
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'", timezone = "UTC")
     private LocalDateTime createdAt;
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'", timezone = "UTC")
     private LocalDateTime updatedAt;
     private Map<Long, FieldValueResponse> fieldValues;
     private List<Long> assetIds;

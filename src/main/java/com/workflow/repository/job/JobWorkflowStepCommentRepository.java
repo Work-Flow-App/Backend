@@ -13,4 +13,6 @@ public interface JobWorkflowStepCommentRepository
 
     @Query("SELECT c FROM JobWorkflowStepComment c JOIN FETCH c.author WHERE c.step.id = :stepId ORDER BY c.createdAt ASC")
     List<JobWorkflowStepComment> findByStepIdOrderByCreatedAtAsc(@Param("stepId") Long stepId);
+
+    boolean existsByStepId(Long stepId);
 }

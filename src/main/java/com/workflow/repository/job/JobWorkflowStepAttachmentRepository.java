@@ -13,4 +13,6 @@ public interface JobWorkflowStepAttachmentRepository
 
     @Query("SELECT a FROM JobWorkflowStepAttachment a JOIN FETCH a.uploadedBy WHERE a.step.id = :stepId ORDER BY a.createdAt ASC")
     List<JobWorkflowStepAttachment> findByStepIdOrderByCreatedAtAsc(@Param("stepId") Long stepId);
+
+    boolean existsByStepId(Long stepId);
 }

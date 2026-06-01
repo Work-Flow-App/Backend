@@ -411,9 +411,10 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
                 List<JobWorkflowStep> allSteps = stepRepository
                                 .findByJobWorkflowIdOrderByOrderIndexAsc(jobWorkflow.getId());
 
-                // Check if every single step is COMPLETED
+                // Check if every single step is safely resolved (COMPLETED or SKIPPED)
                 boolean allCompleted = allSteps.stream()
-                                .allMatch(s -> s.getStatus() == WorkflowStepStatus.COMPLETED);
+                                .allMatch(s -> s.getStatus() == WorkflowStepStatus.COMPLETED ||
+                                                s.getStatus() == WorkflowStepStatus.SKIPPED);
 
                 if (allCompleted) {
                         jobWorkflow.setStatus(WorkflowStepStatus.COMPLETED);

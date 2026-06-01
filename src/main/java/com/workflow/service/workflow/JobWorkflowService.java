@@ -35,7 +35,11 @@ import com.workflow.entity.workflow.Workflow;
 import com.workflow.entity.workflow.WorkflowStep;
 import com.workflow.repository.job.JobRepository;
 import com.workflow.repository.job.JobWorkflowRepository;
+import com.workflow.repository.job.JobWorkflowStepActivityRepository;
+import com.workflow.repository.job.JobWorkflowStepAttachmentRepository;
+import com.workflow.repository.job.JobWorkflowStepCommentRepository;
 import com.workflow.repository.job.JobWorkflowStepRepository;
+import com.workflow.repository.job.JobWorkflowStepVisitLogRepository;
 import com.workflow.repository.worker.WorkerRepository;
 import com.workflow.repository.workflow.WorkflowRepository;
 import com.workflow.repository.workflow.WorkflowStepRepository;
@@ -50,6 +54,10 @@ public class JobWorkflowService implements IJobWorkflowService {
         private final WorkflowStepRepository workflowStepRepository;
         private final WorkerRepository workerRepository;
         private final JobRepository jobRepository;
+        private final JobWorkflowStepCommentRepository jobWorkflowStepCommentRepository;
+        private final JobWorkflowStepAttachmentRepository jobWorkflowStepAttachmentRepository;
+        private final JobWorkflowStepVisitLogRepository jobWorkflowStepVisitLogRepository;
+        private final JobWorkflowStepActivityRepository jobWorkflowStepActivityRepository;
         private final WorkflowRepository workflowRepository;
         private final IStepActivityService stepActivityService;
         private final JobWorkflowMapper jobWorkflowMapper;
@@ -66,7 +74,9 @@ public class JobWorkflowService implements IJobWorkflowService {
                         jobWorkflow.setStatus(WorkflowStepStatus.NOT_STARTED);
                         return;
                 }
-                if (steps.stream().allMatch(s -> s.getStatus() == WorkflowStepStatus.COMPLETED)) {
+                // A workflow is done if all steps are either COMPLETED or SKIPPED
+                if (steps.stream().allMatch(s -> s.getStatus() == WorkflowStepStatus.COMPLETED ||
+                                s.getStatus() == WorkflowStepStatus.SKIPPED)) {
                         jobWorkflow.setStatus(WorkflowStepStatus.COMPLETED);
                         jobWorkflow.setCompletedAt(LocalDateTime.now(ZoneOffset.UTC));
                         return;
@@ -657,12 +667,43 @@ public class JobWorkflowService implements IJobWorkflowService {
 
                 /*
                  * ============================
-                 * DELETE REMOVED STEPS
+                 * DELETE / SKIP REMOVED STEPS
                  * ============================
                  */
                 for (JobWorkflowStep step : existingSteps) {
                         if (!incomingIds.contains(step.getId())) {
-                                jobWorkflowStepRepository.delete(step);
+
+                                // 1. Check if the step has attachments, comments, logs, OR if progress has
+                                // already started
+                                boolean hasMeaningfulWork = (step.getStatus() == WorkflowStepStatus.STARTED ||
+                                                step.getStatus() == WorkflowStepStatus.ONGOING ||
+                                                step.getStatus() == WorkflowStepStatus.COMPLETED) ||
+                                                jobWorkflowStepCommentRepository.existsByStepId(step.getId()) ||
+                                                jobWorkflowStepAttachmentRepository.existsByStepId(step.getId()) ||
+                                                jobWorkflowStepVisitLogRepository.existsByStepId(step.getId());
+
+                                if (hasMeaningfulWork) {
+                                        // FALLBACK: It has data or progress.
+
+                                        // 2. Only force to SKIPPED if it isn't already successfully finished
+                                        if (step.getStatus() != WorkflowStepStatus.COMPLETED) {
+                                                step.setStatus(WorkflowStepStatus.SKIPPED);
+                                                step.setCompletedAt(LocalDateTime.now(ZoneOffset.UTC));
+
+                                                if (step.getStartedAt() == null) {
+                                                        step.setStartedAt(LocalDateTime.now(ZoneOffset.UTC));
+                                                }
+                                        }
+
+                                        stepActivityService.log(step, actor, JobWorkflowStepActivityType.STATUS_CHANGED,
+                                                        "Step removed from workflow template but retained as "
+                                                                        + step.getStatus()
+                                                                        + " to preserve audit history.");
+                                } else {
+                                        // SAFE TO DELETE: It was completely untouched and empty.
+                                        jobWorkflowStepActivityRepository.deleteByStepId(step.getId());
+                                        jobWorkflowStepRepository.delete(step);
+                                }
                         }
                 }
 
@@ -828,8 +869,10 @@ public class JobWorkflowService implements IJobWorkflowService {
                                 ? request.getStatus()
                                 : WorkflowStepStatus.NOT_STARTED;
 
-                LocalDateTime startedAt = status == WorkflowStepStatus.STARTED ? LocalDateTime.now(ZoneOffset.UTC) : null;
-                LocalDateTime completedAt = status == WorkflowStepStatus.COMPLETED ? LocalDateTime.now(ZoneOffset.UTC) : null;
+                LocalDateTime startedAt = status == WorkflowStepStatus.STARTED ? LocalDateTime.now(ZoneOffset.UTC)
+                                : null;
+                LocalDateTime completedAt = status == WorkflowStepStatus.COMPLETED ? LocalDateTime.now(ZoneOffset.UTC)
+                                : null;
 
                 JobWorkflowStep step = JobWorkflowStep.builder()
                                 .jobWorkflow(jw)

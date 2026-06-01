@@ -34,6 +34,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.UUID;
 
 import static org.hamcrest.Matchers.*;
@@ -152,7 +153,7 @@ class AssetAssignmentControllerIntegrationTest extends AbstractControllerIntegra
                 .job(job)
                 .assignedWorker(worker)
                 .notes("Test assignment")
-                .assignedAt(LocalDateTime.now())
+                .assignedAt(LocalDateTime.now(ZoneOffset.UTC))
                 .build());
 
         companyToken = jwtService.generateToken(companyUser);

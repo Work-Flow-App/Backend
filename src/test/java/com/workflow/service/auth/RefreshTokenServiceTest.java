@@ -14,6 +14,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -72,8 +73,8 @@ class RefreshTokenServiceTest {
         assertThat(token).isNotNull();
         assertThat(token.getToken()).isNotEmpty();
         assertThat(token.getUser()).isEqualTo(testUser);
-        assertThat(token.getExpiresAt()).isAfter(LocalDateTime.now());
-        assertThat(token.getExpiresAt()).isBefore(LocalDateTime.now().plusDays(31));
+        assertThat(token.getExpiresAt()).isAfter(LocalDateTime.now(ZoneOffset.UTC));
+        assertThat(token.getExpiresAt()).isBefore(LocalDateTime.now(ZoneOffset.UTC).plusDays(31));
         assertThat(token.getDeviceInfo()).isEqualTo("Mozilla/5.0 Chrome");
         assertThat(token.getIpAddress()).isEqualTo("192.168.1.1");
         assertThat(token.isRevoked()).isFalse();
@@ -87,8 +88,8 @@ class RefreshTokenServiceTest {
                 .id(1L)
                 .token("oldest-token")
                 .user(testUser)
-                .expiresAt(LocalDateTime.now().plusDays(30))
-                .createdAt(LocalDateTime.now().minusDays(10))
+                .expiresAt(LocalDateTime.now(ZoneOffset.UTC).plusDays(30))
+                .createdAt(LocalDateTime.now(ZoneOffset.UTC).minusDays(10))
                 .revoked(false)
                 .build();
 
@@ -96,8 +97,8 @@ class RefreshTokenServiceTest {
                 .id(2L)
                 .token("newer-token")
                 .user(testUser)
-                .expiresAt(LocalDateTime.now().plusDays(30))
-                .createdAt(LocalDateTime.now().minusDays(5))
+                .expiresAt(LocalDateTime.now(ZoneOffset.UTC).plusDays(30))
+                .createdAt(LocalDateTime.now(ZoneOffset.UTC).minusDays(5))
                 .revoked(false)
                 .build();
 
@@ -158,7 +159,7 @@ class RefreshTokenServiceTest {
                 .id(1L)
                 .token("valid-token")
                 .user(testUser)
-                .expiresAt(LocalDateTime.now().plusDays(30))
+                .expiresAt(LocalDateTime.now(ZoneOffset.UTC).plusDays(30))
                 .revoked(false)
                 .build();
 
@@ -191,9 +192,9 @@ class RefreshTokenServiceTest {
         RefreshToken revokedToken = RefreshToken.builder()
                 .token("revoked-token")
                 .user(testUser)
-                .expiresAt(LocalDateTime.now().plusDays(30))
+                .expiresAt(LocalDateTime.now(ZoneOffset.UTC).plusDays(30))
                 .revoked(true)
-                .revokedAt(LocalDateTime.now())
+                .revokedAt(LocalDateTime.now(ZoneOffset.UTC))
                 .build();
 
         when(refreshTokenRepository.findByToken("revoked-token")).thenReturn(Optional.of(revokedToken));
@@ -210,7 +211,7 @@ class RefreshTokenServiceTest {
         RefreshToken expiredToken = RefreshToken.builder()
                 .token("expired-token")
                 .user(testUser)
-                .expiresAt(LocalDateTime.now().minusDays(1))
+                .expiresAt(LocalDateTime.now(ZoneOffset.UTC).minusDays(1))
                 .revoked(false)
                 .build();
 
@@ -231,7 +232,7 @@ class RefreshTokenServiceTest {
                 .id(1L)
                 .token("old-token")
                 .user(testUser)
-                .expiresAt(LocalDateTime.now().plusDays(15))
+                .expiresAt(LocalDateTime.now(ZoneOffset.UTC).plusDays(15))
                 .revoked(false)
                 .build();
 
@@ -259,7 +260,7 @@ class RefreshTokenServiceTest {
         RefreshToken token = RefreshToken.builder()
                 .token("token-to-revoke")
                 .user(testUser)
-                .expiresAt(LocalDateTime.now().plusDays(30))
+                .expiresAt(LocalDateTime.now(ZoneOffset.UTC).plusDays(30))
                 .revoked(false)
                 .build();
 

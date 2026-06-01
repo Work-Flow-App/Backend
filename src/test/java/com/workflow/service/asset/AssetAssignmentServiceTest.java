@@ -27,6 +27,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -79,8 +80,8 @@ class AssetAssignmentServiceTest {
                 .salvageValue(new BigDecimal("5000.00"))
                 .available(true)
                 .archived(false)
-                .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
+                .createdAt(LocalDateTime.now(ZoneOffset.UTC))
+                .updatedAt(LocalDateTime.now(ZoneOffset.UTC))
                 .build();
 
         job = Job.builder()
@@ -102,7 +103,7 @@ class AssetAssignmentServiceTest {
                 .job(job)
                 .assignedWorker(worker)
                 .notes("Assignment notes")
-                .assignedAt(LocalDateTime.now().minusDays(5))
+                .assignedAt(LocalDateTime.now(ZoneOffset.UTC).minusDays(5))
                 .build();
 
         createRequest = AssetAssignmentCreateRequest.builder()
@@ -229,7 +230,7 @@ class AssetAssignmentServiceTest {
         AssetJobAssignment existingAssignment = AssetJobAssignment.builder()
                 .id(2L)
                 .asset(asset)
-                .assignedAt(LocalDateTime.now())
+                .assignedAt(LocalDateTime.now(ZoneOffset.UTC))
                 .build();
 
         when(assetRepository.findById(1L)).thenReturn(Optional.of(asset));
@@ -371,7 +372,7 @@ class AssetAssignmentServiceTest {
         AssetJobAssignment otherActiveAssignment = AssetJobAssignment.builder()
                 .id(2L)
                 .asset(asset)
-                .assignedAt(LocalDateTime.now())
+                .assignedAt(LocalDateTime.now(ZoneOffset.UTC))
                 .build();
 
         when(assignmentRepository.findById(1L)).thenReturn(Optional.of(assignment));
@@ -408,7 +409,7 @@ class AssetAssignmentServiceTest {
 
     @Test
     void returnAsset_AlreadyReturned_ThrowsException() {
-        assignment.setReturnedAt(LocalDateTime.now());
+        assignment.setReturnedAt(LocalDateTime.now(ZoneOffset.UTC));
         when(assignmentRepository.findById(1L)).thenReturn(Optional.of(assignment));
 
         assertThatThrownBy(() -> assetAssignmentService.returnAsset(returnRequest, 1L))
@@ -440,8 +441,8 @@ class AssetAssignmentServiceTest {
                 .id(2L)
                 .asset(asset)
                 .job(job)
-                .assignedAt(LocalDateTime.now().minusDays(10))
-                .returnedAt(LocalDateTime.now().minusDays(8))
+                .assignedAt(LocalDateTime.now(ZoneOffset.UTC).minusDays(10))
+                .returnedAt(LocalDateTime.now(ZoneOffset.UTC).minusDays(8))
                 .build();
 
         when(assetRepository.findById(1L)).thenReturn(Optional.of(asset));
@@ -506,8 +507,8 @@ class AssetAssignmentServiceTest {
                 .id(2L)
                 .asset(asset)
                 .job(job)
-                .assignedAt(LocalDateTime.now().minusDays(10))
-                .returnedAt(LocalDateTime.now().minusDays(8))
+                .assignedAt(LocalDateTime.now(ZoneOffset.UTC).minusDays(10))
+                .returnedAt(LocalDateTime.now(ZoneOffset.UTC).minusDays(8))
                 .build();
 
         when(jobRepository.findById(1L)).thenReturn(Optional.of(job));

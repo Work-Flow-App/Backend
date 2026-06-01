@@ -91,7 +91,7 @@ public class AssetAssignmentService implements IAssetAssignmentService {
                 .job(job)
                 .assignedWorker(worker)
                 .notes(request.getNotes())
-                .assignedAt(LocalDateTime.now())
+                .assignedAt(LocalDateTime.now(ZoneOffset.UTC))
                 .build();
 
         assignmentRepository.save(assignment);
@@ -132,9 +132,9 @@ public class AssetAssignmentService implements IAssetAssignmentService {
 
         Long assetId = assignment.getAsset().getId();
         String assetTag = assignment.getAsset().getAssetTag();
-        long durationDays = Duration.between(assignment.getAssignedAt(), LocalDateTime.now()).toDays();
+        long durationDays = Duration.between(assignment.getAssignedAt(), LocalDateTime.now(ZoneOffset.UTC)).toDays();
 
-        assignment.setReturnedAt(LocalDateTime.now());
+        assignment.setReturnedAt(LocalDateTime.now(ZoneOffset.UTC));
         if (request.getNotes() != null && !request.getNotes().isBlank()) {
             assignment.setNotes(Optional.ofNullable(assignment.getNotes()).map(n -> n + "\n" + request.getNotes())
                     .orElse(request.getNotes()));
@@ -200,7 +200,7 @@ public class AssetAssignmentService implements IAssetAssignmentService {
     }
 
     private AssetAssignmentResponse mapAssignmentToResponse(AssetJobAssignment a) {
-        long durationDays = a.isActive() ? nullSafeDaysBetween(a.getAssignedAt(), LocalDateTime.now())
+        long durationDays = a.isActive() ? nullSafeDaysBetween(a.getAssignedAt(), LocalDateTime.now(ZoneOffset.UTC))
                 : nullSafeDaysBetween(a.getAssignedAt(), a.getReturnedAt());
         String status = a.isActive() ? "ACTIVE" : "COMPLETED";
         return AssetAssignmentResponse.builder()

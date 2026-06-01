@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.Map;
 
 @Getter
@@ -17,7 +18,7 @@ public class ErrorResponse {
     private Map<String, String> validationErrors;
 
     public ErrorResponse(int status, String error, String message, String path) {
-        this.timestamp = LocalDateTime.now();
+        this.timestamp = LocalDateTime.now(ZoneOffset.UTC);
         this.status = status;
         this.error = error;
         this.message = message;

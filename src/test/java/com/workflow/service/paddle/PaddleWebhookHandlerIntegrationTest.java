@@ -22,6 +22,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.UUID;
 
@@ -86,7 +87,7 @@ class PaddleWebhookHandlerIntegrationTest {
 
         subscription = subscriptionRepository.save(CompanySubscription.builder()
                 .company(company)
-                .trialEndsAt(LocalDateTime.now().plusDays(14))
+                .trialEndsAt(LocalDateTime.now(ZoneOffset.UTC).plusDays(14))
                 .status(SubscriptionStatus.TRIAL)
                 .paddleSubscriptionId("sub_integ_123")
                 .paddleCustomerId("cust_integ_999")

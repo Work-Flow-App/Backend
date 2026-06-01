@@ -18,6 +18,7 @@ import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.UUID;
 
 @Service
@@ -51,7 +52,7 @@ public class EmailVerificationService {
         EmailVerificationToken verificationToken = EmailVerificationToken.builder()
                 .token(token)
                 .user(user)
-                .expiresAt(LocalDateTime.now().plusHours(expirationHours))
+                .expiresAt(LocalDateTime.now(ZoneOffset.UTC).plusHours(expirationHours))
                 .build();
 
         tokenRepository.save(verificationToken);

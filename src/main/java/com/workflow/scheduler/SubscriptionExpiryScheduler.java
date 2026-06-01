@@ -29,7 +29,7 @@ public class SubscriptionExpiryScheduler {
     @Scheduled(cron = "0 0 2 * * *", zone = "UTC")
     @Transactional
     public void expireTrials() {
-        // Use UTC explicitly — LocalDateTime.now() picks up JVM default timezone which may not be UTC
+        // Use UTC explicitly — LocalDateTime.now(ZoneOffset.UTC) picks up JVM default timezone which may not be UTC
         LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
         List<CompanySubscription> expired = subscriptionRepository
                 .findExpiredByStatus(SubscriptionStatus.TRIAL, now);

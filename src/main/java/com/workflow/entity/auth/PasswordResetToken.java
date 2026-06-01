@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 
 @Entity
 @Table(name = "password_reset_tokens", uniqueConstraints = @UniqueConstraint(name = "uq_prt_user_code", columnNames = {"user_id", "verification_code"}))
@@ -40,14 +41,14 @@ public class PasswordResetToken {
 
     @PrePersist
     protected void onCreate() {
-        createdAt = LocalDateTime.now();
+        createdAt = LocalDateTime.now(ZoneOffset.UTC);
     }
 
     /**
      * Check if token is expired
      */
     public boolean isExpired() {
-        return LocalDateTime.now().isAfter(expiresAt);
+        return LocalDateTime.now(ZoneOffset.UTC).isAfter(expiresAt);
     }
 
     /**
@@ -62,6 +63,6 @@ public class PasswordResetToken {
      */
     public void markAsUsed() {
         this.used = true;
-        this.usedAt = LocalDateTime.now();
+        this.usedAt = LocalDateTime.now(ZoneOffset.UTC);
     }
 }

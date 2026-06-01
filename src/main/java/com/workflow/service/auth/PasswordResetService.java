@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 
 @Service
@@ -53,10 +54,10 @@ public class PasswordResetService {
         }
 
         // Check if user has too many active tokens
-        long activeTokenCount = passwordResetTokenRepository.countActiveTokensByUser(user, LocalDateTime.now());
+        long activeTokenCount = passwordResetTokenRepository.countActiveTokensByUser(user, LocalDateTime.now(ZoneOffset.UTC));
         if (activeTokenCount >= maxActiveTokensPerUser) {
             // Delete oldest unused tokens
-            List<PasswordResetToken> activeTokens = passwordResetTokenRepository.findActiveTokensByUser(user, LocalDateTime.now());
+            List<PasswordResetToken> activeTokens = passwordResetTokenRepository.findActiveTokensByUser(user, LocalDateTime.now(ZoneOffset.UTC));
             activeTokens.stream()
                     .min((t1, t2) -> t1.getCreatedAt().compareTo(t2.getCreatedAt()))
                     .ifPresent(oldest -> {
@@ -72,7 +73,7 @@ public class PasswordResetService {
         PasswordResetToken resetToken = PasswordResetToken.builder()
                 .verificationCode(verificationCode)
                 .user(user)
-                .expiresAt(LocalDateTime.now().plusMinutes(expirationMinutes))
+                .expiresAt(LocalDateTime.now(ZoneOffset.UTC).plusMinutes(expirationMinutes))
                 .build();
 
         passwordResetTokenRepository.save(resetToken);
@@ -123,7 +124,7 @@ public class PasswordResetService {
 
         // Revoke all refresh tokens (force re-login on all devices)
         // This uses a bulk UPDATE query which may clear the persistence context
-        refreshTokenRepository.revokeAllUserTokens(user, LocalDateTime.now());
+        refreshTokenRepository.revokeAllUserTokens(user, LocalDateTime.now(ZoneOffset.UTC));
 
         log.info("Password reset successfully for user: {}. All sessions invalidated.", user.getUsername());
     }
@@ -133,7 +134,7 @@ public class PasswordResetService {
      */
     @Transactional
     public int cleanupExpiredTokens() {
-        LocalDateTime cutoff = LocalDateTime.now().minusDays(1); // Delete tokens older than 1 day
+        LocalDateTime cutoff = LocalDateTime.now(ZoneOffset.UTC).minusDays(1); // Delete tokens older than 1 day
         int deleted = passwordResetTokenRepository.deleteExpiredAndUsedTokens(cutoff);
         log.info("Cleaned up {} expired/used password reset tokens", deleted);
         return deleted;

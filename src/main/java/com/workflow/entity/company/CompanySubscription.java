@@ -7,6 +7,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 
 @Getter
 @Setter
@@ -61,7 +62,7 @@ public class CompanySubscription {
      * pastDueGraceDays: number of days after currentPeriodEnd before PAST_DUE is blocked.
      */
     public boolean isAccessAllowed(int pastDueGraceDays) {
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
         return switch (status) {
             case TRIAL -> now.isBefore(trialEndsAt);
             case ACTIVE -> true;

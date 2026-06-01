@@ -20,6 +20,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -77,7 +78,7 @@ class AuthenticationServiceTest {
                 .id(1L)
                 .token("mock-refresh-token-uuid")
                 .user(testUser)
-                .expiresAt(LocalDateTime.now().plusDays(30))
+                .expiresAt(LocalDateTime.now(ZoneOffset.UTC).plusDays(30))
                 .revoked(false)
                 .build();
     }
@@ -261,13 +262,13 @@ class AuthenticationServiceTest {
         RefreshToken refreshToken1 = RefreshToken.builder()
                 .token("refresh-token-1")
                 .user(user1)
-                .expiresAt(LocalDateTime.now().plusDays(30))
+                .expiresAt(LocalDateTime.now(ZoneOffset.UTC).plusDays(30))
                 .build();
 
         RefreshToken refreshToken2 = RefreshToken.builder()
                 .token("refresh-token-2")
                 .user(user2)
-                .expiresAt(LocalDateTime.now().plusDays(30))
+                .expiresAt(LocalDateTime.now(ZoneOffset.UTC).plusDays(30))
                 .build();
 
         when(jwtService.generateToken(user1)).thenReturn("token-for-user1");

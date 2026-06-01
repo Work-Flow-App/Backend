@@ -6,4 +6,6 @@ import java.util.List;
 
 public interface JobWorkflowStepVisitLogRepository extends JpaRepository<JobWorkflowStepVisitLog, Long> {
     List<JobWorkflowStepVisitLog> findByStepIdOrderByVisitDateDescTimeInDesc(Long stepId);
+
+    boolean existsByStepId(Long stepId);
 }

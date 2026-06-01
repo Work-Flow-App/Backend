@@ -15,6 +15,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 
@@ -63,9 +64,9 @@ class WorkerInvitationRepositoryTest {
                 .invitationToken("valid-token-123")
                 .email("worker1@example.com")
                 .company(testCompany)
-                .expiresAt(LocalDateTime.now().plusDays(5))
+                .expiresAt(LocalDateTime.now(ZoneOffset.UTC).plusDays(5))
                 .used(false)
-                .createdAt(LocalDateTime.now())
+                .createdAt(LocalDateTime.now(ZoneOffset.UTC))
                 .build();
         entityManager.persist(validInvitation);
 
@@ -74,9 +75,9 @@ class WorkerInvitationRepositoryTest {
                 .invitationToken("expired-token-456")
                 .email("worker2@example.com")
                 .company(testCompany)
-                .expiresAt(LocalDateTime.now().minusDays(1))
+                .expiresAt(LocalDateTime.now(ZoneOffset.UTC).minusDays(1))
                 .used(false)
-                .createdAt(LocalDateTime.now().minusDays(8))
+                .createdAt(LocalDateTime.now(ZoneOffset.UTC).minusDays(8))
                 .build();
         entityManager.persist(expiredInvitation);
 
@@ -85,10 +86,10 @@ class WorkerInvitationRepositoryTest {
                 .invitationToken("used-token-789")
                 .email("worker3@example.com")
                 .company(testCompany)
-                .expiresAt(LocalDateTime.now().plusDays(3))
+                .expiresAt(LocalDateTime.now(ZoneOffset.UTC).plusDays(3))
                 .used(true)
-                .usedAt(LocalDateTime.now().minusDays(1))
-                .createdAt(LocalDateTime.now().minusDays(4))
+                .usedAt(LocalDateTime.now(ZoneOffset.UTC).minusDays(1))
+                .createdAt(LocalDateTime.now(ZoneOffset.UTC).minusDays(4))
                 .build();
         entityManager.persist(usedInvitation);
 
@@ -124,7 +125,7 @@ class WorkerInvitationRepositoryTest {
         Optional<WorkerInvitation> found = invitationRepository.findActiveInvitationByEmailAndCompany(
                 "worker1@example.com",
                 testCompany.getId(),
-                LocalDateTime.now()
+                LocalDateTime.now(ZoneOffset.UTC)
         );
 
         // Assert
@@ -140,7 +141,7 @@ class WorkerInvitationRepositoryTest {
         Optional<WorkerInvitation> found = invitationRepository.findActiveInvitationByEmailAndCompany(
                 "worker2@example.com",
                 testCompany.getId(),
-                LocalDateTime.now()
+                LocalDateTime.now(ZoneOffset.UTC)
         );
 
         // Assert
@@ -154,7 +155,7 @@ class WorkerInvitationRepositoryTest {
         Optional<WorkerInvitation> found = invitationRepository.findActiveInvitationByEmailAndCompany(
                 "worker3@example.com",
                 testCompany.getId(),
-                LocalDateTime.now()
+                LocalDateTime.now(ZoneOffset.UTC)
         );
 
         // Assert
@@ -195,7 +196,7 @@ class WorkerInvitationRepositoryTest {
     @DisplayName("Should delete expired and used invitations")
     void deleteExpiredAndUsedInvitations_Success() {
         // Arrange
-        LocalDateTime cutoff = LocalDateTime.now(); // Delete invitations expired before now
+        LocalDateTime cutoff = LocalDateTime.now(ZoneOffset.UTC); // Delete invitations expired before now
 
         // Act
         int deletedCount = invitationRepository.deleteExpiredAndUsedInvitations(cutoff);
@@ -209,7 +210,7 @@ class WorkerInvitationRepositoryTest {
     @DisplayName("Should not delete valid pending invitations")
     void deleteExpiredAndUsedInvitations_PreservesValid() {
         // Arrange
-        LocalDateTime cutoff = LocalDateTime.now().minusDays(30);
+        LocalDateTime cutoff = LocalDateTime.now(ZoneOffset.UTC).minusDays(30);
         String validToken = validInvitation.getInvitationToken();
 
         // Act
@@ -247,9 +248,9 @@ class WorkerInvitationRepositoryTest {
                 .invitationToken("another-token-123")
                 .email("worker@anothercompany.com")
                 .company(anotherCompany)
-                .expiresAt(LocalDateTime.now().plusDays(7))
+                .expiresAt(LocalDateTime.now(ZoneOffset.UTC).plusDays(7))
                 .used(false)
-                .createdAt(LocalDateTime.now())
+                .createdAt(LocalDateTime.now(ZoneOffset.UTC))
                 .build();
         entityManager.persist(anotherInvitation);
         entityManager.flush();
@@ -275,7 +276,7 @@ class WorkerInvitationRepositoryTest {
                 .invitationToken("new-token-abc")
                 .email("newworker@example.com")
                 .company(testCompany)
-                .expiresAt(LocalDateTime.now().plusDays(7))
+                .expiresAt(LocalDateTime.now(ZoneOffset.UTC).plusDays(7))
                 .used(false)
                 .build();
 

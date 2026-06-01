@@ -20,6 +20,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.UUID;
 
 import static org.hamcrest.Matchers.containsString;
@@ -189,9 +190,9 @@ class PasswordResetIntegrationTest extends AbstractControllerIntegrationTest {
         PasswordResetToken resetToken = PasswordResetToken.builder()
                 .verificationCode("123456")
                 .user(testUser)
-                .expiresAt(LocalDateTime.now().plusMinutes(60))
+                .expiresAt(LocalDateTime.now(ZoneOffset.UTC).plusMinutes(60))
                 .used(false)
-                .createdAt(LocalDateTime.now())
+                .createdAt(LocalDateTime.now(ZoneOffset.UTC))
                 .build();
         passwordResetTokenRepository.saveAndFlush(resetToken);
 
@@ -253,9 +254,9 @@ class PasswordResetIntegrationTest extends AbstractControllerIntegrationTest {
         PasswordResetToken expiredToken = PasswordResetToken.builder()
                 .verificationCode("111111")
                 .user(testUser)
-                .expiresAt(LocalDateTime.now().minusMinutes(10))
+                .expiresAt(LocalDateTime.now(ZoneOffset.UTC).minusMinutes(10))
                 .used(false)
-                .createdAt(LocalDateTime.now().minusMinutes(70))
+                .createdAt(LocalDateTime.now(ZoneOffset.UTC).minusMinutes(70))
                 .build();
         passwordResetTokenRepository.save(expiredToken);
 
@@ -284,10 +285,10 @@ class PasswordResetIntegrationTest extends AbstractControllerIntegrationTest {
         PasswordResetToken usedToken = PasswordResetToken.builder()
                 .verificationCode("222222")
                 .user(testUser)
-                .expiresAt(LocalDateTime.now().plusMinutes(60))
+                .expiresAt(LocalDateTime.now(ZoneOffset.UTC).plusMinutes(60))
                 .used(true)
-                .createdAt(LocalDateTime.now())
-                .usedAt(LocalDateTime.now())
+                .createdAt(LocalDateTime.now(ZoneOffset.UTC))
+                .usedAt(LocalDateTime.now(ZoneOffset.UTC))
                 .build();
         passwordResetTokenRepository.save(usedToken);
 
@@ -316,9 +317,9 @@ class PasswordResetIntegrationTest extends AbstractControllerIntegrationTest {
         PasswordResetToken resetToken = PasswordResetToken.builder()
                 .verificationCode("333333")
                 .user(testUser)
-                .expiresAt(LocalDateTime.now().plusMinutes(60))
+                .expiresAt(LocalDateTime.now(ZoneOffset.UTC).plusMinutes(60))
                 .used(false)
-                .createdAt(LocalDateTime.now())
+                .createdAt(LocalDateTime.now(ZoneOffset.UTC))
                 .build();
         passwordResetTokenRepository.save(resetToken);
 
@@ -360,9 +361,9 @@ class PasswordResetIntegrationTest extends AbstractControllerIntegrationTest {
         PasswordResetToken resetToken = PasswordResetToken.builder()
                 .verificationCode("444444")
                 .user(testUser)
-                .expiresAt(LocalDateTime.now().plusMinutes(60))
+                .expiresAt(LocalDateTime.now(ZoneOffset.UTC).plusMinutes(60))
                 .used(false)
-                .createdAt(LocalDateTime.now())
+                .createdAt(LocalDateTime.now(ZoneOffset.UTC))
                 .build();
         passwordResetTokenRepository.save(resetToken);
 
@@ -392,7 +393,7 @@ class PasswordResetIntegrationTest extends AbstractControllerIntegrationTest {
         RefreshToken refreshToken1 = RefreshToken.builder()
                 .token(UUID.randomUUID().toString())
                 .user(testUser)
-                .expiresAt(LocalDateTime.now().plusDays(7))
+                .expiresAt(LocalDateTime.now(ZoneOffset.UTC).plusDays(7))
                 .revoked(false)
                 .deviceInfo("Device 1")
                 .build();
@@ -400,7 +401,7 @@ class PasswordResetIntegrationTest extends AbstractControllerIntegrationTest {
         RefreshToken refreshToken2 = RefreshToken.builder()
                 .token(UUID.randomUUID().toString())
                 .user(testUser)
-                .expiresAt(LocalDateTime.now().plusDays(7))
+                .expiresAt(LocalDateTime.now(ZoneOffset.UTC).plusDays(7))
                 .revoked(false)
                 .deviceInfo("Device 2")
                 .build();
@@ -412,9 +413,9 @@ class PasswordResetIntegrationTest extends AbstractControllerIntegrationTest {
         PasswordResetToken resetToken = PasswordResetToken.builder()
                 .verificationCode("555555")
                 .user(testUser)
-                .expiresAt(LocalDateTime.now().plusMinutes(60))
+                .expiresAt(LocalDateTime.now(ZoneOffset.UTC).plusMinutes(60))
                 .used(false)
-                .createdAt(LocalDateTime.now())
+                .createdAt(LocalDateTime.now(ZoneOffset.UTC))
                 .build();
         passwordResetTokenRepository.save(resetToken);
 
@@ -511,9 +512,9 @@ class PasswordResetIntegrationTest extends AbstractControllerIntegrationTest {
         PasswordResetToken resetToken = PasswordResetToken.builder()
                 .verificationCode("666666")
                 .user(testUser)
-                .expiresAt(LocalDateTime.now().plusMinutes(60))
+                .expiresAt(LocalDateTime.now(ZoneOffset.UTC).plusMinutes(60))
                 .used(false)
-                .createdAt(LocalDateTime.now())
+                .createdAt(LocalDateTime.now(ZoneOffset.UTC))
                 .build();
         passwordResetTokenRepository.save(resetToken);
 
@@ -541,9 +542,9 @@ class PasswordResetIntegrationTest extends AbstractControllerIntegrationTest {
         PasswordResetToken resetToken = PasswordResetToken.builder()
                 .verificationCode("777777")
                 .user(testUser)
-                .expiresAt(LocalDateTime.now().plusMinutes(60))
+                .expiresAt(LocalDateTime.now(ZoneOffset.UTC).plusMinutes(60))
                 .used(false)
-                .createdAt(LocalDateTime.now())
+                .createdAt(LocalDateTime.now(ZoneOffset.UTC))
                 .build();
         passwordResetTokenRepository.save(resetToken);
 

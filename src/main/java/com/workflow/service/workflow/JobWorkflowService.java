@@ -1,6 +1,7 @@
 package com.workflow.service.workflow;
 
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -67,7 +68,7 @@ public class JobWorkflowService implements IJobWorkflowService {
                 }
                 if (steps.stream().allMatch(s -> s.getStatus() == WorkflowStepStatus.COMPLETED)) {
                         jobWorkflow.setStatus(WorkflowStepStatus.COMPLETED);
-                        jobWorkflow.setCompletedAt(LocalDateTime.now());
+                        jobWorkflow.setCompletedAt(LocalDateTime.now(ZoneOffset.UTC));
                         return;
                 }
                 if (steps.stream().anyMatch(
@@ -358,7 +359,7 @@ public class JobWorkflowService implements IJobWorkflowService {
                         if (newStatus == WorkflowStepStatus.STARTED || newStatus == WorkflowStepStatus.ONGOING) {
                                 // Start the clock if it hasn't started yet
                                 if (step.getStartedAt() == null) {
-                                        step.setStartedAt(LocalDateTime.now());
+                                        step.setStartedAt(LocalDateTime.now(ZoneOffset.UTC));
                                 }
                                 // CRITICAL FIX: If they re-open a COMPLETED step, erase the completion time!
                                 step.setCompletedAt(null);
@@ -366,11 +367,11 @@ public class JobWorkflowService implements IJobWorkflowService {
                         // 2. If moving to a FINISHED state (Timer stops)
                         else if (newStatus == WorkflowStepStatus.COMPLETED || newStatus == WorkflowStepStatus.SKIPPED) {
                                 // Set completion time
-                                step.setCompletedAt(LocalDateTime.now());
+                                step.setCompletedAt(LocalDateTime.now(ZoneOffset.UTC));
 
                                 // Edge Case: If they instantly jump to COMPLETED without ever clicking STARTED
                                 if (step.getStartedAt() == null) {
-                                        step.setStartedAt(LocalDateTime.now());
+                                        step.setStartedAt(LocalDateTime.now(ZoneOffset.UTC));
                                 }
                         }
                         // 3. (Optional) If moving back to a PRE-WORK state (Resetting the step)
@@ -533,14 +534,14 @@ public class JobWorkflowService implements IJobWorkflowService {
                                                 if (newStatus == WorkflowStepStatus.STARTED
                                                                 || newStatus == WorkflowStepStatus.ONGOING) {
                                                         if (step.getStartedAt() == null) {
-                                                                step.setStartedAt(LocalDateTime.now());
+                                                                step.setStartedAt(LocalDateTime.now(ZoneOffset.UTC));
                                                         }
                                                         step.setCompletedAt(null); // Clear if re-opened
                                                 } else if (newStatus == WorkflowStepStatus.COMPLETED
                                                                 || newStatus == WorkflowStepStatus.SKIPPED) {
-                                                        step.setCompletedAt(LocalDateTime.now());
+                                                        step.setCompletedAt(LocalDateTime.now(ZoneOffset.UTC));
                                                         if (step.getStartedAt() == null) {
-                                                                step.setStartedAt(LocalDateTime.now());
+                                                                step.setStartedAt(LocalDateTime.now(ZoneOffset.UTC));
                                                         }
                                                 } else if (newStatus == WorkflowStepStatus.NOT_STARTED
                                                                 || newStatus == WorkflowStepStatus.INITIATED
@@ -610,11 +611,11 @@ public class JobWorkflowService implements IJobWorkflowService {
 
                                         if (requestedStatus == WorkflowStepStatus.STARTED
                                                         || requestedStatus == WorkflowStepStatus.ONGOING) {
-                                                newStartedAt = LocalDateTime.now();
+                                                newStartedAt = LocalDateTime.now(ZoneOffset.UTC);
                                         } else if (requestedStatus == WorkflowStepStatus.COMPLETED
                                                         || requestedStatus == WorkflowStepStatus.SKIPPED) {
-                                                newStartedAt = LocalDateTime.now();
-                                                newCompletedAt = LocalDateTime.now();
+                                                newStartedAt = LocalDateTime.now(ZoneOffset.UTC);
+                                                newCompletedAt = LocalDateTime.now(ZoneOffset.UTC);
                                         }
 
                                         JobWorkflowStep newStep = JobWorkflowStep.builder()
@@ -827,8 +828,8 @@ public class JobWorkflowService implements IJobWorkflowService {
                                 ? request.getStatus()
                                 : WorkflowStepStatus.NOT_STARTED;
 
-                LocalDateTime startedAt = status == WorkflowStepStatus.STARTED ? LocalDateTime.now() : null;
-                LocalDateTime completedAt = status == WorkflowStepStatus.COMPLETED ? LocalDateTime.now() : null;
+                LocalDateTime startedAt = status == WorkflowStepStatus.STARTED ? LocalDateTime.now(ZoneOffset.UTC) : null;
+                LocalDateTime completedAt = status == WorkflowStepStatus.COMPLETED ? LocalDateTime.now(ZoneOffset.UTC) : null;
 
                 JobWorkflowStep step = JobWorkflowStep.builder()
                                 .jobWorkflow(jw)

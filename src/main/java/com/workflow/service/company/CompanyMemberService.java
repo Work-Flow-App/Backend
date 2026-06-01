@@ -22,6 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -72,7 +73,7 @@ public class CompanyMemberService implements ICompanyMemberService {
         invitationRepository.invalidatePreviousInvitations(email, companyId);
 
         String token = UUID.randomUUID().toString();
-        LocalDateTime expiresAt = LocalDateTime.now().plusDays(expirationDays);
+        LocalDateTime expiresAt = LocalDateTime.now(ZoneOffset.UTC).plusDays(expirationDays);
 
         CompanyMemberInvitation invitation = CompanyMemberInvitation.builder()
                 .invitationToken(token)

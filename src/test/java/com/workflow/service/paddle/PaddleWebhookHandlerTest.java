@@ -18,6 +18,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -53,7 +54,7 @@ class PaddleWebhookHandlerTest {
         subscription = CompanySubscription.builder()
                 .id(42L)
                 .company(company)
-                .trialEndsAt(LocalDateTime.now().plusDays(7))
+                .trialEndsAt(LocalDateTime.now(ZoneOffset.UTC).plusDays(7))
                 .status(SubscriptionStatus.TRIAL)
                 .paddleSubscriptionId("sub_123")
                 .build();

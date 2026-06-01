@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 
 @Entity
 @Table(name = "worker_invitations")
@@ -44,14 +45,14 @@ public class WorkerInvitation {
 
     @PrePersist
     protected void onCreate() {
-        createdAt = LocalDateTime.now();
+        createdAt = LocalDateTime.now(ZoneOffset.UTC);
     }
 
     /**
      * Check if invitation is expired
      */
     public boolean isExpired() {
-        return LocalDateTime.now().isAfter(expiresAt);
+        return LocalDateTime.now(ZoneOffset.UTC).isAfter(expiresAt);
     }
 
     /**
@@ -66,6 +67,6 @@ public class WorkerInvitation {
      */
     public void markAsUsed() {
         this.used = true;
-        this.usedAt = LocalDateTime.now();
+        this.usedAt = LocalDateTime.now(ZoneOffset.UTC);
     }
 }

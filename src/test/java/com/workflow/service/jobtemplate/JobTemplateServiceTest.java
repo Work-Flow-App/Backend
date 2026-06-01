@@ -22,6 +22,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -68,8 +69,8 @@ class JobTemplateServiceTest {
                 .name("Maintenance Job")
                 .description("Standard maintenance template")
                 .company(company)
-                .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
+                .createdAt(LocalDateTime.now(ZoneOffset.UTC))
+                .updatedAt(LocalDateTime.now(ZoneOffset.UTC))
                 .build();
 
         field1 = JobTemplateField.builder()
@@ -738,8 +739,8 @@ class JobTemplateServiceTest {
                 .description("This is the default")
                 .company(company)
                 .isDefault(true)
-                .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
+                .createdAt(LocalDateTime.now(ZoneOffset.UTC))
+                .updatedAt(LocalDateTime.now(ZoneOffset.UTC))
                 .build();
 
         when(templateRepository.findByCompanyIdAndIsDefaultTrue(1L)).thenReturn(Optional.of(defaultTemplate));

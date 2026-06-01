@@ -6,6 +6,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -17,7 +18,7 @@ class WorkerInvitationTest {
     void isExpired_NotExpired() {
         // Arrange
         WorkerInvitation invitation = WorkerInvitation.builder()
-                .expiresAt(LocalDateTime.now().plusDays(5))
+                .expiresAt(LocalDateTime.now(ZoneOffset.UTC).plusDays(5))
                 .build();
 
         // Act
@@ -32,7 +33,7 @@ class WorkerInvitationTest {
     void isExpired_Expired() {
         // Arrange
         WorkerInvitation invitation = WorkerInvitation.builder()
-                .expiresAt(LocalDateTime.now().minusMinutes(1))
+                .expiresAt(LocalDateTime.now(ZoneOffset.UTC).minusMinutes(1))
                 .build();
 
         // Act
@@ -47,7 +48,7 @@ class WorkerInvitationTest {
     void isValid_ValidInvitation() {
         // Arrange
         WorkerInvitation invitation = WorkerInvitation.builder()
-                .expiresAt(LocalDateTime.now().plusDays(5))
+                .expiresAt(LocalDateTime.now(ZoneOffset.UTC).plusDays(5))
                 .used(false)
                 .build();
 
@@ -63,7 +64,7 @@ class WorkerInvitationTest {
     void isValid_UsedInvitation() {
         // Arrange
         WorkerInvitation invitation = WorkerInvitation.builder()
-                .expiresAt(LocalDateTime.now().plusDays(5))
+                .expiresAt(LocalDateTime.now(ZoneOffset.UTC).plusDays(5))
                 .used(true)
                 .build();
 
@@ -79,7 +80,7 @@ class WorkerInvitationTest {
     void isValid_ExpiredInvitation() {
         // Arrange
         WorkerInvitation invitation = WorkerInvitation.builder()
-                .expiresAt(LocalDateTime.now().minusMinutes(1))
+                .expiresAt(LocalDateTime.now(ZoneOffset.UTC).minusMinutes(1))
                 .used(false)
                 .build();
 
@@ -95,7 +96,7 @@ class WorkerInvitationTest {
     void isValid_UsedAndExpired() {
         // Arrange
         WorkerInvitation invitation = WorkerInvitation.builder()
-                .expiresAt(LocalDateTime.now().minusMinutes(1))
+                .expiresAt(LocalDateTime.now(ZoneOffset.UTC).minusMinutes(1))
                 .used(true)
                 .build();
 
@@ -121,8 +122,8 @@ class WorkerInvitationTest {
         // Assert
         assertTrue(invitation.isUsed());
         assertNotNull(invitation.getUsedAt());
-        assertTrue(invitation.getUsedAt().isBefore(LocalDateTime.now().plusSeconds(1)));
-        assertTrue(invitation.getUsedAt().isAfter(LocalDateTime.now().minusSeconds(1)));
+        assertTrue(invitation.getUsedAt().isBefore(LocalDateTime.now(ZoneOffset.UTC).plusSeconds(1)));
+        assertTrue(invitation.getUsedAt().isAfter(LocalDateTime.now(ZoneOffset.UTC).minusSeconds(1)));
     }
 
     @Test
@@ -134,7 +135,7 @@ class WorkerInvitationTest {
                 .usedAt(null)
                 .build();
 
-        LocalDateTime firstUsedAt = LocalDateTime.now().minusMinutes(5);
+        LocalDateTime firstUsedAt = LocalDateTime.now(ZoneOffset.UTC).minusMinutes(5);
         invitation.setUsed(true);
         invitation.setUsedAt(firstUsedAt);
 
@@ -152,7 +153,7 @@ class WorkerInvitationTest {
     void builder_AllFields() {
         // Arrange
         Company company = Company.builder().id(1L).name("Test Company").build();
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
         LocalDateTime expiresAt = now.plusDays(7);
 
         // Act
@@ -183,7 +184,7 @@ class WorkerInvitationTest {
     void isExpired_ExpiresNow() {
         // Arrange
         WorkerInvitation invitation = WorkerInvitation.builder()
-                .expiresAt(LocalDateTime.now())
+                .expiresAt(LocalDateTime.now(ZoneOffset.UTC))
                 .build();
 
         // Wait a tiny bit to ensure we're past expiration
@@ -205,7 +206,7 @@ class WorkerInvitationTest {
     void isValid_ExpiringSoon() {
         // Arrange - expires in 1 second
         WorkerInvitation invitation = WorkerInvitation.builder()
-                .expiresAt(LocalDateTime.now().plusSeconds(1))
+                .expiresAt(LocalDateTime.now(ZoneOffset.UTC).plusSeconds(1))
                 .used(false)
                 .build();
 

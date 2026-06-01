@@ -3,6 +3,8 @@ package com.workflow.dto.asset;
 import lombok.*;
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -19,7 +21,9 @@ public class AssetAssignmentResponse {
     private String assetTag;
 
     private String notes;
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'", timezone = "UTC")
     private LocalDateTime assignedAt;
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'", timezone = "UTC")
     private LocalDateTime returnedAt;
     private Long durationDays;
     private String status; // ACTIVE or COMPLETED

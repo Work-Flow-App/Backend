@@ -5,6 +5,8 @@ import com.workflow.entity.company.Company;
 
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+
 public record CompanyProfileResponse(
         Long id,
         String name,
@@ -19,7 +21,9 @@ public record CompanyProfileResponse(
         CompanyBankDetailsResponse bankDetails,
         Currency currency,
         boolean archived,
+        @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'", timezone = "UTC")
         LocalDateTime createdAt,
+        @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'", timezone = "UTC")
         LocalDateTime updatedAt
 ) {
     public static CompanyProfileResponse fromEntity(Company company) {

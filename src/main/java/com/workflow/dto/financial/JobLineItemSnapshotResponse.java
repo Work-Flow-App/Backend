@@ -7,6 +7,8 @@ import lombok.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -25,6 +27,7 @@ public class JobLineItemSnapshotResponse {
     private BigDecimal netAmount;
     private BigDecimal vatAmount;
     private BigDecimal totalAmount;
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'", timezone = "UTC")
     private LocalDateTime createdAt;
 
     public static JobLineItemSnapshotResponse fromEntity(JobLineItemSnapshot snap) {

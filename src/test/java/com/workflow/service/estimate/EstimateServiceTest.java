@@ -35,6 +35,7 @@ class EstimateServiceTest {
     @Mock private EstimateLineItemRepository estimateLineItemRepository;
     @Mock private LineItemRepository lineItemRepository;
     @Mock private CompanyRepository companyRepository;
+    @Mock private com.workflow.service.estimatedocument.IEstimateDocumentService estimateDocumentService;
 
     @InjectMocks
     private EstimateService estimateService;

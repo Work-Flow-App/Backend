@@ -20,11 +20,13 @@ public class DashboardService implements IDashboardService {
         BigDecimal waitingApproval = estimateRepository.sumWaitingApprovalByCompanyId(companyId);
         BigDecimal approved = estimateRepository.sumApprovedByCompanyId(companyId);
         BigDecimal invoiced = estimateRepository.sumInvoicedByCompanyId(companyId);
+        BigDecimal allTimeInvoiced = estimateRepository.sumAllTimeInvoicedByCompanyId(companyId);
 
         return FinancialSummaryResponse.builder()
                 .waitingApprovalValue(waitingApproval)
                 .approvedValue(approved)
                 .invoicedValue(invoiced)
+                .allTimeInvoicedValue(allTimeInvoiced)
                 .build();
     }
 }

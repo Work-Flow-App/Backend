@@ -25,4 +25,9 @@ public interface EstimateLineItemRepository extends JpaRepository<EstimateLineIt
     @Modifying(clearAutomatically = true)
     @Query("DELETE FROM EstimateLineItem eli WHERE eli.estimate.job.id = :jobId")
     void deleteByJobId(@Param("jobId") Long jobId);
+
+    @Query("SELECT eli.id FROM EstimateLineItem eli " +
+           "WHERE eli.id IN :ids " +
+           "AND eli.status <> com.workflow.common.constant.financial.LineItemStatus.AVAILABLE")
+    List<Long> findIdsWithNonAvailableStatus(@Param("ids") List<Long> ids);
 }

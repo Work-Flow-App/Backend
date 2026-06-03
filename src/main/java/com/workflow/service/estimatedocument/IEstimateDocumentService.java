@@ -9,4 +9,5 @@ public interface IEstimateDocumentService {
     EstimateDocumentResponse generateEstimateDocument(Long estimateId, EstimateDocumentCreateRequest request, Long companyId);
     List<EstimateDocumentResponse> getEstimateDocuments(Long estimateId, Long companyId);
     EstimateDocumentResponse getEstimateDocument(Long documentId, Long companyId);
+    void cleanupEmptyDocuments(Long estimateId, Long companyId);
 }

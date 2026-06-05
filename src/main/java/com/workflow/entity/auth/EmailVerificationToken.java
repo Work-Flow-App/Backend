@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 
 @Entity
 @Table(name = "email_verification_tokens")
@@ -40,11 +41,11 @@ public class EmailVerificationToken {
 
     @PrePersist
     protected void onCreate() {
-        createdAt = LocalDateTime.now();
+        createdAt = LocalDateTime.now(ZoneOffset.UTC);
     }
 
     public boolean isExpired() {
-        return LocalDateTime.now().isAfter(expiresAt);
+        return LocalDateTime.now(ZoneOffset.UTC).isAfter(expiresAt);
     }
 
     public boolean isValid() {
@@ -53,6 +54,6 @@ public class EmailVerificationToken {
 
     public void markAsUsed() {
         this.used = true;
-        this.usedAt = LocalDateTime.now();
+        this.usedAt = LocalDateTime.now(ZoneOffset.UTC);
     }
 }

@@ -27,6 +27,7 @@ import java.util.Set;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -83,8 +84,8 @@ class AssetServiceTest {
                 .salvageValue(new BigDecimal("5000.00"))
                 .available(true)
                 .archived(false)
-                .createdAt(LocalDateTime.now())
-                .updatedAt(LocalDateTime.now())
+                .createdAt(LocalDateTime.now(ZoneOffset.UTC))
+                .updatedAt(LocalDateTime.now(ZoneOffset.UTC))
                 .build();
 
         createRequest = AssetCreateRequest.builder()
@@ -113,8 +114,8 @@ class AssetServiceTest {
         when(assetRepository.save(any(Asset.class))).thenAnswer(invocation -> {
             Asset savedAsset = invocation.getArgument(0);
             savedAsset.setId(2L);
-            savedAsset.setCreatedAt(LocalDateTime.now());
-            savedAsset.setUpdatedAt(LocalDateTime.now());
+            savedAsset.setCreatedAt(LocalDateTime.now(ZoneOffset.UTC));
+            savedAsset.setUpdatedAt(LocalDateTime.now(ZoneOffset.UTC));
             return savedAsset;
         });
 
@@ -438,7 +439,7 @@ class AssetServiceTest {
         AssetJobAssignment activeAssignment = AssetJobAssignment.builder()
                 .id(1L)
                 .asset(asset)
-                .assignedAt(LocalDateTime.now())
+                .assignedAt(LocalDateTime.now(ZoneOffset.UTC))
                 .build();
 
         when(assetRepository.findById(1L)).thenReturn(Optional.of(asset));

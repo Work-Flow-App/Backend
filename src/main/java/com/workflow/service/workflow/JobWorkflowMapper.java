@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -81,7 +82,7 @@ public class JobWorkflowMapper {
                         return SlaStatus.NOT_APPLICABLE;
                 }
 
-                LocalDateTime endTime = step.getCompletedAt() != null ? step.getCompletedAt() : LocalDateTime.now();
+                LocalDateTime endTime = step.getCompletedAt() != null ? step.getCompletedAt() : LocalDateTime.now(ZoneOffset.UTC);
                 long minutesElapsed = Duration.between(step.getStartedAt(), endTime).toMinutes();
 
                 if (step.getMaximumDurationMinutes() != null && minutesElapsed > step.getMaximumDurationMinutes()) {

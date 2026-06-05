@@ -25,6 +25,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -116,9 +117,9 @@ class WorkerInvitationServiceTest {
                 .invitationToken(TEST_TOKEN)
                 .email(TEST_EMAIL)
                 .company(testCompany)
-                .expiresAt(LocalDateTime.now().plusDays(5))
+                .expiresAt(LocalDateTime.now(ZoneOffset.UTC).plusDays(5))
                 .used(false)
-                .createdAt(LocalDateTime.now().minusDays(2))
+                .createdAt(LocalDateTime.now(ZoneOffset.UTC).minusDays(2))
                 .build();
 
         expiredInvitation = WorkerInvitation.builder()
@@ -126,9 +127,9 @@ class WorkerInvitationServiceTest {
                 .invitationToken("expired-token-123")
                 .email("expired@example.com")
                 .company(testCompany)
-                .expiresAt(LocalDateTime.now().minusDays(1))
+                .expiresAt(LocalDateTime.now(ZoneOffset.UTC).minusDays(1))
                 .used(false)
-                .createdAt(LocalDateTime.now().minusDays(8))
+                .createdAt(LocalDateTime.now(ZoneOffset.UTC).minusDays(8))
                 .build();
 
         usedInvitation = WorkerInvitation.builder()
@@ -136,10 +137,10 @@ class WorkerInvitationServiceTest {
                 .invitationToken("used-token-456")
                 .email("used@example.com")
                 .company(testCompany)
-                .expiresAt(LocalDateTime.now().plusDays(3))
+                .expiresAt(LocalDateTime.now(ZoneOffset.UTC).plusDays(3))
                 .used(true)
-                .usedAt(LocalDateTime.now().minusDays(1))
-                .createdAt(LocalDateTime.now().minusDays(4))
+                .usedAt(LocalDateTime.now(ZoneOffset.UTC).minusDays(1))
+                .createdAt(LocalDateTime.now(ZoneOffset.UTC).minusDays(4))
                 .build();
     }
 
@@ -265,8 +266,8 @@ class WorkerInvitationServiceTest {
         verify(invitationRepository).save(invitationCaptor.capture());
         WorkerInvitation savedInvitation = invitationCaptor.getValue();
 
-        LocalDateTime expectedExpiration = LocalDateTime.now().plusDays(EXPIRATION_DAYS);
-        assertTrue(savedInvitation.getExpiresAt().isAfter(LocalDateTime.now()));
+        LocalDateTime expectedExpiration = LocalDateTime.now(ZoneOffset.UTC).plusDays(EXPIRATION_DAYS);
+        assertTrue(savedInvitation.getExpiresAt().isAfter(LocalDateTime.now(ZoneOffset.UTC)));
         assertTrue(savedInvitation.getExpiresAt().isBefore(expectedExpiration.plusMinutes(1)));
     }
 

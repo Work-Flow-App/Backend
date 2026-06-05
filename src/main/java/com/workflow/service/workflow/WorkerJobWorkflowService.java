@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -306,7 +307,7 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
 
                 // Start clock only if null, clear completedAt just in case of a reset
                 if (step.getStartedAt() == null) {
-                        step.setStartedAt(LocalDateTime.now());
+                        step.setStartedAt(LocalDateTime.now(ZoneOffset.UTC));
                 }
                 step.setCompletedAt(null);
 
@@ -333,7 +334,7 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
 
                 // SLA FIX: Start clock only if null, clear completedAt
                 if (step.getStartedAt() == null) {
-                        step.setStartedAt(LocalDateTime.now());
+                        step.setStartedAt(LocalDateTime.now(ZoneOffset.UTC));
                 }
                 step.setCompletedAt(null);
 
@@ -357,11 +358,11 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
                 checkStepStatusTransition(step, WorkflowStepStatus.ONGOING);
 
                 step.setStatus(WorkflowStepStatus.COMPLETED);
-                step.setCompletedAt(LocalDateTime.now());
+                step.setCompletedAt(LocalDateTime.now(ZoneOffset.UTC));
 
                 // SLA FIX: Edge case catch
                 if (step.getStartedAt() == null) {
-                        step.setStartedAt(LocalDateTime.now());
+                        step.setStartedAt(LocalDateTime.now(ZoneOffset.UTC));
                 }
 
                 stepRepository.save(step);
@@ -382,11 +383,11 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
                 checkStepStatusTransition(step, WorkflowStepStatus.STARTED);
 
                 step.setStatus(WorkflowStepStatus.COMPLETED);
-                step.setCompletedAt(LocalDateTime.now());
+                step.setCompletedAt(LocalDateTime.now(ZoneOffset.UTC));
 
                 // SLA FIX: Edge case catch
                 if (step.getStartedAt() == null) {
-                        step.setStartedAt(LocalDateTime.now());
+                        step.setStartedAt(LocalDateTime.now(ZoneOffset.UTC));
                 }
 
                 stepRepository.save(step);
@@ -410,13 +411,14 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
                 List<JobWorkflowStep> allSteps = stepRepository
                                 .findByJobWorkflowIdOrderByOrderIndexAsc(jobWorkflow.getId());
 
-                // Check if every single step is COMPLETED
+                // Check if every single step is safely resolved (COMPLETED or SKIPPED)
                 boolean allCompleted = allSteps.stream()
-                                .allMatch(s -> s.getStatus() == WorkflowStepStatus.COMPLETED);
+                                .allMatch(s -> s.getStatus() == WorkflowStepStatus.COMPLETED ||
+                                                s.getStatus() == WorkflowStepStatus.SKIPPED);
 
                 if (allCompleted) {
                         jobWorkflow.setStatus(WorkflowStepStatus.COMPLETED);
-                        jobWorkflow.setCompletedAt(LocalDateTime.now());
+                        jobWorkflow.setCompletedAt(LocalDateTime.now(ZoneOffset.UTC));
                         // Explicit save makes the intent clear and guards against future
                         // transaction boundary changes that might move this logic outside a
                         // managed persistence context.
@@ -631,7 +633,7 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
 
         private AssetAssignmentResponse mapAssetAssignment(AssetJobAssignment a) {
                 long durationDays = a.isActive()
-                                ? nullSafeDaysBetween(a.getAssignedAt(), LocalDateTime.now())
+                                ? nullSafeDaysBetween(a.getAssignedAt(), LocalDateTime.now(ZoneOffset.UTC))
                                 : nullSafeDaysBetween(a.getAssignedAt(), a.getReturnedAt());
 
                 String status = a.isActive() ? "ACTIVE" : "COMPLETED";

@@ -13,4 +13,6 @@ public interface JobWorkflowStepActivityRepository
 
     @Query("SELECT a FROM JobWorkflowStepActivity a JOIN FETCH a.actor WHERE a.step.id = :stepId ORDER BY a.createdAt ASC")
     List<JobWorkflowStepActivity> findByStepIdOrderByCreatedAtAsc(@Param("stepId") Long stepId);
+
+    void deleteByStepId(Long stepId);
 }

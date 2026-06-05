@@ -40,7 +40,7 @@ public interface EstimateRepository extends JpaRepository<Estimate, Long> {
             FROM estimate_line_items eli
             JOIN estimates e ON e.id = eli.estimate_id
             JOIN jobs j ON j.id = e.job_id
-            WHERE e.company_id = :companyId AND eli.status = 'WAITING_APPROVAL' AND j.archived = false
+            WHERE e.company_id = :companyId AND eli.status = 'WAITING_APPROVAL' AND j.archived = false AND j.status NOT IN ('COMPLETED', 'CANCELLED')
             """, nativeQuery = true)
     java.math.BigDecimal sumWaitingApprovalByCompanyId(@Param("companyId") Long companyId);
 
@@ -49,7 +49,7 @@ public interface EstimateRepository extends JpaRepository<Estimate, Long> {
             FROM estimate_line_items eli
             JOIN estimates e ON e.id = eli.estimate_id
             JOIN jobs j ON j.id = e.job_id
-            WHERE e.company_id = :companyId AND eli.status = 'APPROVED' AND j.archived = false
+            WHERE e.company_id = :companyId AND eli.status = 'APPROVED' AND j.archived = false AND j.status NOT IN ('COMPLETED', 'CANCELLED')
             """, nativeQuery = true)
     java.math.BigDecimal sumApprovedByCompanyId(@Param("companyId") Long companyId);
 
@@ -58,7 +58,15 @@ public interface EstimateRepository extends JpaRepository<Estimate, Long> {
             FROM estimate_line_items eli
             JOIN estimates e ON e.id = eli.estimate_id
             JOIN jobs j ON j.id = e.job_id
-            WHERE e.company_id = :companyId AND eli.status = 'INVOICED' AND j.archived = false
+            WHERE e.company_id = :companyId AND eli.status = 'INVOICED' AND j.archived = false AND j.status NOT IN ('COMPLETED', 'CANCELLED')
             """, nativeQuery = true)
     java.math.BigDecimal sumInvoicedByCompanyId(@Param("companyId") Long companyId);
+
+    @Query(value = """
+            SELECT COALESCE(SUM(eli.total_amount), 0)
+            FROM estimate_line_items eli
+            JOIN estimates e ON e.id = eli.estimate_id
+            WHERE e.company_id = :companyId AND eli.status = 'INVOICED'
+            """, nativeQuery = true)
+    java.math.BigDecimal sumAllTimeInvoicedByCompanyId(@Param("companyId") Long companyId);
 }

@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -69,7 +70,7 @@ public class WorkerInvitationService {
         String token = UUID.randomUUID().toString();
 
         // Create invitation with expiration
-        LocalDateTime expiresAt = LocalDateTime.now().plusDays(expirationDays);
+        LocalDateTime expiresAt = LocalDateTime.now(ZoneOffset.UTC).plusDays(expirationDays);
         WorkerInvitation invitation = WorkerInvitation.builder()
                 .invitationToken(token)
                 .email(email)

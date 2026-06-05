@@ -18,6 +18,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -124,7 +125,7 @@ public class SubscriptionCheckFilter extends OncePerRequestFilter {
         response.setCharacterEncoding("UTF-8");
 
         Map<String, Object> body = new LinkedHashMap<>();
-        body.put("timestamp", LocalDateTime.now().toString());
+        body.put("timestamp", LocalDateTime.now(ZoneOffset.UTC).toString());
         body.put("status", 402);
         body.put("error", "Payment Required");
         body.put("message", message);

@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.Optional;
 
 @Service
@@ -240,12 +241,12 @@ public class PaddleWebhookHandler {
     }
 
     private LocalDateTime parseOccurredAt(String occurredAt) {
-        if (occurredAt == null) return LocalDateTime.now();
+        if (occurredAt == null) return LocalDateTime.now(ZoneOffset.UTC);
         try {
             return OffsetDateTime.parse(occurredAt).toLocalDateTime();
         } catch (Exception e) {
             log.warn("Could not parse occurredAt: {}, using now", occurredAt);
-            return LocalDateTime.now();
+            return LocalDateTime.now(ZoneOffset.UTC);
         }
     }
 }

@@ -20,6 +20,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -76,28 +77,28 @@ class PasswordResetServiceTest {
                 .id(1L)
                 .verificationCode("valid-token-123")
                 .user(testUser)
-                .expiresAt(LocalDateTime.now().plusMinutes(30))
+                .expiresAt(LocalDateTime.now(ZoneOffset.UTC).plusMinutes(30))
                 .used(false)
-                .createdAt(LocalDateTime.now())
+                .createdAt(LocalDateTime.now(ZoneOffset.UTC))
                 .build();
 
         expiredToken = PasswordResetToken.builder()
                 .id(2L)
                 .verificationCode("expired-token-456")
                 .user(testUser)
-                .expiresAt(LocalDateTime.now().minusMinutes(10))
+                .expiresAt(LocalDateTime.now(ZoneOffset.UTC).minusMinutes(10))
                 .used(false)
-                .createdAt(LocalDateTime.now().minusMinutes(70))
+                .createdAt(LocalDateTime.now(ZoneOffset.UTC).minusMinutes(70))
                 .build();
 
         usedToken = PasswordResetToken.builder()
                 .id(3L)
                 .verificationCode("used-token-789")
                 .user(testUser)
-                .expiresAt(LocalDateTime.now().plusMinutes(30))
+                .expiresAt(LocalDateTime.now(ZoneOffset.UTC).plusMinutes(30))
                 .used(true)
-                .createdAt(LocalDateTime.now())
-                .usedAt(LocalDateTime.now())
+                .createdAt(LocalDateTime.now(ZoneOffset.UTC))
+                .usedAt(LocalDateTime.now(ZoneOffset.UTC))
                 .build();
     }
 
@@ -175,12 +176,12 @@ class PasswordResetServiceTest {
         when(passwordResetTokenRepository.save(any(PasswordResetToken.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
-        LocalDateTime beforeCreation = LocalDateTime.now();
+        LocalDateTime beforeCreation = LocalDateTime.now(ZoneOffset.UTC);
 
         // When
         passwordResetService.createPasswordResetToken(email);
 
-        LocalDateTime afterCreation = LocalDateTime.now();
+        LocalDateTime afterCreation = LocalDateTime.now(ZoneOffset.UTC);
 
         // Then
         ArgumentCaptor<PasswordResetToken> tokenCaptor = ArgumentCaptor.forClass(PasswordResetToken.class);
@@ -231,8 +232,8 @@ class PasswordResetServiceTest {
                 .id(10L)
                 .verificationCode("oldest-token")
                 .user(testUser)
-                .expiresAt(LocalDateTime.now().plusMinutes(30))
-                .createdAt(LocalDateTime.now().minusMinutes(50))
+                .expiresAt(LocalDateTime.now(ZoneOffset.UTC).plusMinutes(30))
+                .createdAt(LocalDateTime.now(ZoneOffset.UTC).minusMinutes(50))
                 .used(false)
                 .build();
 
@@ -240,8 +241,8 @@ class PasswordResetServiceTest {
                 .id(11L)
                 .verificationCode("newer-token-1")
                 .user(testUser)
-                .expiresAt(LocalDateTime.now().plusMinutes(30))
-                .createdAt(LocalDateTime.now().minusMinutes(30))
+                .expiresAt(LocalDateTime.now(ZoneOffset.UTC).plusMinutes(30))
+                .createdAt(LocalDateTime.now(ZoneOffset.UTC).minusMinutes(30))
                 .used(false)
                 .build();
 
@@ -249,8 +250,8 @@ class PasswordResetServiceTest {
                 .id(12L)
                 .verificationCode("newer-token-2")
                 .user(testUser)
-                .expiresAt(LocalDateTime.now().plusMinutes(30))
-                .createdAt(LocalDateTime.now().minusMinutes(10))
+                .expiresAt(LocalDateTime.now(ZoneOffset.UTC).plusMinutes(30))
+                .createdAt(LocalDateTime.now(ZoneOffset.UTC).minusMinutes(10))
                 .used(false)
                 .build();
 
@@ -431,7 +432,7 @@ class PasswordResetServiceTest {
         verify(passwordResetTokenRepository).deleteExpiredAndUsedTokens(cutoffCaptor.capture());
 
         LocalDateTime cutoff = cutoffCaptor.getValue();
-        LocalDateTime expectedCutoff = LocalDateTime.now().minusDays(1);
+        LocalDateTime expectedCutoff = LocalDateTime.now(ZoneOffset.UTC).minusDays(1);
         assertTrue(cutoff.isBefore(expectedCutoff.plusSeconds(1)));
         assertTrue(cutoff.isAfter(expectedCutoff.minusSeconds(1)));
     }

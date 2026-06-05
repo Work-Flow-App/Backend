@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.UUID;
 
@@ -30,7 +31,7 @@ public class RefreshTokenService {
     @Transactional
     public RefreshToken createRefreshToken(User user, HttpServletRequest request) {
         // Check if user has too many active tokens
-        long activeTokenCount = refreshTokenRepository.countActiveTokensByUser(user, LocalDateTime.now());
+        long activeTokenCount = refreshTokenRepository.countActiveTokensByUser(user, LocalDateTime.now(ZoneOffset.UTC));
         if (activeTokenCount >= jwtConfigProperties.getRefreshToken().getMaxActiveTokens()) {
             // Revoke oldest token
             List<RefreshToken> userTokens = refreshTokenRepository.findByUserAndRevokedFalse(user);
@@ -46,7 +47,7 @@ public class RefreshTokenService {
         RefreshToken refreshToken = RefreshToken.builder()
                 .token(UUID.randomUUID().toString())
                 .user(user)
-                .expiresAt(LocalDateTime.now().plusDays(jwtConfigProperties.getRefreshToken().getExpirationDays()))
+                .expiresAt(LocalDateTime.now(ZoneOffset.UTC).plusDays(jwtConfigProperties.getRefreshToken().getExpirationDays()))
                 .deviceInfo(extractDeviceInfo(request))
                 .ipAddress(extractIpAddress(request))
                 .build();
@@ -118,7 +119,7 @@ public class RefreshTokenService {
      */
     @Transactional
     public int revokeAllUserTokens(User user) {
-        int revokedCount = refreshTokenRepository.revokeAllUserTokens(user, LocalDateTime.now());
+        int revokedCount = refreshTokenRepository.revokeAllUserTokens(user, LocalDateTime.now(ZoneOffset.UTC));
         log.info("Revoked {} refresh tokens for user {}", revokedCount, user.getUsername());
         return revokedCount;
     }
@@ -136,7 +137,7 @@ public class RefreshTokenService {
      */
     @Transactional
     public int cleanupExpiredTokens() {
-        int deleted = refreshTokenRepository.deleteExpiredAndRevokedTokens(LocalDateTime.now());
+        int deleted = refreshTokenRepository.deleteExpiredAndRevokedTokens(LocalDateTime.now(ZoneOffset.UTC));
         log.info("Cleaned up {} expired/revoked refresh tokens", deleted);
         return deleted;
     }

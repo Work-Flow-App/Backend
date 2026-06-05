@@ -12,6 +12,7 @@ import com.workflow.repository.company.CompanyRepository;
 import com.workflow.repository.financial.EstimateLineItemRepository;
 import com.workflow.repository.financial.EstimateRepository;
 import com.workflow.repository.financial.LineItemRepository;
+import com.workflow.service.estimatedocument.IEstimateDocumentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,6 +29,7 @@ public class EstimateService implements IEstimateService {
     private final EstimateLineItemRepository estimateLineItemRepository;
     private final LineItemRepository lineItemRepository;
     private final CompanyRepository companyRepository;
+    private final IEstimateDocumentService estimateDocumentService;
 
     @Override
     @Transactional(readOnly = true)
@@ -144,6 +146,10 @@ public class EstimateService implements IEstimateService {
                 .findFirst()
                 .orElseThrow(() -> new LineItemNotFoundException("Line item not found on this estimate"));
 
+        if (item.getStatus() == LineItemStatus.INVOICED) {
+            throw new InvalidRequestException("Cannot edit an invoiced line item");
+        }
+
         if (request.getProductCode() != null) item.setProductCode(request.getProductCode());
         if (request.getProductDescription() != null) item.setProductDescription(request.getProductDescription());
         if (request.getAdditionalDetails() != null) item.setAdditionalDetails(request.getAdditionalDetails());
@@ -152,7 +158,20 @@ public class EstimateService implements IEstimateService {
         if (request.getVatRate() != null) item.setVatRate(request.getVatRate());
 
         LineItemCalculator.recalculate(item);
+
+        boolean statusReverted = false;
+        if (item.getStatus() == LineItemStatus.WAITING_APPROVAL
+                || item.getStatus() == LineItemStatus.APPROVED) {
+            item.setStatus(LineItemStatus.AVAILABLE);
+            statusReverted = true;
+        }
+
         estimateRepository.save(estimate);
+
+        if (statusReverted) {
+            estimateDocumentService.cleanupEmptyDocuments(estimateId, companyId);
+        }
+
         return toResponse(estimate);
     }
 
@@ -169,13 +188,13 @@ public class EstimateService implements IEstimateService {
         if (toRemove.getStatus() == LineItemStatus.INVOICED) {
             throw new InvalidRequestException("Cannot remove an invoiced line item");
         }
-        if (toRemove.getStatus() == LineItemStatus.WAITING_APPROVAL) {
-            throw new InvalidRequestException("Cannot remove a line item pending approval");
-        }
 
         estimate.getLineItems().remove(toRemove);
 
         estimateRepository.save(estimate);
+
+        estimateDocumentService.cleanupEmptyDocuments(estimateId, companyId);
+
         return toResponse(estimate);
     }
 
@@ -189,15 +208,27 @@ public class EstimateService implements IEstimateService {
                 .findByIdAndEstimateId(estimateLineItemId, estimateId)
                 .orElseThrow(() -> new LineItemNotFoundException("Line item not found on this estimate"));
 
-        if (request.getStatus() != LineItemStatus.APPROVED) {
-            throw new InvalidRequestException("Only APPROVED can be set via this endpoint");
-        }
         if (item.getStatus() == LineItemStatus.INVOICED) {
             throw new InvalidRequestException("Cannot change status of an invoiced line item");
         }
 
-        item.setStatus(request.getStatus());
+        LineItemStatus requested = request.getStatus();
+        boolean approve = requested == LineItemStatus.APPROVED
+                && item.getStatus() == LineItemStatus.WAITING_APPROVAL;
+        boolean reject = requested == LineItemStatus.AVAILABLE
+                && item.getStatus() == LineItemStatus.WAITING_APPROVAL;
+
+        if (!approve && !reject) {
+            throw new InvalidRequestException(
+                    "Line item must be in WAITING_APPROVAL status to be approved or rejected");
+        }
+
+        item.setStatus(requested);
         estimateLineItemRepository.save(item);
+
+        if (reject) {
+            estimateDocumentService.cleanupEmptyDocuments(estimateId, companyId);
+        }
 
         Estimate estimate = estimateRepository.findByIdAndCompanyId(estimateId, companyId)
                 .orElseThrow(() -> new EstimateNotFoundException("Estimate not found"));

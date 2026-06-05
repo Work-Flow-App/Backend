@@ -7,6 +7,9 @@ import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
+
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -29,7 +32,9 @@ public class EstimateResponse {
     private BigDecimal waitingApprovalValue;
     private BigDecimal approvedValue;
     private BigDecimal invoicedValue;
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'", timezone = "UTC")
     private LocalDateTime createdAt;
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'", timezone = "UTC")
     private LocalDateTime updatedAt;
 
     public static EstimateResponse fromEntity(Estimate estimate, Set<Long> invoicedLineItemIds) {

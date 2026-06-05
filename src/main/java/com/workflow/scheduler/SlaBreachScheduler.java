@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,7 +32,7 @@ public class SlaBreachScheduler {
 
         // Only pulls steps that are running and haven't been flagged as breached yet
         List<JobWorkflowStep> activeSteps = stepRepository.findActiveStepsWithUnnotifiedSlaBreach();
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
         List<JobWorkflowStep> newlyBreachedSteps = new ArrayList<>();
 
         for (JobWorkflowStep step : activeSteps) {

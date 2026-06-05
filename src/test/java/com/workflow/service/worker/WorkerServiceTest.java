@@ -24,6 +24,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -79,7 +80,7 @@ class WorkerServiceTest {
                 .user(companyUser)
                 .email("company@example.com")
                 .archived(false)
-                .createdAt(LocalDateTime.now())
+                .createdAt(LocalDateTime.now(ZoneOffset.UTC))
                 .build();
 
         workerUser = User.builder()
@@ -103,7 +104,7 @@ class WorkerServiceTest {
                 .user(workerUser)
                 .loginLocked(false)
                 .archived(false)
-                .createdAt(LocalDateTime.now())
+                .createdAt(LocalDateTime.now(ZoneOffset.UTC))
                 .build();
 
         createRequest = new WorkerCreateRequest(

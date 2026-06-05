@@ -156,6 +156,31 @@ public class EstimateDocumentService implements IEstimateDocumentService {
         return EstimateDocumentResponse.fromEntity(doc, presignedUrl);
     }
 
+    @Override
+    public void cleanupEmptyDocuments(Long estimateId, Long companyId) {
+        List<EstimateDocument> docs = estimateDocumentRepository
+                .findByEstimateIdAndCompanyId(estimateId, companyId);
+
+        for (EstimateDocument doc : docs) {
+            List<Long> snapshotLineItemIds = doc.getLineItemSnapshots().stream()
+                    .map(JobLineItemSnapshot::getSourceLineItemId)
+                    .collect(Collectors.toList());
+
+            boolean empty = snapshotLineItemIds.isEmpty()
+                    || estimateLineItemRepository.findIdsWithNonAvailableStatus(snapshotLineItemIds).isEmpty();
+
+            if (empty) {
+                String s3Key = doc.getS3Key();
+                estimateDocumentRepository.delete(doc);
+                try {
+                    storageService.delete(s3Key);
+                } catch (RuntimeException ignored) {
+                    // S3 cleanup best-effort; DB row already removed.
+                }
+            }
+        }
+    }
+
     private byte[] generatePdf(EstimateDocument doc, String documentNumber,
                                 List<EstimateLineItem> items, Estimate estimate) {
         Company company = estimate.getCompany();

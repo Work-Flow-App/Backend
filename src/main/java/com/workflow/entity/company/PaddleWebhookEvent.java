@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 
 @Getter
 @Setter
@@ -23,5 +24,5 @@ public class PaddleWebhookEvent {
 
     @Builder.Default
     @Column(name = "processed_at", nullable = false)
-    private LocalDateTime processedAt = LocalDateTime.now();
+    private LocalDateTime processedAt = LocalDateTime.now(ZoneOffset.UTC);
 }

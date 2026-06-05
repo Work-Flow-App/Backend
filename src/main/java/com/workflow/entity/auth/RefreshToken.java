@@ -5,6 +5,7 @@ import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 
 @Getter
 @Setter
@@ -51,7 +52,7 @@ public class RefreshToken {
 
     // Helper methods
     public boolean isExpired() {
-        return LocalDateTime.now().isAfter(this.expiresAt);
+        return LocalDateTime.now(ZoneOffset.UTC).isAfter(this.expiresAt);
     }
 
     public boolean isValid() {
@@ -60,10 +61,10 @@ public class RefreshToken {
 
     public void revoke() {
         this.revoked = true;
-        this.revokedAt = LocalDateTime.now();
+        this.revokedAt = LocalDateTime.now(ZoneOffset.UTC);
     }
 
     public void updateLastUsed() {
-        this.lastUsedAt = LocalDateTime.now();
+        this.lastUsedAt = LocalDateTime.now(ZoneOffset.UTC);
     }
 }

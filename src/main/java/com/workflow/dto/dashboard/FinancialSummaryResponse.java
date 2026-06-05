@@ -11,4 +11,5 @@ public class FinancialSummaryResponse {
     private BigDecimal waitingApprovalValue;
     private BigDecimal approvedValue;
     private BigDecimal invoicedValue;
+    private BigDecimal allTimeInvoicedValue;
 }

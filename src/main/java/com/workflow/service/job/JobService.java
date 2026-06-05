@@ -2,6 +2,7 @@ package com.workflow.service.job;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -454,7 +455,7 @@ public class JobService implements IJobService {
                                 .findByJobIdAndReturnedAtIsNull(job.getId());
 
                 if (!activeAssignments.isEmpty()) {
-                        LocalDateTime now = LocalDateTime.now();
+                        LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
 
                         // Collect all asset IDs affected by the return so we can batch-check
                         // availability
@@ -529,7 +530,7 @@ public class JobService implements IJobService {
                                                 a -> a,
                                                 (a, b) -> a));
 
-                LocalDateTime now = LocalDateTime.now();
+                LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
                 List<AssetJobAssignment> newAssignments = new ArrayList<>();
 
                 for (Long assetId : assetIds) {

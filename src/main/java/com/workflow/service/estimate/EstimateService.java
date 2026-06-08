@@ -216,11 +216,12 @@ public class EstimateService implements IEstimateService {
         boolean approve = requested == LineItemStatus.APPROVED
                 && item.getStatus() == LineItemStatus.WAITING_APPROVAL;
         boolean reject = requested == LineItemStatus.AVAILABLE
-                && item.getStatus() == LineItemStatus.WAITING_APPROVAL;
+                && (item.getStatus() == LineItemStatus.WAITING_APPROVAL
+                        || item.getStatus() == LineItemStatus.APPROVED);
 
         if (!approve && !reject) {
             throw new InvalidRequestException(
-                    "Line item must be in WAITING_APPROVAL status to be approved or rejected");
+                    "Line item can only be approved (from WAITING_APPROVAL) or rejected (from WAITING_APPROVAL or APPROVED)");
         }
 
         item.setStatus(requested);

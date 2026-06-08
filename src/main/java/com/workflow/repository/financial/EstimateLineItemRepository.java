@@ -30,4 +30,7 @@ public interface EstimateLineItemRepository extends JpaRepository<EstimateLineIt
            "WHERE eli.id IN :ids " +
            "AND eli.status <> com.workflow.common.constant.financial.LineItemStatus.AVAILABLE")
     List<Long> findIdsWithNonAvailableStatus(@Param("ids") List<Long> ids);
+
+    @Query("SELECT eli.id FROM EstimateLineItem eli WHERE eli.id IN :ids")
+    List<Long> findExistingIds(@Param("ids") List<Long> ids);
 }

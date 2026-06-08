@@ -173,13 +173,13 @@ public class EstimateDocumentService implements IEstimateDocumentService {
 
             // Guard: if any snapshot source ID doesn't exist in estimate_line_items,
             // those are orphaned references from pre-V23 data. Keep the document.
-            List<Long> existingIds = estimateLineItemRepository.findExistingIds(snapshotLineItemIds);
+            List<Long> existingIds = estimateLineItemRepository.findExistingIds(snapshotLineItemIds, estimateId);
             if (existingIds.size() < snapshotLineItemIds.size()) {
                 continue;
             }
 
             boolean allAvailable = estimateLineItemRepository
-                    .findIdsWithNonAvailableStatus(existingIds).isEmpty();
+                    .findIdsWithNonAvailableStatus(existingIds, estimateId).isEmpty();
 
             if (allAvailable) {
                 deleteDoc(doc);

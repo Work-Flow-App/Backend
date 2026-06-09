@@ -166,18 +166,34 @@ public class EstimateDocumentService implements IEstimateDocumentService {
                     .map(JobLineItemSnapshot::getSourceLineItemId)
                     .collect(Collectors.toList());
 
-            boolean empty = snapshotLineItemIds.isEmpty()
-                    || estimateLineItemRepository.findIdsWithNonAvailableStatus(snapshotLineItemIds).isEmpty();
-
-            if (empty) {
-                String s3Key = doc.getS3Key();
-                estimateDocumentRepository.delete(doc);
-                try {
-                    storageService.delete(s3Key);
-                } catch (RuntimeException ignored) {
-                    // S3 cleanup best-effort; DB row already removed.
-                }
+            if (snapshotLineItemIds.isEmpty()) {
+                deleteDoc(doc);
+                continue;
             }
+
+            // Guard: if any snapshot source ID doesn't exist in estimate_line_items,
+            // those are orphaned references from pre-V23 data. Keep the document.
+            List<Long> existingIds = estimateLineItemRepository.findExistingIds(snapshotLineItemIds, estimateId);
+            if (existingIds.size() < snapshotLineItemIds.size()) {
+                continue;
+            }
+
+            boolean allAvailable = estimateLineItemRepository
+                    .findIdsWithNonAvailableStatus(existingIds, estimateId).isEmpty();
+
+            if (allAvailable) {
+                deleteDoc(doc);
+            }
+        }
+    }
+
+    private void deleteDoc(EstimateDocument doc) {
+        String s3Key = doc.getS3Key();
+        estimateDocumentRepository.delete(doc);
+        try {
+            storageService.delete(s3Key);
+        } catch (RuntimeException ignored) {
+            // S3 cleanup best-effort; DB row already removed.
         }
     }
 

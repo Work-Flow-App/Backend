@@ -1,5 +1,6 @@
 package com.workflow.service.job;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -90,6 +91,8 @@ public class JobService implements IJobService {
         private final IJobWorkflowService jobWorkflowService;
         private final AddressRepository addressRepository;
         private final CompanyCounterService companyCounterService;
+
+        private record EstimateSummary(Long estimateId, BigDecimal totalNet) {}
 
         @Override
         public JobResponse createJob(JobCreateRequest request, Long companyId) {
@@ -372,12 +375,21 @@ public class JobService implements IJobService {
                         }
                 }
 
+                // Batch-load estimate id + totalNet per job
+                Map<Long, EstimateSummary> estimateByJob = estimateRepository
+                                .findEstimateSummaryByJobIds(jobIds).stream()
+                                .collect(Collectors.toMap(
+                                                row -> (Long) row[0],
+                                                row -> new EstimateSummary((Long) row[1], (BigDecimal) row[2]),
+                                                (a, b) -> a));
+
                 return jobs.stream()
                                 .map(job -> mapToResponse(
                                                 job,
                                                 fieldValuesByJob.getOrDefault(job.getId(), new HashMap<>()),
                                                 assetIdsByJob.getOrDefault(job.getId(), new ArrayList<>()),
-                                                workerIdsByJob.getOrDefault(job.getId(), new ArrayList<>())))
+                                                workerIdsByJob.getOrDefault(job.getId(), new ArrayList<>()),
+                                                estimateByJob.get(job.getId())))
                                 .collect(Collectors.toList());
         }
 
@@ -623,11 +635,14 @@ public class JobService implements IJobService {
                         workerIds.addAll(uniqueWorkerIds);
                 });
 
-                return mapToResponse(job, values, assetIds, workerIds);
+                List<Object[]> rows = estimateRepository.findEstimateSummaryByJobIds(List.of(job.getId()));
+                EstimateSummary es = rows.isEmpty() ? null : new EstimateSummary((Long) rows.get(0)[1], (BigDecimal) rows.get(0)[2]);
+
+                return mapToResponse(job, values, assetIds, workerIds, es);
         }
 
         private JobResponse mapToResponse(Job job, Map<Long, FieldValueResponse> values, List<Long> assetIds,
-                        List<Long> workerIds) {
+                        List<Long> workerIds, EstimateSummary estimate) {
                 AddressResponse addressResponse = null;
 
                 if (job.getAddress() != null) {
@@ -661,6 +676,8 @@ public class JobService implements IJobService {
                                 .assetIds(assetIds)
                                 .assignedWorkerIds(workerIds) // <--- Added the union back here
                                 .address(addressResponse)
+                                .estimateId(estimate != null ? estimate.estimateId() : null)
+                                .estimateTotalNet(estimate != null ? estimate.totalNet() : null)
                                 .build();
         }
 

@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface EstimateRepository extends JpaRepository<Estimate, Long> {
@@ -30,6 +31,9 @@ public interface EstimateRepository extends JpaRepository<Estimate, Long> {
            "LEFT JOIN FETCH e.lineItems " +
            "WHERE e.id = :id AND e.company.id = :companyId")
     Optional<Estimate> findByIdWithDetailsAndCompanyId(@Param("id") Long id, @Param("companyId") Long companyId);
+
+    @Query("SELECT e.job.id, e.id, COALESCE(SUM(li.netAmount), 0) FROM Estimate e LEFT JOIN e.lineItems li WHERE e.job.id IN :jobIds GROUP BY e.job.id, e.id")
+    List<Object[]> findEstimateSummaryByJobIds(@Param("jobIds") List<Long> jobIds);
 
     boolean existsByJobId(Long jobId);
 

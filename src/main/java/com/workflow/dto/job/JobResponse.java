@@ -3,6 +3,7 @@ package com.workflow.dto.job;
 import com.workflow.common.constant.job.JobStatus;
 
 import lombok.*;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
@@ -32,4 +33,6 @@ public class JobResponse {
     private Map<Long, FieldValueResponse> fieldValues;
     private List<Long> assetIds;
     private AddressResponse address;
+    private Long estimateId;
+    private BigDecimal estimateTotalNet;
 }

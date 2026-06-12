@@ -123,7 +123,8 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
 
                 // JOIN FETCH ensures jobWorkflow and job are loaded in one query (no lazy
                 // chain)
-                List<JobWorkflowStep> assignedSteps = stepRepository.findByAssignedWorkers_Id(worker.getId());
+                List<JobWorkflowStep> assignedSteps = stepRepository
+                                .findByAssignedWorkers_IdAndJobNotArchived(worker.getId());
 
                 // Batch-load all active asset assignments for the relevant jobs in one query
                 List<Long> jobIds = assignedSteps.stream()

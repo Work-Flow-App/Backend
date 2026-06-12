@@ -18,6 +18,10 @@ public interface JobWorkflowStepRepository extends JpaRepository<JobWorkflowStep
         @Query("SELECT s FROM JobWorkflowStep s JOIN FETCH s.jobWorkflow jw JOIN FETCH jw.job JOIN s.assignedWorkers w WHERE w.id = :workerId")
         List<JobWorkflowStep> findByAssignedWorkers_Id(@Param("workerId") Long workerId);
 
+        // Fetch all steps assigned to a specific worker where the job is NOT archived
+        @Query("SELECT s FROM JobWorkflowStep s JOIN FETCH s.jobWorkflow jw JOIN FETCH jw.job j JOIN s.assignedWorkers w WHERE w.id = :workerId AND j.archived = false")
+        List<JobWorkflowStep> findByAssignedWorkers_IdAndJobNotArchived(@Param("workerId") Long workerId);
+
         // Batch-load steps for multiple workflows at once; JOIN FETCH jobWorkflow so
         // callers can group by s.getJobWorkflow().getId() without triggering N+1 lazy
         // loads

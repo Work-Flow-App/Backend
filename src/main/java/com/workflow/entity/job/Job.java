@@ -10,6 +10,7 @@ import com.workflow.entity.common.Address;
 import com.workflow.entity.company.Company;
 import com.workflow.entity.customer.Client;
 import com.workflow.entity.customer.Customer;
+import com.workflow.entity.financial.Estimate;
 import com.workflow.entity.workflow.Workflow;
 
 import jakarta.persistence.*;
@@ -68,4 +69,8 @@ public class Job {
     @Builder.Default
     @Column(name = "job_ref", nullable = false)
     private Long jobRef = 0L;
+
+    
+    @OneToOne(mappedBy = "job", fetch = FetchType.LAZY)
+    private Estimate estimate;
 }

@@ -224,7 +224,7 @@ class JobControllerIntegrationTest extends AbstractControllerIntegrationTest {
                                 .build();
                 field2 = jobTemplateFieldRepository.save(field2);
 
-                // Create job (Note: workers are no longer assigned directly to the Job entity)
+                // Create job
                 job = Job.builder()
                                 .template(template)
                                 .company(company)
@@ -268,7 +268,7 @@ class JobControllerIntegrationTest extends AbstractControllerIntegrationTest {
                                 .templateId(template.getId())
                                 .clientId(client.getId())
                                 .customerId(customer.getId())
-                                .assignedWorkerIds(new ArrayList<>()) // Changed to list
+                                .assignedWorkerIds(new ArrayList<>())
                                 .status(JobStatus.NEW)
                                 .fieldValues(fieldValues)
                                 .build();
@@ -283,7 +283,7 @@ class JobControllerIntegrationTest extends AbstractControllerIntegrationTest {
                                 .andExpect(jsonPath("$.clientId").value(client.getId()))
                                 .andExpect(jsonPath("$.status").value("NEW"))
                                 .andExpect(jsonPath("$.archived").value(false))
-                                .andExpect(jsonPath("$.assignedWorkerIds").isArray()) // Assert array exists
+                                .andExpect(jsonPath("$.assignedWorkerIds").isArray())
                                 .andExpect(jsonPath("$.fieldValues").exists());
         }
 
@@ -296,7 +296,7 @@ class JobControllerIntegrationTest extends AbstractControllerIntegrationTest {
                                 .templateId(template.getId())
                                 .clientId(null)
                                 .customerId(customer.getId())
-                                .assignedWorkerIds(null) // Changed to list
+                                .assignedWorkerIds(null)
                                 .status(JobStatus.NEW)
                                 .fieldValues(fieldValues)
                                 .build();
@@ -307,7 +307,7 @@ class JobControllerIntegrationTest extends AbstractControllerIntegrationTest {
                                 .content(objectMapper.writeValueAsString(request)))
                                 .andExpect(status().isCreated())
                                 .andExpect(jsonPath("$.clientId").isEmpty())
-                                .andExpect(jsonPath("$.assignedWorkerIds").isArray()) // Handled gracefully by service
+                                .andExpect(jsonPath("$.assignedWorkerIds").isArray())
                                 .andExpect(jsonPath("$.assignedWorkerIds", hasSize(0)));
         }
 
@@ -437,7 +437,7 @@ class JobControllerIntegrationTest extends AbstractControllerIntegrationTest {
                                 .andExpect(jsonPath("$.id").value(job.getId()))
                                 .andExpect(jsonPath("$.templateId").value(template.getId()))
                                 .andExpect(jsonPath("$.clientId").value(client.getId()))
-                                .andExpect(jsonPath("$.assignedWorkerIds").isArray()) // Expect an array for workers now
+                                .andExpect(jsonPath("$.assignedWorkerIds").isArray())
                                 .andExpect(jsonPath("$.status").value("NEW"))
                                 .andExpect(jsonPath("$.archived").value(false))
                                 .andExpect(jsonPath("$.fieldValues").exists())
@@ -466,9 +466,10 @@ class JobControllerIntegrationTest extends AbstractControllerIntegrationTest {
                 mockMvc.perform(get("/api/v1/jobs")
                                 .header("Authorization", "Bearer " + companyUserToken))
                                 .andExpect(status().isOk())
-                                .andExpect(jsonPath("$", hasSize(1)))
-                                .andExpect(jsonPath("$[0].id").value(job.getId()))
-                                .andExpect(jsonPath("$[0].status").value("NEW"));
+                                // Target "$.content" since endpoint returns a paginated Page<JobResponse>
+                                .andExpect(jsonPath("$.content", hasSize(1)))
+                                .andExpect(jsonPath("$.content[0].id").value(job.getId()))
+                                .andExpect(jsonPath("$.content[0].status").value("NEW"));
         }
 
         @Test
@@ -476,7 +477,8 @@ class JobControllerIntegrationTest extends AbstractControllerIntegrationTest {
                 mockMvc.perform(get("/api/v1/jobs")
                                 .header("Authorization", "Bearer " + anotherCompanyUserToken))
                                 .andExpect(status().isOk())
-                                .andExpect(jsonPath("$", hasSize(0)));
+                                // Check "$.content" size is 0 for paginated response
+                                .andExpect(jsonPath("$.content", hasSize(0)));
         }
 
         // ============= GET /api/v1/jobs/templates/{templateId} Tests =============
@@ -500,7 +502,6 @@ class JobControllerIntegrationTest extends AbstractControllerIntegrationTest {
 
         @Test
         void shouldReturnEmptyListWhenNoJobsForTemplate() throws Exception {
-                // Create a new template without jobs
                 JobTemplate emptyTemplate = JobTemplate.builder()
                                 .name("Empty Template")
                                 .company(company)
@@ -517,7 +518,6 @@ class JobControllerIntegrationTest extends AbstractControllerIntegrationTest {
 
         @Test
         void shouldDeleteJobSuccessfully() throws Exception {
-                // Archive the job first — delete requires archived=true
                 mockMvc.perform(patch("/api/v1/jobs/" + job.getId() + "/archive")
                                 .header("Authorization", "Bearer " + companyUserToken))
                                 .andExpect(status().isNoContent());
@@ -529,7 +529,6 @@ class JobControllerIntegrationTest extends AbstractControllerIntegrationTest {
 
         @Test
         void shouldReturn400WhenDeletingNonArchivedJob() throws Exception {
-                // job is created with archived=false in setUp — delete must be rejected
                 mockMvc.perform(delete("/api/v1/jobs/" + job.getId())
                                 .header("Authorization", "Bearer " + companyUserToken))
                                 .andExpect(status().isBadRequest());

@@ -7,6 +7,7 @@ import com.workflow.dto.job.JobResponse;
 import com.workflow.entity.customer.Client;
 import com.workflow.entity.company.Company;
 import com.workflow.entity.customer.Customer;
+import com.workflow.entity.financial.Estimate;
 import com.workflow.entity.job.Job;
 import com.workflow.entity.job.JobTemplate;
 import com.workflow.repository.asset.AssetJobAssignmentRepository;
@@ -38,6 +39,7 @@ import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -120,7 +122,7 @@ class JobServiceTest {
                                 .templateId(3L)
                                 .clientId(1L)
                                 .customerId(1L)
-                                .assignedWorkerIds(List.of(1L)) // Updated to use List of IDs
+                                .assignedWorkerIds(List.of(1L))
                                 .status(JobStatus.NEW)
                                 .fieldValues(fieldValues)
                                 .build();
@@ -134,9 +136,11 @@ class JobServiceTest {
                 when(customerRepository.findById(1L)).thenReturn(Optional.of(customer));
                 when(templateFieldRepository.findByTemplateIdOrderByOrderIndexAsc(3L))
                                 .thenReturn(Collections.emptyList());
+                when(companyCounterService.nextJobId(1L)).thenReturn(1001L); // Fix: mock Job ID sequence generator
+
                 doAnswer(invocation -> {
                         Job job = invocation.getArgument(0);
-                        job.setId(55L); // simulate database ID assignment
+                        job.setId(55L);
                         return job;
                 }).when(jobRepository).saveAndFlush(any(Job.class));
 
@@ -145,28 +149,31 @@ class JobServiceTest {
                 assertThat(response).isNotNull();
                 assertThat(response.getId()).isEqualTo(55L);
                 assertThat(response.getStatus()).isEqualTo(JobStatus.NEW);
+                assertThat(response.getJobRef()).isEqualTo(1001L);
 
                 verify(companyRepository).getReferenceById(1L);
                 verify(templateRepository).findById(3L);
                 verify(clientRepository).findById(1L);
                 verify(customerRepository).findById(1L);
                 verify(jobRepository).saveAndFlush(any(Job.class));
+                verify(estimateRepository).save(any(Estimate.class)); // Fix: verify automatic estimate creation
         }
 
         @Test
         void createJob_ShouldUseDefaultStatus_WhenStatusIsNull() {
-                createRequest.setStatus(null); // status is null
+                createRequest.setStatus(null);
                 when(companyRepository.getReferenceById(1L)).thenReturn(company);
                 when(templateRepository.findById(3L)).thenReturn(Optional.of(template));
                 when(clientRepository.findById(1L)).thenReturn(Optional.of(client));
                 when(customerRepository.findById(1L)).thenReturn(Optional.of(customer));
                 when(templateFieldRepository.findByTemplateIdOrderByOrderIndexAsc(3L))
                                 .thenReturn(Collections.emptyList());
+                when(companyCounterService.nextJobId(1L)).thenReturn(1002L);
 
                 doAnswer(invocation -> {
                         Job job = invocation.getArgument(0);
                         job.setId(55L);
-                        assertThat(job.getStatus()).isEqualTo(JobStatus.NEW); // verify default
+                        assertThat(job.getStatus()).isEqualTo(JobStatus.NEW);
                         return job;
                 }).when(jobRepository).saveAndFlush(any(Job.class));
 
@@ -186,6 +193,8 @@ class JobServiceTest {
                 when(clientRepository.findById(1L)).thenReturn(Optional.of(client));
                 when(templateFieldRepository.findByTemplateIdOrderByOrderIndexAsc(3L))
                                 .thenReturn(Collections.emptyList());
+                when(companyCounterService.nextJobId(1L)).thenReturn(1003L);
+
                 doAnswer(invocation -> {
                         Job job = invocation.getArgument(0);
                         job.setId(55L);
@@ -241,9 +250,10 @@ class JobServiceTest {
 
                 jobService.deleteJob(jobId, 1L);
 
+                verify(assetJobAssignmentRepository).deleteByJobId(jobId);
+                verify(estimateDocumentRepository).deleteByEstimateJobId(jobId); // Fix: verify document deletion
                 verify(invoiceRepository).deleteLineItemSnapshotsByJobId(jobId);
                 verify(invoiceRepository).deleteByJobId(jobId);
-                verify(assetJobAssignmentRepository).deleteByJobId(jobId);
                 verify(jobWorkflowRepository).deleteByJobId(jobId);
                 verify(fieldValueRepository).deleteByJobId(jobId);
                 verify(jobRepository).delete(archivedJob);
@@ -266,7 +276,7 @@ class JobServiceTest {
                                 .isInstanceOf(InvalidRequestException.class)
                                 .hasMessageContaining("archived");
 
-                verify(jobRepository, never()).delete(any());
+                verify(jobRepository, never()).delete(any(Job.class));
         }
 
         @Test
@@ -277,7 +287,7 @@ class JobServiceTest {
                 assertThatThrownBy(() -> jobService.deleteJob(jobId, 1L))
                                 .isInstanceOf(JobNotFoundException.class);
 
-                verify(jobRepository, never()).delete(any());
+                verify(jobRepository, never()).delete(any(Job.class));
         }
 
         // ============= archiveJob Tests =============

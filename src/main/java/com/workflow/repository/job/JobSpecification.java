@@ -2,11 +2,15 @@ package com.workflow.repository.job;
 
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.util.StringUtils;
+
+import com.workflow.entity.financial.EstimateLineItem;
 import com.workflow.entity.job.Job;
 import com.workflow.common.constant.job.JobStatus;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.Subquery;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -103,14 +107,23 @@ public class JobSpecification {
 
             // 6. NUMBER RANGE FILTER (Estimate Total Net)
             if (minNet != null || maxNet != null) {
-                Join<Object, Object> estimateJoin = root.join("estimate", JoinType.LEFT);
+                // Create a subquery to calculate the sum of 'netAmount' from EstimateLineItem
+                Subquery<BigDecimal> sumSubquery = query.subquery(BigDecimal.class);
+                Root<EstimateLineItem> eliRoot = sumSubquery.from(EstimateLineItem.class);
+                Join<Object, Object> subEstimateJoin = eliRoot.join("estimate");
+
+                // SELECT COALESCE(SUM(eli.netAmount), 0)
+                sumSubquery.select(cb.coalesce(cb.sum(eliRoot.get("netAmount")), BigDecimal.ZERO));
+
+                // WHERE eli.estimate.job = root (the current Job we are filtering)
+                sumSubquery.where(cb.equal(subEstimateJoin.get("job"), root));
 
                 if (minNet != null && maxNet != null) {
-                    predicates.add(cb.between(estimateJoin.get("netAmount"), minNet, maxNet));
+                    predicates.add(cb.between(sumSubquery, minNet, maxNet));
                 } else if (minNet != null) {
-                    predicates.add(cb.greaterThanOrEqualTo(estimateJoin.get("netAmount"), minNet));
+                    predicates.add(cb.greaterThanOrEqualTo(sumSubquery, minNet));
                 } else {
-                    predicates.add(cb.lessThanOrEqualTo(estimateJoin.get("netAmount"), maxNet));
+                    predicates.add(cb.lessThanOrEqualTo(sumSubquery, maxNet));
                 }
             }
 

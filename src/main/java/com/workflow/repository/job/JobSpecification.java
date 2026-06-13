@@ -45,9 +45,6 @@ public class JobSpecification {
             }
 
             // --- SAFE JOIN DECLARATIONS ---
-            // Declaring joins here to reuse them for both specific and global searches.
-            // This prevents Hibernate from generating duplicate LEFT JOIN clauses in the
-            // SQL.
             Join<Object, Object> customerJoin = root.join("customer", JoinType.LEFT);
             Join<Object, Object> clientJoin = root.join("client", JoinType.LEFT);
             Join<Object, Object> workflowJoin = root.join("workflow", JoinType.LEFT);
@@ -71,20 +68,37 @@ public class JobSpecification {
                         "%" + templateName.toLowerCase() + "%"));
             }
 
-            // 5. Global Text Search
+            // 5. Global Text Search (Upgraded to be truly global)
             if (StringUtils.hasText(search)) {
                 String searchPattern = "%" + search.toLowerCase() + "%";
 
-                // Address join is only needed if a global search happens
                 Join<Object, Object> addressJoin = root.join("address", JoinType.LEFT);
 
+                // Base Job Field
                 Predicate matchJobRef = cb.like(cb.lower(root.get("jobRef").as(String.class)), searchPattern);
+
+                // Related Entity Names
                 Predicate matchCustomer = cb.like(cb.lower(customerJoin.get("name")), searchPattern);
                 Predicate matchClient = cb.like(cb.lower(clientJoin.get("name")), searchPattern);
                 Predicate matchWorkflow = cb.like(cb.lower(workflowJoin.get("name")), searchPattern);
-                Predicate matchPostCode = cb.like(cb.lower(addressJoin.get("postalCode")), searchPattern);
+                Predicate matchTemplate = cb.like(cb.lower(templateJoin.get("name")), searchPattern);
 
-                predicates.add(cb.or(matchJobRef, matchCustomer, matchClient, matchWorkflow, matchPostCode));
+                // Expanded Address Search
+                Predicate matchPostCode = cb.like(cb.lower(addressJoin.get("postalCode")), searchPattern);
+                Predicate matchStreet = cb.like(cb.lower(addressJoin.get("street")), searchPattern);
+                Predicate matchCity = cb.like(cb.lower(addressJoin.get("city")), searchPattern);
+                Predicate matchState = cb.like(cb.lower(addressJoin.get("state")), searchPattern);
+
+                predicates.add(cb.or(
+                        matchJobRef,
+                        matchCustomer,
+                        matchClient,
+                        matchWorkflow,
+                        matchTemplate,
+                        matchPostCode,
+                        matchStreet,
+                        matchCity,
+                        matchState));
             }
 
             // 6. NUMBER RANGE FILTER (Estimate Total Net)
@@ -92,14 +106,11 @@ public class JobSpecification {
                 Join<Object, Object> estimateJoin = root.join("estimate", JoinType.LEFT);
 
                 if (minNet != null && maxNet != null) {
-                    // In Between
-                    predicates.add(cb.between(estimateJoin.get("totalNet"), minNet, maxNet));
+                    predicates.add(cb.between(estimateJoin.get("netAmount"), minNet, maxNet));
                 } else if (minNet != null) {
-                    // Greater than or equal
-                    predicates.add(cb.greaterThanOrEqualTo(estimateJoin.get("totalNet"), minNet));
+                    predicates.add(cb.greaterThanOrEqualTo(estimateJoin.get("netAmount"), minNet));
                 } else {
-                    // Less than or equal
-                    predicates.add(cb.lessThanOrEqualTo(estimateJoin.get("totalNet"), maxNet));
+                    predicates.add(cb.lessThanOrEqualTo(estimateJoin.get("netAmount"), maxNet));
                 }
             }
 

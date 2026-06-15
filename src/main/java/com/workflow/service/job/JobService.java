@@ -247,7 +247,10 @@ public class JobService implements IJobService {
                         updateJobAssetAssignments(job, request.getAssetIds(), companyId);
                 }
 
-                return mapToResponse(job);
+                Job refreshedJob = jobRepository.findById(jobId)
+                                .orElseThrow(() -> new JobNotFoundException("Job not found"));
+
+                return mapToResponse(refreshedJob);
         }
 
         private void saveJobFieldValues(Job job, Map<Long, Object> fieldValues) {

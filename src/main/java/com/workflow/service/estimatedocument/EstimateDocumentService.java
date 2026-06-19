@@ -23,29 +23,27 @@ import com.workflow.service.storage.IStorageService;
 import com.workflow.templates.pdf.estimate.EstimatePdfRenderer;
 import com.workflow.templates.pdf.estimate.EstimateTemplateData;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.io.ByteArrayInputStream;
-import java.util.concurrent.CompletableFuture;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import lombok.extern.slf4j.Slf4j;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
-@Slf4j
 @Service
-@Transactional
 @RequiredArgsConstructor
+@Slf4j
 public class EstimateDocumentService implements IEstimateDocumentService {
 
     private final EstimateDocumentRepository estimateDocumentRepository;
@@ -54,25 +52,25 @@ public class EstimateDocumentService implements IEstimateDocumentService {
     private final IStorageService storageService;
     private final EstimatePdfRenderer pdfRenderer;
     private final CompanyCounterService companyCounterService;
+    private final TransactionTemplate transactionTemplate;
 
     @Override
-    public EstimateDocumentResponse generateEstimateDocument(Long estimateId,
-                                                              EstimateDocumentCreateRequest request,
-                                                              Long companyId) {
-        long t0 = System.currentTimeMillis();
-        log.info("[EstimateDoc] START estimateId={} companyId={} lineItemIds={}", estimateId, companyId, request.getLineItemIds());
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    public EstimateDocumentResponse generateEstimateDocument(Long estimateId, EstimateDocumentCreateRequest request,
+            Long companyId) {
+        log.info("[EstimateDoc] START estimateId={} companyId={}", estimateId, companyId);
 
-        log.info("[EstimateDoc] Loading estimate...");
-        Estimate estimate = estimateRepository.findByIdWithDetailsAndCompanyId(estimateId, companyId)
-                .orElseThrow(() -> new EstimateNotFoundException("Estimate not found"));
-        log.info("[EstimateDoc] Estimate loaded {}ms", System.currentTimeMillis() - t0);
+        // 1. FETCH DATA (Short Transaction)
+        Estimate estimate = transactionTemplate.execute(status -> estimateRepository
+                .findByIdWithDetailsAndCompanyId(estimateId, companyId)
+                .orElseThrow(() -> new EstimateNotFoundException("Estimate not found")));
 
+        // Validate request
         Set<Long> estimateLineItemIds = estimate.getLineItems().stream()
                 .map(EstimateLineItem::getId)
                 .collect(Collectors.toSet());
 
-        List<Long> requestedIds = request.getLineItemIds();
-        List<Long> invalidIds = requestedIds.stream()
+        List<Long> invalidIds = request.getLineItemIds().stream()
                 .filter(id -> !estimateLineItemIds.contains(id))
                 .toList();
 
@@ -82,9 +80,10 @@ public class EstimateDocumentService implements IEstimateDocumentService {
         }
 
         List<EstimateLineItem> selectedItems = estimate.getLineItems().stream()
-                .filter(eli -> requestedIds.contains(eli.getId()))
+                .filter(eli -> request.getLineItemIds().contains(eli.getId()))
                 .collect(Collectors.toList());
 
+        // Calculate totals
         BigDecimal totalNet = selectedItems.stream()
                 .map(EstimateLineItem::getNetAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
@@ -97,6 +96,7 @@ public class EstimateDocumentService implements IEstimateDocumentService {
                 .map(EstimateLineItem::getTotalAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
+        // Build snapshots
         List<JobLineItemSnapshot> snapshots = selectedItems.stream()
                 .map(eli -> JobLineItemSnapshot.builder()
                         .type(SnapshotType.ESTIMATE_DOCUMENT)
@@ -113,11 +113,10 @@ public class EstimateDocumentService implements IEstimateDocumentService {
                         .build())
                 .collect(Collectors.toList());
 
-        log.info("[EstimateDoc] Allocating counter {}ms", System.currentTimeMillis() - t0);
+        // 2. GENERATE PDF (Heavy CPU work - NO DATABASE CONNECTION HELD!)
         long docSeq = companyCounterService.nextEstimateDocumentId(companyId);
         String documentNumber = String.format("EST-%d-%05d", LocalDate.now().getYear(), docSeq);
         String s3Key = String.format("estimate-documents/%d/%s.pdf", companyId, documentNumber);
-        log.info("[EstimateDoc] Counter done documentNumber={} {}ms", documentNumber, System.currentTimeMillis() - t0);
 
         EstimateDocument docToSave = EstimateDocument.builder()
                 .estimate(estimate)
@@ -133,46 +132,25 @@ public class EstimateDocumentService implements IEstimateDocumentService {
                 .notes(request.getNotes() != null ? request.getNotes() : estimate.getNotes())
                 .build();
 
-        log.info("[EstimateDoc] Generating PDF {}ms", System.currentTimeMillis() - t0);
-        byte[] pdfBytes = generatePdf(docToSave, documentNumber, selectedItems, estimate);
-        log.info("[EstimateDoc] PDF done sizeBytes={} {}ms", pdfBytes.length, System.currentTimeMillis() - t0);
-
         snapshots.forEach(s -> s.setEstimateDocument(docToSave));
-        log.info("[EstimateDoc] Saving EstimateDocument (INSERT estimate_documents + cascade job_line_item_snapshots) {}ms", System.currentTimeMillis() - t0);
-        EstimateDocument savedDoc = estimateDocumentRepository.save(docToSave);
-        log.info("[EstimateDoc] Saved id={} {}ms", savedDoc.getId(), System.currentTimeMillis() - t0);
 
-        List<Long> selectedIds = selectedItems.stream().map(EstimateLineItem::getId).toList();
-        log.info("[EstimateDoc] Updating line item status {}ms", System.currentTimeMillis() - t0);
-        estimateLineItemRepository.updateStatusForIdsIfAvailable(selectedIds, LineItemStatus.WAITING_APPROVAL);
-        log.info("[EstimateDoc] Line items updated {}ms", System.currentTimeMillis() - t0);
+        log.info("[EstimateDoc] Generating PDF...");
+        byte[] pdfBytes = generatePdf(docToSave, documentNumber, selectedItems, estimate);
 
-        // Upload after TX commits — releasing X locks on estimate_documents and
-        // job_line_item_snapshots before the S3 network call.
-        final byte[] uploadBytes = pdfBytes;
-        if (TransactionSynchronizationManager.isSynchronizationActive()) {
-            log.debug("[EstimateDoc] Registering S3 upload for afterCommit key={}", s3Key);
-            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-                @Override
-                public void afterCommit() {
-                    try {
-                        log.debug("[EstimateDoc] afterCommit: uploading to S3 key={}", s3Key);
-                        storageService.upload(s3Key, new ByteArrayInputStream(uploadBytes), uploadBytes.length, "application/pdf");
-                        log.info("[EstimateDoc] S3 upload complete key={}", s3Key);
-                    } catch (Exception e) {
-                        log.error("[EstimateDoc] S3 upload failed key={}", s3Key, e);
-                        throw e;
-                    }
-                }
-            });
-        } else {
-            log.warn("[EstimateDoc] No active TX sync — uploading S3 inline key={}", s3Key);
-            storageService.upload(s3Key, new ByteArrayInputStream(uploadBytes), uploadBytes.length, "application/pdf");
-        }
+        // 3. SAVE TO DB AND UPDATE STATUS (Short Transaction)
+        EstimateDocument savedDoc = transactionTemplate.execute(status -> {
+            EstimateDocument doc = estimateDocumentRepository.save(docToSave);
+            List<Long> selectedIds = selectedItems.stream().map(EstimateLineItem::getId).toList();
+            estimateLineItemRepository.updateStatusForIdsIfAvailable(selectedIds,
+                    LineItemStatus.WAITING_APPROVAL);
+            return doc;
+        });
 
-        log.info("[EstimateDoc] TX committing — afterCommit will upload to S3 {}ms", System.currentTimeMillis() - t0);
+        // 4. UPLOAD TO S3 (Network call - outside DB transaction)
+        log.info("[EstimateDoc] Uploading to S3...");
+        storageService.upload(s3Key, new ByteArrayInputStream(pdfBytes), pdfBytes.length, "application/pdf");
+
         String presignedUrl = storageService.generatePresignedUrl(s3Key);
-        log.info("[EstimateDoc] DONE returning response {}ms", System.currentTimeMillis() - t0);
         return EstimateDocumentResponse.fromEntity(savedDoc, presignedUrl);
     }
 
@@ -192,23 +170,17 @@ public class EstimateDocumentService implements IEstimateDocumentService {
     @Transactional(readOnly = true)
     public EstimateDocumentResponse getEstimateDocument(Long documentId, Long companyId) {
         EstimateDocument doc = estimateDocumentRepository.findByIdAndCompanyId(documentId, companyId)
-                .orElseThrow(() -> new EstimateDocumentNotFoundException("Estimate document not found"));
+                .orElseThrow(() -> new EstimateDocumentNotFoundException(
+                        "Estimate document not found"));
         String presignedUrl = storageService.generatePresignedUrl(doc.getS3Key());
         return EstimateDocumentResponse.fromEntity(doc, presignedUrl);
     }
 
-    // READ_COMMITTED: CASCADE DELETE does not acquire gap locks in this isolation level,
-    // eliminating contention on idx_jlis_estimate_document with concurrent generateEstimateDocument INSERTs.
-    // REQUIRES_NEW: own TX so gap locks release as soon as cleanup commits, independent of any
-    // outer TX or afterCommit context that called this method.
     @Override
     @Transactional(isolation = Isolation.READ_COMMITTED, propagation = Propagation.REQUIRES_NEW)
     public void cleanupEmptyDocuments(Long estimateId, Long companyId) {
-        long tc = System.currentTimeMillis();
-        log.info("[Cleanup] START estimateId={} companyId={}", estimateId, companyId);
         List<EstimateDocument> docs = estimateDocumentRepository
                 .findByEstimateIdAndCompanyId(estimateId, companyId);
-        log.info("[Cleanup] Found {} docs {}ms", docs.size(), System.currentTimeMillis() - tc);
 
         for (EstimateDocument doc : docs) {
             List<Long> snapshotLineItemIds = doc.getLineItemSnapshots().stream()
@@ -216,15 +188,14 @@ public class EstimateDocumentService implements IEstimateDocumentService {
                     .collect(Collectors.toList());
 
             if (snapshotLineItemIds.isEmpty()) {
-                log.info("[Cleanup] Deleting doc id={} (no snapshots) {}ms", doc.getId(), System.currentTimeMillis() - tc);
                 deleteDoc(doc);
-                log.info("[Cleanup] Deleted doc id={} {}ms", doc.getId(), System.currentTimeMillis() - tc);
                 continue;
             }
 
             // Guard: if any snapshot source ID doesn't exist in estimate_line_items,
             // those are orphaned references from pre-V23 data. Keep the document.
-            List<Long> existingIds = estimateLineItemRepository.findExistingIds(snapshotLineItemIds, estimateId);
+            List<Long> existingIds = estimateLineItemRepository.findExistingIds(snapshotLineItemIds,
+                    estimateId);
             if (existingIds.size() < snapshotLineItemIds.size()) {
                 continue;
             }
@@ -233,29 +204,27 @@ public class EstimateDocumentService implements IEstimateDocumentService {
                     .findIdsWithNonAvailableStatus(existingIds, estimateId).isEmpty();
 
             if (allAvailable) {
-                log.info("[Cleanup] Deleting doc id={} (all items available) {}ms", doc.getId(), System.currentTimeMillis() - tc);
                 deleteDoc(doc);
-                log.info("[Cleanup] Deleted doc id={} {}ms", doc.getId(), System.currentTimeMillis() - tc);
             }
         }
-        log.info("[Cleanup] DONE estimateId={} {}ms", estimateId, System.currentTimeMillis() - tc);
     }
 
     private void deleteDoc(EstimateDocument doc) {
         String s3Key = doc.getS3Key();
         estimateDocumentRepository.delete(doc);
+        
         // S3 delete in background — must not block the TX so gap locks are released immediately.
         CompletableFuture.runAsync(() -> {
             try {
                 storageService.delete(s3Key);
             } catch (RuntimeException ignored) {
-                // best-effort; DB row already removed
+                // S3 cleanup best-effort; DB row already removed.
             }
         });
     }
 
     private byte[] generatePdf(EstimateDocument doc, String documentNumber,
-                                List<EstimateLineItem> items, Estimate estimate) {
+            List<EstimateLineItem> items, Estimate estimate) {
         Company company = estimate.getCompany();
         Customer customer = estimate.getJob().getCustomer();
         DateTimeFormatter dateFmt = DateTimeFormatter.ofPattern("dd MMM yyyy");
@@ -268,8 +237,10 @@ public class EstimateDocumentService implements IEstimateDocumentService {
                 .companyName(company.getName())
                 .companyAddressLines(companyAddressLines(company))
                 .vatNumber(company.getVatNumber())
-                .companyEmail(company.getEmail() != null ? company.getEmail() : company.getContactEmail())
-                .companyPhone(company.getTelephone() != null ? company.getTelephone() : company.getMobile())
+                .companyEmail(company.getEmail() != null ? company.getEmail()
+                        : company.getContactEmail())
+                .companyPhone(company.getTelephone() != null ? company.getTelephone()
+                        : company.getMobile())
                 .customerName(customer != null ? customer.getName() : null)
                 .customerAddressLines(customer != null ? customerAddressLines(customer) : List.of())
                 .lineItems(items.stream().map(eli -> EstimateTemplateData.LineItemRow.builder()
@@ -280,11 +251,13 @@ public class EstimateDocumentService implements IEstimateDocumentService {
                         .unitPrice(formatAmount(eli.getUnitPrice()))
                         .vatDisplay(eli.getVatRate().compareTo(BigDecimal.ZERO) == 0
                                 ? "No VAT"
-                                : eli.getVatRate().stripTrailingZeros().toPlainString() + "%")
+                                : eli.getVatRate().stripTrailingZeros().toPlainString()
+                                        + "%")
                         .amount(formatAmount(eli.getTotalAmount()))
                         .build()).collect(Collectors.toList()))
                 .subtotal(formatAmount(doc.getTotalNet()))
-                .vatLabel(doc.getTotalVat().compareTo(BigDecimal.ZERO) == 0 ? "TOTAL  NO VAT" : "TOTAL VAT")
+                .vatLabel(doc.getTotalVat().compareTo(BigDecimal.ZERO) == 0 ? "TOTAL  NO VAT"
+                        : "TOTAL VAT")
                 .totalVat(formatAmount(doc.getTotalVat()))
                 .grandTotal(formatAmount(doc.getGrandTotal()))
                 .notes(doc.getNotes())
@@ -325,7 +298,8 @@ public class EstimateDocumentService implements IEstimateDocumentService {
     }
 
     private void addIfPresent(List<String> list, String value) {
-        if (value != null && !value.isBlank()) list.add(value);
+        if (value != null && !value.isBlank())
+            list.add(value);
     }
 
     private String formatAmount(BigDecimal amount) {

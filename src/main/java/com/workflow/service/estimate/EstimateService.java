@@ -20,6 +20,7 @@ import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 @Service
@@ -242,10 +243,14 @@ public class EstimateService implements IEstimateService {
         if (TransactionSynchronizationManager.isSynchronizationActive()) {
             TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
                 @Override
-                public void afterCommit() { action.run(); }
+                public void afterCommit() { 
+                    // This forces the cleanup to happen in the background
+                    CompletableFuture.runAsync(action); 
+                }
             });
         } else {
-            action.run();
+            // This forces the cleanup to happen in the background
+            CompletableFuture.runAsync(action);
         }
     }
 

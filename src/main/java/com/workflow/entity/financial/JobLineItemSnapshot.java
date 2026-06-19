@@ -14,7 +14,11 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 @Entity
-@Table(name = "job_line_item_snapshots")
+@Table(name = "job_line_item_snapshots", indexes = {
+        @Index(name = "idx_jlis_estimate_doc", columnList = "estimate_document_id"),
+        @Index(name = "idx_jlis_invoice", columnList = "invoice_id"),
+        @Index(name = "idx_jlis_source_item", columnList = "source_line_item_id")
+})
 public class JobLineItemSnapshot {
 
     @Id

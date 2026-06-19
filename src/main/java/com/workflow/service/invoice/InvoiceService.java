@@ -26,6 +26,8 @@ import com.workflow.templates.pdf.invoice.InvoiceTemplateData;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.io.ByteArrayInputStream;
 import java.math.BigDecimal;
@@ -133,8 +135,23 @@ public class InvoiceService implements IInvoiceService {
         List<Long> selectedIds = selectedItems.stream().map(EstimateLineItem::getId).toList();
         estimateLineItemRepository.markAsInvoiced(selectedIds);
 
-        byte[] pdfBytes = generatePdf(invoice, invoiceNumber, selectedItems, estimate);
-        storageService.upload(s3Key, new ByteArrayInputStream(pdfBytes), pdfBytes.length, "application/pdf");
+        // PDF generation and upload after TX commits — X locks on invoices and
+        // job_line_item_snapshots released before CPU/S3 work.
+        final Invoice committedInvoice = invoice;
+        final List<EstimateLineItem> itemsForPdf = selectedItems;
+        final Estimate estimateForPdf = estimate;
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    byte[] pdfBytes = generatePdf(committedInvoice, invoiceNumber, itemsForPdf, estimateForPdf);
+                    storageService.upload(s3Key, new ByteArrayInputStream(pdfBytes), pdfBytes.length, "application/pdf");
+                }
+            });
+        } else {
+            byte[] pdfBytes = generatePdf(invoice, invoiceNumber, selectedItems, estimate);
+            storageService.upload(s3Key, new ByteArrayInputStream(pdfBytes), pdfBytes.length, "application/pdf");
+        }
 
         String presignedUrl = storageService.generatePresignedUrl(s3Key);
         return InvoiceResponse.fromEntity(invoice, presignedUrl);

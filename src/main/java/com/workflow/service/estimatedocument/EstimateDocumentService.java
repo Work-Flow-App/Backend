@@ -24,9 +24,14 @@ import com.workflow.templates.pdf.estimate.EstimatePdfRenderer;
 import com.workflow.templates.pdf.estimate.EstimateTemplateData;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.io.ByteArrayInputStream;
+import java.util.concurrent.CompletableFuture;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -129,7 +134,19 @@ public class EstimateDocumentService implements IEstimateDocumentService {
         List<Long> selectedIds = selectedItems.stream().map(EstimateLineItem::getId).toList();
         estimateLineItemRepository.updateStatusForIdsIfAvailable(selectedIds, LineItemStatus.WAITING_APPROVAL);
 
-        storageService.upload(s3Key, new ByteArrayInputStream(pdfBytes), pdfBytes.length, "application/pdf");
+        // Upload after TX commits — releasing X locks on estimate_documents and
+        // job_line_item_snapshots before the S3 network call.
+        final byte[] uploadBytes = pdfBytes;
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    storageService.upload(s3Key, new ByteArrayInputStream(uploadBytes), uploadBytes.length, "application/pdf");
+                }
+            });
+        } else {
+            storageService.upload(s3Key, new ByteArrayInputStream(uploadBytes), uploadBytes.length, "application/pdf");
+        }
 
         String presignedUrl = storageService.generatePresignedUrl(s3Key);
         return EstimateDocumentResponse.fromEntity(savedDoc, presignedUrl);
@@ -156,7 +173,12 @@ public class EstimateDocumentService implements IEstimateDocumentService {
         return EstimateDocumentResponse.fromEntity(doc, presignedUrl);
     }
 
+    // READ_COMMITTED: CASCADE DELETE does not acquire gap locks in this isolation level,
+    // eliminating contention on idx_jlis_estimate_document with concurrent generateEstimateDocument INSERTs.
+    // REQUIRES_NEW: own TX so gap locks release as soon as cleanup commits, independent of any
+    // outer TX or afterCommit context that called this method.
     @Override
+    @Transactional(isolation = Isolation.READ_COMMITTED, propagation = Propagation.REQUIRES_NEW)
     public void cleanupEmptyDocuments(Long estimateId, Long companyId) {
         List<EstimateDocument> docs = estimateDocumentRepository
                 .findByEstimateIdAndCompanyId(estimateId, companyId);
@@ -190,11 +212,14 @@ public class EstimateDocumentService implements IEstimateDocumentService {
     private void deleteDoc(EstimateDocument doc) {
         String s3Key = doc.getS3Key();
         estimateDocumentRepository.delete(doc);
-        try {
-            storageService.delete(s3Key);
-        } catch (RuntimeException ignored) {
-            // S3 cleanup best-effort; DB row already removed.
-        }
+        // S3 delete in background — must not block the TX so gap locks are released immediately.
+        CompletableFuture.runAsync(() -> {
+            try {
+                storageService.delete(s3Key);
+            } catch (RuntimeException ignored) {
+                // best-effort; DB row already removed
+            }
+        });
     }
 
     private byte[] generatePdf(EstimateDocument doc, String documentNumber,

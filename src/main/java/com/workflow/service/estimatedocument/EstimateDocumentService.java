@@ -35,11 +35,14 @@ import java.util.concurrent.CompletableFuture;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import lombok.extern.slf4j.Slf4j;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @Transactional
 @RequiredArgsConstructor
@@ -138,13 +141,22 @@ public class EstimateDocumentService implements IEstimateDocumentService {
         // job_line_item_snapshots before the S3 network call.
         final byte[] uploadBytes = pdfBytes;
         if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            log.debug("[EstimateDoc] Registering S3 upload for afterCommit key={}", s3Key);
             TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
                 @Override
                 public void afterCommit() {
-                    storageService.upload(s3Key, new ByteArrayInputStream(uploadBytes), uploadBytes.length, "application/pdf");
+                    try {
+                        log.debug("[EstimateDoc] afterCommit: uploading to S3 key={}", s3Key);
+                        storageService.upload(s3Key, new ByteArrayInputStream(uploadBytes), uploadBytes.length, "application/pdf");
+                        log.info("[EstimateDoc] S3 upload complete key={}", s3Key);
+                    } catch (Exception e) {
+                        log.error("[EstimateDoc] S3 upload failed key={}", s3Key, e);
+                        throw e;
+                    }
                 }
             });
         } else {
+            log.warn("[EstimateDoc] No active TX sync — uploading S3 inline key={}", s3Key);
             storageService.upload(s3Key, new ByteArrayInputStream(uploadBytes), uploadBytes.length, "application/pdf");
         }
 

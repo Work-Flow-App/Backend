@@ -204,8 +204,11 @@ public class EstimateDocumentService implements IEstimateDocumentService {
     @Override
     @Transactional(isolation = Isolation.READ_COMMITTED, propagation = Propagation.REQUIRES_NEW)
     public void cleanupEmptyDocuments(Long estimateId, Long companyId) {
+        long tc = System.currentTimeMillis();
+        log.info("[Cleanup] START estimateId={} companyId={}", estimateId, companyId);
         List<EstimateDocument> docs = estimateDocumentRepository
                 .findByEstimateIdAndCompanyId(estimateId, companyId);
+        log.info("[Cleanup] Found {} docs {}ms", docs.size(), System.currentTimeMillis() - tc);
 
         for (EstimateDocument doc : docs) {
             List<Long> snapshotLineItemIds = doc.getLineItemSnapshots().stream()
@@ -213,7 +216,9 @@ public class EstimateDocumentService implements IEstimateDocumentService {
                     .collect(Collectors.toList());
 
             if (snapshotLineItemIds.isEmpty()) {
+                log.info("[Cleanup] Deleting doc id={} (no snapshots) {}ms", doc.getId(), System.currentTimeMillis() - tc);
                 deleteDoc(doc);
+                log.info("[Cleanup] Deleted doc id={} {}ms", doc.getId(), System.currentTimeMillis() - tc);
                 continue;
             }
 
@@ -228,9 +233,12 @@ public class EstimateDocumentService implements IEstimateDocumentService {
                     .findIdsWithNonAvailableStatus(existingIds, estimateId).isEmpty();
 
             if (allAvailable) {
+                log.info("[Cleanup] Deleting doc id={} (all items available) {}ms", doc.getId(), System.currentTimeMillis() - tc);
                 deleteDoc(doc);
+                log.info("[Cleanup] Deleted doc id={} {}ms", doc.getId(), System.currentTimeMillis() - tc);
             }
         }
+        log.info("[Cleanup] DONE estimateId={} {}ms", estimateId, System.currentTimeMillis() - tc);
     }
 
     private void deleteDoc(EstimateDocument doc) {

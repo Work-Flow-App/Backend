@@ -59,8 +59,13 @@ public class EstimateDocumentService implements IEstimateDocumentService {
     public EstimateDocumentResponse generateEstimateDocument(Long estimateId,
                                                               EstimateDocumentCreateRequest request,
                                                               Long companyId) {
+        long t0 = System.currentTimeMillis();
+        log.info("[EstimateDoc] START estimateId={} companyId={} lineItemIds={}", estimateId, companyId, request.getLineItemIds());
+
+        log.info("[EstimateDoc] Loading estimate...");
         Estimate estimate = estimateRepository.findByIdWithDetailsAndCompanyId(estimateId, companyId)
                 .orElseThrow(() -> new EstimateNotFoundException("Estimate not found"));
+        log.info("[EstimateDoc] Estimate loaded {}ms", System.currentTimeMillis() - t0);
 
         Set<Long> estimateLineItemIds = estimate.getLineItems().stream()
                 .map(EstimateLineItem::getId)
@@ -108,10 +113,11 @@ public class EstimateDocumentService implements IEstimateDocumentService {
                         .build())
                 .collect(Collectors.toList());
 
-        // REQUIRES_NEW transaction guarantees uniqueness of the sequence counter
+        log.info("[EstimateDoc] Allocating counter {}ms", System.currentTimeMillis() - t0);
         long docSeq = companyCounterService.nextEstimateDocumentId(companyId);
         String documentNumber = String.format("EST-%d-%05d", LocalDate.now().getYear(), docSeq);
         String s3Key = String.format("estimate-documents/%d/%s.pdf", companyId, documentNumber);
+        log.info("[EstimateDoc] Counter done documentNumber={} {}ms", documentNumber, System.currentTimeMillis() - t0);
 
         EstimateDocument docToSave = EstimateDocument.builder()
                 .estimate(estimate)
@@ -127,15 +133,19 @@ public class EstimateDocumentService implements IEstimateDocumentService {
                 .notes(request.getNotes() != null ? request.getNotes() : estimate.getNotes())
                 .build();
 
-        // Generate PDF before any DB writes — rendering failure must not commit the document record.
+        log.info("[EstimateDoc] Generating PDF {}ms", System.currentTimeMillis() - t0);
         byte[] pdfBytes = generatePdf(docToSave, documentNumber, selectedItems, estimate);
+        log.info("[EstimateDoc] PDF done sizeBytes={} {}ms", pdfBytes.length, System.currentTimeMillis() - t0);
 
         snapshots.forEach(s -> s.setEstimateDocument(docToSave));
+        log.info("[EstimateDoc] Saving EstimateDocument (INSERT estimate_documents + cascade job_line_item_snapshots) {}ms", System.currentTimeMillis() - t0);
         EstimateDocument savedDoc = estimateDocumentRepository.save(docToSave);
+        log.info("[EstimateDoc] Saved id={} {}ms", savedDoc.getId(), System.currentTimeMillis() - t0);
 
-        // Transition AVAILABLE line items to WAITING_APPROVAL after successful PDF generation.
         List<Long> selectedIds = selectedItems.stream().map(EstimateLineItem::getId).toList();
+        log.info("[EstimateDoc] Updating line item status {}ms", System.currentTimeMillis() - t0);
         estimateLineItemRepository.updateStatusForIdsIfAvailable(selectedIds, LineItemStatus.WAITING_APPROVAL);
+        log.info("[EstimateDoc] Line items updated {}ms", System.currentTimeMillis() - t0);
 
         // Upload after TX commits — releasing X locks on estimate_documents and
         // job_line_item_snapshots before the S3 network call.
@@ -160,7 +170,9 @@ public class EstimateDocumentService implements IEstimateDocumentService {
             storageService.upload(s3Key, new ByteArrayInputStream(uploadBytes), uploadBytes.length, "application/pdf");
         }
 
+        log.info("[EstimateDoc] TX committing — afterCommit will upload to S3 {}ms", System.currentTimeMillis() - t0);
         String presignedUrl = storageService.generatePresignedUrl(s3Key);
+        log.info("[EstimateDoc] DONE returning response {}ms", System.currentTimeMillis() - t0);
         return EstimateDocumentResponse.fromEntity(savedDoc, presignedUrl);
     }
 

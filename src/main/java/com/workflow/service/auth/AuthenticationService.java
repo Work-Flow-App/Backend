@@ -14,7 +14,6 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @RequiredArgsConstructor
 @Service
@@ -26,7 +25,6 @@ public class AuthenticationService {
     private final RefreshTokenService refreshTokenService;
     private final JwtConfigProperties jwtConfigProperties;
 
-    @Transactional
     public AuthenticationResponse authenticate(LoginRequest request, HttpServletRequest httpRequest) {
         // Spring Security will throw if invalid
         authenticationManager.authenticate(
@@ -46,7 +44,6 @@ public class AuthenticationService {
         return AuthenticationResponse.success(accessToken, refreshToken.getToken(), expiresIn);
     }
 
-    @Transactional
     public AuthenticationResponse generateJwtToken(UserDetails user, HttpServletRequest httpRequest) {
         String accessToken = jwtService.generateToken(user);
         RefreshToken refreshToken = refreshTokenService.createRefreshToken((User) user, httpRequest);
@@ -55,7 +52,6 @@ public class AuthenticationService {
         return AuthenticationResponse.success(accessToken, refreshToken.getToken(), expiresIn);
     }
 
-    @Transactional
     public AuthenticationResponse refreshAccessToken(RefreshTokenRequest request, HttpServletRequest httpRequest) {
         // Validate refresh token
         RefreshToken refreshToken = refreshTokenService.validateRefreshToken(request.refreshToken());
@@ -70,14 +66,11 @@ public class AuthenticationService {
         return AuthenticationResponse.success(newAccessToken, newRefreshToken.getToken(), expiresIn);
     }
 
-    @Transactional
     public void logout(String refreshToken, User user) {
         refreshTokenService.revokeRefreshToken(refreshToken, user);
     }
 
-    @Transactional
     public void logoutFromAllDevices(User user) {
         refreshTokenService.revokeAllUserTokens(user);
     }
 }
-

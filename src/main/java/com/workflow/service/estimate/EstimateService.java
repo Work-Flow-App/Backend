@@ -16,8 +16,11 @@ import com.workflow.service.estimatedocument.IEstimateDocumentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 @Service
@@ -169,7 +172,7 @@ public class EstimateService implements IEstimateService {
         estimateRepository.save(estimate);
 
         if (statusReverted) {
-            estimateDocumentService.cleanupEmptyDocuments(estimateId, companyId);
+            runAfterCommit(() -> estimateDocumentService.cleanupEmptyDocuments(estimateId, companyId));
         }
 
         return toResponse(estimate);
@@ -193,7 +196,7 @@ public class EstimateService implements IEstimateService {
 
         estimateRepository.save(estimate);
 
-        estimateDocumentService.cleanupEmptyDocuments(estimateId, companyId);
+        runAfterCommit(() -> estimateDocumentService.cleanupEmptyDocuments(estimateId, companyId));
 
         return toResponse(estimate);
     }
@@ -228,12 +231,27 @@ public class EstimateService implements IEstimateService {
         estimateLineItemRepository.save(item);
 
         if (reject) {
-            estimateDocumentService.cleanupEmptyDocuments(estimateId, companyId);
+            runAfterCommit(() -> estimateDocumentService.cleanupEmptyDocuments(estimateId, companyId));
         }
 
         Estimate estimate = estimateRepository.findByIdAndCompanyId(estimateId, companyId)
                 .orElseThrow(() -> new EstimateNotFoundException("Estimate not found"));
         return toResponse(estimate);
+    }
+
+    private void runAfterCommit(Runnable action) {
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() { 
+                    // This forces the cleanup to happen in the background
+                    CompletableFuture.runAsync(action); 
+                }
+            });
+        } else {
+            // This forces the cleanup to happen in the background
+            CompletableFuture.runAsync(action);
+        }
     }
 
     private EstimateResponse toResponse(Estimate estimate) {

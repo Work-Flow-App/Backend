@@ -24,8 +24,11 @@ import com.workflow.service.storage.IStorageService;
 import com.workflow.templates.pdf.invoice.InvoicePdfRenderer;
 import com.workflow.templates.pdf.invoice.InvoiceTemplateData;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.io.ByteArrayInputStream;
 import java.math.BigDecimal;
@@ -36,6 +39,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @Transactional
 @RequiredArgsConstructor
@@ -133,8 +137,33 @@ public class InvoiceService implements IInvoiceService {
         List<Long> selectedIds = selectedItems.stream().map(EstimateLineItem::getId).toList();
         estimateLineItemRepository.markAsInvoiced(selectedIds);
 
-        byte[] pdfBytes = generatePdf(invoice, invoiceNumber, selectedItems, estimate);
-        storageService.upload(s3Key, new ByteArrayInputStream(pdfBytes), pdfBytes.length, "application/pdf");
+        // PDF generation and upload after TX commits — X locks on invoices and
+        // job_line_item_snapshots released before CPU/S3 work.
+        final Invoice committedInvoice = invoice;
+        final List<EstimateLineItem> itemsForPdf = selectedItems;
+        final Estimate estimateForPdf = estimate;
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            log.debug("[Invoice] Registering PDF+S3 upload for afterCommit key={}", s3Key);
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    try {
+                        log.debug("[Invoice] afterCommit: generating PDF key={}", s3Key);
+                        byte[] pdfBytes = generatePdf(committedInvoice, invoiceNumber, itemsForPdf, estimateForPdf);
+                        log.debug("[Invoice] afterCommit: uploading to S3 key={}", s3Key);
+                        storageService.upload(s3Key, new ByteArrayInputStream(pdfBytes), pdfBytes.length, "application/pdf");
+                        log.info("[Invoice] S3 upload complete key={}", s3Key);
+                    } catch (Exception e) {
+                        log.error("[Invoice] PDF/S3 failed key={}", s3Key, e);
+                        throw e;
+                    }
+                }
+            });
+        } else {
+            log.warn("[Invoice] No active TX sync — generating PDF and uploading S3 inline key={}", s3Key);
+            byte[] pdfBytes = generatePdf(invoice, invoiceNumber, selectedItems, estimate);
+            storageService.upload(s3Key, new ByteArrayInputStream(pdfBytes), pdfBytes.length, "application/pdf");
+        }
 
         String presignedUrl = storageService.generatePresignedUrl(s3Key);
         return InvoiceResponse.fromEntity(invoice, presignedUrl);

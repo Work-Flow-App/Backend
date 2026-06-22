@@ -102,12 +102,10 @@ class RefreshTokenServiceTest {
                 .revoked(false)
                 .build();
 
-        List<RefreshToken> userTokens = List.of(oldestToken, newerToken);
-
         when(httpRequest.getHeader("User-Agent")).thenReturn("Mozilla/5.0");
         when(httpRequest.getRemoteAddr()).thenReturn("192.168.1.1");
         when(refreshTokenRepository.countActiveTokensByUser(any(), any())).thenReturn(5L);
-        when(refreshTokenRepository.findByUserAndRevokedFalse(testUser)).thenReturn(userTokens);
+        when(refreshTokenRepository.revokeOldestActiveToken(eq(testUser.getId()), any())).thenReturn(1);
         when(refreshTokenRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
         // Act
@@ -115,9 +113,8 @@ class RefreshTokenServiceTest {
 
         // Assert
         assertThat(newToken).isNotNull();
-        assertThat(oldestToken.isRevoked()).isTrue();
-        assertThat(oldestToken.getRevokedAt()).isNotNull();
-        verify(refreshTokenRepository, times(2)).save(any(RefreshToken.class)); // Once for revoke, once for new token
+        verify(refreshTokenRepository).revokeOldestActiveToken(eq(testUser.getId()), any());
+        verify(refreshTokenRepository, times(1)).save(any(RefreshToken.class)); // Only the new token
     }
 
     @Test

@@ -30,18 +30,13 @@ public class RefreshTokenService {
      */
     @Transactional
     public RefreshToken createRefreshToken(User user, HttpServletRequest request) {
-        // Check if user has too many active tokens
-        long activeTokenCount = refreshTokenRepository.countActiveTokensByUser(user, LocalDateTime.now(ZoneOffset.UTC));
+        LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
+        long activeTokenCount = refreshTokenRepository.countActiveTokensByUser(user, now);
         if (activeTokenCount >= jwtConfigProperties.getRefreshToken().getMaxActiveTokens()) {
-            // Revoke oldest token
-            List<RefreshToken> userTokens = refreshTokenRepository.findByUserAndRevokedFalse(user);
-            userTokens.stream()
-                    .min((t1, t2) -> t1.getCreatedAt().compareTo(t2.getCreatedAt()))
-                    .ifPresent(oldestToken -> {
-                        oldestToken.revoke();
-                        refreshTokenRepository.save(oldestToken);
-                        log.info("Revoked oldest token for user {} due to max active tokens limit", user.getUsername());
-                    });
+            int revoked = refreshTokenRepository.revokeOldestActiveToken(user.getId(), now);
+            if (revoked > 0) {
+                log.info("Revoked oldest token for user {} due to max active tokens limit", user.getUsername());
+            }
         }
 
         RefreshToken refreshToken = RefreshToken.builder()

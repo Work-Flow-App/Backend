@@ -598,6 +598,7 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
                                 .workedMinutes(duration) // Added mapped duration
                                 .description(log.getDescription())
                                 .loggedById(log.getLoggedBy().getId())
+                                .loggedByUsername(log.getLoggedBy().getUsername())
                                 .createdAt(log.getCreatedAt())
                                 .updatedAt(log.getUpdatedAt())
                                 .build();

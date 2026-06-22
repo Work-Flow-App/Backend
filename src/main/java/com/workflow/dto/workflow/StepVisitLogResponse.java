@@ -19,6 +19,7 @@ public class StepVisitLogResponse {
     private Long workedMinutes;
     private String description;
     private Long loggedById;
+    private String loggedByUsername;
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'", timezone = "UTC")
     private LocalDateTime createdAt;
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'", timezone = "UTC")

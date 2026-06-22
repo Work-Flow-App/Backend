@@ -28,11 +28,3 @@ spring:
   devtools:
     restart:
       enabled: false
-  datasource:
-    hikari:
-      maximum-pool-size: 10
-      minimum-idle: 2
-      idle-timeout: 300000        # 5 min — evict idle connections after 5 min
-      max-lifetime: 600000        # 10 min — recycle connections before MySQL wait_timeout
-      connection-timeout: 30000   # 30s — fail fast if pool exhausted
-      keepalive-time: 60000       # 1 min — heartbeat to detect dead connections early

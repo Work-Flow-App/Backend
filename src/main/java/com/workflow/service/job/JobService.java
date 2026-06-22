@@ -14,6 +14,10 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -57,6 +61,7 @@ import com.workflow.repository.financial.EstimateRepository;
 import com.workflow.repository.financial.InvoiceRepository;
 import com.workflow.repository.job.JobFieldValueRepository;
 import com.workflow.repository.job.JobRepository;
+import com.workflow.repository.job.JobSpecification;
 import com.workflow.repository.job.JobTemplateFieldRepository;
 import com.workflow.repository.job.JobTemplateRepository;
 import com.workflow.repository.job.JobWorkflowRepository;
@@ -92,7 +97,8 @@ public class JobService implements IJobService {
         private final AddressRepository addressRepository;
         private final CompanyCounterService companyCounterService;
 
-        private record EstimateSummary(Long estimateId, BigDecimal totalNet) {}
+        private record EstimateSummary(Long estimateId, BigDecimal totalNet) {
+        }
 
         @Override
         public JobResponse createJob(JobCreateRequest request, Long companyId) {
@@ -241,7 +247,10 @@ public class JobService implements IJobService {
                         updateJobAssetAssignments(job, request.getAssetIds(), companyId);
                 }
 
-                return mapToResponse(job);
+                Job refreshedJob = jobRepository.findById(jobId)
+                                .orElseThrow(() -> new JobNotFoundException("Job not found"));
+
+                return mapToResponse(refreshedJob);
         }
 
         private void saveJobFieldValues(Job job, Map<Long, Object> fieldValues) {
@@ -317,7 +326,7 @@ public class JobService implements IJobService {
         @Transactional(readOnly = true)
         public List<JobResponse> getArchivedJobs(Long companyId) {
                 List<Job> jobs = jobRepository.findArchivedByCompanyId(companyId);
-                
+
                 if (jobs.isEmpty()) {
                         return new ArrayList<>();
                 }
@@ -406,8 +415,8 @@ public class JobService implements IJobService {
                 // Mark assigned assets as available before bulk-deleting the assignment rows.
                 // findByJobIdAndReturnedAtIsNull covers only currently active assignments;
                 // historical (returned) rows have no effect on availability.
-                List<AssetJobAssignment> activeAssignments =
-                                assetJobAssignmentRepository.findByJobIdAndReturnedAtIsNull(jobId);
+                List<AssetJobAssignment> activeAssignments = assetJobAssignmentRepository
+                                .findByJobIdAndReturnedAtIsNull(jobId);
                 if (!activeAssignments.isEmpty()) {
                         List<Asset> assetsToRelease = activeAssignments.stream()
                                         .map(AssetJobAssignment::getAsset)
@@ -416,11 +425,14 @@ public class JobService implements IJobService {
                         assetRepository.saveAll(assetsToRelease);
                 }
 
-                // Bulk-delete all asset assignments for this job (RESTRICT FK — must go before job).
+                // Bulk-delete all asset assignments for this job (RESTRICT FK — must go before
+                // job).
                 assetJobAssignmentRepository.deleteByJobId(jobId);
 
-                // estimate_documents.estimate_id is RESTRICT — must delete before estimate cascade.
-                // Snapshots inside EstimateDocument cascade via fk_jlis_estimate_document ON DELETE CASCADE.
+                // estimate_documents.estimate_id is RESTRICT — must delete before estimate
+                // cascade.
+                // Snapshots inside EstimateDocument cascade via fk_jlis_estimate_document ON
+                // DELETE CASCADE.
                 estimateDocumentRepository.deleteByEstimateJobId(jobId);
 
                 // Bulk-delete invoice snapshots and invoices before the job delete
@@ -428,7 +440,8 @@ public class JobService implements IJobService {
                 invoiceRepository.deleteLineItemSnapshotsByJobId(jobId);
                 invoiceRepository.deleteByJobId(jobId);
 
-                // Bulk-delete the job_workflow record before the job. The FK on job_workflows.job_id
+                // Bulk-delete the job_workflow record before the job. The FK on
+                // job_workflows.job_id
                 // has no ON DELETE clause (RESTRICT). Deleting it here lets DB cascades remove
                 // job_workflow_steps and all child rows (activities, attachments, comments,
                 // visit_logs) via their ON DELETE CASCADE FKs on job_workflow_steps.
@@ -607,6 +620,38 @@ public class JobService implements IJobService {
                 }
         }
 
+        @Override
+        @Transactional(readOnly = true)
+        public Page<JobResponse> searchJobs(
+                        Long companyId,
+                        String search,
+                        String customerName,
+                        String clientName,
+                        String workflowName,
+                        String templateName,
+                        JobStatus status,
+                        Boolean archived,
+                        BigDecimal minNet,
+                        BigDecimal maxNet,
+                        LocalDateTime startDate,
+                        LocalDateTime endDate,
+                        Pageable pageable) {
+
+                // Pass the new fields to the specification builder
+                Specification<Job> spec = JobSpecification.buildAdvancedFilters(
+                                companyId, search, customerName, clientName, workflowName, templateName,
+                                status, archived, minNet, maxNet, startDate, endDate);
+
+                Page<Job> jobPage = jobRepository.findAll(spec, pageable);
+
+                if (jobPage.isEmpty()) {
+                        return Page.empty(pageable);
+                }
+
+                List<JobResponse> hydratedResponses = buildJobResponsesInBatch(jobPage.getContent());
+                return new PageImpl<>(hydratedResponses, pageable, jobPage.getTotalElements());
+        }
+
         private JobResponse mapToResponse(Job job) {
                 Map<Long, FieldValueResponse> values = fieldValueRepository.findByJobId(job.getId())
                                 .stream()
@@ -636,7 +681,8 @@ public class JobService implements IJobService {
                 });
 
                 List<Object[]> rows = estimateRepository.findEstimateSummaryByJobIds(List.of(job.getId()));
-                EstimateSummary es = rows.isEmpty() ? null : new EstimateSummary((Long) rows.get(0)[1], (BigDecimal) rows.get(0)[2]);
+                EstimateSummary es = rows.isEmpty() ? null
+                                : new EstimateSummary((Long) rows.get(0)[1], (BigDecimal) rows.get(0)[2]);
 
                 return mapToResponse(job, values, assetIds, workerIds, es);
         }
@@ -664,17 +710,21 @@ public class JobService implements IJobService {
                                 .id(job.getId())
                                 .jobRef(job.getJobRef())
                                 .companyId(job.getCompany().getId())
-                                .templateId(job.getTemplate().getId())
-                                .clientId(job.getClient() != null ? job.getClient().getId() : null)
-                                .customerId(job.getCustomer() != null ? job.getCustomer().getId() : null)
-                                .workflowId(job.getWorkflow() != null ? job.getWorkflow().getId() : null)
                                 .status(job.getStatus())
                                 .archived(job.isArchived())
                                 .createdAt(job.getCreatedAt())
                                 .updatedAt(job.getUpdatedAt())
+                                .templateId(job.getTemplate().getId())
+                                .templateName(job.getTemplate().getName())
+                                .clientId(job.getClient() != null ? job.getClient().getId() : null)
+                                .clientName(job.getClient() != null ? job.getClient().getName() : null)
+                                .customerId(job.getCustomer() != null ? job.getCustomer().getId() : null)
+                                .customerName(job.getCustomer() != null ? job.getCustomer().getName() : null)
+                                .workflowId(job.getWorkflow() != null ? job.getWorkflow().getId() : null)
+                                .workflowName(job.getWorkflow() != null ? job.getWorkflow().getName() : null)
                                 .fieldValues(values)
                                 .assetIds(assetIds)
-                                .assignedWorkerIds(workerIds) // <--- Added the union back here
+                                .assignedWorkerIds(workerIds)
                                 .address(addressResponse)
                                 .estimateId(estimate != null ? estimate.estimateId() : null)
                                 .estimateTotalNet(estimate != null ? estimate.totalNet() : null)

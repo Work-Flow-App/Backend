@@ -1,5 +1,7 @@
 package com.workflow.entity.asset;
 
+import com.workflow.common.constant.asset.AssetLocationType;
+import com.workflow.entity.common.Address;
 import com.workflow.entity.company.Company;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -59,6 +61,21 @@ public class Asset {
     @Column(nullable = false, columnDefinition = "BOOLEAN DEFAULT FALSE")
     @Builder.Default
     private boolean archived = false;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 30)
+    @Builder.Default
+    private AssetLocationType locationType = AssetLocationType.WAREHOUSE;
+
+    // The current physical location of the asset
+    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @JoinColumn(name = "address_id")
+    private Address address;
+
+    // The default home base. When returned, it reverts to this address.
+    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @JoinColumn(name = "warehouse_address_id")
+    private Address warehouseAddress;
 
     @Builder.Default
     @Column(name = "asset_ref", nullable = false)

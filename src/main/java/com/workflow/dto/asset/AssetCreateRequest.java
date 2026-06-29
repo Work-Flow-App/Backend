@@ -1,10 +1,13 @@
 package com.workflow.dto.asset;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+
+import com.workflow.dto.job.AddressRequest;
 
 @Data
 @NoArgsConstructor
@@ -40,4 +43,7 @@ public class AssetCreateRequest {
 
     // salvageValue < purchasePrice is a cross-field rule — validated in the service
     private BigDecimal salvageValue;
+
+    @Valid
+    private AddressRequest warehouseAddress;
 }

@@ -14,4 +14,5 @@ public class AssetAssignmentUpdateRequest {
 
     private AssetLocationType explicitLocationType; 
     private AddressRequest customAddress;
+    private Integer expectedDurationDays;
 }

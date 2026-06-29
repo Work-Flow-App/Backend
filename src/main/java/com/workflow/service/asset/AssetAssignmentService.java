@@ -124,6 +124,8 @@ public class AssetAssignmentService implements IAssetAssignmentService {
                 .assignedAt(LocalDateTime.now(ZoneOffset.UTC))
                 .locationType(locationType) // Saving for history
                 .address(locationAddress) // Saving for history
+                .expectedDurationDays(request.getExpectedDurationDays()) // <-- Add this
+                .slaBreached(false)
                 .build();
 
         assignmentRepository.save(assignment);
@@ -200,6 +202,36 @@ public class AssetAssignmentService implements IAssetAssignmentService {
 
         if (request.getNotes() != null) {
             assignment.setNotes(request.getNotes());
+        }
+
+        // Duration update logic
+        if (request.getExpectedDurationDays() != null) {
+            Integer oldDuration = assignment.getExpectedDurationDays();
+            Integer newDuration = request.getExpectedDurationDays();
+
+            assignment.setExpectedDurationDays(newDuration);
+
+            // If it is currently breached, check if the new deadline fixes it
+            if (assignment.isSlaBreached()) {
+                LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
+                long daysElapsed = Duration.between(assignment.getAssignedAt(), now).toDays();
+
+                // If the new deadline is greater than the days already elapsed, reset the
+                // breach!
+                if (newDuration > daysElapsed) {
+                    assignment.setSlaBreached(false);
+
+                    // Log this extension in the notes so you have an audit trail of the override
+                    String extensionMessage = String.format(
+                            "\n[SYSTEM ALERT - %s] SLA Extended. Deadline increased from %d to %d days. Breach status reset.",
+                            now.toLocalDate().toString(),
+                            oldDuration != null ? oldDuration : 0,
+                            newDuration);
+
+                    String currentNotes = assignment.getNotes() == null ? "" : assignment.getNotes();
+                    assignment.setNotes(currentNotes + extensionMessage);
+                }
+            }
         }
 
         // 2. Handle Location Updates
@@ -426,6 +458,8 @@ public class AssetAssignmentService implements IAssetAssignmentService {
                 .assignedAt(a.getAssignedAt())
                 .returnedAt(a.getReturnedAt())
                 .durationDays(durationDays)
+                .expectedDurationDays(a.getExpectedDurationDays())
+                .slaBreached(a.isSlaBreached())
                 .status(status)
                 .locationType(a.getLocationType()) // PULL FROM ASSIGNMENT
                 .address(addressResponse) // PULL FROM ASSIGNMENT

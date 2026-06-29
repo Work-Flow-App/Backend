@@ -52,6 +52,13 @@ public class AssetJobAssignment {
     @JoinColumn(name = "address_id")
     private Address address;
 
+    @Column(name = "expected_duration_days")
+    private Integer expectedDurationDays;
+
+    @Column(name = "sla_breached", nullable = false, columnDefinition = "BOOLEAN DEFAULT FALSE")
+    @Builder.Default
+    private boolean slaBreached = false;
+
     // read-only convenience
     public boolean isActive() {
         return returnedAt == null;

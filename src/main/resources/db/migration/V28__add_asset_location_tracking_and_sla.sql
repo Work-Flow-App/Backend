@@ -1,4 +1,4 @@
--- Migration V28: Add location tracking to assets and asset_job_assignments
+-- Migration V28: Add location tracking and SLA fields to assets and asset_job_assignments
 
 -- 1. Update `assets` table
 ALTER TABLE assets 
@@ -18,7 +18,9 @@ ALTER TABLE assets
 -- 2. Update `asset_job_assignments` table
 ALTER TABLE asset_job_assignments 
     ADD COLUMN location_type VARCHAR(30) DEFAULT NULL,
-    ADD COLUMN address_id BIGINT DEFAULT NULL;
+    ADD COLUMN address_id BIGINT DEFAULT NULL,
+    ADD COLUMN expected_duration_days INT DEFAULT NULL,
+    ADD COLUMN sla_breached BOOLEAN NOT NULL DEFAULT FALSE;
 
 -- Add foreign key constraint for the address relationship on `asset_job_assignments`
 ALTER TABLE asset_job_assignments 

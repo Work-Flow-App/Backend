@@ -20,4 +20,6 @@ public class AssetAssignmentCreateRequest {
     
     // Allows passing a custom address, completely optional
     private AddressRequest customAddress;
+
+    private Integer expectedDurationDays;
 }

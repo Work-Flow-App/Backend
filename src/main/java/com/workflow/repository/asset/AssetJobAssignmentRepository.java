@@ -11,16 +11,25 @@ import java.util.Optional;
 
 public interface AssetJobAssignmentRepository extends JpaRepository<AssetJobAssignment, Long> {
     List<AssetJobAssignment> findByAssetIdOrderByAssignedAtDesc(Long assetId);
+
     List<AssetJobAssignment> findTop10ByAssetIdOrderByAssignedAtDesc(Long assetId);
+
     Optional<AssetJobAssignment> findByAssetIdAndReturnedAtIsNull(Long assetId);
+
     Optional<AssetJobAssignment> findByIdAndAssetId(Long id, Long assetId);
+
     List<AssetJobAssignment> findByJobIdAndReturnedAtIsNull(Long jobId);
 
     List<AssetJobAssignment> findByJobIdInAndReturnedAtIsNull(List<Long> jobIds);
+
     List<AssetJobAssignment> findByAssetIdInAndReturnedAtIsNull(List<Long> assetIds);
+
     List<AssetJobAssignment> findByJobId(Long jobId);
 
     @Modifying(clearAutomatically = true)
     @Query("DELETE FROM AssetJobAssignment a WHERE a.job.id = :jobId")
     void deleteByJobId(@Param("jobId") Long jobId);
+
+    @Query("SELECT a FROM AssetJobAssignment a WHERE a.returnedAt IS NULL AND a.slaBreached = false AND a.expectedDurationDays IS NOT NULL")
+    List<AssetJobAssignment> findActiveAssignmentsWithUnnotifiedSlaBreach();
 }

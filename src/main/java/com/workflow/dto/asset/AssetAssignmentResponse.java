@@ -31,4 +31,6 @@ public class AssetAssignmentResponse {
     private String status; // ACTIVE or COMPLETED
     private AssetLocationType locationType;
     private AddressResponse address;
+    private Integer expectedDurationDays;
+    private Boolean slaBreached;
 }

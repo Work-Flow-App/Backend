@@ -4,6 +4,8 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.workflow.common.constant.asset.AssetLocationType;
+import com.workflow.dto.job.AddressResponse;
 
 @Data
 @NoArgsConstructor
@@ -27,4 +29,6 @@ public class AssetAssignmentResponse {
     private LocalDateTime returnedAt;
     private Long durationDays;
     private String status; // ACTIVE or COMPLETED
+    private AssetLocationType locationType;
+    private AddressResponse address;
 }

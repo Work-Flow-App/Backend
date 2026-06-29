@@ -1,12 +1,17 @@
 package com.workflow.service.asset;
 
 import com.workflow.dto.asset.*;
+import com.workflow.dto.job.AddressRequest;
+import com.workflow.dto.job.AddressResponse;
 import com.workflow.entity.asset.Asset;
 import com.workflow.entity.asset.AssetJobAssignment;
+import com.workflow.entity.common.Address;
 import com.workflow.entity.company.Company;
 import com.workflow.repository.asset.AssetJobAssignmentRepository;
 import com.workflow.repository.asset.AssetRepository;
+import com.workflow.repository.common.AddressRepository;
 import com.workflow.repository.company.CompanyRepository;
+import com.workflow.common.constant.asset.AssetLocationType;
 import com.workflow.common.exception.business.*;
 import com.workflow.service.sequence.CompanyCounterService;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +27,6 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.*;
 import java.util.*;
-// import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -34,20 +38,15 @@ public class AssetService implements IAssetService {
     private final AssetJobAssignmentRepository assignmentRepository;
     private final CompanyRepository companyRepository;
     private final CompanyCounterService companyCounterService;
-    // private final JobRepository jobRepository;
-    // private final WorkerRepository workerRepository;
+    private final AddressRepository addressRepository;
 
-    // ----------------- CREATE --------------------
     @Override
     public AssetResponse createAsset(AssetCreateRequest request, Long companyId) {
         log.info("Creating asset: name={}, assetTag={}, purchasePrice={}, companyId={}",
-                 request.getName(), request.getAssetTag(), request.getPurchasePrice(), companyId);
+                request.getName(), request.getAssetTag(), request.getPurchasePrice(), companyId);
 
         Company company = companyRepository.getReferenceById(companyId);
 
-        // Field-level validations are handled by Bean Validation on AssetCreateRequest.
-        // Cross-field validation (salvageValue vs purchasePrice) is enforced here
-        // because @Valid cannot express cross-field rules.
         if (assetRepository.existsByCompanyIdAndName(companyId, request.getName())) {
             throw new DuplicateNameException("Asset name must be unique within the company");
         }
@@ -57,6 +56,11 @@ public class AssetService implements IAssetService {
         }
         if (request.getSalvageValue() != null && request.getPurchasePrice().compareTo(request.getSalvageValue()) < 0) {
             throw new IllegalArgumentException("Purchase price must be greater than salvage value");
+        }
+
+        Address warehouseAddress = mapToAddress(request.getWarehouseAddress());
+        if (warehouseAddress != null) {
+            warehouseAddress = addressRepository.save(warehouseAddress);
         }
 
         Asset asset = Asset.builder()
@@ -73,13 +77,15 @@ public class AssetService implements IAssetService {
                 .available(true)
                 .archived(false)
                 .assetRef(companyCounterService.nextAssetId(companyId))
+                .locationType(AssetLocationType.WAREHOUSE)
+                .warehouseAddress(warehouseAddress)
+                .address(warehouseAddress)
                 .build();
 
         assetRepository.save(asset);
         return mapToResponse(asset);
     }
 
-    // ----------------- UPDATE --------------------
     @Override
     public AssetResponse updateAsset(Long assetId, AssetUpdateRequest request, Long companyId) {
         Asset asset = assetRepository.findById(assetId)
@@ -87,7 +93,7 @@ public class AssetService implements IAssetService {
                 .orElseThrow(() -> new AssetNotFoundException("Asset not found"));
 
         if (asset.isArchived()) {
-            throw new IllegalStateException("Cannot update archived asset");
+            throw new InvalidRequestException("Cannot update archived asset");
         }
 
         if (request.getName() != null && !request.getName().equals(asset.getName())) {
@@ -104,20 +110,51 @@ public class AssetService implements IAssetService {
             asset.setAssetTag(request.getAssetTag());
         }
 
-        asset.setDescription(request.getDescription());
-        asset.setSerialNumber(request.getSerialNumber());
+        if (request.getDescription() != null) {
+            asset.setDescription(request.getDescription());
+        }
+        if (request.getSerialNumber() != null) {
+            asset.setSerialNumber(request.getSerialNumber());
+        }
+
+        // --- NEW: Update Financial & Lifecycle Fields ---
+        if (request.getPurchasePrice() != null) {
+            asset.setPurchasePrice(request.getPurchasePrice().setScale(2, RoundingMode.HALF_UP));
+        }
+        if (request.getPurchaseDate() != null) {
+            asset.setPurchaseDate(request.getPurchaseDate());
+        }
+        if (request.getDepreciationRate() != null) {
+            asset.setDepreciationRate(request.getDepreciationRate().setScale(2, RoundingMode.HALF_UP));
+        }
         if (request.getSalvageValue() != null) {
-            if (asset.getPurchasePrice().compareTo(request.getSalvageValue()) < 0) {
-                throw new IllegalArgumentException("Purchase price must be greater than salvage value");
-            }
             asset.setSalvageValue(request.getSalvageValue().setScale(2, RoundingMode.HALF_UP));
+        }
+
+        // Holistic Cross-Field Validation: Ensure final salvage doesn't exceed final
+        // purchase price
+        BigDecimal finalPurchasePrice = asset.getPurchasePrice();
+        BigDecimal finalSalvageValue = asset.getSalvageValue() == null ? BigDecimal.ZERO : asset.getSalvageValue();
+        if (finalPurchasePrice.compareTo(finalSalvageValue) < 0) {
+            throw new InvalidRequestException("Purchase price must be greater than or equal to salvage value");
+        }
+
+        // Handle Warehouse Address Update
+        if (request.getWarehouseAddress() != null) {
+            Address updatedWarehouse = mapToAddress(request.getWarehouseAddress());
+            updatedWarehouse = addressRepository.save(updatedWarehouse);
+            asset.setWarehouseAddress(updatedWarehouse);
+
+            // If the asset is currently at the warehouse, update its current location too
+            if (asset.getLocationType() == AssetLocationType.WAREHOUSE) {
+                asset.setAddress(updatedWarehouse);
+            }
         }
 
         assetRepository.save(asset);
         return mapToResponse(asset);
     }
 
-    // ----------------- GET / LIST --------------------
     @Override
     public AssetResponse getAsset(Long assetId, Long companyId) {
         Asset asset = assetRepository.findById(assetId)
@@ -141,21 +178,19 @@ public class AssetService implements IAssetService {
                 assetsPage = assetRepository.findByCompanyId(companyId, pageable);
             else
                 assetsPage = assetRepository.findByCompanyIdAndArchivedFalse(companyId, pageable);
-        } else { // available filter provided
+        } else {
             assetsPage = assetRepository.findByCompanyIdAndArchivedFalseAndAvailable(companyId, available, pageable);
         }
 
         return assetsPage.map(this::mapToResponse);
     }
 
-    // ----------------- ARCHIVE --------------------
     @Override
     public void archiveAsset(Long assetId, Long companyId) {
         Asset asset = assetRepository.findById(assetId)
                 .filter(a -> a.getCompany().getId().equals(companyId))
                 .orElseThrow(() -> new AssetNotFoundException("Asset not found"));
 
-        // cannot archive if currently assigned to active job
         Optional<AssetJobAssignment> active = assignmentRepository.findByAssetIdAndReturnedAtIsNull(assetId);
         if (active.isPresent()) {
             throw new IllegalStateException("Cannot archive asset currently assigned to active job");
@@ -164,7 +199,6 @@ public class AssetService implements IAssetService {
         assetRepository.save(asset);
     }
 
-    // ----------------- DEPRECIATION --------------------
     @Override
     public AssetValueResponse calculateAssetValue(Long assetId, Long companyId, LocalDate asOfDate) {
         Asset asset = assetRepository.findById(assetId)
@@ -173,7 +207,6 @@ public class AssetService implements IAssetService {
 
         LocalDate date = asOfDate == null ? LocalDate.now() : asOfDate;
         if (date.isBefore(asset.getPurchaseDate())) {
-            // per business rules, if as-of date before purchase date return purchase price
             return AssetValueResponse.builder()
                     .assetId(asset.getId())
                     .assetName(asset.getName())
@@ -192,15 +225,12 @@ public class AssetService implements IAssetService {
         long daysOwned = Duration.between(asset.getPurchaseDate().atStartOfDay(), date.atStartOfDay()).toDays();
         double yearsOwned = daysOwned / 365.25;
 
-        // rate as fraction
         BigDecimal ratePercent = asset.getDepreciationRate();
         double r = ratePercent.divide(new BigDecimal("100"), 8, RoundingMode.HALF_UP).doubleValue();
 
-        // Declining balance formula: current = purchase * (1 - r)^years
         double factor = Math.pow(1.0 - r, yearsOwned);
 
         BigDecimal currentValue = asset.getPurchasePrice().multiply(new BigDecimal(factor));
-        // never less than salvage value (or 0 if not set)
         BigDecimal salvage = asset.getSalvageValue() == null ? BigDecimal.ZERO : asset.getSalvageValue();
         if (currentValue.compareTo(salvage) < 0)
             currentValue = salvage;
@@ -225,16 +255,12 @@ public class AssetService implements IAssetService {
                 .build();
     }
 
-    // ----------------- DASHBOARD --------------------
     @Override
     public AssetStatistics getStatistics(Long companyId) {
-        // Use aggregate queries for counts — avoids loading all assets into heap
         long total = assetRepository.countActiveByCompanyId(companyId);
         long available = assetRepository.countAvailableByCompanyId(companyId);
         long inUse = total - available;
 
-        // Depreciation calculations require per-asset data; load only active assets
-        // (not archived) without Pageable.unpaged() — use targeted query instead
         List<Asset> assets = assetRepository.findActiveByCompanyId(companyId);
 
         LocalDate today = LocalDate.now();
@@ -262,15 +288,9 @@ public class AssetService implements IAssetService {
                 .build();
     }
 
-    // ----------------- HELPERS --------------------
-    /**
-     * Calculate current depreciated value of an asset without making database queries.
-     * Used internally for efficient batch calculations (e.g., in getStatistics).
-     */
     private BigDecimal calculateCurrentValue(Asset asset, LocalDate asOfDate) {
         LocalDate date = asOfDate == null ? LocalDate.now() : asOfDate;
 
-        // If date is before purchase, value equals purchase price
         if (date.isBefore(asset.getPurchaseDate())) {
             return asset.getPurchasePrice();
         }
@@ -278,14 +298,11 @@ public class AssetService implements IAssetService {
         long daysOwned = Duration.between(asset.getPurchaseDate().atStartOfDay(), date.atStartOfDay()).toDays();
         double yearsOwned = daysOwned / 365.25;
 
-        // Convert depreciation rate from percentage to fraction
         double rate = asset.getDepreciationRate().divide(new BigDecimal("100"), 8, RoundingMode.HALF_UP).doubleValue();
 
-        // Declining balance formula: current = purchase * (1 - rate)^years
         double depreciationFactor = Math.pow(1.0 - rate, yearsOwned);
         BigDecimal currentValue = asset.getPurchasePrice().multiply(new BigDecimal(depreciationFactor));
 
-        // Never go below salvage value
         BigDecimal salvageValue = asset.getSalvageValue() == null ? BigDecimal.ZERO : asset.getSalvageValue();
         if (currentValue.compareTo(salvageValue) < 0) {
             currentValue = salvageValue;
@@ -294,7 +311,37 @@ public class AssetService implements IAssetService {
         return currentValue.setScale(2, RoundingMode.HALF_UP);
     }
 
-    // ----------------- MAPPERS --------------------
+    private Address mapToAddress(AddressRequest ar) {
+        if (ar == null)
+            return null;
+        return Address.builder()
+                .street(ar.getStreet())
+                .city(ar.getCity())
+                .state(ar.getState())
+                .postalCode(ar.getPostalCode())
+                .country(ar.getCountry())
+                .additionalInfo(ar.getAdditionalInfo())
+                .latitude(ar.getLatitude())
+                .longitude(ar.getLongitude())
+                .build();
+    }
+
+    private AddressResponse mapAddressToResponse(Address a) {
+        if (a == null)
+            return null;
+        return AddressResponse.builder()
+                .id(a.getId())
+                .street(a.getStreet())
+                .city(a.getCity())
+                .state(a.getState())
+                .postalCode(a.getPostalCode())
+                .country(a.getCountry())
+                .additionalInfo(a.getAdditionalInfo())
+                .latitude(a.getLatitude())
+                .longitude(a.getLongitude())
+                .build();
+    }
+
     private AssetResponse mapToResponse(Asset asset) {
         return AssetResponse.builder()
                 .id(asset.getId())
@@ -310,6 +357,9 @@ public class AssetService implements IAssetService {
                 .salvageValue(asset.getSalvageValue())
                 .available(asset.isAvailable())
                 .archived(asset.isArchived())
+                .locationType(asset.getLocationType())
+                .address(mapAddressToResponse(asset.getAddress()))
+                .warehouseAddress(mapAddressToResponse(asset.getWarehouseAddress()))
                 .createdAt(asset.getCreatedAt())
                 .updatedAt(asset.getUpdatedAt())
                 .build();

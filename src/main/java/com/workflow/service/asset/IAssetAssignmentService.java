@@ -8,6 +8,10 @@ public interface IAssetAssignmentService {
 
     AssetAssignmentResponse returnAsset(AssetAssignmentReturnRequest request, Long companyId);
 
+    AssetAssignmentResponse updateAssignment(Long assignmentId, AssetAssignmentUpdateRequest request, Long companyId);
+
+    void syncJobAssets(Long jobId, List<Long> assetIds, Long companyId);
+    
     List<AssetAssignmentResponse> getAssignmentHistory(Long assetId, Long companyId);
 
     List<AssetAssignmentResponse> getAssignedAssetsForJob(Long jobId, Long companyId, boolean onlyActive);

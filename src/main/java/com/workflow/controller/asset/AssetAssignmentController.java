@@ -28,7 +28,7 @@ public class AssetAssignmentController {
         return AuthUtils.getCompanyId();
     }
 
-    @RequireCompanyRole({COMPANY_ADMIN, MANAGER, EDITOR})
+    @RequireCompanyRole({ COMPANY_ADMIN, MANAGER, EDITOR })
     @PostMapping("/assign")
     public ResponseEntity<AssetAssignmentResponse> assign(@Valid @RequestBody AssetAssignmentCreateRequest request,
             Authentication auth) {
@@ -36,20 +36,29 @@ public class AssetAssignmentController {
                 .body(assignmentService.assignAsset(request, getCompanyId()));
     }
 
-    @RequireCompanyRole({COMPANY_ADMIN, MANAGER, EDITOR})
+    @RequireCompanyRole({ COMPANY_ADMIN, MANAGER, EDITOR })
     @PostMapping("/return")
     public ResponseEntity<AssetAssignmentResponse> returnAsset(@Valid @RequestBody AssetAssignmentReturnRequest request,
             Authentication auth) {
         return ResponseEntity.ok(assignmentService.returnAsset(request, getCompanyId()));
     }
 
-    @RequireCompanyRole({COMPANY_ADMIN, MANAGER, EDITOR, VIEWER})
+    @RequireCompanyRole({ COMPANY_ADMIN, MANAGER, EDITOR, VIEWER })
     @GetMapping("/asset/{assetId}/history")
     public ResponseEntity<List<AssetAssignmentResponse>> history(@PathVariable Long assetId, Authentication auth) {
         return ResponseEntity.ok(assignmentService.getAssignmentHistory(assetId, getCompanyId()));
     }
 
-    @RequireCompanyRole({COMPANY_ADMIN, MANAGER, EDITOR, VIEWER})
+    @RequireCompanyRole({ COMPANY_ADMIN, MANAGER, EDITOR })
+    @PutMapping("/assign/{assignmentId}")
+    public ResponseEntity<AssetAssignmentResponse> updateAssignment(
+            @PathVariable Long assignmentId,
+            @Valid @RequestBody AssetAssignmentUpdateRequest request,
+            Authentication auth) {
+        return ResponseEntity.ok(assignmentService.updateAssignment(assignmentId, request, getCompanyId()));
+    }
+
+    @RequireCompanyRole({ COMPANY_ADMIN, MANAGER, EDITOR, VIEWER })
     @GetMapping("/job/{jobId}")
     public ResponseEntity<List<AssetAssignmentResponse>> jobAssignments(@PathVariable Long jobId,
             @RequestParam(defaultValue = "true") boolean onlyActive,

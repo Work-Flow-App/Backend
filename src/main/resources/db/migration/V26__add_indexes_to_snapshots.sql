@@ -1,4 +1,4 @@
 -- Add indexes to prevent full table scans during cascade deletes
-CREATE INDEX idx_jlis_estimate_doc ON job_line_item_snapshots(estimate_document_id);
-CREATE INDEX idx_jlis_invoice ON job_line_item_snapshots(invoice_id);
-CREATE INDEX idx_jlis_source_item ON job_line_item_snapshots(source_line_item_id);
+-- CREATE INDEX idx_jlis_estimate_doc ON job_line_item_snapshots(estimate_document_id);
+-- CREATE INDEX idx_jlis_invoice ON job_line_item_snapshots(invoice_id);
+-- CREATE INDEX idx_jlis_source_item ON job_line_item_snapshots(source_line_item_id);

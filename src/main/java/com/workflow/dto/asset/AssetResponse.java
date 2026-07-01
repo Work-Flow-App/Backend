@@ -4,6 +4,7 @@ import lombok.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.workflow.common.constant.asset.AssetLocationType;
@@ -31,6 +32,7 @@ public class AssetResponse {
     private AssetLocationType locationType;
     private AddressResponse address;
     private AddressResponse warehouseAddress;
+    private List<AssetAttachmentDto> attachments;
     
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'", timezone = "UTC")
     private LocalDateTime createdAt;

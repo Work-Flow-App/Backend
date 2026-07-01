@@ -2,7 +2,10 @@ package com.workflow.service.asset;
 
 import com.workflow.dto.asset.*;
 import org.springframework.data.domain.Page;
+import org.springframework.web.multipart.MultipartFile;
+
 import java.time.LocalDate;
+import java.util.List;
 
 public interface IAssetService {
     AssetResponse createAsset(AssetCreateRequest request, Long companyId);
@@ -20,4 +23,8 @@ public interface IAssetService {
 
     // Dashboard helpers
     AssetStatistics getStatistics(Long companyId);
+
+    AssetResponse addAttachments(Long assetId, List<MultipartFile> files, Long companyId);
+
+    AssetResponse removeAttachment(Long assetId, String fileUrl, Long companyId);
 }

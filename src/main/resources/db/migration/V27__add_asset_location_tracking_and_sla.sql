@@ -1,4 +1,4 @@
--- Migration V28: Add location tracking and SLA fields to assets and asset_job_assignments
+-- Migration V27: Add location tracking and SLA fields to assets and asset_job_assignments
 
 -- 1. Update `assets` table
 ALTER TABLE assets 

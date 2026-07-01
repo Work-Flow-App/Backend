@@ -10,6 +10,8 @@ import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "assets")
@@ -80,6 +82,11 @@ public class Asset {
     @Builder.Default
     @Column(name = "asset_ref", nullable = false)
     private Long assetRef = 0L;
+
+    @ElementCollection
+    @CollectionTable(name = "asset_attachments", joinColumns = @JoinColumn(name = "asset_id"))
+    @Builder.Default
+    private List<AssetAttachment> attachments = new ArrayList<>();
 
     @CreationTimestamp
     private LocalDateTime createdAt;

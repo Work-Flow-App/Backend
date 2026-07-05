@@ -28,7 +28,7 @@ public class JobWorkflowStepActivity {
     private JobWorkflowStep step;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "actor_id", nullable = false)
+    @JoinColumn(name = "actor_id", nullable = true)
     private User actor;
 
     @Enumerated(EnumType.STRING)

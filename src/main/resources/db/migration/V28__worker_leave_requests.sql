@@ -1,0 +1,20 @@
+CREATE TABLE worker_leave_requests (
+    id            BIGINT       NOT NULL AUTO_INCREMENT,
+    worker_id     BIGINT       NOT NULL,
+    leave_type    ENUM('ANNUAL','SICK','UNPAID','OTHER') NOT NULL,
+    start_date    DATE         NOT NULL,
+    end_date      DATE         NOT NULL,
+    reason        VARCHAR(1000),
+    status        ENUM('PENDING','APPROVED','REJECTED','CANCELLED') NOT NULL DEFAULT 'PENDING',
+    decision_by   BIGINT,
+    decision_at   DATETIME(6),
+    decision_note VARCHAR(500),
+    created_at    DATETIME(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+    updated_at    DATETIME(6)           DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP(6),
+    PRIMARY KEY (id),
+    CONSTRAINT FK_worker_leave_requests_worker      FOREIGN KEY (worker_id)   REFERENCES workers(id) ON DELETE CASCADE,
+    CONSTRAINT FK_worker_leave_requests_decision_by FOREIGN KEY (decision_by) REFERENCES users(id),
+    CONSTRAINT CHK_worker_leave_requests_dates CHECK (end_date >= start_date),
+    INDEX idx_worker_leave_requests_worker_status (worker_id, status),
+    INDEX idx_worker_leave_requests_dates (start_date, end_date)
+) ENGINE=InnoDB;

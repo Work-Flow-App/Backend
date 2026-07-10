@@ -10,9 +10,8 @@ import com.workflow.dto.company.CompanyProfileUpdateRequest;
 import com.workflow.entity.company.Company;
 import com.workflow.entity.company.CompanyAddress;
 import com.workflow.entity.company.CompanyBankDetails;
-import com.workflow.entity.auth.User;
 import com.workflow.repository.company.CompanyRepository;
-import com.workflow.repository.auth.UserRepository;
+import com.workflow.service.storage.IStorageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,7 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class CompanyService implements ICompanyService {
 
     private final CompanyRepository companyRepository;
-    private final UserRepository userRepository;
+    private final IStorageService s3Service;
 
     @Override
     @Transactional
@@ -37,6 +36,11 @@ public class CompanyService implements ICompanyService {
 
         // Update company fields
         company.setName(request.name());
+
+        company.setDescription(request.description());
+        company.setWebsite(request.website());
+        company.setTagline(request.tagline());
+
         if (request.address() != null) {
             CompanyAddressRequest a = request.address();
             company.setAddress(CompanyAddress.builder()
@@ -73,14 +77,22 @@ public class CompanyService implements ICompanyService {
         }
 
         Company savedCompany = companyRepository.save(company);
-        return CompanyProfileResponse.fromEntity(savedCompany);
+        // Resolve logo URL using S3 service if it exists
+        String resolvedLogoUrl = savedCompany.getLogoUrl() != null ? s3Service.resolveFileUrl(savedCompany.getLogoUrl())
+                : null;
+
+        return CompanyProfileResponse.fromEntity(savedCompany, resolvedLogoUrl);
     }
 
     @Override
     @Transactional(readOnly = true)
     public CompanyProfileResponse getProfile(Long userId) {
         Company company = findCompanyByUserId(userId);
-        return CompanyProfileResponse.fromEntity(company);
+
+        // Resolve the logo URL before returning
+        String resolvedLogoUrl = company.getLogoUrl() != null ? s3Service.resolveFileUrl(company.getLogoUrl()) : null;
+
+        return CompanyProfileResponse.fromEntity(company, resolvedLogoUrl);
     }
 
     @Override
@@ -99,8 +111,7 @@ public class CompanyService implements ICompanyService {
                 totalWorkers,
                 totalClients,
                 activeWorkers,
-                archivedWorkers
-        );
+                archivedWorkers);
     }
 
     @Override

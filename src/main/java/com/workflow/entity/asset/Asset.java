@@ -1,5 +1,7 @@
 package com.workflow.entity.asset;
 
+import com.workflow.common.constant.asset.AssetLocationType;
+import com.workflow.entity.common.Address;
 import com.workflow.entity.company.Company;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -8,6 +10,8 @@ import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "assets")
@@ -60,9 +64,29 @@ public class Asset {
     @Builder.Default
     private boolean archived = false;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 30)
+    @Builder.Default
+    private AssetLocationType locationType = AssetLocationType.WAREHOUSE;
+
+    // The current physical location of the asset
+    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @JoinColumn(name = "address_id")
+    private Address address;
+
+    // The default home base. When returned, it reverts to this address.
+    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @JoinColumn(name = "warehouse_address_id")
+    private Address warehouseAddress;
+
     @Builder.Default
     @Column(name = "asset_ref", nullable = false)
     private Long assetRef = 0L;
+
+    @ElementCollection
+    @CollectionTable(name = "asset_attachments", joinColumns = @JoinColumn(name = "asset_id"))
+    @Builder.Default
+    private List<AssetAttachment> attachments = new ArrayList<>();
 
     @CreationTimestamp
     private LocalDateTime createdAt;

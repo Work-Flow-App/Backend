@@ -3,6 +3,7 @@ package com.workflow.service.asset;
 import com.workflow.common.constant.job.JobStatus;
 import com.workflow.common.exception.business.AssetAssignmentNotFoundException;
 import com.workflow.common.exception.business.AssetNotFoundException;
+import com.workflow.common.exception.business.AssignmentException;
 import com.workflow.common.exception.business.JobNotFoundException;
 import com.workflow.common.exception.business.WorkerNotFoundException;
 import com.workflow.dto.asset.AssetAssignmentCreateRequest;
@@ -15,6 +16,7 @@ import com.workflow.entity.job.Job;
 import com.workflow.entity.worker.Worker;
 import com.workflow.repository.asset.AssetJobAssignmentRepository;
 import com.workflow.repository.asset.AssetRepository;
+import com.workflow.repository.common.AddressRepository;
 import com.workflow.repository.job.JobRepository;
 import com.workflow.repository.worker.WorkerRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -50,6 +52,9 @@ class AssetAssignmentServiceTest {
 
     @Mock
     private WorkerRepository workerRepository;
+    
+    @Mock
+    private AddressRepository addressRepository;
 
     @InjectMocks
     private AssetAssignmentService assetAssignmentService;
@@ -219,7 +224,7 @@ class AssetAssignmentServiceTest {
         when(assetRepository.findById(1L)).thenReturn(Optional.of(asset));
 
         assertThatThrownBy(() -> assetAssignmentService.assignAsset(createRequest, 1L))
-                .isInstanceOf(IllegalStateException.class)
+                .isInstanceOf(AssignmentException.class)
                 .hasMessage("Cannot assign archived asset");
 
         verify(assignmentRepository, never()).save(any());
@@ -237,7 +242,7 @@ class AssetAssignmentServiceTest {
         when(assignmentRepository.findByAssetIdAndReturnedAtIsNull(1L)).thenReturn(Optional.of(existingAssignment));
 
         assertThatThrownBy(() -> assetAssignmentService.assignAsset(createRequest, 1L))
-                .isInstanceOf(IllegalStateException.class)
+                .isInstanceOf(AssignmentException.class)
                 .hasMessage("Asset is already assigned");
 
         verify(assignmentRepository, never()).save(any());
@@ -280,7 +285,7 @@ class AssetAssignmentServiceTest {
         when(jobRepository.findById(1L)).thenReturn(Optional.of(job));
 
         assertThatThrownBy(() -> assetAssignmentService.assignAsset(createRequest, 1L))
-                .isInstanceOf(IllegalStateException.class)
+                .isInstanceOf(AssignmentException.class)
                 .hasMessage("Cannot assign asset to a completed or cancelled job");
 
         verify(assignmentRepository, never()).save(any());
@@ -294,7 +299,7 @@ class AssetAssignmentServiceTest {
         when(jobRepository.findById(1L)).thenReturn(Optional.of(job));
 
         assertThatThrownBy(() -> assetAssignmentService.assignAsset(createRequest, 1L))
-                .isInstanceOf(IllegalStateException.class)
+                .isInstanceOf(AssignmentException.class)
                 .hasMessage("Cannot assign asset to a completed or cancelled job");
 
         verify(assignmentRepository, never()).save(any());

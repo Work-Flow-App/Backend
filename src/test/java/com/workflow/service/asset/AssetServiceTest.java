@@ -2,18 +2,22 @@ package com.workflow.service.asset;
 
 import com.workflow.common.exception.business.AssetNotFoundException;
 import com.workflow.common.exception.business.DuplicateNameException;
+import com.workflow.common.exception.business.InvalidRequestException;
 import com.workflow.dto.asset.*;
 import com.workflow.entity.asset.Asset;
+import com.workflow.entity.asset.AssetAttachment;
 import com.workflow.entity.asset.AssetJobAssignment;
 import com.workflow.entity.company.Company;
 import com.workflow.repository.asset.AssetJobAssignmentRepository;
 import com.workflow.repository.asset.AssetRepository;
 import com.workflow.repository.company.CompanyRepository;
 import com.workflow.service.sequence.CompanyCounterService;
+import com.workflow.service.storage.IStorageService;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
 import jakarta.validation.ValidatorFactory;
+import org.apache.tika.Tika;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -21,16 +25,18 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.*;
+import org.springframework.mock.web.MockMultipartFile;
 
-import java.util.Set;
-
+import java.io.InputStream;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -50,6 +56,13 @@ class AssetServiceTest {
 
     @Mock
     private CompanyCounterService companyCounterService;
+
+    // MISSING DEPENDENCIES ADDED HERE
+    @Mock
+    private IStorageService s3Service;
+
+    @Mock
+    private Tika tika;
 
     @InjectMocks
     private AssetService assetService;
@@ -84,6 +97,7 @@ class AssetServiceTest {
                 .salvageValue(new BigDecimal("5000.00"))
                 .available(true)
                 .archived(false)
+                .attachments(new ArrayList<>())
                 .createdAt(LocalDateTime.now(ZoneOffset.UTC))
                 .updatedAt(LocalDateTime.now(ZoneOffset.UTC))
                 .build();
@@ -131,14 +145,8 @@ class AssetServiceTest {
         verify(assetRepository).save(any(Asset.class));
     }
 
-    // Company existence is now enforced by FK constraint at commit, not upfront.
-    // createAsset_CompanyNotFound_ThrowsException removed: getReferenceById returns a
-    // proxy without a DB hit; the constraint fires at flush in an integration context.
-
     @Test
     void createAsset_NameTooShort_DtoViolation() {
-        // Field-level validation is now on AssetCreateRequest via @Size(min=2).
-        // The service no longer enforces this — it is enforced by @Valid at the controller.
         AssetCreateRequest request = AssetCreateRequest.builder()
                 .name("A")
                 .purchasePrice(new BigDecimal("299.99"))
@@ -181,7 +189,6 @@ class AssetServiceTest {
 
     @Test
     void createAsset_InvalidPurchasePrice_DtoViolation() {
-        // Field-level validation is now on AssetCreateRequest via @DecimalMin("0.01").
         AssetCreateRequest request = AssetCreateRequest.builder()
                 .name("Valid Name")
                 .purchasePrice(BigDecimal.ZERO)
@@ -199,7 +206,6 @@ class AssetServiceTest {
 
     @Test
     void createAsset_FuturePurchaseDate_DtoViolation() {
-        // Field-level validation is now on AssetCreateRequest via @PastOrPresent.
         AssetCreateRequest request = AssetCreateRequest.builder()
                 .name("Valid Name")
                 .purchasePrice(new BigDecimal("299.99"))
@@ -216,7 +222,6 @@ class AssetServiceTest {
 
     @Test
     void createAsset_InvalidDepreciationRate_DtoViolation() {
-        // Field-level validation is now on AssetCreateRequest via @DecimalMax("100.00").
         AssetCreateRequest request = AssetCreateRequest.builder()
                 .name("Valid Name")
                 .purchasePrice(new BigDecimal("299.99"))
@@ -289,7 +294,7 @@ class AssetServiceTest {
         when(assetRepository.findById(1L)).thenReturn(Optional.of(asset));
 
         assertThatThrownBy(() -> assetService.updateAsset(1L, updateRequest, 1L))
-                .isInstanceOf(IllegalStateException.class)
+                .isInstanceOf(InvalidRequestException.class)
                 .hasMessage("Cannot update archived asset");
 
         verify(assetRepository, never()).save(any());
@@ -313,10 +318,51 @@ class AssetServiceTest {
         when(assetRepository.findById(1L)).thenReturn(Optional.of(asset));
 
         assertThatThrownBy(() -> assetService.updateAsset(1L, updateRequest, 1L))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Purchase price must be greater than salvage value");
+                .isInstanceOf(InvalidRequestException.class)
+                .hasMessage("Purchase price must be greater than or equal to salvage value");
 
         verify(assetRepository, never()).save(any());
+    }
+
+    // ==================== ATTACHMENTS (NEW) ====================
+
+    @Test
+    void addAttachments_Success() throws Exception {
+        MockMultipartFile file = new MockMultipartFile("files", "image.jpg", "image/jpeg", "test data".getBytes());
+        
+        when(assetRepository.findById(1L)).thenReturn(Optional.of(asset));
+        when(tika.detect(any(InputStream.class))).thenReturn("image/jpeg");
+        when(s3Service.resolveFileUrl(anyString())).thenReturn("http://s3.com/image.jpg");
+        when(assetRepository.save(any(Asset.class))).thenReturn(asset);
+
+        AssetResponse response = assetService.addAttachments(1L, List.of(file), 1L);
+
+        verify(s3Service).upload(anyString(), any(InputStream.class), anyLong(), eq("image/jpeg"));
+        verify(assetRepository).save(asset);
+        
+        assertThat(response).isNotNull();
+        assertThat(asset.getAttachments()).hasSize(1);
+        assertThat(asset.getAttachments().get(0).getFileName()).isEqualTo("image.jpg");
+    }
+
+    @Test
+    void removeAttachment_Success() {
+        asset.getAttachments().add(AssetAttachment.builder()
+                .fileUrl("companies/1/assets/1/some-uuid.jpg")
+                .fileName("test.jpg")
+                .fileType("image/jpeg")
+                .build());
+                
+        when(assetRepository.findById(1L)).thenReturn(Optional.of(asset));
+        when(assetRepository.save(any(Asset.class))).thenReturn(asset);
+
+        AssetResponse response = assetService.removeAttachment(1L, "companies/1/assets/1/some-uuid.jpg", 1L);
+
+        verify(s3Service).delete("companies/1/assets/1/some-uuid.jpg");
+        verify(assetRepository).save(asset);
+        
+        assertThat(response).isNotNull();
+        assertThat(asset.getAttachments()).isEmpty();
     }
 
     // ==================== GET ASSET TESTS ====================

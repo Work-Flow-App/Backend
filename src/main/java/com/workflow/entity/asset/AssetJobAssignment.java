@@ -1,5 +1,7 @@
 package com.workflow.entity.asset;
 
+import com.workflow.common.constant.asset.AssetLocationType;
+import com.workflow.entity.common.Address;
 import com.workflow.entity.job.Job;
 import com.workflow.entity.worker.Worker;
 import lombok.*;
@@ -41,6 +43,21 @@ public class AssetJobAssignment {
     private LocalDateTime assignedAt;
 
     private LocalDateTime returnedAt;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 30)
+    private AssetLocationType locationType;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "address_id")
+    private Address address;
+
+    @Column(name = "expected_duration_days")
+    private Integer expectedDurationDays;
+
+    @Column(name = "sla_breached", nullable = false, columnDefinition = "BOOLEAN DEFAULT FALSE")
+    @Builder.Default
+    private boolean slaBreached = false;
 
     // read-only convenience
     public boolean isActive() {

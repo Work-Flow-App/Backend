@@ -8,6 +8,7 @@ import com.workflow.common.constant.Role;
 import com.workflow.dto.asset.AssetCreateRequest;
 import com.workflow.dto.asset.AssetUpdateRequest;
 import com.workflow.entity.asset.Asset;
+import com.workflow.entity.asset.AssetAttachment;
 import com.workflow.entity.company.Company;
 import com.workflow.entity.auth.User;
 import com.workflow.repository.asset.AssetJobAssignmentRepository;
@@ -15,18 +16,26 @@ import com.workflow.repository.asset.AssetRepository;
 import com.workflow.repository.company.CompanyRepository;
 import com.workflow.repository.auth.UserRepository;
 import com.workflow.service.auth.JwtService;
+import com.workflow.service.storage.IStorageService;
+import org.apache.tika.Tika;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.io.InputStream;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.UUID;
 
 import static org.hamcrest.Matchers.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -40,6 +49,10 @@ class AssetControllerIntegrationTest extends AbstractControllerIntegrationTest {
     @Autowired private AssetJobAssignmentRepository assetJobAssignmentRepository;
     @Autowired private PasswordEncoder passwordEncoder;
     @Autowired private JwtService jwtService;
+
+    // Autowired to inherit from AbstractControllerIntegrationTest, preventing duplicate mock errors
+    @Autowired private IStorageService s3Service;
+    @MockBean private Tika tika;
 
     private Company company;
     private Company anotherCompany;
@@ -91,6 +104,7 @@ class AssetControllerIntegrationTest extends AbstractControllerIntegrationTest {
                 .salvageValue(new BigDecimal("200.00"))
                 .available(true)
                 .archived(false)
+                .attachments(new ArrayList<>())
                 .build());
 
         companyToken = jwtService.generateToken(companyUser);
@@ -194,7 +208,6 @@ class AssetControllerIntegrationTest extends AbstractControllerIntegrationTest {
 
     @Test
     void shouldReturn403ForWorkerRoleOnCreate() throws Exception {
-        // WORKER users have no company context; CompanyRoleAspect rejects with 403
         AssetCreateRequest request = AssetCreateRequest.builder()
                 .name("Asset Name")
                 .purchasePrice(new BigDecimal("1000.00"))
@@ -252,6 +265,41 @@ class AssetControllerIntegrationTest extends AbstractControllerIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isNotFound());
+    }
+
+    // ============= ATTACHMENTS =============
+    
+    @Test
+    void shouldAddAttachmentsSuccessfully() throws Exception {
+        when(tika.detect(any(InputStream.class))).thenReturn("image/jpeg");
+        when(s3Service.resolveFileUrl(any())).thenReturn("http://mock-s3-url.com/image.jpg");
+        
+        MockMultipartFile file = new MockMultipartFile("files", "test.jpg", MediaType.IMAGE_JPEG_VALUE, "mock image content".getBytes());
+
+        mockMvc.perform(multipart("/api/v1/assets/" + existingAsset.getId() + "/attachments")
+                        .file(file)
+                        .header("Authorization", "Bearer " + companyToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(existingAsset.getId()))
+                .andExpect(jsonPath("$.attachments", hasSize(1)))
+                .andExpect(jsonPath("$.attachments[0].fileName").value("test.jpg"));
+    }
+
+    @Test
+    void shouldRemoveAttachmentSuccessfully() throws Exception {
+        existingAsset.getAttachments().add(AssetAttachment.builder()
+                .fileName("test.jpg")
+                .fileType("image/jpeg")
+                .fileUrl("companies/1/assets/1/mock-key.jpg")
+                .build());
+        assetRepository.save(existingAsset);
+
+        mockMvc.perform(delete("/api/v1/assets/" + existingAsset.getId() + "/attachments")
+                        // FIXED: Uses "fileUrl" parameter to match what the Controller is expecting
+                        .param("fileUrl", "companies/1/assets/1/mock-key.jpg")
+                        .header("Authorization", "Bearer " + companyToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.attachments", hasSize(0)));
     }
 
     // ============= GET /api/v1/assets/{id} =============

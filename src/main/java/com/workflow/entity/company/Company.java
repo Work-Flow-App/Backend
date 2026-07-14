@@ -90,4 +90,25 @@ public class Company {
 
     @UpdateTimestamp
     private LocalDateTime updatedAt;
+
+    @Column(name = "logo_url", length = 500)
+    private String logoUrl;
+
+    @Column(name = "description", columnDefinition = "TEXT")
+    private String description;
+
+    @Column(name = "website", length = 255)
+    private String website;
+
+    @Column(name = "tagline", length = 255)
+    private String tagline;
+
+    // Add Relationships
+    @OneToMany(mappedBy = "company", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<CompanyDocument> documents = new ArrayList<>();
+
+    @OneToMany(mappedBy = "company", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<CompanyPost> posts = new ArrayList<>();
 }

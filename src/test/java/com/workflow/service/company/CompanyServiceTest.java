@@ -10,8 +10,8 @@ import com.workflow.dto.company.CompanyProfileUpdateRequest;
 import com.workflow.entity.company.Company;
 import com.workflow.entity.company.CompanyAddress;
 import com.workflow.entity.auth.User;
-import com.workflow.entity.worker.Worker;
 import com.workflow.repository.company.CompanyRepository;
+import com.workflow.service.storage.IStorageService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -22,7 +22,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -35,6 +34,9 @@ class CompanyServiceTest {
 
     @Mock
     private CompanyRepository companyRepository;
+
+    @Mock
+    private IStorageService s3Service;
 
     @InjectMocks
     private CompanyService companyService;
@@ -61,6 +63,7 @@ class CompanyServiceTest {
                 .user(companyUser)
                 .email("company@example.com")
                 .telephone("1234567890")
+                .logoUrl("companies/1/logo/test.png")
                 .address(CompanyAddress.builder()
                         .addressLine1("123 Main St")
                         .town("New York")
@@ -74,6 +77,9 @@ class CompanyServiceTest {
 
         updateRequest = new CompanyProfileUpdateRequest(
                 "Updated Company",
+                "New Description",
+                "https://website.com",
+                "New Tagline",
                 new CompanyAddressRequest("456 Oak Ave", "Suite 200", null, "Los Angeles", "USA", "90001"),
                 "9876543210",
                 "5555555555",
@@ -95,12 +101,14 @@ class CompanyServiceTest {
         when(companyRepository.findByUserIdAndNotArchived(1L)).thenReturn(Optional.of(company));
         when(companyRepository.existsByNameIgnoreCase("Updated Company")).thenReturn(false);
         when(companyRepository.save(any(Company.class))).thenReturn(company);
+        when(s3Service.resolveFileUrl(anyString())).thenReturn("https://s3.amazonaws.com/companies/1/logo/test.png");
 
         // Act
         CompanyProfileResponse response = companyService.updateProfile(updateRequest, 1L);
 
         // Assert
         assertThat(response).isNotNull();
+        assertThat(response.logoUrl()).isEqualTo("https://s3.amazonaws.com/companies/1/logo/test.png");
         verify(companyRepository).findByUserIdAndNotArchived(1L);
         verify(companyRepository).existsByNameIgnoreCase("Updated Company");
         verify(companyRepository).save(company);
@@ -140,8 +148,7 @@ class CompanyServiceTest {
     void updateProfile_ShouldAllowSameNameWithDifferentCase() {
         // Arrange
         CompanyProfileUpdateRequest sameNameRequest = new CompanyProfileUpdateRequest(
-                "test company", // Same name, different case
-                null, null, null, null, null, null, null, null, null, null
+                "test company", null, null, null, null, null, null, null, null, null, null, null, null, null
         );
         when(companyRepository.findByUserIdAndNotArchived(1L)).thenReturn(Optional.of(company));
         when(companyRepository.save(any(Company.class))).thenReturn(company);
@@ -164,6 +171,9 @@ class CompanyServiceTest {
         when(companyRepository.save(any(Company.class))).thenAnswer(invocation -> {
             Company savedCompany = invocation.getArgument(0);
             assertThat(savedCompany.getName()).isEqualTo("Updated Company");
+            assertThat(savedCompany.getDescription()).isEqualTo("New Description");
+            assertThat(savedCompany.getWebsite()).isEqualTo("https://website.com");
+            assertThat(savedCompany.getTagline()).isEqualTo("New Tagline");
             assertThat(savedCompany.getAddress().getAddressLine1()).isEqualTo("456 Oak Ave");
             assertThat(savedCompany.getAddress().getAddressLine2()).isEqualTo("Suite 200");
             assertThat(savedCompany.getAddress().getTown()).isEqualTo("Los Angeles");
@@ -191,6 +201,7 @@ class CompanyServiceTest {
     void getProfile_ShouldReturnCompanyProfile() {
         // Arrange
         when(companyRepository.findByUserIdAndNotArchived(1L)).thenReturn(Optional.of(company));
+        when(s3Service.resolveFileUrl(anyString())).thenReturn("https://s3.amazonaws.com/companies/1/logo/test.png");
 
         // Act
         CompanyProfileResponse response = companyService.getProfile(1L);
@@ -201,8 +212,10 @@ class CompanyServiceTest {
         assertThat(response.name()).isEqualTo("Test Company");
         assertThat(response.email()).isEqualTo("company@example.com");
         assertThat(response.telephone()).isEqualTo("1234567890");
+        assertThat(response.logoUrl()).isEqualTo("https://s3.amazonaws.com/companies/1/logo/test.png");
         assertThat(response.archived()).isFalse();
         verify(companyRepository).findByUserIdAndNotArchived(1L);
+        verify(s3Service).resolveFileUrl(company.getLogoUrl());
     }
 
     @Test

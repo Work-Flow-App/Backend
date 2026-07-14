@@ -151,6 +151,9 @@ class CompanyControllerIntegrationTest extends AbstractControllerIntegrationTest
     void shouldUpdateCompanyProfileSuccessfully() throws Exception {
         CompanyProfileUpdateRequest request = new CompanyProfileUpdateRequest(
                 "Updated Company Name",
+                "New Description",
+                "https://example.com",
+                "Great Tagline",
                 new CompanyAddressRequest("123 Main St", "Suite 100", null, "New York", "USA", "10001"),
                 "9876543210",
                 "9876543210",
@@ -169,6 +172,9 @@ class CompanyControllerIntegrationTest extends AbstractControllerIntegrationTest
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("Updated Company Name"))
+                .andExpect(jsonPath("$.description").value("New Description"))
+                .andExpect(jsonPath("$.website").value("https://example.com"))
+                .andExpect(jsonPath("$.tagline").value("Great Tagline"))
                 .andExpect(jsonPath("$.address.addressLine1").value("123 Main St"))
                 .andExpect(jsonPath("$.address.addressLine2").value("Suite 100"))
                 .andExpect(jsonPath("$.address.town").value("New York"))
@@ -186,7 +192,7 @@ class CompanyControllerIntegrationTest extends AbstractControllerIntegrationTest
     void shouldReturn400BadRequestForInvalidEmail() throws Exception {
         CompanyProfileUpdateRequest request = new CompanyProfileUpdateRequest(
                 "Test Company",
-                null, null, null, null,
+                null, null, null, null, null, null, null,
                 "invalid-email",
                 null, null, null, null, null
         );
@@ -204,7 +210,7 @@ class CompanyControllerIntegrationTest extends AbstractControllerIntegrationTest
     void shouldReturn400BadRequestForInvalidContactEmail() throws Exception {
         CompanyProfileUpdateRequest request = new CompanyProfileUpdateRequest(
                 "Test Company",
-                null, null, null, null,
+                null, null, null, null, null, null, null,
                 "valid@example.com",
                 "invalid-contact-email",
                 null, null, null, null
@@ -221,8 +227,7 @@ class CompanyControllerIntegrationTest extends AbstractControllerIntegrationTest
     @Test
     void shouldReturn400BadRequestForMissingCompanyName() throws Exception {
         CompanyProfileUpdateRequest request = new CompanyProfileUpdateRequest(
-                "",
-                null, null, null, null, null, null, null, null, null, null
+                "", null, null, null, null, null, null, null, null, null, null, null, null, null
         );
 
         mockMvc.perform(post("/api/v1/companies/profile")
@@ -256,8 +261,7 @@ class CompanyControllerIntegrationTest extends AbstractControllerIntegrationTest
 
         // Try to update first company with the second company's name
         CompanyProfileUpdateRequest request = new CompanyProfileUpdateRequest(
-                "Another Company",
-                null, null, null, null, null, null, null, null, null, null
+                "Another Company", null, null, null, null, null, null, null, null, null, null, null, null, null
         );
 
         mockMvc.perform(post("/api/v1/companies/profile")
@@ -272,8 +276,7 @@ class CompanyControllerIntegrationTest extends AbstractControllerIntegrationTest
     @Test
     void shouldAllowUpdatingSameNameWithDifferentCase() throws Exception {
         CompanyProfileUpdateRequest request = new CompanyProfileUpdateRequest(
-                "test company", // lowercase
-                null, null, null, null, null, null, null, null, null, null
+                "test company", null, null, null, null, null, null, null, null, null, null, null, null, null
         );
 
         mockMvc.perform(post("/api/v1/companies/profile")
@@ -289,8 +292,7 @@ class CompanyControllerIntegrationTest extends AbstractControllerIntegrationTest
         String longString = "a".repeat(300);
 
         CompanyProfileUpdateRequest request = new CompanyProfileUpdateRequest(
-                longString, // Exceeds 150 characters
-                null, null, null, null, null, null, null, null, null, null
+                longString, null, null, null, null, null, null, null, null, null, null, null, null, null
         );
 
         mockMvc.perform(post("/api/v1/companies/profile")
@@ -348,8 +350,7 @@ class CompanyControllerIntegrationTest extends AbstractControllerIntegrationTest
     @Test
     void shouldHandleNullFieldsInUpdate() throws Exception {
         CompanyProfileUpdateRequest request = new CompanyProfileUpdateRequest(
-                "Only Name Updated",
-                null, null, null, null, null, null, null, null, null, null
+                "Only Name Updated", null, null, null, null, null, null, null, null, null, null, null, null, null
         );
 
         mockMvc.perform(post("/api/v1/companies/profile")

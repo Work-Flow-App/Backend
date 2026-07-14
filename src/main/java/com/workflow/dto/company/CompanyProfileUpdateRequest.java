@@ -11,6 +11,14 @@ public record CompanyProfileUpdateRequest(
         @Size(min = 2, max = 150, message = "Company name must be between 2 and 150 characters")
         String name,
 
+        String description,
+
+        @Size(max = 255, message = "Website cannot exceed 255 characters")
+        String website,
+
+        @Size(max = 255, message = "Tagline cannot exceed 255 characters")
+        String tagline,
+
         @Valid
         CompanyAddressRequest address,
 

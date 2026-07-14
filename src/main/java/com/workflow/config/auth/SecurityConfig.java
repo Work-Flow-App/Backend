@@ -84,6 +84,7 @@ public class SecurityConfig {
             "/api/v1/workers/invites/check/**",
             "/api/v1/companies/members/invitations/check",
             "/api/v1/webhooks/**",
+            "/api/v1/public/companies/**",
             "/swagger-ui/**",
             "/swagger-ui.html",
             "/v3/api-docs/**",

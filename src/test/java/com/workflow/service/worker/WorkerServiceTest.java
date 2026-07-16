@@ -12,9 +12,12 @@ import com.workflow.entity.company.Company;
 import com.workflow.entity.auth.User;
 import com.workflow.entity.worker.Worker;
 import com.workflow.repository.auth.UserRepository;
+import com.workflow.repository.job.JobWorkflowStepVisitLogRepository;
 import com.workflow.repository.worker.WorkerRepository;
 import com.workflow.service.company.CompanyService;
 import com.workflow.service.sequence.CompanyCounterService;
+import com.workflow.service.storage.IStorageService;
+import org.apache.tika.Tika;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -22,6 +25,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -52,6 +56,15 @@ class WorkerServiceTest {
     @Mock
     private CompanyCounterService companyCounterService;
 
+    @Mock
+    private JobWorkflowStepVisitLogRepository visitLogRepository;
+
+    @Mock
+    private Tika tika;
+
+    @Mock
+    private IStorageService s3Service;
+
     @InjectMocks
     private WorkerService workerService;
 
@@ -64,6 +77,9 @@ class WorkerServiceTest {
 
     @BeforeEach
     void setUp() {
+        ReflectionTestUtils.setField(workerService, "blockedTypes",
+                List.of("application/x-msdownload", "text/html"));
+
         companyUser = User.builder()
                 .id(1L)
                 .uuid("company-uuid")
@@ -497,5 +513,90 @@ class WorkerServiceTest {
         verify(companyService).findCompanyByUserId(1L);
         verify(workerRepository).findByIdAndCompanyIdAndNotArchived(99L, 1L);
         verify(workerRepository, never()).save(any());
+    }
+
+    // ============= uploadPhotoForWorker Tests =============
+
+    @Test
+    void uploadPhotoForWorker_ShouldUploadAndDeleteOldPhoto() throws Exception {
+        worker.setPhotoUrl("companies/1/workers/1/photo/old.png");
+        org.springframework.mock.web.MockMultipartFile file =
+                new org.springframework.mock.web.MockMultipartFile("file", "new.png", "image/png", "content".getBytes());
+
+        when(companyService.findCompanyByUserId(1L)).thenReturn(company);
+        when(workerRepository.findByIdAndCompanyIdAndNotArchived(1L, 1L)).thenReturn(Optional.of(worker));
+        when(tika.detect(any(java.io.InputStream.class))).thenReturn("image/png");
+        when(workerRepository.save(any(Worker.class))).thenReturn(worker);
+
+        workerService.uploadPhotoForWorker(1L, 1L, file);
+
+        verify(s3Service).upload(anyString(), any(), anyLong(), eq("image/png"));
+        verify(s3Service).delete("companies/1/workers/1/photo/old.png");
+        assertThat(worker.getPhotoUrl()).isNotEqualTo("companies/1/workers/1/photo/old.png");
+    }
+
+    @Test
+    void uploadPhotoForWorker_ShouldThrow_WhenFileTooLarge() {
+        byte[] oversized = new byte[6 * 1024 * 1024]; // 6MB > 5MB limit
+        org.springframework.mock.web.MockMultipartFile file =
+                new org.springframework.mock.web.MockMultipartFile("file", "big.png", "image/png", oversized);
+
+        when(companyService.findCompanyByUserId(1L)).thenReturn(company);
+        when(workerRepository.findByIdAndCompanyIdAndNotArchived(1L, 1L)).thenReturn(Optional.of(worker));
+
+        assertThatThrownBy(() -> workerService.uploadPhotoForWorker(1L, 1L, file))
+                .isInstanceOf(com.workflow.common.exception.business.FileSizeLimitExceededException.class);
+
+        verify(s3Service, never()).upload(anyString(), any(), anyLong(), anyString());
+    }
+
+    // ============= updateHourlyRate Tests =============
+
+    @Test
+    void updateHourlyRate_ShouldUpdateSuccessfully() {
+        when(companyService.findCompanyByUserId(1L)).thenReturn(company);
+        when(workerRepository.findByIdAndCompanyIdAndNotArchived(1L, 1L)).thenReturn(Optional.of(worker));
+        when(workerRepository.save(any(Worker.class))).thenReturn(worker);
+
+        com.workflow.dto.worker.WorkerRateUpdateRequest request =
+                new com.workflow.dto.worker.WorkerRateUpdateRequest(new java.math.BigDecimal("22.50"));
+
+        WorkerResponse response = workerService.updateHourlyRate(1L, request, 1L);
+
+        assertThat(response.hourlyRate()).isEqualByComparingTo("22.50");
+        verify(workerRepository).save(worker);
+    }
+
+    // ============= getWeeklyHoursForWorker Tests =============
+
+    @Test
+    void getWeeklyHoursForWorker_ShouldSumCompletedVisitsAndFlagOpenVisit() {
+        java.time.LocalDate wednesday = java.time.LocalDate.of(2026, 8, 5);
+        java.time.LocalDate weekStart = java.time.LocalDate.of(2026, 8, 3);
+        java.time.LocalDate weekEnd = java.time.LocalDate.of(2026, 8, 9);
+
+        com.workflow.entity.job.JobWorkflowStepVisitLog completed = com.workflow.entity.job.JobWorkflowStepVisitLog.builder()
+                .visitDate(wednesday)
+                .timeIn(java.time.LocalTime.of(9, 0))
+                .timeOut(java.time.LocalTime.of(17, 0))
+                .build();
+
+        com.workflow.entity.job.JobWorkflowStepVisitLog open = com.workflow.entity.job.JobWorkflowStepVisitLog.builder()
+                .visitDate(wednesday)
+                .timeIn(java.time.LocalTime.of(9, 0))
+                .timeOut(null)
+                .build();
+
+        when(companyService.findCompanyByUserId(1L)).thenReturn(company);
+        when(workerRepository.findByIdAndCompanyIdAndNotArchived(1L, 1L)).thenReturn(Optional.of(worker));
+        when(visitLogRepository.findByLoggedByIdAndVisitDateBetween(2L, weekStart, weekEnd))
+                .thenReturn(java.util.List.of(completed, open));
+
+        var response = workerService.getWeeklyHoursForWorker(1L, 1L, wednesday);
+
+        assertThat(response.totalHours()).isEqualByComparingTo("8.00");
+        assertThat(response.hasOpenVisit()).isTrue();
+        assertThat(response.weekStart()).isEqualTo(weekStart);
+        assertThat(response.weekEnd()).isEqualTo(weekEnd);
     }
 }

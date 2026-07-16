@@ -1,41 +1,70 @@
 package com.workflow.service.worker;
 
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.DayOfWeek;
+import java.time.Duration;
+import java.time.LocalDate;
+import java.time.temporal.TemporalAdjusters;
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+import org.apache.tika.Tika;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
+import org.springframework.web.multipart.MultipartFile;
+
 import com.workflow.common.constant.Role;
+import com.workflow.common.exception.business.EmptyFileException;
+import com.workflow.common.exception.business.FileSizeLimitExceededException;
+import com.workflow.common.exception.business.ForbiddenActionException;
 import com.workflow.common.exception.business.UserAlreadyExistsException;
 import com.workflow.common.exception.business.WorkerAlreadyExistsException;
 import com.workflow.common.exception.business.WorkerNotFoundException;
 import com.workflow.dto.worker.WorkerCreateRequest;
-import com.workflow.dto.worker.WorkerInviteResponse;
 import com.workflow.dto.worker.WorkerPasswordResetRequest;
+import com.workflow.dto.worker.WorkerProfileResponse;
+import com.workflow.dto.worker.WorkerRateUpdateRequest;
 import com.workflow.dto.worker.WorkerResponse;
 import com.workflow.dto.worker.WorkerUpdateRequest;
-import com.workflow.entity.company.Company;
+import com.workflow.dto.worker.WorkerWeeklyHoursResponse;
 import com.workflow.entity.auth.User;
+import com.workflow.entity.company.Company;
+import com.workflow.entity.job.JobWorkflowStepVisitLog;
 import com.workflow.entity.worker.Worker;
 import com.workflow.repository.auth.UserRepository;
+import com.workflow.repository.job.JobWorkflowStepVisitLogRepository;
 import com.workflow.repository.worker.WorkerRepository;
 import com.workflow.service.company.ICompanyService;
 import com.workflow.service.sequence.CompanyCounterService;
+import com.workflow.service.storage.IStorageService;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
-import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class WorkerService implements IWorkerService {
 
+    private static final long MAX_PHOTO_SIZE = 5 * 1024 * 1024; // 5 MB
+
     private final WorkerRepository workerRepository;
     private final UserRepository userRepository;
     private final ICompanyService companyService;
     private final PasswordEncoder passwordEncoder;
     private final CompanyCounterService companyCounterService;
+    private final JobWorkflowStepVisitLogRepository visitLogRepository;
+    private final Tika tika;
+    private final IStorageService s3Service;
+
+    @Value("${workflow.security.file.blocked-types}")
+    private List<String> blockedTypes;
 
     @Override
     @Transactional
@@ -82,7 +111,7 @@ public class WorkerService implements IWorkerService {
         Worker savedWorker = workerRepository.save(worker);
         log.info("Created worker with ID: {} for company: {}", savedWorker.getId(), company.getName());
 
-        return WorkerResponse.fromEntity(savedWorker);
+        return map(savedWorker);
     }
 
     @Override
@@ -93,7 +122,7 @@ public class WorkerService implements IWorkerService {
         List<Worker> workers = workerRepository.findByCompanyIdAndNotArchived(company.getId());
 
         return workers.stream()
-                .map(WorkerResponse::fromEntity)
+                .map(this::map)
                 .collect(Collectors.toList());
     }
 
@@ -105,7 +134,7 @@ public class WorkerService implements IWorkerService {
         Worker worker = workerRepository.findByIdAndCompanyIdAndNotArchived(workerId, company.getId())
                 .orElseThrow(() -> new WorkerNotFoundException("Worker not found with ID: " + workerId));
 
-        return WorkerResponse.fromEntity(worker);
+        return map(worker);
     }
 
     @Override
@@ -141,7 +170,7 @@ public class WorkerService implements IWorkerService {
         Worker updatedWorker = workerRepository.save(worker);
         log.info("Updated worker with ID: {}", workerId);
 
-        return WorkerResponse.fromEntity(updatedWorker);
+        return map(updatedWorker);
     }
 
     @Override
@@ -187,7 +216,7 @@ public class WorkerService implements IWorkerService {
         Worker updatedWorker = workerRepository.save(worker);
         log.info("Patched worker with ID: {}", workerId);
 
-        return WorkerResponse.fromEntity(updatedWorker);
+        return map(updatedWorker);
     }
 
     @Override
@@ -225,5 +254,153 @@ public class WorkerService implements IWorkerService {
 
         userRepository.save(worker.getUser());
         log.info("Reset credentials for worker ID: {} in company: {}", workerId, company.getId());
+    }
+
+    /*
+     * ===========================
+     * SELF-SERVICE PROFILE
+     * ===========================
+     */
+
+    private Worker getWorker(Long userId) {
+        return workerRepository.findByUserId(userId)
+                .orElseThrow(() -> new WorkerNotFoundException("Current user is not a registered worker"));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public WorkerProfileResponse getOwnProfile(Long workerUserId) {
+        Worker worker = getWorker(workerUserId);
+        return WorkerProfileResponse.fromEntity(worker, s3Service.resolveFileUrl(worker.getPhotoUrl()));
+    }
+
+    @Override
+    @Transactional
+    public WorkerProfileResponse uploadOwnPhoto(Long workerUserId, MultipartFile file) throws IOException {
+        Worker worker = getWorker(workerUserId);
+        uploadPhoto(worker, file);
+        return WorkerProfileResponse.fromEntity(worker, s3Service.resolveFileUrl(worker.getPhotoUrl()));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public WorkerWeeklyHoursResponse getOwnWeeklyHours(Long workerUserId, LocalDate anyDateInWeek) {
+        Worker worker = getWorker(workerUserId);
+        return calculateWeeklyHours(worker, anyDateInWeek);
+    }
+
+    /*
+     * ===========================
+     * ADMIN-FACING
+     * ===========================
+     */
+
+    @Override
+    @Transactional
+    public WorkerResponse uploadPhotoForWorker(Long workerId, Long companyUserId, MultipartFile file) throws IOException {
+        Company company = companyService.findCompanyByUserId(companyUserId);
+        Worker worker = workerRepository.findByIdAndCompanyIdAndNotArchived(workerId, company.getId())
+                .orElseThrow(() -> new WorkerNotFoundException("Worker not found with ID: " + workerId));
+
+        uploadPhoto(worker, file);
+        return map(worker);
+    }
+
+    @Override
+    @Transactional
+    public WorkerResponse updateHourlyRate(Long workerId, WorkerRateUpdateRequest request, Long companyUserId) {
+        Company company = companyService.findCompanyByUserId(companyUserId);
+        Worker worker = workerRepository.findByIdAndCompanyIdAndNotArchived(workerId, company.getId())
+                .orElseThrow(() -> new WorkerNotFoundException("Worker not found with ID: " + workerId));
+
+        worker.setHourlyRate(request.hourlyRate());
+        Worker updatedWorker = workerRepository.save(worker);
+        log.info("Updated hourly rate for worker ID: {}", workerId);
+
+        return map(updatedWorker);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public WorkerWeeklyHoursResponse getWeeklyHoursForWorker(Long workerId, Long companyUserId, LocalDate anyDateInWeek) {
+        Company company = companyService.findCompanyByUserId(companyUserId);
+        Worker worker = workerRepository.findByIdAndCompanyIdAndNotArchived(workerId, company.getId())
+                .orElseThrow(() -> new WorkerNotFoundException("Worker not found with ID: " + workerId));
+
+        return calculateWeeklyHours(worker, anyDateInWeek);
+    }
+
+    /*
+     * ===========================
+     * INTERNAL HELPERS
+     * ===========================
+     */
+
+    private void uploadPhoto(Worker worker, MultipartFile file) throws IOException {
+        if (file.isEmpty()) {
+            throw new EmptyFileException("Uploaded file cannot be empty");
+        }
+
+        if (file.getSize() > MAX_PHOTO_SIZE) {
+            throw new FileSizeLimitExceededException("Photo must not exceed 5 MB");
+        }
+
+        String detectedType = tika.detect(file.getInputStream());
+
+        if (blockedTypes.contains(detectedType)) {
+            throw new ForbiddenActionException("Upload is blocked for security reasons.");
+        }
+
+        String originalFilename = StringUtils.cleanPath(file.getOriginalFilename());
+        String extension = "";
+        if (originalFilename.contains(".")) {
+            extension = originalFilename.substring(originalFilename.lastIndexOf("."));
+        }
+        String safeUniqueFilename = UUID.randomUUID() + extension;
+
+        String key = String.format(
+                "companies/%d/workers/%d/photo/%s",
+                worker.getCompany().getId(),
+                worker.getId(),
+                safeUniqueFilename);
+
+        s3Service.upload(key, file.getInputStream(), file.getSize(), detectedType);
+
+        String previousKey = worker.getPhotoUrl();
+        worker.setPhotoUrl(key);
+        workerRepository.save(worker);
+
+        if (previousKey != null) {
+            s3Service.delete(previousKey);
+        }
+    }
+
+    private WorkerWeeklyHoursResponse calculateWeeklyHours(Worker worker, LocalDate anyDateInWeek) {
+        LocalDate reference = anyDateInWeek != null ? anyDateInWeek : LocalDate.now();
+        LocalDate weekStart = reference.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+        LocalDate weekEnd = reference.with(TemporalAdjusters.nextOrSame(DayOfWeek.SUNDAY));
+
+        List<JobWorkflowStepVisitLog> logs = visitLogRepository.findByLoggedByIdAndVisitDateBetween(
+                worker.getUser().getId(), weekStart, weekEnd);
+
+        Duration totalDuration = Duration.ZERO;
+        boolean hasOpenVisit = false;
+
+        for (JobWorkflowStepVisitLog visitLog : logs) {
+            if (visitLog.getTimeOut() == null) {
+                hasOpenVisit = true;
+                continue;
+            }
+            totalDuration = totalDuration.plus(Duration.between(visitLog.getTimeIn(), visitLog.getTimeOut()));
+        }
+
+        BigDecimal totalHours = BigDecimal.valueOf(totalDuration.toMinutes())
+                .divide(BigDecimal.valueOf(60), 2, RoundingMode.HALF_UP);
+
+        return new WorkerWeeklyHoursResponse(worker.getId(), weekStart, weekEnd, totalHours, hasOpenVisit);
+    }
+
+    private WorkerResponse map(Worker worker) {
+        return WorkerResponse.fromEntity(worker, s3Service.resolveFileUrl(worker.getPhotoUrl()));
     }
 }

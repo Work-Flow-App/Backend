@@ -30,6 +30,9 @@ public interface WorkerRepository extends JpaRepository<Worker, Long> {
     @Query("SELECT w FROM Worker w WHERE w.user.id = :userId")
     Optional<Worker> findByUserId(@Param("userId") Long userId);
 
+    @Query("SELECT w FROM Worker w WHERE w.user.id = :userId AND w.archived = false")
+    Optional<Worker> findByUserIdAndArchivedFalse(@Param("userId") Long userId);
+
     boolean existsByUserIdAndArchivedFalse(Long userId);
 
     boolean existsByEmailIgnoreCaseAndArchivedFalse(String email);

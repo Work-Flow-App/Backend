@@ -515,6 +515,18 @@ class WorkerServiceTest {
         verify(workerRepository, never()).save(any());
     }
 
+    // ============= self-service archived-worker guard =============
+
+    @Test
+    void getOwnProfile_ShouldThrow_WhenWorkerIsArchived() {
+        // Regression test: an archived (offboarded) worker's still-valid JWT must not
+        // be able to keep using self-service endpoints.
+        when(workerRepository.findByUserIdAndArchivedFalse(2L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> workerService.getOwnProfile(2L))
+                .isInstanceOf(WorkerNotFoundException.class);
+    }
+
     // ============= uploadPhotoForWorker Tests =============
 
     @Test

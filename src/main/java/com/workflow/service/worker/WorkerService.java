@@ -16,6 +16,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -263,7 +265,7 @@ public class WorkerService implements IWorkerService {
      */
 
     private Worker getWorker(Long userId) {
-        return workerRepository.findByUserId(userId)
+        return workerRepository.findByUserIdAndArchivedFalse(userId)
                 .orElseThrow(() -> new WorkerNotFoundException("Current user is not a registered worker"));
     }
 
@@ -351,6 +353,10 @@ public class WorkerService implements IWorkerService {
             throw new ForbiddenActionException("Upload is blocked for security reasons.");
         }
 
+        // Lock the worker row for the rest of this transaction so a concurrent
+        // upload can't read the same stale photoUrl and both delete/overwrite it.
+        workerRepository.findByIdForUpdate(worker.getId());
+
         String originalFilename = StringUtils.cleanPath(file.getOriginalFilename());
         String extension = "";
         if (originalFilename.contains(".")) {
@@ -370,8 +376,19 @@ public class WorkerService implements IWorkerService {
         worker.setPhotoUrl(key);
         workerRepository.save(worker);
 
+        // Delete the old photo only after the transaction commits - if the commit
+        // fails, the DB rolls back to previousKey and the old S3 object must still exist.
         if (previousKey != null) {
-            s3Service.delete(previousKey);
+            if (TransactionSynchronizationManager.isSynchronizationActive()) {
+                TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                    @Override
+                    public void afterCommit() {
+                        s3Service.delete(previousKey);
+                    }
+                });
+            } else {
+                s3Service.delete(previousKey);
+            }
         }
     }
 

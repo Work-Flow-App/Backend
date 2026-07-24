@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Form Submission</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 15mm 15mm 15mm 15mm;
+        }
+
+        body {
+            font-family: Helvetica, Arial, sans-serif;
+            font-size: 9pt;
+            color: #000000;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* ── Header table ── */
+        .header-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 22pt;
+        }
+        .header-table td {
+            vertical-align: top;
+            border: none;
+            padding: 0 8pt 0 0;
+        }
+        .col-form-info { width: 50%; }
+        .col-company   { width: 50%; padding-right: 0 !important; text-align: right; }
+
+        .form-title {
+            font-size: 24pt;
+            font-weight: bold;
+            margin-bottom: 10pt;
+            text-transform: uppercase;
+        }
+        .meta-label {
+            font-weight: bold;
+            margin-top: 6pt;
+            margin-bottom: 1pt;
+            color: #505050;
+        }
+        .col-company-name {
+            font-weight: bold;
+            margin-bottom: 1pt;
+            font-size: 11pt;
+        }
+        .address-line {
+            margin: 0;
+            padding: 0;
+        }
+        .contact-line {
+            margin: 0;
+            padding: 0;
+            margin-top: 4pt;
+        }
+
+        /* ── Fields table ── */
+        .line-items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10pt;
+        }
+        .line-items-table thead tr th {
+            border-top: 1pt solid #000000;
+            border-bottom: 1pt solid #000000;
+            padding: 7pt 5pt;
+            font-size: 10pt;
+            font-weight: bold;
+            text-align: left;
+            background-color: #f9f9f9;
+        }
+        .line-items-table tbody tr td {
+            border-bottom: 1pt solid #cccccc;
+            padding: 8pt 5pt;
+            vertical-align: top;
+        }
+        
+        .field-label {
+            width: 40%;
+            font-weight: bold;
+            color: #333333;
+        }
+        .field-value {
+            width: 60%;
+        }
+        .empty-value {
+            color: #999999;
+            font-style: italic;
+        }
+        
+        /* ── Image Attachment Styles (FIXED FOR FLYING SAUCER) ── */
+        .pdf-image {
+            width: 250px;       /* FORCE exact width so it scales down */
+            height: auto;       /* FORCE proportional height to prevent cropping */
+            display: block;
+            margin-top: 6pt;
+            margin-bottom: 4pt;
+            border: 1px solid #dddddd;
+        }
+        .file-attachment {
+            margin-top: 4pt;
+            font-size: 8.5pt;
+            color: #0056b3;
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- ── Header ── -->
+    <table class="header-table">
+        <tr>
+            <!-- Col 1: Form Info -->
+            <td class="col-form-info">
+                <div class="form-title" th:text="${data.title}">FORM TITLE</div>
+                
+                <div class="meta-label">Template</div>
+                <div th:text="${data.templateName}">Template Name</div>
+
+                <div class="meta-label">Status</div>
+                <div th:text="${data.status}">STATUS</div>
+
+                <div th:if="${data.workerName != null}">
+                    <div class="meta-label">Assigned To</div>
+                    <div th:text="${data.workerName}">Worker Name</div>
+                </div>
+
+                <div th:if="${data.submittedAt != null}">
+                    <div class="meta-label">Submitted On</div>
+                    <div th:text="${data.submittedAt}">01 Jan 2026</div>
+                </div>
+            </td>
+
+            <!-- Col 2: Company Info -->
+            <td class="col-company">
+                <div class="col-company-name" th:text="${data.companyName}">Company Name</div>
+                <div th:each="line : ${data.companyAddressLines}"
+                     class="address-line"
+                     th:text="${line}">Address Line</div>
+                
+                <div th:if="${data.companyEmail != null and !#strings.isEmpty(data.companyEmail)}"
+                     class="contact-line"
+                     th:text="${data.companyEmail}">email@company.com</div>
+                
+                <div th:if="${data.companyPhone != null and !#strings.isEmpty(data.companyPhone)}"
+                     class="contact-line"
+                     th:text="${data.companyPhone}">+44 000 000 0000</div>
+            </td>
+        </tr>
+    </table>
+
+    <!-- ── Fields Table ── -->
+    <table class="line-items-table">
+        <thead>
+            <tr>
+                <th>Question / Field</th>
+                <th>Response</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr th:each="field : ${data.fields}">
+                <td class="field-label" th:text="${field.label}">Field Label</td>
+                <td class="field-value">
+                    
+                    <!-- Standard Text/Boolean/Date Value -->
+                    <div th:if="${field.value != null}" th:text="${field.value}"></div>
+                    
+                    <!-- IMAGE File Attachment -->
+                    <div th:if="${field.fileName != null and field.isImage}">
+                        <!-- NOTE: Flying Saucer requires self-closing tags like <img ... /> -->
+                        <img th:src="${field.fileUrl}" alt="Image Response" class="pdf-image" />
+                        <div class="file-attachment">
+                            &#128206; <span th:text="${field.fileName}"></span>
+                        </div>
+                    </div>
+
+                    <!-- NON-IMAGE File Attachment (e.g. PDF, Word Doc) -->
+                    <div th:if="${field.fileName != null and !field.isImage}" class="file-attachment">
+                        &#128206; Attached File: <span th:text="${field.fileName}"></span>
+                    </div>
+
+                    <!-- Empty State -->
+                    <div th:if="${field.value == null and field.fileName == null}" class="empty-value">
+                        No response provided
+                    </div>
+
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+</body>
+</html>

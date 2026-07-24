@@ -69,7 +69,28 @@ public class FormService implements IFormService {
                 .id(t.getId())
                 .name(t.getName())
                 .description(t.getDescription())
+                // WE MUST RETURN THE FIELDS SO THE FRONTEND CAN LOAD THEM FOR EDITING
+                .fields(t.getFields().stream().map(f -> FormFieldDto.builder()
+                        .id(f.getId())
+                        .name(f.getName())
+                        .label(f.getLabel())
+                        .type(f.getType())
+                        .roleTarget(f.getRoleTarget())
+                        .required(f.isRequired())
+                        .options(f.getOptions())
+                        .orderIndex(f.getOrderIndex())
+                        .build()).collect(Collectors.toList()))
                 .build()).collect(Collectors.toList());
+    }
+
+    @Override
+    public void deleteTemplate(Long templateId, Long companyId) {
+        FormTemplate template = templateRepo.findByIdAndCompanyIdAndArchivedFalse(templateId, companyId)
+                .orElseThrow(() -> new TemplateNotFoundException("Template not found"));
+
+        // Soft delete so we don't break old submitted forms
+        template.setArchived(true);
+        templateRepo.save(template);
     }
 
     @Override
@@ -278,6 +299,7 @@ public class FormService implements IFormService {
                                     val != null && val.getFileUrl() != null ? s3Service.resolveFileUrl(val.getFileUrl())
                                             : null)
                             .fileName(val != null ? val.getFileName() : null)
+                            .options(field.getOptions())
                             .build();
                 }).collect(Collectors.toList()))
                 .build();

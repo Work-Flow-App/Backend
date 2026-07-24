@@ -91,4 +91,11 @@ public class CompanyFormController {
         // You'll need to add a method to IFormService to list by company
         return ResponseEntity.ok(formService.getCompanySubmissions(AuthUtils.getCompanyId()));
     }
+
+    @RequireCompanyRole({ COMPANY_ADMIN, MANAGER, EDITOR, VIEWER })
+    @DeleteMapping("/templates/{id}")
+    public ResponseEntity<Void> deleteTemplate(@PathVariable Long id) {
+        formService.deleteTemplate(id, AuthUtils.getCompanyId());
+        return ResponseEntity.noContent().build();
+    }
 }

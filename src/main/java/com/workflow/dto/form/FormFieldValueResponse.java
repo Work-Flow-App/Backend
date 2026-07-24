@@ -14,4 +14,5 @@ public class FormFieldValueResponse {
     private Object value; // Typed value
     private String fileUrl;
     private String fileName;
+    private String options;
 }

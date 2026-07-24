@@ -93,7 +93,14 @@ public class FormPdfRenderer {
         } else if (val.getDateValue() != null) {
             displayValue = val.getDateValue().format(DATE_FORMATTER);
         } else if (val.getJsonValue() != null) {
-            displayValue = val.getJsonValue();
+            // Clean up JSON Arrays for MULTI_SELECT ---
+            String rawJson = val.getJsonValue();
+            if (rawJson.startsWith("[") && rawJson.endsWith("]")) {
+                // Converts ["A","B"] into A, B
+                displayValue = rawJson.replaceAll("[\\[\\]\"]", "").replace(",", ", ");
+            } else {
+                displayValue = rawJson;
+            }
         }
 
         // --- NEW LOGIC TO HANDLE IMAGES ---
@@ -102,7 +109,8 @@ public class FormPdfRenderer {
 
         if (val.getFileUrl() != null) {
             resolvedUrl = s3Service.resolveFileUrl(val.getFileUrl());
-            // Check if the uploaded file was actually an image (e.g., image/png, image/jpeg)
+            // Check if the uploaded file was actually an image (e.g., image/png,
+            // image/jpeg)
             if (val.getFileType() != null && val.getFileType().startsWith("image/")) {
                 isImage = true;
             }
@@ -112,8 +120,8 @@ public class FormPdfRenderer {
                 .label(val.getField().getLabel())
                 .value(displayValue)
                 .fileName(val.getFileName())
-                .fileUrl(resolvedUrl)   // Passing URL to HTML
-                .isImage(isImage)       // Flag to trigger <img> tag
+                .fileUrl(resolvedUrl) // Passing URL to HTML
+                .isImage(isImage) // Flag to trigger <img> tag
                 .build();
     }
 }

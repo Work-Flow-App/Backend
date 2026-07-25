@@ -98,4 +98,11 @@ public class CompanyFormController {
         formService.deleteTemplate(id, AuthUtils.getCompanyId());
         return ResponseEntity.noContent().build();
     }
+
+    // Add this endpoint back
+    @RequireCompanyRole({ COMPANY_ADMIN, MANAGER, EDITOR, VIEWER })
+    @PutMapping("/templates/{id}")
+    public ResponseEntity<FormTemplateRequest> updateTemplate(@PathVariable Long id, @RequestBody FormTemplateRequest request) {
+        return ResponseEntity.ok(formService.updateTemplate(id, request, AuthUtils.getCompanyId()));
+    }
 }

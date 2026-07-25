@@ -9,4 +9,8 @@ public interface FormTemplateRepository extends JpaRepository<FormTemplate, Long
     List<FormTemplate> findByCompanyIdAndArchivedFalse(Long companyId);
 
     Optional<FormTemplate> findByIdAndCompanyIdAndArchivedFalse(Long id, Long companyId);
+
+    List<FormTemplate> findByCompanyId(Long companyId);
+
+    Optional<FormTemplate> findByIdAndCompanyId(Long id, Long companyId);
 }

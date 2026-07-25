@@ -5,6 +5,8 @@ CREATE TABLE form_templates (
     name VARCHAR(150) NOT NULL,
     description VARCHAR(500),
     archived BOOLEAN NOT NULL DEFAULT FALSE,
+    version INT DEFAULT 1 NOT NULL,
+    parent_template_id BIGINT,
     created_at DATETIME(6) DEFAULT CURRENT_TIMESTAMP(6),
     updated_at DATETIME(6) DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
     CONSTRAINT fk_form_templates_company FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE

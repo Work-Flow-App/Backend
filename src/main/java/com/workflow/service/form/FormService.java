@@ -45,6 +45,7 @@ public class FormService implements IFormService {
                 .company(company)
                 .name(request.getName())
                 .description(request.getDescription())
+                .version(1) // explicitly set version 1
                 .build();
 
         List<FormField> fields = request.getFields().stream().map(dto -> FormField.builder()
@@ -65,11 +66,13 @@ public class FormService implements IFormService {
 
     @Override
     public List<FormTemplateRequest> getTemplates(Long companyId) {
-        return templateRepo.findByCompanyIdAndArchivedFalse(companyId).stream().map(t -> FormTemplateRequest.builder()
+        return templateRepo.findByCompanyId(companyId).stream().map(t -> FormTemplateRequest.builder()
                 .id(t.getId())
                 .name(t.getName())
                 .description(t.getDescription())
-                // WE MUST RETURN THE FIELDS SO THE FRONTEND CAN LOAD THEM FOR EDITING
+                .version(t.getVersion()) // expose version
+                .parentTemplateId(t.getParentTemplateId())
+                .archived(t.isArchived())
                 .fields(t.getFields().stream().map(f -> FormFieldDto.builder()
                         .id(f.getId())
                         .name(f.getName())
@@ -84,13 +87,79 @@ public class FormService implements IFormService {
     }
 
     @Override
+    public FormTemplateRequest updateTemplate(Long templateId, FormTemplateRequest request, Long companyId) {
+        // 1. Fetch the old active template
+        FormTemplate oldTemplate = templateRepo.findByIdAndCompanyIdAndArchivedFalse(templateId, companyId)
+                .orElseThrow(() -> new TemplateNotFoundException("Template not found or already archived"));
+
+        // 2. Secretly Archive the old template so historical forms remain intact
+        oldTemplate.setArchived(true);
+        templateRepo.save(oldTemplate);
+
+        // 3. Figure out the "Parent" (original V1 template) for grouping later if
+        // needed
+        Long parentId = oldTemplate.getParentTemplateId() != null ? oldTemplate.getParentTemplateId()
+                : oldTemplate.getId();
+
+        // 4. Create the brand NEW template version
+        FormTemplate newTemplate = FormTemplate.builder()
+                .company(oldTemplate.getCompany())
+                .name(request.getName()) // Can be updated name
+                .description(request.getDescription()) // Can be updated description
+                .version(oldTemplate.getVersion() + 1) // Increment Version!
+                .parentTemplateId(parentId)
+                .archived(false)
+                .build();
+
+        // 5. Clone fields from request directly to the NEW template.
+        // We ignore the incoming DTO field IDs because these are entirely new fields in
+        // the DB!
+        List<FormField> newFields = request.getFields().stream().map(dto -> FormField.builder()
+                .template(newTemplate)
+                .name(dto.getName())
+                .label(dto.getLabel())
+                .type(dto.getType())
+                .roleTarget(dto.getRoleTarget())
+                .required(dto.isRequired())
+                .options(dto.getOptions())
+                .orderIndex(dto.getOrderIndex())
+                .build()).collect(Collectors.toList());
+
+        newTemplate.setFields(newFields);
+
+        // 6. Save and return
+        FormTemplate savedTemplate = templateRepo.save(newTemplate);
+
+        request.setId(savedTemplate.getId());
+        request.setVersion(savedTemplate.getVersion());
+        request.setParentTemplateId(savedTemplate.getParentTemplateId());
+
+        return request;
+    }
+
+    @Override
     public void deleteTemplate(Long templateId, Long companyId) {
-        FormTemplate template = templateRepo.findByIdAndCompanyIdAndArchivedFalse(templateId, companyId)
+        // CHANGED: Fetch regardless of whether it's archived or not
+        FormTemplate template = templateRepo.findByIdAndCompanyId(templateId, companyId)
                 .orElseThrow(() -> new TemplateNotFoundException("Template not found"));
 
-        // Soft delete so we don't break old submitted forms
-        template.setArchived(true);
-        templateRepo.save(template);
+        long submissionCount = submissionRepo.countByTemplateId(templateId);
+
+        if (submissionCount == 0) {
+            // STEP 2: No submissions left! We can safely hard delete it forever.
+            templateRepo.delete(template);
+        } else {
+            // Forms exist!
+            if (template.isArchived()) {
+                // If it's ALREADY archived, but they clicked delete again, we must stop them.
+                throw new InvalidRequestException(
+                        "Cannot permanently delete. Please delete the " + submissionCount + " associated forms first.");
+            } else {
+                // STEP 1: It's active. Soft delete (Archive) it.
+                template.setArchived(true);
+                templateRepo.save(template);
+            }
+        }
     }
 
     @Override
@@ -130,6 +199,14 @@ public class FormService implements IFormService {
         for (FormFieldValueDto dto : values) {
             FormField field = fieldRepo.findById(dto.getFieldId()).orElseThrow();
 
+            // --- SECURITY CHECK: ENFORCE ROLE TARGETS ---
+            if (isWorker && field.getRoleTarget().name().equals("COMPANY")) {
+                throw new InvalidRequestException("Workers are not authorized to edit company-only fields.");
+            }
+            if (!isWorker && field.getRoleTarget().name().equals("WORKER")) {
+                throw new InvalidRequestException("Companies are not authorized to edit worker-only fields.");
+            }
+
             // Upsert value
             FormFieldValue val = submission.getFieldValues().stream()
                     .filter(v -> v.getField().getId().equals(field.getId()))
@@ -140,12 +217,14 @@ public class FormService implements IFormService {
             val.setStringValue(dto.getStringValue());
             val.setBooleanValue(dto.getBooleanValue());
             val.setJsonValue(dto.getJsonValue());
+
             if (dto.getDateValue() != null) {
                 val.setDateValue(LocalDateTime.parse(dto.getDateValue()));
             }
 
-            if (val.getId() == null)
+            if (val.getId() == null) {
                 submission.getFieldValues().add(val);
+            }
         }
 
         return mapToResponse(submissionRepo.save(submission));
@@ -162,12 +241,22 @@ public class FormService implements IFormService {
         }
 
         FormField field = fieldRepo.findById(fieldId).orElseThrow();
-        if (field.getType() != FormFieldType.FILE)
+
+        // --- SECURITY CHECK: ENFORCE ROLE TARGETS ---
+        if (isWorker && field.getRoleTarget().name().equals("COMPANY")) {
+            throw new InvalidRequestException("Workers are not authorized to upload to company-only fields.");
+        }
+        if (!isWorker && field.getRoleTarget().name().equals("WORKER")) {
+            throw new InvalidRequestException("Companies are not authorized to upload to worker-only fields.");
+        }
+
+        if (field.getType() != FormFieldType.FILE) {
             throw new InvalidRequestException("Field is not a file type");
+        }
 
         String safeFileName = UUID.randomUUID().toString() + "_" + file.getOriginalFilename();
-        String key = String.format("forms/%d/submissions/%d/%s", submission.getCompany().getId(), submissionId,
-                safeFileName);
+        String key = String.format("forms/%d/submissions/%d/%s",
+                submission.getCompany().getId(), submissionId, safeFileName);
 
         s3Service.upload(key, file.getInputStream(), file.getSize(), file.getContentType());
 
@@ -181,8 +270,9 @@ public class FormService implements IFormService {
         val.setFileType(file.getContentType());
         val.setFileUrl(key);
 
-        if (val.getId() == null)
+        if (val.getId() == null) {
             submission.getFieldValues().add(val);
+        }
 
         return mapToResponse(submissionRepo.save(submission));
     }
@@ -203,6 +293,29 @@ public class FormService implements IFormService {
     public FormSubmissionResponse sendToWorker(Long submissionId, Long workerId, Long companyId) {
         FormSubmission submission = submissionRepo.findByIdAndCompanyId(submissionId, companyId).orElseThrow();
         Worker worker = workerRepo.findById(workerId).orElseThrow();
+
+        // --- VALIDATION: ENFORCE COMPANY REQUIRED FIELDS BEFORE SENDING ---
+        for (FormField field : submission.getTemplate().getFields()) {
+
+            // If the field is required AND only the company can edit it,
+            // the company MUST fill it out before passing it to the worker.
+            if (field.isRequired() && field.getRoleTarget().name().equals("COMPANY")) {
+
+                boolean hasValue = submission.getFieldValues().stream()
+                        .anyMatch(v -> v.getField().getId().equals(field.getId()) &&
+                                (v.getStringValue() != null && !v.getStringValue().trim().isEmpty() ||
+                                        v.getBooleanValue() != null ||
+                                        v.getDateValue() != null ||
+                                        v.getJsonValue() != null ||
+                                        v.getFileUrl() != null));
+
+                if (!hasValue) {
+                    throw new InvalidRequestException(
+                            "Cannot send to worker. Required company field missing: '" + field.getLabel() + "'.");
+                }
+            }
+        }
+
         submission.setWorker(worker);
         submission.setStatus(FormSubmissionStatus.SENT);
         return mapToResponse(submissionRepo.save(submission));
@@ -234,6 +347,28 @@ public class FormService implements IFormService {
     @Override
     public FormSubmissionResponse submitForm(Long submissionId, Long workerId) {
         FormSubmission submission = submissionRepo.findByIdAndWorkerId(submissionId, workerId).orElseThrow();
+
+        // --- VALIDATION: ENFORCE REQUIRED FIELDS ---
+        for (FormField field : submission.getTemplate().getFields()) {
+
+            // Only enforce required rule if the field isn't restricted to COMPANY only
+            if (field.isRequired() && !field.getRoleTarget().name().equals("COMPANY")) {
+
+                boolean hasValue = submission.getFieldValues().stream()
+                        .anyMatch(v -> v.getField().getId().equals(field.getId()) &&
+                                (v.getStringValue() != null && !v.getStringValue().trim().isEmpty() ||
+                                        v.getBooleanValue() != null ||
+                                        v.getDateValue() != null ||
+                                        v.getJsonValue() != null ||
+                                        v.getFileUrl() != null));
+
+                if (!hasValue) {
+                    throw new InvalidRequestException(
+                            "Required field missing: '" + field.getLabel() + "' must be filled out before submitting.");
+                }
+            }
+        }
+
         submission.setStatus(FormSubmissionStatus.SUBMITTED);
         submission.setSubmittedAt(LocalDateTime.now(ZoneOffset.UTC));
         return mapToResponse(submissionRepo.save(submission));
@@ -294,6 +429,7 @@ public class FormService implements IFormService {
                             .fieldLabel(field.getLabel())
                             .fieldType(field.getType().name())
                             .roleTarget(field.getRoleTarget().name())
+                            .required(field.isRequired())
                             .value(displayValue) // Now sends null if unanswered, instead of hiding the field!
                             .fileUrl(
                                     val != null && val.getFileUrl() != null ? s3Service.resolveFileUrl(val.getFileUrl())

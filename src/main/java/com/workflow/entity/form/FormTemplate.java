@@ -35,6 +35,13 @@ public class FormTemplate {
     @Column(nullable = false)
     private boolean archived = false;
 
+    @Builder.Default
+    @Column(nullable = false)
+    private Integer version = 1;
+
+    @Column(name = "parent_template_id")
+    private Long parentTemplateId; 
+
     @OneToMany(mappedBy = "template", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("orderIndex ASC")
     @Builder.Default

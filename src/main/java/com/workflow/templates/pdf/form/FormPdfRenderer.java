@@ -1,9 +1,10 @@
 package com.workflow.templates.pdf.form;
 
 import com.workflow.entity.company.Company;
+import com.workflow.entity.form.FormField;
 import com.workflow.entity.form.FormSubmission;
 import com.workflow.entity.form.FormFieldValue;
-import com.workflow.service.storage.IStorageService; // <-- Added Import
+import com.workflow.service.storage.IStorageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.context.Context;
@@ -13,6 +14,7 @@ import org.xhtmlrenderer.pdf.ITextRenderer;
 import java.io.ByteArrayOutputStream;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -21,10 +23,16 @@ import java.util.stream.Collectors;
 public class FormPdfRenderer {
 
     private static final String TEMPLATE = "pdf/form/form-template";
-    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm");
+
+    // --- UPDATED: Two different formatters ---
+    // 1. For user's answers (keeps the time because it's their local time)
+    private static final DateTimeFormatter FIELD_DATE_FORMATTER = DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm");
+
+    // 2. For the submission header (omits the time to hide the UTC offset)
+    private static final DateTimeFormatter SUBMISSION_DATE_FORMATTER = DateTimeFormatter.ofPattern("dd MMM yyyy");
 
     private final SpringTemplateEngine templateEngine;
-    private final IStorageService s3Service; // <-- Inject Storage Service
+    private final IStorageService s3Service;
 
     public byte[] generatePdf(FormSubmission submission) throws Exception {
         FormTemplateData data = mapToTemplateData(submission);
@@ -60,13 +68,21 @@ public class FormPdfRenderer {
         }
 
         // 2. Map Fields
-        List<FormTemplateData.FormFieldRow> fields = submission.getFieldValues().stream()
-                .map(this::mapField)
+        List<FormTemplateData.FormFieldRow> fields = submission.getTemplate().getFields().stream()
+                .sorted(Comparator.comparing(FormField::getOrderIndex, Comparator.nullsLast(Comparator.naturalOrder())))
+                .map(templateField -> {
+                    FormFieldValue val = submission.getFieldValues().stream()
+                            .filter(v -> v.getField().getId().equals(templateField.getId()))
+                            .findFirst()
+                            .orElse(null);
+
+                    return mapField(templateField, val);
+                })
                 .collect(Collectors.toList());
 
-        // 3. Format Date
+        // 3. Format Date - USES THE NEW OMIT-TIME FORMATTER
         String submittedAtStr = submission.getSubmittedAt() != null
-                ? submission.getSubmittedAt().format(DATE_FORMATTER)
+                ? submission.getSubmittedAt().format(SUBMISSION_DATE_FORMATTER)
                 : null;
 
         return FormTemplateData.builder()
@@ -83,45 +99,45 @@ public class FormPdfRenderer {
                 .build();
     }
 
-    private FormTemplateData.FormFieldRow mapField(FormFieldValue val) {
+    private FormTemplateData.FormFieldRow mapField(FormField field, FormFieldValue val) {
         String displayValue = null;
-
-        if (val.getStringValue() != null) {
-            displayValue = val.getStringValue();
-        } else if (val.getBooleanValue() != null) {
-            displayValue = val.getBooleanValue() ? "Yes" : "No";
-        } else if (val.getDateValue() != null) {
-            displayValue = val.getDateValue().format(DATE_FORMATTER);
-        } else if (val.getJsonValue() != null) {
-            // Clean up JSON Arrays for MULTI_SELECT ---
-            String rawJson = val.getJsonValue();
-            if (rawJson.startsWith("[") && rawJson.endsWith("]")) {
-                // Converts ["A","B"] into A, B
-                displayValue = rawJson.replaceAll("[\\[\\]\"]", "").replace(",", ", ");
-            } else {
-                displayValue = rawJson;
-            }
-        }
-
-        // --- NEW LOGIC TO HANDLE IMAGES ---
         boolean isImage = false;
         String resolvedUrl = null;
+        String fileName = null;
 
-        if (val.getFileUrl() != null) {
-            resolvedUrl = s3Service.resolveFileUrl(val.getFileUrl());
-            // Check if the uploaded file was actually an image (e.g., image/png,
-            // image/jpeg)
-            if (val.getFileType() != null && val.getFileType().startsWith("image/")) {
-                isImage = true;
+        if (val != null) {
+            fileName = val.getFileName();
+
+            if (val.getStringValue() != null) {
+                displayValue = val.getStringValue();
+            } else if (val.getBooleanValue() != null) {
+                displayValue = val.getBooleanValue() ? "Yes" : "No";
+            } else if (val.getDateValue() != null) {
+                // USES THE FULL FORMATTER FOR FIELD ANSWERS
+                displayValue = val.getDateValue().format(FIELD_DATE_FORMATTER);
+            } else if (val.getJsonValue() != null) {
+                String rawJson = val.getJsonValue();
+                if (rawJson.startsWith("[") && rawJson.endsWith("]")) {
+                    displayValue = rawJson.replaceAll("[\\[\\]\"]", "").replace(",", ", ");
+                } else {
+                    displayValue = rawJson;
+                }
+            }
+
+            if (val.getFileUrl() != null) {
+                resolvedUrl = s3Service.resolveFileUrl(val.getFileUrl());
+                if (val.getFileType() != null && val.getFileType().startsWith("image/")) {
+                    isImage = true;
+                }
             }
         }
 
         return FormTemplateData.FormFieldRow.builder()
-                .label(val.getField().getLabel())
+                .label(field.getLabel())
                 .value(displayValue)
-                .fileName(val.getFileName())
-                .fileUrl(resolvedUrl) // Passing URL to HTML
-                .isImage(isImage) // Flag to trigger <img> tag
+                .fileName(fileName)
+                .fileUrl(resolvedUrl)
+                .isImage(isImage)
                 .build();
     }
 }

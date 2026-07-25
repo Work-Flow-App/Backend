@@ -11,6 +11,7 @@ public class FormFieldValueResponse {
     private String fieldLabel;
     private String fieldType;
     private String roleTarget;
+    private boolean required;
     private Object value; // Typed value
     private String fileUrl;
     private String fileName;

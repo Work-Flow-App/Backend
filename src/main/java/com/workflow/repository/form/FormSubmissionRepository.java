@@ -13,4 +13,6 @@ public interface FormSubmissionRepository extends JpaRepository<FormSubmission, 
     Optional<FormSubmission> findByIdAndCompanyId(Long id, Long companyId);
 
     Optional<FormSubmission> findByIdAndWorkerId(Long id, Long workerId);
+
+    long countByTemplateId(Long templateId);
 }

@@ -9,5 +9,8 @@ public class FormTemplateRequest {
     private Long id;
     private String name;
     private String description;
+    private Integer version;
+    private Long parentTemplateId;
+    private boolean archived;
     private List<FormFieldDto> fields;
 }

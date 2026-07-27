@@ -1,5 +1,6 @@
 package com.workflow.controller.form;
 
+import com.workflow.dto.form.FormAttachmentResponse;
 import com.workflow.dto.form.FormFieldValueDto;
 import com.workflow.dto.form.FormSubmissionResponse;
 import com.workflow.entity.auth.User;
@@ -26,10 +27,9 @@ public class WorkerFormController {
     private final IFormService formService;
     private final WorkerRepository workerRepository;
 
-
     private Long getWorkerId(Authentication auth) {
         User user = (User) auth.getPrincipal();
-        
+
         // Using your exact method to bridge the Auth User to the Worker Profile
         return workerRepository.findByUserId(user.getId())
                 .orElseThrow(() -> new RuntimeException("Worker profile not found for user ID: " + user.getId()))
@@ -59,6 +59,11 @@ public class WorkerFormController {
     @PostMapping("/{id}/submit")
     public ResponseEntity<FormSubmissionResponse> submitForm(@PathVariable Long id, Authentication auth) {
         return ResponseEntity.ok(formService.submitForm(id, getWorkerId(auth)));
+    }
+
+    @GetMapping("/{id}/attachments")
+    public ResponseEntity<List<FormAttachmentResponse>> getAttachments(@PathVariable Long id, Authentication auth) {
+        return ResponseEntity.ok(formService.getFormAttachments(id, getWorkerId(auth), true));
     }
 
     @GetMapping(value = "/{id}/pdf", produces = MediaType.APPLICATION_PDF_VALUE)

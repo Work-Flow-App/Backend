@@ -14,6 +14,9 @@ import com.workflow.service.storage.IStorageService;
 import com.workflow.templates.pdf.form.FormPdfRenderer;
 
 import lombok.RequiredArgsConstructor;
+
+import org.apache.tika.Tika;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -29,6 +32,8 @@ import java.util.stream.Collectors;
 @Transactional
 public class FormService implements IFormService {
 
+    private static final long MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
+
     private final FormTemplateRepository templateRepo;
     private final FormFieldRepository fieldRepo;
     private final FormSubmissionRepository submissionRepo;
@@ -36,6 +41,9 @@ public class FormService implements IFormService {
     private final WorkerRepository workerRepo;
     private final IStorageService s3Service;
     private final FormPdfRenderer formPdfRenderer;
+    private final Tika tika;
+    @Value("${workflow.security.file.blocked-types}")
+    private List<String> blockedTypes;
 
     @Override
     public FormTemplateRequest createTemplate(FormTemplateRequest request, Long companyId) {
@@ -233,6 +241,24 @@ public class FormService implements IFormService {
     @Override
     public FormSubmissionResponse uploadFile(Long submissionId, Long fieldId, MultipartFile file, Long actorId,
             boolean isWorker) throws IOException {
+
+        // 1. Basic Validation
+        if (file.isEmpty()) {
+            throw new EmptyFileException("Uploaded file cannot be empty");
+        }
+
+        if (file.getSize() > MAX_FILE_SIZE) {
+            throw new FileSizeLimitExceededException("Attachment size must not exceed 10 MB");
+        }
+
+        // 2. Detect true file type securely
+        String detectedType = tika.detect(file.getInputStream());
+
+        if (blockedTypes.contains(detectedType)) {
+            throw new ForbiddenActionException("Upload is blocked for security reasons.");
+        }
+
+        // 3. Authorization & Fetching
         FormSubmission submission;
         if (isWorker) {
             submission = submissionRepo.findByIdAndWorkerId(submissionId, actorId).orElseThrow();
@@ -389,6 +415,34 @@ public class FormService implements IFormService {
 
         // Call the PDF Renderer
         return formPdfRenderer.generatePdf(submission);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<FormAttachmentResponse> getFormAttachments(Long submissionId, Long actorId, boolean isWorker) {
+        FormSubmission submission;
+
+        // 1. Fetch submission with appropriate authorization
+        if (isWorker) {
+            submission = submissionRepo.findByIdAndWorkerId(submissionId, actorId)
+                    .orElseThrow(() -> new InvalidRequestException("Form submission not found or access denied"));
+        } else {
+            submission = submissionRepo.findByIdAndCompanyId(submissionId, actorId)
+                    .orElseThrow(() -> new InvalidRequestException("Form submission not found or access denied"));
+        }
+
+        // 2. Filter out only FILE fields that actually have an uploaded file, then map
+        // to DTO
+        return submission.getFieldValues().stream()
+                .filter(v -> v.getField().getType() == FormFieldType.FILE && v.getFileUrl() != null)
+                .map(v -> FormAttachmentResponse.builder()
+                        .fieldId(v.getField().getId())
+                        .fieldLabel(v.getField().getLabel())
+                        .fileName(v.getFileName())
+                        .fileType(v.getFileType())
+                        .fileUrl(s3Service.resolveFileUrl(v.getFileUrl())) // Generate presigned URL or public URL
+                        .build())
+                .collect(Collectors.toList());
     }
 
     private FormSubmissionResponse mapToResponse(FormSubmission s) {

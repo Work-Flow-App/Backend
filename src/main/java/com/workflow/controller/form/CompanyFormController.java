@@ -79,6 +79,12 @@ public class CompanyFormController {
     }
 
     @RequireCompanyRole({ COMPANY_ADMIN, MANAGER, EDITOR, VIEWER })
+    @GetMapping("/{id}/attachments")
+    public ResponseEntity<List<FormAttachmentResponse>> getAttachments(@PathVariable Long id) {
+        return ResponseEntity.ok(formService.getFormAttachments(id, AuthUtils.getCompanyId(), false));
+    }
+
+    @RequireCompanyRole({ COMPANY_ADMIN, MANAGER, EDITOR, VIEWER })
     @GetMapping("/templates")
     public ResponseEntity<List<FormTemplateRequest>> getAllTemplates() {
         return ResponseEntity.ok(formService.getTemplates(AuthUtils.getCompanyId()));
@@ -102,7 +108,8 @@ public class CompanyFormController {
     // Add this endpoint back
     @RequireCompanyRole({ COMPANY_ADMIN, MANAGER, EDITOR, VIEWER })
     @PutMapping("/templates/{id}")
-    public ResponseEntity<FormTemplateRequest> updateTemplate(@PathVariable Long id, @RequestBody FormTemplateRequest request) {
+    public ResponseEntity<FormTemplateRequest> updateTemplate(@PathVariable Long id,
+            @RequestBody FormTemplateRequest request) {
         return ResponseEntity.ok(formService.updateTemplate(id, request, AuthUtils.getCompanyId()));
     }
 }

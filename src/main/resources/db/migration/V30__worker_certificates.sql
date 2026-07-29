@@ -1,0 +1,20 @@
+CREATE TABLE worker_certificates (
+    id                BIGINT        NOT NULL AUTO_INCREMENT,
+    worker_id         BIGINT        NOT NULL,
+    type              ENUM('LICENSE','SAFETY','TRADE_QUALIFICATION','INSURANCE','OTHER') NOT NULL,
+    name              VARCHAR(150)  NOT NULL,
+    issuing_authority VARCHAR(150),
+    issue_date        DATE,
+    expiry_date       DATE,
+    file_name         VARCHAR(255)  NOT NULL,
+    file_type         VARCHAR(100),
+    file_url          VARCHAR(500)  NOT NULL,
+    uploaded_by       BIGINT        NOT NULL,
+    created_at        DATETIME(6)   NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+    updated_at        DATETIME(6)            DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP(6),
+    PRIMARY KEY (id),
+    CONSTRAINT FK_worker_certificates_worker      FOREIGN KEY (worker_id)   REFERENCES workers(id) ON DELETE CASCADE,
+    CONSTRAINT FK_worker_certificates_uploaded_by FOREIGN KEY (uploaded_by) REFERENCES users(id),
+    INDEX idx_worker_certificates_worker (worker_id),
+    INDEX idx_worker_certificates_expiry (expiry_date)
+) ENGINE=InnoDB;

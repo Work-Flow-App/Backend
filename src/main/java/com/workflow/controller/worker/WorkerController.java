@@ -11,13 +11,17 @@ import jakarta.validation.Valid;
 import jakarta.validation.groups.Default;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 
+import java.io.IOException;
+import java.time.LocalDate;
 import java.util.List;
 
 import static com.workflow.common.constant.CompanyRole.*;
@@ -90,6 +94,39 @@ public class WorkerController {
         User user = (User) authentication.getPrincipal();
         workerService.deleteWorker(id, user.getId());
         return ResponseEntity.noContent().build();
+    }
+
+    @RequireCompanyRole({COMPANY_ADMIN, MANAGER})
+    @PostMapping(value = "/{id}/photo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<WorkerResponse> uploadPhotoForWorker(
+            @PathVariable Long id,
+            @RequestParam("file") MultipartFile file,
+            Authentication authentication
+    ) throws IOException {
+        User user = (User) authentication.getPrincipal();
+        return ResponseEntity.ok(workerService.uploadPhotoForWorker(id, user.getId(), file));
+    }
+
+    @RequireCompanyRole({COMPANY_ADMIN, MANAGER})
+    @PatchMapping("/{id}/rate")
+    public ResponseEntity<WorkerResponse> updateHourlyRate(
+            @PathVariable Long id,
+            @Valid @RequestBody WorkerRateUpdateRequest request,
+            Authentication authentication
+    ) {
+        User user = (User) authentication.getPrincipal();
+        return ResponseEntity.ok(workerService.updateHourlyRate(id, request, user.getId()));
+    }
+
+    @RequireCompanyRole({COMPANY_ADMIN, MANAGER, EDITOR, VIEWER})
+    @GetMapping("/{id}/hours/weekly")
+    public ResponseEntity<WorkerWeeklyHoursResponse> getWeeklyHoursForWorker(
+            @PathVariable Long id,
+            @RequestParam(required = false) LocalDate date,
+            Authentication authentication
+    ) {
+        User user = (User) authentication.getPrincipal();
+        return ResponseEntity.ok(workerService.getWeeklyHoursForWorker(id, user.getId(), date));
     }
 
     @RequireCompanyRole({COMPANY_ADMIN, MANAGER})

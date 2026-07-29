@@ -1,0 +1,3 @@
+ALTER TABLE workers
+    ADD COLUMN photo_url   VARCHAR(500) DEFAULT NULL,
+    ADD COLUMN hourly_rate DECIMAL(10,2) DEFAULT NULL;

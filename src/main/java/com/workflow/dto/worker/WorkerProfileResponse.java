@@ -2,12 +2,15 @@ package com.workflow.dto.worker;
 
 import com.workflow.entity.worker.Worker;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 
-public record WorkerResponse(
+/**
+ * Self-service view of a worker's own profile. Deliberately omits hourlyRate -
+ * pay rate is admin-managed and not exposed to the worker themselves.
+ */
+public record WorkerProfileResponse(
         Long id,
         Long workerRef,
         String name,
@@ -17,16 +20,13 @@ public record WorkerResponse(
         String email,
         String username,
         String photoUrl,
-        BigDecimal hourlyRate,
-        boolean loginLocked,
-        boolean archived,
         @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'", timezone = "UTC")
         LocalDateTime createdAt,
         @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'", timezone = "UTC")
         LocalDateTime updatedAt
 ) {
-    public static WorkerResponse fromEntity(Worker worker, String resolvedPhotoUrl) {
-        return new WorkerResponse(
+    public static WorkerProfileResponse fromEntity(Worker worker, String resolvedPhotoUrl) {
+        return new WorkerProfileResponse(
                 worker.getId(),
                 worker.getWorkerRef(),
                 worker.getName(),
@@ -36,9 +36,6 @@ public record WorkerResponse(
                 worker.getEmail(),
                 worker.getUser().getUsername(),
                 resolvedPhotoUrl,
-                worker.getHourlyRate(),
-                worker.isLoginLocked(),
-                worker.isArchived(),
                 worker.getCreatedAt(),
                 worker.getUpdatedAt()
         );

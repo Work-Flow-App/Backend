@@ -32,4 +32,10 @@ public interface AssetJobAssignmentRepository extends JpaRepository<AssetJobAssi
 
     @Query("SELECT a FROM AssetJobAssignment a WHERE a.returnedAt IS NULL AND a.slaBreached = false AND a.expectedDurationDays IS NOT NULL")
     List<AssetJobAssignment> findActiveAssignmentsWithUnnotifiedSlaBreach();
+
+    List<AssetJobAssignment> findByAssignedWorkerIdAndReturnedAtIsNull(Long workerId);
+
+    Optional<AssetJobAssignment> findByIdAndAssignedWorkerIdAndReturnedAtIsNull(Long id, Long workerId);
+
+    Optional<AssetJobAssignment> findByAssetIdAndAssignedWorkerIdAndReturnedAtIsNull(Long assetId, Long workerId);
 }

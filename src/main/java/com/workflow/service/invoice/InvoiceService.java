@@ -152,6 +152,7 @@ public class InvoiceService implements IInvoiceService {
                         byte[] pdfBytes = generatePdf(committedInvoice, invoiceNumber, itemsForPdf, estimateForPdf);
                         log.debug("[Invoice] afterCommit: uploading to S3 key={}", s3Key);
                         storageService.upload(s3Key, new ByteArrayInputStream(pdfBytes), pdfBytes.length, "application/pdf");
+                        invoiceRepository.updateFileSizeBytes(committedInvoice.getId(), pdfBytes.length);
                         log.info("[Invoice] S3 upload complete key={}", s3Key);
                     } catch (Exception e) {
                         log.error("[Invoice] PDF/S3 failed key={}", s3Key, e);
@@ -163,6 +164,7 @@ public class InvoiceService implements IInvoiceService {
             log.warn("[Invoice] No active TX sync — generating PDF and uploading S3 inline key={}", s3Key);
             byte[] pdfBytes = generatePdf(invoice, invoiceNumber, selectedItems, estimate);
             storageService.upload(s3Key, new ByteArrayInputStream(pdfBytes), pdfBytes.length, "application/pdf");
+            invoiceRepository.updateFileSizeBytes(invoice.getId(), pdfBytes.length);
         }
 
         String presignedUrl = storageService.generatePresignedUrl(s3Key);

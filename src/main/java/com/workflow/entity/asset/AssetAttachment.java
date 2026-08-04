@@ -20,4 +20,7 @@ public class AssetAttachment {
 
     @Column(nullable = false, length = 1000)
     private String fileUrl;
+
+    @Column(name = "file_size_bytes")
+    private Long fileSizeBytes;
 }

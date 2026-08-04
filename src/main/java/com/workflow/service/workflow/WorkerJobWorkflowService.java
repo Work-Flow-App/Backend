@@ -518,6 +518,7 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
                                                 .fileName(originalFilename) // <-- Safe original name for UI
                                                 .fileType(detectedType) // <-- Secure type used here
                                                 .fileUrl(key) // <-- UUID path used here
+                                                .fileSizeBytes(file.getSize())
                                                 .type(type)
                                                 .description(description)
                                                 .build());

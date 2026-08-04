@@ -136,6 +136,7 @@ public class EstimateDocumentService implements IEstimateDocumentService {
 
         log.info("[EstimateDoc] Generating PDF...");
         byte[] pdfBytes = generatePdf(docToSave, documentNumber, selectedItems, estimate);
+        docToSave.setFileSizeBytes((long) pdfBytes.length);
 
         // 3. SAVE TO DB AND UPDATE STATUS (Short Transaction)
         EstimateDocument savedDoc = transactionTemplate.execute(status -> {

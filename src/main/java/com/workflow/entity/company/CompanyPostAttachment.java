@@ -31,6 +31,9 @@ public class CompanyPostAttachment {
     @Column(nullable = false, length = 100)
     private String fileType;
 
+    @Column(name = "file_size_bytes")
+    private Long fileSizeBytes;
+
     @CreationTimestamp
     private LocalDateTime createdAt;
 }

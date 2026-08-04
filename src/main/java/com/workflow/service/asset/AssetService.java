@@ -347,6 +347,7 @@ public class AssetService implements IAssetService {
                             .fileName(originalFilename)
                             .fileType(detectedType)
                             .fileUrl(key)
+                            .fileSizeBytes(file.getSize())
                             .build());
 
                 } catch (Exception e) {

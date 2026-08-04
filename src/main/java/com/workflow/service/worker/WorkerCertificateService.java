@@ -110,6 +110,7 @@ public class WorkerCertificateService implements IWorkerCertificateService {
                         .fileName(originalFilename)
                         .fileType(detectedType)
                         .fileUrl(key)
+                        .fileSizeBytes(file.getSize())
                         .build());
     }
 

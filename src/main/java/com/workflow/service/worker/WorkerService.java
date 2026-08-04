@@ -374,6 +374,7 @@ public class WorkerService implements IWorkerService {
 
         String previousKey = worker.getPhotoUrl();
         worker.setPhotoUrl(key);
+        worker.setPhotoSizeBytes(file.getSize());
         workerRepository.save(worker);
 
         // Delete the old photo only after the transaction commits - if the commit

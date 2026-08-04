@@ -97,6 +97,7 @@ public class CompanyProfileMediaService implements ICompanyProfileMediaService {
                 .fileUrl(key)
                 .fileName(originalName)
                 .fileType(detectedType)
+                .fileSizeBytes(file.getSize())
                 .validityStartDate(startDate)
                 .validityEndDate(endDate)
                 .isPublic(isPublic)
@@ -143,6 +144,7 @@ public class CompanyProfileMediaService implements ICompanyProfileMediaService {
             doc.setFileUrl(key);
             doc.setFileName(originalName);
             doc.setFileType(detectedType);
+            doc.setFileSizeBytes(newFile.getSize());
         }
 
         return map(documentRepository.save(doc));
@@ -295,6 +297,7 @@ public class CompanyProfileMediaService implements ICompanyProfileMediaService {
                 .fileUrl(key)
                 .fileName(originalName)
                 .fileType(detectedType)
+                .fileSizeBytes(file.getSize())
                 .build());
     }
 

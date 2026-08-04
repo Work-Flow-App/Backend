@@ -233,7 +233,7 @@ class EntityMappingIntegrationTest {
         Worker foundWorker = workerRepository.findById(worker.getId()).orElseThrow();
 
         // When - Map to response DTO (accesses lazy user)
-        WorkerResponse response = WorkerResponse.fromEntity(foundWorker);
+        WorkerResponse response = WorkerResponse.fromEntity(foundWorker, null);
 
         // Then
         assertThat(response).isNotNull();

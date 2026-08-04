@@ -7,6 +7,7 @@ import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Getter
@@ -44,6 +45,12 @@ public class Worker {
 
     @Column(length = 100)
     private String email;
+
+    @Column(name = "photo_url", length = 500)
+    private String photoUrl;
+
+    @Column(name = "hourly_rate", precision = 10, scale = 2)
+    private BigDecimal hourlyRate;
 
     @Column(name = "login_locked", columnDefinition = "BOOLEAN DEFAULT FALSE")
     @Builder.Default

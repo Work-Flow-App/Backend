@@ -145,6 +145,33 @@ paddle:
   success-url: ${PADDLE_SUCCESS_URL:http://localhost:5173/subscription/success}
   cancel-url: ${PADDLE_CANCEL_URL:http://localhost:5173/subscription/cancel}
 
+# Storage limits below are decimal (1GB = 1,000,000,000 bytes), matching how the tiers are quoted to customers
+plan-limits:
+  free:
+    max-users: 1
+    extra-user-price: 0
+    jobs-per-month: 10
+    storage-limit-bytes: 250000000      # 250 MB
+    storage-overage-block-bytes: 0
+    storage-overage-price: 0
+    monthly-price: 0
+  starter:
+    max-users: 3
+    extra-user-price: 10
+    jobs-per-month: 150
+    storage-limit-bytes: 10000000000    # 10 GB
+    storage-overage-block-bytes: 3000000000  # 3 GB
+    storage-overage-price: 10
+    monthly-price: 39
+  professional:
+    max-users: 8
+    extra-user-price: 8
+    jobs-per-month: 200
+    storage-limit-bytes: 30000000000    # 30 GB
+    storage-overage-block-bytes: 5000000000  # 5 GB
+    storage-overage-price: 10
+    monthly-price: 79
+
 affiliate:
   tracking:
     enabled: ${AFFILIATE_TRACKING_ENABLED:false}

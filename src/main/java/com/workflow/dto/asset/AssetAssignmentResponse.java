@@ -15,6 +15,7 @@ public class AssetAssignmentResponse {
     private Long assignmentId;
     private Long assetId;
     private Long jobId;
+    private Long jobRef;
     private Long assignedWorkerId;
 
     private String assetName;

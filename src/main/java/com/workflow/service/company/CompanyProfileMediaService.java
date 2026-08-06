@@ -10,6 +10,7 @@ import com.workflow.dto.company.*;
 import com.workflow.entity.company.*;
 import com.workflow.repository.company.*;
 import com.workflow.service.storage.IStorageService;
+import com.workflow.service.subscription.IStorageQuotaService;
 import lombok.RequiredArgsConstructor;
 import org.apache.tika.Tika;
 import org.springframework.stereotype.Service;
@@ -31,6 +32,7 @@ public class CompanyProfileMediaService implements ICompanyProfileMediaService {
     private final CompanyDocumentRepository documentRepository;
     private final CompanyPostRepository postRepository;
     private final IStorageService s3Service;
+    private final IStorageQuotaService storageQuotaService;
     private final Tika tika;
 
     // ==========================================
@@ -51,13 +53,18 @@ public class CompanyProfileMediaService implements ICompanyProfileMediaService {
         String extension = extractExtension(file.getOriginalFilename());
         String key = String.format("companies/%d/logo/%s", companyId, UUID.randomUUID() + extension);
 
+        // Note: logo has no persisted size column (out of Phase 1 schema scope), so the old
+        // logo's bytes can't be decremented here — this is a known one-way drift for logo only,
+        // replacing a logo repeatedly will overcount usage. Flagged for a follow-up migration.
         if (company.getLogoUrl() != null) {
             s3Service.delete(company.getLogoUrl()); // Delete old
         }
 
+        storageQuotaService.assertCapacity(companyId, file.getSize());
         s3Service.upload(key, file.getInputStream(), file.getSize(), detectedType);
         company.setLogoUrl(key);
         companyRepository.save(company);
+        storageQuotaService.recordUpload(companyId, file.getSize());
 
         return s3Service.resolveFileUrl(key);
     }
@@ -87,6 +94,7 @@ public class CompanyProfileMediaService implements ICompanyProfileMediaService {
         String key = String.format("companies/%d/documents/%s", companyId,
                 UUID.randomUUID() + extractExtension(originalName));
 
+        storageQuotaService.assertCapacity(companyId, file.getSize());
         s3Service.upload(key, file.getInputStream(), file.getSize(), detectedType);
 
         CompanyDocument document = documentRepository.save(CompanyDocument.builder()
@@ -102,6 +110,7 @@ public class CompanyProfileMediaService implements ICompanyProfileMediaService {
                 .validityEndDate(endDate)
                 .isPublic(isPublic)
                 .build());
+        storageQuotaService.recordUpload(companyId, file.getSize());
 
         return map(document);
     }
@@ -132,14 +141,21 @@ public class CompanyProfileMediaService implements ICompanyProfileMediaService {
 
         if (newFile != null && !newFile.isEmpty()) {
             // Delete old file
+            Long previousFileSizeBytes = doc.getFileSizeBytes();
             s3Service.delete(doc.getFileUrl());
+            // Legacy rows uploaded before fileSizeBytes existed have nothing to decrement
+            if (previousFileSizeBytes != null) {
+                storageQuotaService.recordDelete(companyId, previousFileSizeBytes);
+            }
 
             // Upload new file
             String detectedType = tika.detect(newFile.getInputStream());
             String originalName = StringUtils.cleanPath(newFile.getOriginalFilename());
             String key = String.format("companies/%d/documents/%s", companyId,
                     UUID.randomUUID() + extractExtension(originalName));
+            storageQuotaService.assertCapacity(companyId, newFile.getSize());
             s3Service.upload(key, newFile.getInputStream(), newFile.getSize(), detectedType);
+            storageQuotaService.recordUpload(companyId, newFile.getSize());
 
             doc.setFileUrl(key);
             doc.setFileName(originalName);
@@ -158,6 +174,10 @@ public class CompanyProfileMediaService implements ICompanyProfileMediaService {
         verifyCompanyOwnership(companyId, doc.getCompany().getId());
 
         s3Service.delete(doc.getFileUrl());
+        // Legacy rows uploaded before fileSizeBytes existed have nothing to decrement
+        if (doc.getFileSizeBytes() != null) {
+            storageQuotaService.recordDelete(companyId, doc.getFileSizeBytes());
+        }
         documentRepository.delete(doc);
     }
 
@@ -221,6 +241,10 @@ public class CompanyProfileMediaService implements ICompanyProfileMediaService {
 
                 for (CompanyPostAttachment attachment : toRemove) {
                     s3Service.delete(attachment.getFileUrl()); // delete from S3
+                    // Legacy rows uploaded before fileSizeBytes existed have nothing to decrement
+                    if (attachment.getFileSizeBytes() != null) {
+                        storageQuotaService.recordDelete(companyId, attachment.getFileSizeBytes());
+                    }
                     post.getAttachments().remove(attachment); // orphanRemoval=true will delete from DB
                 }
             }
@@ -246,7 +270,13 @@ public class CompanyProfileMediaService implements ICompanyProfileMediaService {
         verifyCompanyOwnership(companyId, post.getCompany().getId());
 
         // Delete all associated files from S3
-        post.getAttachments().forEach(attachment -> s3Service.delete(attachment.getFileUrl()));
+        post.getAttachments().forEach(attachment -> {
+            s3Service.delete(attachment.getFileUrl());
+            // Legacy rows uploaded before fileSizeBytes existed have nothing to decrement
+            if (attachment.getFileSizeBytes() != null) {
+                storageQuotaService.recordDelete(companyId, attachment.getFileSizeBytes());
+            }
+        });
 
         postRepository.delete(post);
     }
@@ -290,7 +320,9 @@ public class CompanyProfileMediaService implements ICompanyProfileMediaService {
         String key = String.format("companies/%d/posts/%d/%s", companyId, post.getId(),
                 UUID.randomUUID() + extractExtension(originalName));
 
+        storageQuotaService.assertCapacity(companyId, file.getSize());
         s3Service.upload(key, file.getInputStream(), file.getSize(), detectedType);
+        storageQuotaService.recordUpload(companyId, file.getSize());
 
         post.getAttachments().add(CompanyPostAttachment.builder()
                 .post(post)

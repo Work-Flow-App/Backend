@@ -38,6 +38,7 @@ import com.workflow.repository.job.JobWorkflowStepAttachmentRepository;
 import com.workflow.repository.job.JobWorkflowStepCommentRepository;
 import com.workflow.repository.job.JobWorkflowStepRepository;
 import com.workflow.service.storage.IStorageService;
+import com.workflow.service.subscription.IStorageQuotaService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -57,6 +58,7 @@ public class JobWorkflowStepActivityService
         private final IStepActivityService stepActivityService;
         private final Tika tika;
         private final IStorageService s3Service;
+        private final IStorageQuotaService storageQuotaService;
 
         // Spring injects the list from application.yml here!
         @Value("${workflow.security.file.blocked-types}")
@@ -230,6 +232,7 @@ public class JobWorkflowStepActivityService
                                 safeUniqueFilename); // <-- UUID used here
 
                 // 4. Upload using the secure detectedType
+                storageQuotaService.assertCapacity(companyId, file.getSize());
                 s3Service.upload(
                                 key,
                                 file.getInputStream(),
@@ -248,6 +251,7 @@ public class JobWorkflowStepActivityService
                                                 .type(type)
                                                 .description(description)
                                                 .build());
+                storageQuotaService.recordUpload(companyId, file.getSize());
 
                 stepActivityService.log(
                                 step,
@@ -307,6 +311,10 @@ public class JobWorkflowStepActivityService
                 }
 
                 s3Service.delete(attachment.getFileUrl());
+                // Legacy rows uploaded before fileSizeBytes existed have nothing to decrement
+                if (attachment.getFileSizeBytes() != null) {
+                        storageQuotaService.recordDelete(companyId, attachment.getFileSizeBytes());
+                }
                 attachmentRepository.delete(attachment);
 
                 stepActivityService.log(

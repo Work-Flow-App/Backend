@@ -45,6 +45,7 @@ import com.workflow.repository.worker.WorkerRepository;
 import com.workflow.service.company.ICompanyService;
 import com.workflow.service.sequence.CompanyCounterService;
 import com.workflow.service.storage.IStorageService;
+import com.workflow.service.subscription.IStorageQuotaService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -64,6 +65,7 @@ public class WorkerService implements IWorkerService {
     private final JobWorkflowStepVisitLogRepository visitLogRepository;
     private final Tika tika;
     private final IStorageService s3Service;
+    private final IStorageQuotaService storageQuotaService;
 
     @Value("${workflow.security.file.blocked-types}")
     private List<String> blockedTypes;
@@ -370,12 +372,16 @@ public class WorkerService implements IWorkerService {
                 worker.getId(),
                 safeUniqueFilename);
 
+        Long companyId = worker.getCompany().getId();
+        storageQuotaService.assertCapacity(companyId, file.getSize());
         s3Service.upload(key, file.getInputStream(), file.getSize(), detectedType);
 
         String previousKey = worker.getPhotoUrl();
+        Long previousSizeBytes = worker.getPhotoSizeBytes();
         worker.setPhotoUrl(key);
         worker.setPhotoSizeBytes(file.getSize());
         workerRepository.save(worker);
+        storageQuotaService.recordUpload(companyId, file.getSize());
 
         // Delete the old photo only after the transaction commits - if the commit
         // fails, the DB rolls back to previousKey and the old S3 object must still exist.
@@ -385,10 +391,17 @@ public class WorkerService implements IWorkerService {
                     @Override
                     public void afterCommit() {
                         s3Service.delete(previousKey);
+                        // Legacy rows uploaded before photoSizeBytes existed have nothing to decrement
+                        if (previousSizeBytes != null) {
+                            storageQuotaService.recordDelete(companyId, previousSizeBytes);
+                        }
                     }
                 });
             } else {
                 s3Service.delete(previousKey);
+                if (previousSizeBytes != null) {
+                    storageQuotaService.recordDelete(companyId, previousSizeBytes);
+                }
             }
         }
     }

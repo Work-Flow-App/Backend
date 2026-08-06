@@ -16,6 +16,7 @@ import com.workflow.common.constant.asset.AssetLocationType;
 import com.workflow.common.exception.business.*;
 import com.workflow.service.sequence.CompanyCounterService;
 import com.workflow.service.storage.IStorageService;
+import com.workflow.service.subscription.IStorageQuotaService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -47,6 +48,7 @@ public class AssetService implements IAssetService {
     private final AddressRepository addressRepository;
     private final IStorageService s3Service;
     private final Tika tika;
+    private final IStorageQuotaService storageQuotaService;
 
     @Override
     public AssetResponse createAsset(AssetCreateRequest request, Long companyId) {
@@ -340,6 +342,7 @@ public class AssetService implements IAssetService {
 
                     String key = String.format("companies/%d/assets/%d/%s", companyId, assetId, safeUniqueFilename);
 
+                    storageQuotaService.assertCapacity(companyId, file.getSize());
                     s3Service.upload(key, file.getInputStream(), file.getSize(), detectedType);
 
                     // APPEND to the list, do NOT clear it
@@ -349,6 +352,8 @@ public class AssetService implements IAssetService {
                             .fileUrl(key)
                             .fileSizeBytes(file.getSize())
                             .build());
+
+                    storageQuotaService.recordUpload(companyId, file.getSize());
 
                 } catch (Exception e) {
                     throw new InvalidRequestException("Failed to process file upload: " + e.getMessage());
@@ -367,12 +372,20 @@ public class AssetService implements IAssetService {
                 .orElseThrow(() -> new AssetNotFoundException("Asset not found"));
 
         // Find and remove the attachment from the Java list
-        // removeIf returns true if an item was actually removed
+        Long removedFileSizeBytes = asset.getAttachments().stream()
+                .filter(att -> att.getFileUrl().equals(fileUrl))
+                .findFirst()
+                .map(AssetAttachment::getFileSizeBytes)
+                .orElse(null);
         boolean removed = asset.getAttachments().removeIf(att -> att.getFileUrl().equals(fileUrl));
 
         if (removed) {
             // Delete from S3
             s3Service.delete(fileUrl);
+            // Legacy rows uploaded before fileSizeBytes existed have nothing to decrement
+            if (removedFileSizeBytes != null) {
+                storageQuotaService.recordDelete(companyId, removedFileSizeBytes);
+            }
 
             // Saving the asset will automatically delete the row in the asset_attachments
             // DB table

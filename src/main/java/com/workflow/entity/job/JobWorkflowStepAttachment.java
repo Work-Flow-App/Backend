@@ -45,6 +45,9 @@ public class JobWorkflowStepAttachment {
     @Column(nullable = false)
     private String fileUrl;
 
+    @Column(name = "file_size_bytes")
+    private Long fileSizeBytes;
+
     @CreationTimestamp
     private LocalDateTime createdAt;
 

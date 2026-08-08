@@ -60,6 +60,7 @@ import com.workflow.repository.job.JobWorkflowStepRepository;
 import com.workflow.repository.job.JobWorkflowStepVisitLogRepository;
 import com.workflow.repository.worker.WorkerRepository;
 import com.workflow.service.storage.IStorageService;
+import com.workflow.service.subscription.IStorageQuotaService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -81,6 +82,7 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
 
         private final IStepActivityService stepActivityService;
         private final IStorageService s3Service;
+        private final IStorageQuotaService storageQuotaService;
         private final JobWorkflowMapper jobWorkflowMapper;
 
         // Spring injects the list from application.yml here!
@@ -495,15 +497,17 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
                 String safeUniqueFilename = UUID.randomUUID().toString() + extension;
 
                 // 3. Build S3 key using the UUID and worker-specific path
+                Long companyId = step.getJobWorkflow().getJob().getCompany().getId();
                 String key = String.format(
                                 "companies/%d/jobs/%d/steps/%d/workers/%d/%s",
-                                step.getJobWorkflow().getJob().getCompany().getId(),
+                                companyId,
                                 step.getJobWorkflow().getJob().getId(),
                                 step.getId(),
                                 worker.getId(),
                                 safeUniqueFilename); // <-- UUID used here
 
                 // 4. Upload using the secure detectedType
+                storageQuotaService.assertCapacity(companyId, file.getSize());
                 s3Service.upload(
                                 key,
                                 file.getInputStream(),
@@ -518,9 +522,11 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
                                                 .fileName(originalFilename) // <-- Safe original name for UI
                                                 .fileType(detectedType) // <-- Secure type used here
                                                 .fileUrl(key) // <-- UUID path used here
+                                                .fileSizeBytes(file.getSize())
                                                 .type(type)
                                                 .description(description)
                                                 .build());
+                storageQuotaService.recordUpload(companyId, file.getSize());
 
                 stepActivityService.log(step, worker.getUser(), JobWorkflowStepActivityType.ATTACHMENT_ADDED,
                                 "Worker uploaded " + originalFilename);

@@ -21,6 +21,7 @@ import com.workflow.repository.financial.EstimateRepository;
 import com.workflow.repository.financial.InvoiceRepository;
 import com.workflow.service.sequence.CompanyCounterService;
 import com.workflow.service.storage.IStorageService;
+import com.workflow.service.subscription.IStorageQuotaService;
 import com.workflow.templates.pdf.invoice.InvoicePdfRenderer;
 import com.workflow.templates.pdf.invoice.InvoiceTemplateData;
 import lombok.RequiredArgsConstructor;
@@ -49,6 +50,7 @@ public class InvoiceService implements IInvoiceService {
     private final EstimateRepository estimateRepository;
     private final EstimateLineItemRepository estimateLineItemRepository;
     private final IStorageService storageService;
+    private final IStorageQuotaService storageQuotaService;
     private final InvoicePdfRenderer pdfRenderer;
     private final CompanyCounterService companyCounterService;
 
@@ -151,7 +153,10 @@ public class InvoiceService implements IInvoiceService {
                         log.debug("[Invoice] afterCommit: generating PDF key={}", s3Key);
                         byte[] pdfBytes = generatePdf(committedInvoice, invoiceNumber, itemsForPdf, estimateForPdf);
                         log.debug("[Invoice] afterCommit: uploading to S3 key={}", s3Key);
+                        storageQuotaService.assertCapacity(companyId, pdfBytes.length);
                         storageService.upload(s3Key, new ByteArrayInputStream(pdfBytes), pdfBytes.length, "application/pdf");
+                        invoiceRepository.updateFileSizeBytes(committedInvoice.getId(), pdfBytes.length);
+                        storageQuotaService.recordUpload(companyId, pdfBytes.length);
                         log.info("[Invoice] S3 upload complete key={}", s3Key);
                     } catch (Exception e) {
                         log.error("[Invoice] PDF/S3 failed key={}", s3Key, e);
@@ -162,7 +167,10 @@ public class InvoiceService implements IInvoiceService {
         } else {
             log.warn("[Invoice] No active TX sync — generating PDF and uploading S3 inline key={}", s3Key);
             byte[] pdfBytes = generatePdf(invoice, invoiceNumber, selectedItems, estimate);
+            storageQuotaService.assertCapacity(companyId, pdfBytes.length);
             storageService.upload(s3Key, new ByteArrayInputStream(pdfBytes), pdfBytes.length, "application/pdf");
+            invoiceRepository.updateFileSizeBytes(invoice.getId(), pdfBytes.length);
+            storageQuotaService.recordUpload(companyId, pdfBytes.length);
         }
 
         String presignedUrl = storageService.generatePresignedUrl(s3Key);

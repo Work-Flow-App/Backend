@@ -49,6 +49,9 @@ public class Worker {
     @Column(name = "photo_url", length = 500)
     private String photoUrl;
 
+    @Column(name = "photo_size_bytes")
+    private Long photoSizeBytes;
+
     @Column(name = "hourly_rate", precision = 10, scale = 2)
     private BigDecimal hourlyRate;
 

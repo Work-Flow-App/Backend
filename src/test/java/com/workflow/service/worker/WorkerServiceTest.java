@@ -17,6 +17,7 @@ import com.workflow.repository.worker.WorkerRepository;
 import com.workflow.service.company.CompanyService;
 import com.workflow.service.sequence.CompanyCounterService;
 import com.workflow.service.storage.IStorageService;
+import com.workflow.service.subscription.IStorageQuotaService;
 import org.apache.tika.Tika;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -64,6 +65,9 @@ class WorkerServiceTest {
 
     @Mock
     private IStorageService s3Service;
+
+    @Mock
+    private IStorageQuotaService storageQuotaService;
 
     @InjectMocks
     private WorkerService workerService;
@@ -531,6 +535,7 @@ class WorkerServiceTest {
 
     @Test
     void uploadPhotoForWorker_ShouldUploadAndDeleteOldPhoto() throws Exception {
+        // No photoSizeBytes set on the old photo — simulates a legacy row uploaded before that column existed
         worker.setPhotoUrl("companies/1/workers/1/photo/old.png");
         org.springframework.mock.web.MockMultipartFile file =
                 new org.springframework.mock.web.MockMultipartFile("file", "new.png", "image/png", "content".getBytes());
@@ -544,7 +549,28 @@ class WorkerServiceTest {
 
         verify(s3Service).upload(anyString(), any(), anyLong(), eq("image/png"));
         verify(s3Service).delete("companies/1/workers/1/photo/old.png");
+        // worker.company.id == 1L (set up in setUp())
+        verify(storageQuotaService).assertCapacity(1L, file.getSize());
+        verify(storageQuotaService).recordUpload(1L, file.getSize());
+        verify(storageQuotaService, never()).recordDelete(anyLong(), anyLong());
         assertThat(worker.getPhotoUrl()).isNotEqualTo("companies/1/workers/1/photo/old.png");
+    }
+
+    @Test
+    void uploadPhotoForWorker_WithPreviousPhotoSizeBytes_RecordsDelete() throws Exception {
+        worker.setPhotoUrl("companies/1/workers/1/photo/old.png");
+        worker.setPhotoSizeBytes(9999L);
+        org.springframework.mock.web.MockMultipartFile file =
+                new org.springframework.mock.web.MockMultipartFile("file", "new.png", "image/png", "content".getBytes());
+
+        when(companyService.findCompanyByUserId(1L)).thenReturn(company);
+        when(workerRepository.findByIdAndCompanyIdAndNotArchived(1L, 1L)).thenReturn(Optional.of(worker));
+        when(tika.detect(any(java.io.InputStream.class))).thenReturn("image/png");
+        when(workerRepository.save(any(Worker.class))).thenReturn(worker);
+
+        workerService.uploadPhotoForWorker(1L, 1L, file);
+
+        verify(storageQuotaService).recordDelete(1L, 9999L);
     }
 
     @Test

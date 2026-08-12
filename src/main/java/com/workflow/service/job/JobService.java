@@ -11,6 +11,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -217,7 +218,7 @@ public class JobService implements IJobService {
                         job.setStatus(request.getStatus());
                 }
 
-                job.setArchived(request.isArchived());
+                job.setArchived(Boolean.TRUE.equals(request.getArchived()));
 
                 if (request.getAddress() != null) {
                         AddressRequest ar = request.getAddress();
@@ -259,6 +260,91 @@ public class JobService implements IJobService {
                 return mapToResponse(refreshedJob);
         }
 
+        @Override
+        public JobResponse patchJob(Long jobId, JobUpdateRequest request, Long companyId) {
+                Job job = jobRepository.findById(jobId)
+                                .filter(j -> j.getCompany().getId().equals(companyId))
+                                .orElseThrow(() -> new JobNotFoundException("Job not found"));
+
+                if (request.getClientId() != null) {
+                        Client client = clientRepository.findById(request.getClientId())
+                                        .filter(c -> c.getCompany().getId().equals(companyId))
+                                        .orElseThrow(() -> new ClientNotFoundException("Client not found"));
+                        job.setClient(client);
+                }
+
+                if (request.getCustomerId() != null) {
+                        Customer customer = customerRepository.findById(request.getCustomerId())
+                                        .filter(c -> c.getCompany().getId().equals(companyId))
+                                        .orElseThrow(() -> new CustomerNotFoundException("Customer not found"));
+                        job.setCustomer(customer);
+                }
+
+                if (request.getWorkflowId() != null) {
+                        if (job.getWorkflow() != null) {
+                                throw new IllegalStateException("Workflow cannot be changed once assigned to a job");
+                        }
+                        Workflow workflow = workflowRepository.findById(request.getWorkflowId())
+                                        .filter(w -> w.getCompany().getId().equals(companyId))
+                                        .orElseThrow(() -> new WorkflowNotFoundException("Workflow not found"));
+                        job.setWorkflow(workflow);
+                }
+
+                if (request.getStatus() != null) {
+                        job.setStatus(request.getStatus());
+                }
+
+                if (request.getArchived() != null) {
+                        job.setArchived(request.getArchived());
+                }
+
+                if (request.getAddress() != null) {
+                        AddressRequest ar = request.getAddress();
+                        Address address = job.getAddress();
+
+                        if (address == null) {
+                                address = new Address();
+                        }
+
+                        if (ar.getStreet() != null)
+                                address.setStreet(ar.getStreet());
+                        if (ar.getCity() != null)
+                                address.setCity(ar.getCity());
+                        if (ar.getState() != null)
+                                address.setState(ar.getState());
+                        if (ar.getPostalCode() != null)
+                                address.setPostalCode(ar.getPostalCode());
+                        if (ar.getCountry() != null)
+                                address.setCountry(ar.getCountry());
+                        if (ar.getAdditionalInfo() != null)
+                                address.setAdditionalInfo(ar.getAdditionalInfo());
+                        if (ar.getLatitude() != null)
+                                address.setLatitude(ar.getLatitude());
+                        if (ar.getLongitude() != null)
+                                address.setLongitude(ar.getLongitude());
+
+                        addressRepository.save(address);
+                        job.setAddress(address);
+                }
+
+                jobRepository.save(job);
+
+                if (request.getWorkflowId() != null && job.getWorkflow() != null) {
+                        jobWorkflowService.startWorkflow(job, job.getWorkflow(), companyId);
+                }
+
+                mergeJobFieldValues(job, request.getFieldValues());
+
+                if (request.getAssetIds() != null) {
+                        assetAssignmentService.syncJobAssets(job.getId(), request.getAssetIds(), companyId);
+                }
+
+                Job refreshedJob = jobRepository.findById(jobId)
+                                .orElseThrow(() -> new JobNotFoundException("Job not found"));
+
+                return mapToResponse(refreshedJob);
+        }
+
         private void saveJobFieldValues(Job job, Map<Long, Object> fieldValues) {
                 if (fieldValues == null)
                         return;
@@ -277,29 +363,7 @@ public class JobService implements IJobService {
                                                         .field(f)
                                                         .build();
 
-                                        switch (f.getJobFieldType()) {
-                                                case TEXT, DROPDOWN -> fieldValue.setStringValue(val.toString());
-                                                case NUMBER ->
-                                                        fieldValue.setNumberValue(Double.valueOf(val.toString()));
-                                                case BOOLEAN ->
-                                                        fieldValue.setBooleanValue(Boolean.valueOf(val.toString()));
-                                                case DATE -> {
-                                                        if (val instanceof String s) {
-                                                                fieldValue.setDateValue(parseDateTime(s));
-                                                        } else if (val instanceof LocalDateTime dt) {
-                                                                fieldValue.setDateValue(dt);
-                                                        }
-                                                }
-                                                case JSON -> fieldValue.setJsonValue(JsonUtil.toJson(val));
-                                                case REFERENCE -> {
-                                                        // Expect Map with keys "id" and "type"
-                                                        if (val instanceof Map<?, ?> map) {
-                                                                fieldValue.setReferenceId(
-                                                                                Long.valueOf(map.get("id").toString()));
-                                                                fieldValue.setReferenceType(map.get("type").toString());
-                                                        }
-                                                }
-                                        }
+                                        applyTypedValue(fieldValue, f, val);
 
                                         return fieldValue;
                                 })
@@ -307,6 +371,62 @@ public class JobService implements IJobService {
                                 .toList();
 
                 fieldValueRepository.saveAll(values);
+        }
+
+        private void applyTypedValue(JobFieldValue fieldValue, JobTemplateField field, Object val) {
+                switch (field.getJobFieldType()) {
+                        case TEXT, DROPDOWN -> fieldValue.setStringValue(val.toString());
+                        case NUMBER -> fieldValue.setNumberValue(Double.valueOf(val.toString()));
+                        case BOOLEAN -> fieldValue.setBooleanValue(Boolean.valueOf(val.toString()));
+                        case DATE -> {
+                                if (val instanceof String s) {
+                                        fieldValue.setDateValue(parseDateTime(s));
+                                } else if (val instanceof LocalDateTime dt) {
+                                        fieldValue.setDateValue(dt);
+                                }
+                        }
+                        case JSON -> fieldValue.setJsonValue(JsonUtil.toJson(val));
+                        case REFERENCE -> {
+                                // Expect Map with keys "id" and "type"
+                                if (val instanceof Map<?, ?> map) {
+                                        fieldValue.setReferenceId(
+                                                        Long.valueOf(map.get("id").toString()));
+                                        fieldValue.setReferenceType(map.get("type").toString());
+                                }
+                        }
+                }
+        }
+
+        private void mergeJobFieldValues(Job job, Map<Long, Object> fieldValueUpdates) {
+                if (fieldValueUpdates == null)
+                        return;
+
+                Long templateId = job.getTemplate().getId();
+
+                for (Map.Entry<Long, Object> entry : fieldValueUpdates.entrySet()) {
+                        Long fieldId = entry.getKey();
+                        Object rawValue = entry.getValue();
+
+                        JobTemplateField field = templateFieldRepository.findById(fieldId)
+                                        .filter(f -> f.getTemplate().getId().equals(templateId))
+                                        .orElseThrow(() -> new InvalidRequestException(
+                                                        "Field id " + fieldId + " does not belong to this job's template"));
+
+                        Optional<JobFieldValue> existing = fieldValueRepository.findByJobIdAndFieldId(job.getId(),
+                                        fieldId);
+
+                        if (rawValue == null) {
+                                existing.ifPresent(fieldValueRepository::delete);
+                                continue;
+                        }
+
+                        JobFieldValue fieldValue = existing.orElseGet(() -> JobFieldValue.builder()
+                                        .job(job)
+                                        .field(field)
+                                        .build());
+                        applyTypedValue(fieldValue, field, rawValue);
+                        fieldValueRepository.save(fieldValue);
+                }
         }
 
         @Override

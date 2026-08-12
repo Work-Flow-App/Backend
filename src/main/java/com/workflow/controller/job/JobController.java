@@ -4,8 +4,11 @@ import com.workflow.common.constant.job.JobStatus;
 import com.workflow.common.security.RequireCompanyRole;
 import com.workflow.common.util.AuthUtils;
 import com.workflow.dto.job.*;
+import com.workflow.dto.job.validators.PatchValidation;
+import com.workflow.dto.job.validators.PutValidation;
 import com.workflow.service.job.IJobService;
 import jakarta.validation.Valid;
+import jakarta.validation.groups.Default;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.data.domain.Page;
@@ -13,6 +16,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.*;
 import org.springframework.security.core.Authentication;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -44,9 +48,18 @@ public class JobController {
     @PutMapping("/{id}")
     public ResponseEntity<JobResponse> update(
             @PathVariable Long id,
-            @Valid @RequestBody JobUpdateRequest request,
+            @Validated({ PutValidation.class, Default.class }) @RequestBody JobUpdateRequest request,
             Authentication auth) {
         return ResponseEntity.ok(jobService.updateJob(id, request, getCompanyId()));
+    }
+
+    @RequireCompanyRole({ COMPANY_ADMIN, MANAGER, EDITOR })
+    @PatchMapping("/{id}")
+    public ResponseEntity<JobResponse> patch(
+            @PathVariable Long id,
+            @Validated({ PatchValidation.class, Default.class }) @RequestBody JobUpdateRequest request,
+            Authentication auth) {
+        return ResponseEntity.ok(jobService.patchJob(id, request, getCompanyId()));
     }
 
     @RequireCompanyRole({ COMPANY_ADMIN, MANAGER, EDITOR, VIEWER })

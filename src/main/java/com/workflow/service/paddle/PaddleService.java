@@ -1,5 +1,6 @@
 package com.workflow.service.paddle;
 
+import com.workflow.common.constant.PlanType;
 import com.workflow.config.properties.PaddleConfigProperties;
 import com.workflow.dto.paddle.*;
 import lombok.extern.slf4j.Slf4j;
@@ -8,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -55,10 +57,24 @@ public class PaddleService implements IPaddleService {
     }
 
     @Override
-    public CheckoutSessionResponse generateCheckoutUrl(String paddleCustomerId, Long companyId) {
-        log.debug("Generating checkout URL for paddleCustomerId={}, companyId={}", paddleCustomerId, companyId);
+    public CheckoutSessionResponse generateCheckoutUrl(
+            String paddleCustomerId, Long companyId, PlanType planType, int extraSeats, int extraStorageBlocks) {
+        log.debug("Generating checkout URL for paddleCustomerId={}, companyId={}, planType={}, extraSeats={}, extraStorageBlocks={}",
+                paddleCustomerId, companyId, planType, extraSeats, extraStorageBlocks);
+
+        List<GenerateCheckoutLinkRequest.CheckoutItem> items = new ArrayList<>();
+        items.add(new GenerateCheckoutLinkRequest.CheckoutItem(paddleProps.basePriceIdFor(planType), 1));
+        if (extraSeats > 0) {
+            items.add(new GenerateCheckoutLinkRequest.CheckoutItem(
+                    paddleProps.extraSeatPriceIdFor(planType), extraSeats));
+        }
+        if (extraStorageBlocks > 0) {
+            items.add(new GenerateCheckoutLinkRequest.CheckoutItem(
+                    paddleProps.storageBlockPriceIdFor(planType), extraStorageBlocks));
+        }
+
         GenerateCheckoutLinkRequest request = new GenerateCheckoutLinkRequest(
-                List.of(new GenerateCheckoutLinkRequest.CheckoutItem(paddleProps.getPriceId(), 1)),
+                items,
                 paddleCustomerId,
                 Map.of("companyId", String.valueOf(companyId)),
                 paddleProps.getSuccessUrl(),

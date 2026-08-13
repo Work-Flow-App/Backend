@@ -137,7 +137,12 @@ workflow:
 paddle:
   api-key: ${PADDLE_API_KEY}
   webhook-secret: ${PADDLE_WEBHOOK_SECRET}
-  price-id: ${PADDLE_PRICE_ID}
+  starter-price-id: ${PADDLE_STARTER_PRICE_ID}
+  professional-price-id: ${PADDLE_PROFESSIONAL_PRICE_ID}
+  starter-extra-seat-price-id: ${PADDLE_STARTER_EXTRA_SEAT_PRICE_ID}
+  professional-extra-seat-price-id: ${PADDLE_PROFESSIONAL_EXTRA_SEAT_PRICE_ID}
+  starter-storage-block-price-id: ${PADDLE_STARTER_STORAGE_BLOCK_PRICE_ID}
+  professional-storage-block-price-id: ${PADDLE_PROFESSIONAL_STORAGE_BLOCK_PRICE_ID}
   api-base-url: ${PADDLE_API_BASE_URL:https://sandbox-api.paddle.com}
   trial-days: 14
   past-due-grace-days: 3

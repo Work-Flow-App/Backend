@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 
@@ -355,7 +356,11 @@ class WorkerInvitationRepositoryTest {
     @Test
     @DisplayName("Should not count an invitation that expires exactly now")
     void countPendingByCompanyId_ExpiresExactlyAtNow_DoesNotCount() {
-        LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
+        // Truncated to microseconds — some DB timestamp columns don't preserve full nanosecond
+        // precision, so persisting and querying with an untruncated `now` can round each side
+        // differently and flip the boundary comparison depending on environment. Truncating both
+        // sides to the same precision before comparing makes the equality actually deterministic.
+        LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC).truncatedTo(ChronoUnit.MICROS);
         WorkerInvitation boundaryInvitation = WorkerInvitation.builder()
                 .invitationToken("boundary-token")
                 .email("boundary@example.com")

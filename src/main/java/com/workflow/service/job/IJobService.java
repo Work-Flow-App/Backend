@@ -14,6 +14,8 @@ public interface IJobService {
 
     JobResponse updateJob(Long jobId, JobUpdateRequest request, Long companyId);
 
+    JobResponse patchJob(Long jobId, JobUpdateRequest request, Long companyId);
+
     JobResponse getJob(Long jobId, Long companyId);
 
     List<JobResponse> getAllJobs(Long companyId);

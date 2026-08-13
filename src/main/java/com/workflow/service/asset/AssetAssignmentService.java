@@ -449,6 +449,7 @@ public class AssetAssignmentService implements IAssetAssignmentService {
                 .assignmentId(a.getId())
                 .assetId(a.getAsset().getId())
                 .jobId(a.getJob() != null ? a.getJob().getId() : null)
+                .jobRef(a.getJob() != null ? a.getJob().getJobRef() : null)
                 .assignedWorkerId(a.getAssignedWorker() != null ? a.getAssignedWorker().getId() : null)
                 .assetName(a.getAsset().getName())
                 .description(a.getAsset().getDescription())

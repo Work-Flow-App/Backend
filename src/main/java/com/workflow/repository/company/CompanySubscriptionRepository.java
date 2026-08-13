@@ -2,7 +2,9 @@ package com.workflow.repository.company;
 
 import com.workflow.common.constant.SubscriptionStatus;
 import com.workflow.entity.company.CompanySubscription;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -14,6 +16,19 @@ import java.util.Optional;
 public interface CompanySubscriptionRepository extends JpaRepository<CompanySubscription, Long> {
 
     Optional<CompanySubscription> findByCompanyId(Long companyId);
+
+    /**
+     * Locks the subscription row for the duration of the caller's transaction, serializing
+     * concurrent count-check-insert sequences (job cap, seat cap) for the same company so two
+     * requests can't both pass the check at count=limit-1 and both insert. Callers must already
+     * be inside a write (non-readOnly) transaction — locking a row within a read-only transaction
+     * is rejected by some JDBC configurations. No row to lock (and thus no serialization) if the
+     * company has no CompanySubscription at all — an edge case the FREE-tier-default fallback
+     * treats as "should never legitimately happen" anyway.
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT s FROM CompanySubscription s WHERE s.company.id = :companyId")
+    Optional<CompanySubscription> findByCompanyIdForUpdate(@Param("companyId") Long companyId);
 
     Optional<CompanySubscription> findByPaddleSubscriptionId(String paddleSubscriptionId);
 

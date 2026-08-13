@@ -72,10 +72,11 @@ public class CompanySubscription {
     private LocalDateTime updatedAt;
 
     /**
-     * Returns true when the company is allowed to access the application.
+     * Returns true when the company is allowed to perform mutating (write) operations.
+     * Lapsed subscriptions still get read-only access — this only gates writes.
      * pastDueGraceDays: number of days after currentPeriodEnd before PAST_DUE is blocked.
      */
-    public boolean isAccessAllowed(int pastDueGraceDays) {
+    public boolean isMutationAllowed(int pastDueGraceDays) {
         LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
         return switch (status) {
             case TRIAL -> now.isBefore(trialEndsAt);

@@ -43,7 +43,7 @@ public class SubscriptionController {
                 sub.getStatus(),
                 sub.getTrialEndsAt(),
                 sub.getCurrentPeriodEnd(),
-                sub.isAccessAllowed(paddleProps.getPastDueGraceDays())
+                sub.isMutationAllowed(paddleProps.getPastDueGraceDays())
         ));
     }
 

@@ -13,6 +13,7 @@ import com.workflow.repository.worker.WorkerInvitationRepository;
 import com.workflow.repository.worker.WorkerRepository;
 import com.workflow.service.company.ICompanyService;
 import com.workflow.service.email.EmailService;
+import com.workflow.service.subscription.ISeatLimitService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -37,6 +38,7 @@ public class WorkerInvitationService {
     private final ICompanyService companyService;
     private final EmailService emailService;
     private final PasswordEncoder passwordEncoder;
+    private final ISeatLimitService seatLimitService;
 
     @Value("${worker-invitation.token.expiration-days}")
     private int expirationDays;
@@ -50,6 +52,8 @@ public class WorkerInvitationService {
 
         // Get company
         Company company = companyService.findCompanyByUserId(companyUserId);
+
+        seatLimitService.assertCapacity(company.getId());
 
         // Check if email already registered in User table
         if (userRepository.findByEmail(email).isPresent()) {

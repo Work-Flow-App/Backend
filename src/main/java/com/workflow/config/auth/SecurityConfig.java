@@ -5,6 +5,7 @@ import com.workflow.common.constant.Role;
 import com.workflow.config.properties.PaddleConfigProperties;
 import com.workflow.repository.company.CompanyMemberRepository;
 import com.workflow.repository.company.CompanySubscriptionRepository;
+import com.workflow.repository.worker.WorkerRepository;
 import com.workflow.service.auth.JwtFilter;
 import com.workflow.service.company.ICompanyService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -100,6 +101,7 @@ public class SecurityConfig {
             ICompanyService companyService,
             CompanyMemberRepository companyMemberRepository,
             CompanySubscriptionRepository subscriptionRepository,
+            WorkerRepository workerRepository,
             PaddleConfigProperties paddleConfigProperties,
             ObjectMapper objectMapper) throws Exception {
         http
@@ -131,6 +133,7 @@ public class SecurityConfig {
                         new SubscriptionCheckFilter(
                                 companyService,
                                 subscriptionRepository,
+                                workerRepository,
                                 paddleConfigProperties,
                                 objectMapper),
                         CompanyMembershipFilter.class);

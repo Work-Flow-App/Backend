@@ -1,5 +1,6 @@
 package com.workflow.entity.company;
 
+import com.workflow.common.constant.PlanType;
 import com.workflow.common.constant.SubscriptionStatus;
 import jakarta.persistence.*;
 import lombok.*;
@@ -46,6 +47,19 @@ public class CompanySubscription {
     @Column(name = "current_period_end")
     private LocalDateTime currentPeriodEnd;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "plan_type", nullable = false, length = 20)
+    @Builder.Default
+    private PlanType planType = PlanType.FREE;
+
+    @Column(name = "extra_user_seats", nullable = false)
+    @Builder.Default
+    private int extraUserSeats = 0;
+
+    @Column(name = "extra_storage_blocks", nullable = false)
+    @Builder.Default
+    private int extraStorageBlocks = 0;
+
     @Column(name = "last_event_occurred_at")
     private LocalDateTime lastEventOccurredAt;
 
@@ -58,10 +72,11 @@ public class CompanySubscription {
     private LocalDateTime updatedAt;
 
     /**
-     * Returns true when the company is allowed to access the application.
+     * Returns true when the company is allowed to perform mutating (write) operations.
+     * Lapsed subscriptions still get read-only access — this only gates writes.
      * pastDueGraceDays: number of days after currentPeriodEnd before PAST_DUE is blocked.
      */
-    public boolean isAccessAllowed(int pastDueGraceDays) {
+    public boolean isMutationAllowed(int pastDueGraceDays) {
         LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
         return switch (status) {
             case TRIAL -> now.isBefore(trialEndsAt);
@@ -78,5 +93,14 @@ public class CompanySubscription {
      */
     public boolean isNewerEvent(LocalDateTime eventOccurredAt) {
         return lastEventOccurredAt == null || eventOccurredAt.isAfter(lastEventOccurredAt);
+    }
+
+    // @Builder.Default only applies via the Lombok builder, not new CompanySubscription() + setters —
+    // this backstops the column's NOT NULL DEFAULT 'FREE' for any construction path that skips the builder.
+    @PrePersist
+    private void normalizeDefaults() {
+        if (planType == null) {
+            planType = PlanType.FREE;
+        }
     }
 }

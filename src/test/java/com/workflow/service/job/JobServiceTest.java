@@ -1,5 +1,6 @@
 package com.workflow.service.job;
 
+import com.workflow.common.constant.PlanType;
 import com.workflow.common.constant.job.JobFieldType;
 import com.workflow.common.constant.job.JobStatus;
 import com.workflow.common.exception.business.*;
@@ -10,6 +11,7 @@ import com.workflow.dto.job.JobUpdateRequest;
 import com.workflow.entity.common.Address;
 import com.workflow.entity.customer.Client;
 import com.workflow.entity.company.Company;
+import com.workflow.entity.company.CompanySubscription;
 import com.workflow.entity.customer.Customer;
 import com.workflow.entity.financial.Estimate;
 import com.workflow.entity.job.Job;
@@ -19,6 +21,7 @@ import com.workflow.entity.job.JobTemplateField;
 import com.workflow.repository.asset.AssetJobAssignmentRepository;
 import com.workflow.repository.asset.AssetRepository;
 import com.workflow.repository.company.CompanyRepository;
+import com.workflow.repository.company.CompanySubscriptionRepository;
 import com.workflow.repository.customer.ClientRepository;
 import com.workflow.repository.customer.CustomerRepository;
 import com.workflow.repository.financial.EstimateDocumentRepository;
@@ -34,10 +37,12 @@ import com.workflow.repository.common.AddressRepository;
 import com.workflow.repository.workflow.WorkflowRepository;
 import com.workflow.service.asset.IAssetAssignmentService;
 import com.workflow.service.sequence.CompanyCounterService;
+import com.workflow.service.subscription.IPlanLimitsService;
 import com.workflow.service.workflow.IJobWorkflowService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -109,6 +114,12 @@ class JobServiceTest {
         @Mock
         private IAssetAssignmentService assetAssignmentService;
 
+        @Mock
+        private CompanySubscriptionRepository subscriptionRepository;
+
+        @Mock
+        private IPlanLimitsService planLimitsService;
+
         @InjectMocks
         private JobService jobService;
 
@@ -136,6 +147,18 @@ class JobServiceTest {
                                 .status(JobStatus.NEW)
                                 .fieldValues(fieldValues)
                                 .build();
+
+                // Permissive default for assertJobCapacity, which now runs first in every createJob()
+                // call (fail-closed to FREE-tier defaults per #5 means an unstubbed plan-limits mock
+                // would otherwise return 0 and trip the cap on every test). lenient() since tests that
+                // exercise the cap itself override these with more specific stubs.
+                CompanySubscription defaultSubscription = CompanySubscription.builder().planType(PlanType.PROFESSIONAL).build();
+                lenient().when(subscriptionRepository.findByCompanyIdForUpdate(anyLong())).thenReturn(Optional.of(defaultSubscription));
+                lenient().when(jobRepository.countByCompanyIdAndCreatedAtBetween(anyLong(), any(), any())).thenReturn(0L);
+                // Explicit type witness needed — bare any() is ambiguous now that getEffectiveJobsPerMonth
+                // is overloaded on CompanySubscription vs Optional<CompanySubscription>.
+                lenient().when(planLimitsService.getEffectiveJobsPerMonth(ArgumentMatchers.<Optional<CompanySubscription>>any()))
+                                .thenReturn(200);
         }
 
         @Test
@@ -239,6 +262,89 @@ class JobServiceTest {
                 assertThatThrownBy(() -> jobService.createJob(createRequest, 1L))
                                 .isInstanceOf(ClientNotFoundException.class)
                                 .hasMessageContaining("Client not found");
+
+                verify(jobRepository, never()).saveAndFlush(any());
+        }
+
+        // ============= Monthly job cap Tests =============
+
+        @Test
+        void createJob_ShouldThrowJobLimitExceededException_WhenMonthlyLimitReached() {
+                CompanySubscription subscription = CompanySubscription.builder().planType(PlanType.STARTER).build();
+                when(subscriptionRepository.findByCompanyIdForUpdate(1L)).thenReturn(Optional.of(subscription));
+                when(jobRepository.countByCompanyIdAndCreatedAtBetween(eq(1L), any(), any())).thenReturn(150L);
+                when(planLimitsService.getEffectiveJobsPerMonth(Optional.of(subscription))).thenReturn(150);
+
+                assertThatThrownBy(() -> jobService.createJob(createRequest, 1L))
+                                .isInstanceOf(JobLimitExceededException.class);
+
+                // Fails fast — none of the downstream lookups should run once the cap check throws
+                verify(companyRepository, never()).getReferenceById(any());
+                verify(jobRepository, never()).saveAndFlush(any());
+        }
+
+        @Test
+        void createJob_ShouldSucceed_WhenUnderMonthlyLimit() {
+                CompanySubscription subscription = CompanySubscription.builder().planType(PlanType.STARTER).build();
+                when(subscriptionRepository.findByCompanyIdForUpdate(1L)).thenReturn(Optional.of(subscription));
+                when(jobRepository.countByCompanyIdAndCreatedAtBetween(eq(1L), any(), any())).thenReturn(149L);
+                when(planLimitsService.getEffectiveJobsPerMonth(Optional.of(subscription))).thenReturn(150);
+
+                when(companyRepository.getReferenceById(1L)).thenReturn(company);
+                when(templateRepository.findById(3L)).thenReturn(Optional.of(template));
+                when(clientRepository.findById(1L)).thenReturn(Optional.of(client));
+                when(customerRepository.findById(1L)).thenReturn(Optional.of(customer));
+                when(templateFieldRepository.findByTemplateIdOrderByOrderIndexAsc(3L))
+                                .thenReturn(Collections.emptyList());
+                when(companyCounterService.nextJobId(1L)).thenReturn(1003L);
+                doAnswer(invocation -> {
+                        Job job = invocation.getArgument(0);
+                        job.setId(56L);
+                        return job;
+                }).when(jobRepository).saveAndFlush(any(Job.class));
+
+                JobResponse response = jobService.createJob(createRequest, 1L);
+
+                assertThat(response).isNotNull();
+                verify(jobRepository).saveAndFlush(any(Job.class));
+        }
+
+        // Decision: fail CLOSED to FREE-tier limits (not open/unlimited) when no CompanySubscription
+        // exists — this should never legitimately happen, so it's still logged loudly, but the cap
+        // check now actually runs against FREE-tier defaults instead of being skipped.
+        @Test
+        void createJob_ShouldEvaluateAgainstFreeTierDefaults_WhenNoSubscriptionFound() {
+                when(subscriptionRepository.findByCompanyIdForUpdate(1L)).thenReturn(Optional.empty());
+                when(jobRepository.countByCompanyIdAndCreatedAtBetween(eq(1L), any(), any())).thenReturn(9L);
+                when(planLimitsService.getEffectiveJobsPerMonth(Optional.<CompanySubscription>empty())).thenReturn(10);
+
+                when(companyRepository.getReferenceById(1L)).thenReturn(company);
+                when(templateRepository.findById(3L)).thenReturn(Optional.of(template));
+                when(clientRepository.findById(1L)).thenReturn(Optional.of(client));
+                when(customerRepository.findById(1L)).thenReturn(Optional.of(customer));
+                when(templateFieldRepository.findByTemplateIdOrderByOrderIndexAsc(3L))
+                                .thenReturn(Collections.emptyList());
+                when(companyCounterService.nextJobId(1L)).thenReturn(1004L);
+                doAnswer(invocation -> {
+                        Job job = invocation.getArgument(0);
+                        job.setId(57L);
+                        return job;
+                }).when(jobRepository).saveAndFlush(any(Job.class));
+
+                JobResponse response = jobService.createJob(createRequest, 1L);
+
+                assertThat(response).isNotNull();
+                verify(planLimitsService).getEffectiveJobsPerMonth(Optional.<CompanySubscription>empty());
+        }
+
+        @Test
+        void createJob_ShouldThrowJobLimitExceededException_WhenNoSubscriptionAndFreeTierLimitReached() {
+                when(subscriptionRepository.findByCompanyIdForUpdate(1L)).thenReturn(Optional.empty());
+                when(jobRepository.countByCompanyIdAndCreatedAtBetween(eq(1L), any(), any())).thenReturn(10L);
+                when(planLimitsService.getEffectiveJobsPerMonth(Optional.<CompanySubscription>empty())).thenReturn(10);
+
+                assertThatThrownBy(() -> jobService.createJob(createRequest, 1L))
+                                .isInstanceOf(JobLimitExceededException.class);
 
                 verify(jobRepository, never()).saveAndFlush(any());
         }

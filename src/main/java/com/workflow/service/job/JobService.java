@@ -27,6 +27,7 @@ import com.workflow.common.constant.job.JobStatus;
 import com.workflow.common.exception.business.AssetNotFoundException;
 import com.workflow.common.exception.business.ClientNotFoundException;
 import com.workflow.common.exception.business.CustomerNotFoundException;
+import com.workflow.common.exception.business.JobLimitExceededException;
 import com.workflow.common.exception.business.JobNotFoundException;
 import com.workflow.common.exception.business.TemplateNotFoundException;
 import com.workflow.common.exception.business.InvalidRequestException;
@@ -45,6 +46,7 @@ import com.workflow.entity.customer.Client;
 import com.workflow.entity.company.Company;
 import com.workflow.entity.customer.Customer;
 import com.workflow.entity.financial.Estimate;
+import com.workflow.entity.company.CompanySubscription;
 import com.workflow.entity.job.Job;
 import com.workflow.entity.job.JobFieldValue;
 import com.workflow.entity.job.JobTemplate;
@@ -57,6 +59,7 @@ import com.workflow.repository.asset.AssetJobAssignmentRepository;
 import com.workflow.repository.asset.AssetRepository;
 import com.workflow.repository.customer.ClientRepository;
 import com.workflow.repository.company.CompanyRepository;
+import com.workflow.repository.company.CompanySubscriptionRepository;
 import com.workflow.repository.customer.CustomerRepository;
 import com.workflow.repository.financial.EstimateDocumentRepository;
 import com.workflow.repository.financial.EstimateRepository;
@@ -71,11 +74,14 @@ import com.workflow.repository.job.JobWorkflowStepRepository;
 import com.workflow.repository.workflow.WorkflowRepository;
 import com.workflow.service.asset.IAssetAssignmentService;
 import com.workflow.service.sequence.CompanyCounterService;
+import com.workflow.service.subscription.IPlanLimitsService;
 import com.workflow.service.workflow.IJobWorkflowService;
 import com.workflow.util.JsonUtil;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -100,12 +106,16 @@ public class JobService implements IJobService {
         private final AddressRepository addressRepository;
         private final CompanyCounterService companyCounterService;
         private final IAssetAssignmentService assetAssignmentService;
+        private final CompanySubscriptionRepository subscriptionRepository;
+        private final IPlanLimitsService planLimitsService;
 
         private record EstimateSummary(Long estimateId, BigDecimal totalNet) {
         }
 
         @Override
         public JobResponse createJob(JobCreateRequest request, Long companyId) {
+                assertJobCapacity(companyId);
+
                 Company company = companyRepository.getReferenceById(companyId);
 
                 JobTemplate template = templateRepository.findById(request.getTemplateId())
@@ -343,6 +353,34 @@ public class JobService implements IJobService {
                                 .orElseThrow(() -> new JobNotFoundException("Job not found"));
 
                 return mapToResponse(refreshedJob);
+        }
+
+        // Self-resetting by calendar month via the createdAt range filter — no counter column
+        // or monthly reset job needed. See countByCompanyIdAndCreatedAtBetween for why archived
+        // jobs still count (otherwise archiving becomes a way to bypass the cap).
+        //
+        // findByCompanyIdForUpdate locks the subscription row for the rest of this transaction
+        // (JobService's class-level @Transactional is already read-write), serializing concurrent
+        // count-check-insert sequences for the same company. Lower-priority fix than the seat cap
+        // (this one self-corrects next month), added anyway since the locking pattern was already
+        // built for SeatLimitService and reusing it here was cheap.
+        private void assertJobCapacity(Long companyId) {
+                Optional<CompanySubscription> subscription = subscriptionRepository.findByCompanyIdForUpdate(companyId);
+                // Every signup goes through initTrial(), so this shouldn't happen. Fail CLOSED to
+                // FREE-tier limits (not open/unlimited) — see PlanLimitsService's Optional overloads.
+                if (subscription.isEmpty()) {
+                        log.error("assertJobCapacity: no CompanySubscription for companyId={} — treating as FREE tier for limit-checking", companyId);
+                }
+
+                LocalDateTime startOfMonth = LocalDateTime.now(ZoneOffset.UTC).toLocalDate().withDayOfMonth(1).atStartOfDay();
+                LocalDateTime startOfNextMonth = startOfMonth.plusMonths(1);
+                long jobsThisMonth = jobRepository.countByCompanyIdAndCreatedAtBetween(companyId, startOfMonth, startOfNextMonth);
+                int effectiveLimit = planLimitsService.getEffectiveJobsPerMonth(subscription);
+
+                if (jobsThisMonth >= effectiveLimit) {
+                        throw new JobLimitExceededException(
+                                        "Monthly job limit reached (" + effectiveLimit + " max). Upgrade your plan to create more jobs this month.");
+                }
         }
 
         private void saveJobFieldValues(Job job, Map<Long, Object> fieldValues) {

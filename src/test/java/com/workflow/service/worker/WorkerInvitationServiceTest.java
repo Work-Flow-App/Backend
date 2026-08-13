@@ -13,6 +13,7 @@ import com.workflow.repository.worker.WorkerInvitationRepository;
 import com.workflow.repository.worker.WorkerRepository;
 import com.workflow.service.company.CompanyService;
 import com.workflow.service.email.EmailService;
+import com.workflow.service.subscription.ISeatLimitService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -55,6 +56,9 @@ class WorkerInvitationServiceTest {
 
     @Mock
     private PasswordEncoder passwordEncoder;
+
+    @Mock
+    private ISeatLimitService seatLimitService;
 
     @InjectMocks
     private WorkerInvitationService workerInvitationService;
@@ -168,6 +172,25 @@ class WorkerInvitationServiceTest {
         verify(invitationRepository).invalidatePreviousInvitations(TEST_EMAIL, testCompany.getId());
         verify(invitationRepository).save(any(WorkerInvitation.class));
         verify(emailService).sendWorkerInvitationEmail(eq(TEST_EMAIL), eq(testCompany.getName()), anyString());
+        verify(seatLimitService).assertCapacity(testCompany.getId());
+    }
+
+    @Test
+    @DisplayName("Should propagate SeatLimitExceededException and never create the invitation")
+    void createInvitation_SeatLimitExceeded_DoesNotCreateInvitation() {
+        // Arrange
+        when(companyService.findCompanyByUserId(companyUser.getId())).thenReturn(testCompany);
+        doThrow(new SeatLimitExceededException("Seat limit reached"))
+                .when(seatLimitService).assertCapacity(testCompany.getId());
+
+        // Act & Assert
+        assertThrows(
+                SeatLimitExceededException.class,
+                () -> workerInvitationService.createInvitation(TEST_EMAIL, companyUser.getId())
+        );
+
+        verify(invitationRepository, never()).save(any());
+        verify(emailService, never()).sendWorkerInvitationEmail(anyString(), anyString(), anyString());
     }
 
     @Test

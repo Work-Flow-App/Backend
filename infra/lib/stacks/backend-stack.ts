@@ -293,7 +293,12 @@ export class BackendStack extends cdk.Stack {
       secretStringValue: cdk.SecretValue.unsafePlainText(JSON.stringify({
         apiKey: 'POPULATE_ME',
         webhookSecret: 'POPULATE_ME',
-        priceId: 'POPULATE_ME',
+        starterPriceId: 'POPULATE_ME',
+        professionalPriceId: 'POPULATE_ME',
+        starterExtraSeatPriceId: 'POPULATE_ME',
+        professionalExtraSeatPriceId: 'POPULATE_ME',
+        starterStorageBlockPriceId: 'POPULATE_ME',
+        professionalStorageBlockPriceId: 'POPULATE_ME',
       })),
       removalPolicy: config.removalPolicy,
     });
@@ -447,7 +452,7 @@ export class BackendStack extends cdk.Stack {
 
     new cdk.CfnOutput(this, 'PaddleSecretArn', {
       value: paddleSecret.secretArn,
-      description: 'Paddle secret ARN — populate with real apiKey, webhookSecret, priceId',
+      description: 'Paddle secret ARN — populate with real apiKey, webhookSecret, and per-tier/add-on price IDs',
     });
 
     new cdk.CfnOutput(this, 'AffiliateSecretArn', {

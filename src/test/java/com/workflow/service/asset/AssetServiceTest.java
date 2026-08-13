@@ -13,6 +13,7 @@ import com.workflow.repository.asset.AssetRepository;
 import com.workflow.repository.company.CompanyRepository;
 import com.workflow.service.sequence.CompanyCounterService;
 import com.workflow.service.storage.IStorageService;
+import com.workflow.service.subscription.IStorageQuotaService;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
@@ -63,6 +64,9 @@ class AssetServiceTest {
 
     @Mock
     private Tika tika;
+
+    @Mock
+    private IStorageQuotaService storageQuotaService;
 
     @InjectMocks
     private AssetService assetService;
@@ -339,7 +343,9 @@ class AssetServiceTest {
 
         verify(s3Service).upload(anyString(), any(InputStream.class), anyLong(), eq("image/jpeg"));
         verify(assetRepository).save(asset);
-        
+        verify(storageQuotaService).assertCapacity(1L, file.getSize());
+        verify(storageQuotaService).recordUpload(1L, file.getSize());
+
         assertThat(response).isNotNull();
         assertThat(asset.getAttachments()).hasSize(1);
         assertThat(asset.getAttachments().get(0).getFileName()).isEqualTo("image.jpg");
@@ -347,12 +353,13 @@ class AssetServiceTest {
 
     @Test
     void removeAttachment_Success() {
+        // No fileSizeBytes set — simulates a legacy row uploaded before that column existed
         asset.getAttachments().add(AssetAttachment.builder()
                 .fileUrl("companies/1/assets/1/some-uuid.jpg")
                 .fileName("test.jpg")
                 .fileType("image/jpeg")
                 .build());
-                
+
         when(assetRepository.findById(1L)).thenReturn(Optional.of(asset));
         when(assetRepository.save(any(Asset.class))).thenReturn(asset);
 
@@ -360,9 +367,27 @@ class AssetServiceTest {
 
         verify(s3Service).delete("companies/1/assets/1/some-uuid.jpg");
         verify(assetRepository).save(asset);
-        
+        verify(storageQuotaService, never()).recordDelete(anyLong(), anyLong());
+
         assertThat(response).isNotNull();
         assertThat(asset.getAttachments()).isEmpty();
+    }
+
+    @Test
+    void removeAttachment_WithFileSizeBytes_RecordsDelete() {
+        asset.getAttachments().add(AssetAttachment.builder()
+                .fileUrl("companies/1/assets/1/some-uuid.jpg")
+                .fileName("test.jpg")
+                .fileType("image/jpeg")
+                .fileSizeBytes(12345L)
+                .build());
+
+        when(assetRepository.findById(1L)).thenReturn(Optional.of(asset));
+        when(assetRepository.save(any(Asset.class))).thenReturn(asset);
+
+        assetService.removeAttachment(1L, "companies/1/assets/1/some-uuid.jpg", 1L);
+
+        verify(storageQuotaService).recordDelete(1L, 12345L);
     }
 
     // ==================== GET ASSET TESTS ====================

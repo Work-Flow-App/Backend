@@ -187,7 +187,8 @@ class EntityMappingIntegrationTest {
                 totalWorkers,
                 totalClients,
                 activeWorkers,
-                archivedWorkers
+                archivedWorkers,
+                null // usageSummary not relevant to this lazy-collection-access test
         );
 
         // Then

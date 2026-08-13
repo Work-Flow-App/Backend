@@ -50,4 +50,11 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
     @Modifying(clearAutomatically = true)
     @Query("DELETE FROM Invoice i WHERE i.estimate.job.id = :jobId")
     void deleteByJobId(@Param("jobId") Long jobId);
+
+    // Invoice rows are saved before the PDF exists (PDF generation happens afterCommit),
+    // so the size can't be set on the entity being saved like every other upload site — it's
+    // written back once the byte count is actually known, right after the S3 upload succeeds.
+    @Modifying(clearAutomatically = true)
+    @Query("UPDATE Invoice i SET i.fileSizeBytes = :fileSizeBytes WHERE i.id = :id")
+    void updateFileSizeBytes(@Param("id") Long id, @Param("fileSizeBytes") long fileSizeBytes);
 }

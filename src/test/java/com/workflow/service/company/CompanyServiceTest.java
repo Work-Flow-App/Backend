@@ -1,5 +1,6 @@
 package com.workflow.service.company;
 
+import com.workflow.common.constant.PlanType;
 import com.workflow.common.constant.Role;
 import com.workflow.common.exception.business.CompanyAlreadyExistsException;
 import com.workflow.common.exception.business.CompanyNotFoundException;
@@ -7,11 +8,16 @@ import com.workflow.dto.company.CompanyAddressRequest;
 import com.workflow.dto.company.CompanyDashboardResponse;
 import com.workflow.dto.company.CompanyProfileResponse;
 import com.workflow.dto.company.CompanyProfileUpdateRequest;
+import com.workflow.dto.company.UsageSummaryResponse;
 import com.workflow.entity.company.Company;
 import com.workflow.entity.company.CompanyAddress;
+import com.workflow.entity.company.CompanySubscription;
 import com.workflow.entity.auth.User;
 import com.workflow.repository.company.CompanyRepository;
+import com.workflow.repository.company.CompanySubscriptionRepository;
+import com.workflow.repository.job.JobRepository;
 import com.workflow.service.storage.IStorageService;
+import com.workflow.service.subscription.IPlanLimitsService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -34,6 +40,15 @@ class CompanyServiceTest {
 
     @Mock
     private CompanyRepository companyRepository;
+
+    @Mock
+    private JobRepository jobRepository;
+
+    @Mock
+    private CompanySubscriptionRepository subscriptionRepository;
+
+    @Mock
+    private IPlanLimitsService planLimitsService;
 
     @Mock
     private IStorageService s3Service;
@@ -233,11 +248,22 @@ class CompanyServiceTest {
 
     // ============= getDashboard Tests =============
 
+    private CompanySubscription starterSubscription() {
+        return CompanySubscription.builder().planType(PlanType.STARTER).build();
+    }
+
     @Test
     void getDashboard_ShouldReturnDashboardWithNoWorkers() {
         // Arrange
         company.setWorkers(new ArrayList<>());
         when(companyRepository.findByUserIdAndNotArchived(1L)).thenReturn(Optional.of(company));
+
+        CompanySubscription subscription = starterSubscription();
+        when(subscriptionRepository.findByCompanyId(1L)).thenReturn(Optional.of(subscription));
+        when(jobRepository.countByCompanyIdAndCreatedAtBetween(eq(1L), any(), any())).thenReturn(5L);
+        when(planLimitsService.getEffectiveJobsPerMonth(Optional.of(subscription))).thenReturn(150);
+        when(planLimitsService.getEffectiveStorageLimitBytes(Optional.of(subscription))).thenReturn(10_000_000_000L);
+        when(planLimitsService.getEffectiveMaxUsers(Optional.of(subscription))).thenReturn(3);
 
         // Act
         CompanyDashboardResponse response = companyService.getDashboard(1L);
@@ -251,6 +277,37 @@ class CompanyServiceTest {
         assertThat(response.archivedWorkers()).isEqualTo(0);
         assertThat(response.totalClients()).isEqualTo(0);
         verify(companyRepository).findByUserIdAndNotArchived(1L);
+
+        UsageSummaryResponse usage = response.usageSummary();
+        assertThat(usage).isNotNull();
+        assertThat(usage.jobsUsedThisMonth()).isEqualTo(5L);
+        assertThat(usage.jobsLimit()).isEqualTo(150);
+        assertThat(usage.jobsWarningThresholdReached()).isFalse();
+        assertThat(usage.activeWorkers()).isEqualTo(0);
+        assertThat(usage.seatsLimit()).isEqualTo(3);
+        assertThat(usage.seatsWarningThresholdReached()).isFalse();
+    }
+
+    // Decision: fail CLOSED to FREE-tier limits (not open/unlimited, not null) when no
+    // CompanySubscription exists — the dashboard must keep working, but with conservative
+    // (FREE-tier) numbers rather than silently omitting usage data.
+    @Test
+    void getDashboard_ShouldUseFreeTierDefaults_WhenNoSubscriptionFound() {
+        company.setWorkers(new ArrayList<>());
+        when(companyRepository.findByUserIdAndNotArchived(1L)).thenReturn(Optional.of(company));
+        when(subscriptionRepository.findByCompanyId(1L)).thenReturn(Optional.empty());
+        when(jobRepository.countByCompanyIdAndCreatedAtBetween(eq(1L), any(), any())).thenReturn(2L);
+        when(planLimitsService.getEffectiveJobsPerMonth(Optional.<CompanySubscription>empty())).thenReturn(10);
+        when(planLimitsService.getEffectiveStorageLimitBytes(Optional.<CompanySubscription>empty())).thenReturn(250_000_000L);
+        when(planLimitsService.getEffectiveMaxUsers(Optional.<CompanySubscription>empty())).thenReturn(1);
+
+        CompanyDashboardResponse response = companyService.getDashboard(1L);
+
+        assertThat(response).isNotNull();
+        assertThat(response.usageSummary()).isNotNull();
+        assertThat(response.usageSummary().jobsLimit()).isEqualTo(10);
+        assertThat(response.usageSummary().seatsLimit()).isEqualTo(1);
+        verify(planLimitsService).getEffectiveJobsPerMonth(Optional.<CompanySubscription>empty());
     }
 
     @Test
@@ -264,6 +321,80 @@ class CompanyServiceTest {
                 .hasMessageContaining("No active company found");
 
         verify(companyRepository).findByUserIdAndNotArchived(1L);
+    }
+
+    // ============= getUsageSummary Tests =============
+
+    @Test
+    void getUsageSummary_WithinAllLimits_NoWarningsReached() {
+        when(companyRepository.findByUserIdAndNotArchived(1L)).thenReturn(Optional.of(company));
+        when(companyRepository.countActiveWorkers(1L)).thenReturn(1L);
+
+        CompanySubscription subscription = starterSubscription();
+        when(subscriptionRepository.findByCompanyId(1L)).thenReturn(Optional.of(subscription));
+        when(jobRepository.countByCompanyIdAndCreatedAtBetween(eq(1L), any(), any())).thenReturn(10L);
+        when(planLimitsService.getEffectiveJobsPerMonth(Optional.of(subscription))).thenReturn(150);
+        when(planLimitsService.getEffectiveStorageLimitBytes(Optional.of(subscription))).thenReturn(10_000_000_000L);
+        when(planLimitsService.getEffectiveMaxUsers(Optional.of(subscription))).thenReturn(3);
+
+        UsageSummaryResponse usage = companyService.getUsageSummary(1L);
+
+        assertThat(usage.jobsUsedThisMonth()).isEqualTo(10L);
+        assertThat(usage.jobsWarningThresholdReached()).isFalse();
+        assertThat(usage.storageWarningThresholdReached()).isFalse();
+        assertThat(usage.seatsWarningThresholdReached()).isFalse();
+    }
+
+    @Test
+    void getUsageSummary_AtEightyPercentOfJobLimit_JobsWarningThresholdReached() {
+        when(companyRepository.findByUserIdAndNotArchived(1L)).thenReturn(Optional.of(company));
+        when(companyRepository.countActiveWorkers(1L)).thenReturn(1L);
+
+        CompanySubscription subscription = starterSubscription();
+        when(subscriptionRepository.findByCompanyId(1L)).thenReturn(Optional.of(subscription));
+        // 120 / 150 == exactly 80%
+        when(jobRepository.countByCompanyIdAndCreatedAtBetween(eq(1L), any(), any())).thenReturn(120L);
+        when(planLimitsService.getEffectiveJobsPerMonth(Optional.of(subscription))).thenReturn(150);
+        when(planLimitsService.getEffectiveStorageLimitBytes(Optional.of(subscription))).thenReturn(10_000_000_000L);
+        when(planLimitsService.getEffectiveMaxUsers(Optional.of(subscription))).thenReturn(3);
+
+        UsageSummaryResponse usage = companyService.getUsageSummary(1L);
+
+        assertThat(usage.jobsWarningThresholdReached()).isTrue();
+    }
+
+    @Test
+    void getUsageSummary_SeatsAtLimit_SeatsWarningThresholdReached() {
+        when(companyRepository.findByUserIdAndNotArchived(1L)).thenReturn(Optional.of(company));
+        when(companyRepository.countActiveWorkers(1L)).thenReturn(3L);
+
+        CompanySubscription subscription = starterSubscription();
+        when(subscriptionRepository.findByCompanyId(1L)).thenReturn(Optional.of(subscription));
+        when(jobRepository.countByCompanyIdAndCreatedAtBetween(eq(1L), any(), any())).thenReturn(0L);
+        when(planLimitsService.getEffectiveJobsPerMonth(Optional.of(subscription))).thenReturn(150);
+        when(planLimitsService.getEffectiveStorageLimitBytes(Optional.of(subscription))).thenReturn(10_000_000_000L);
+        when(planLimitsService.getEffectiveMaxUsers(Optional.of(subscription))).thenReturn(3);
+
+        UsageSummaryResponse usage = companyService.getUsageSummary(1L);
+
+        assertThat(usage.seatsWarningThresholdReached()).isTrue();
+    }
+
+    @Test
+    void getUsageSummary_NoSubscriptionFound_UsesFreeTierDefaultsInsteadOfThrowing() {
+        when(companyRepository.findByUserIdAndNotArchived(1L)).thenReturn(Optional.of(company));
+        when(companyRepository.countActiveWorkers(1L)).thenReturn(0L);
+        when(subscriptionRepository.findByCompanyId(1L)).thenReturn(Optional.empty());
+        when(jobRepository.countByCompanyIdAndCreatedAtBetween(eq(1L), any(), any())).thenReturn(0L);
+        when(planLimitsService.getEffectiveJobsPerMonth(Optional.<CompanySubscription>empty())).thenReturn(10);
+        when(planLimitsService.getEffectiveStorageLimitBytes(Optional.<CompanySubscription>empty())).thenReturn(250_000_000L);
+        when(planLimitsService.getEffectiveMaxUsers(Optional.<CompanySubscription>empty())).thenReturn(1);
+
+        UsageSummaryResponse usage = companyService.getUsageSummary(1L);
+
+        assertThat(usage).isNotNull();
+        assertThat(usage.jobsLimit()).isEqualTo(10);
+        assertThat(usage.seatsLimit()).isEqualTo(1);
     }
 
     // ============= findCompanyByUserId Tests =============

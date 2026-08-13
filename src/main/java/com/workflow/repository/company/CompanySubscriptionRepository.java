@@ -1,8 +1,11 @@
 package com.workflow.repository.company;
 
+import com.workflow.common.constant.PlanType;
 import com.workflow.common.constant.SubscriptionStatus;
 import com.workflow.entity.company.CompanySubscription;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -14,6 +17,19 @@ import java.util.Optional;
 public interface CompanySubscriptionRepository extends JpaRepository<CompanySubscription, Long> {
 
     Optional<CompanySubscription> findByCompanyId(Long companyId);
+
+    /**
+     * Locks the subscription row for the duration of the caller's transaction, serializing
+     * concurrent count-check-insert sequences (job cap, seat cap) for the same company so two
+     * requests can't both pass the check at count=limit-1 and both insert. Callers must already
+     * be inside a write (non-readOnly) transaction — locking a row within a read-only transaction
+     * is rejected by some JDBC configurations. No row to lock (and thus no serialization) if the
+     * company has no CompanySubscription at all — an edge case the FREE-tier-default fallback
+     * treats as "should never legitimately happen" anyway.
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT s FROM CompanySubscription s WHERE s.company.id = :companyId")
+    Optional<CompanySubscription> findByCompanyIdForUpdate(@Param("companyId") Long companyId);
 
     Optional<CompanySubscription> findByPaddleSubscriptionId(String paddleSubscriptionId);
 
@@ -27,7 +43,12 @@ public interface CompanySubscriptionRepository extends JpaRepository<CompanySubs
     void updatePaddleIds(@Param("id") Long id, @Param("subId") String subId, @Param("custId") String custId);
 
     /**
-     * Used by subscription.activated: atomically sets status, currentPeriodEnd, and lastEventOccurredAt.
+     * Used by subscription.activated: atomically sets status, currentPeriodEnd, and lastEventOccurredAt,
+     * plus the plan/seat/storage snapshot parsed from the event's items[] (planType/extraSeats/extraStorageBlocks
+     * are null when no resolvable BASE_PLAN item was found — the CASE WHEN guards leave those columns
+     * untouched in that case rather than writing null/garbage). Everything lands in one atomic UPDATE so a
+     * second, separately-gated statement can't get blocked by this one having already advanced
+     * lastEventOccurredAt to the same value.
      * The WHERE clause on lastEventOccurredAt prevents out-of-order events from rolling back state.
      * Returns the number of rows updated (0 = stale event, no-op).
      */
@@ -35,6 +56,9 @@ public interface CompanySubscriptionRepository extends JpaRepository<CompanySubs
     @Query("UPDATE CompanySubscription s SET " +
            "s.status = :status, " +
            "s.currentPeriodEnd = :periodEnd, " +
+           "s.planType = CASE WHEN :planType IS NOT NULL THEN :planType ELSE s.planType END, " +
+           "s.extraUserSeats = CASE WHEN :extraSeats IS NOT NULL THEN :extraSeats ELSE s.extraUserSeats END, " +
+           "s.extraStorageBlocks = CASE WHEN :extraStorageBlocks IS NOT NULL THEN :extraStorageBlocks ELSE s.extraStorageBlocks END, " +
            "s.lastEventOccurredAt = :occurredAt " +
            "WHERE s.id = :id " +
            "AND (s.lastEventOccurredAt IS NULL OR s.lastEventOccurredAt < :occurredAt)")
@@ -42,6 +66,9 @@ public interface CompanySubscriptionRepository extends JpaRepository<CompanySubs
             @Param("id") Long id,
             @Param("status") SubscriptionStatus status,
             @Param("periodEnd") LocalDateTime periodEnd,
+            @Param("planType") PlanType planType,
+            @Param("extraSeats") Integer extraSeats,
+            @Param("extraStorageBlocks") Integer extraStorageBlocks,
             @Param("occurredAt") LocalDateTime occurredAt);
 
     /**
@@ -62,12 +89,18 @@ public interface CompanySubscriptionRepository extends JpaRepository<CompanySubs
 
     /**
      * Used by subscription.updated when both a mapped status and a periodEnd are present.
+     * Also carries the plan/seat/storage snapshot parsed from items[] (see {@link #updateActivated} for
+     * why planType/extraSeats/extraStorageBlocks are nullable CASE-WHEN guarded and why this must stay
+     * a single atomic UPDATE rather than a second statement gated on the same lastEventOccurredAt).
      * Returns the number of rows updated (0 = stale event, no-op).
      */
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("UPDATE CompanySubscription s SET " +
            "s.status = :status, " +
            "s.currentPeriodEnd = :periodEnd, " +
+           "s.planType = CASE WHEN :planType IS NOT NULL THEN :planType ELSE s.planType END, " +
+           "s.extraUserSeats = CASE WHEN :extraSeats IS NOT NULL THEN :extraSeats ELSE s.extraUserSeats END, " +
+           "s.extraStorageBlocks = CASE WHEN :extraStorageBlocks IS NOT NULL THEN :extraStorageBlocks ELSE s.extraStorageBlocks END, " +
            "s.lastEventOccurredAt = :occurredAt " +
            "WHERE s.id = :id " +
            "AND (s.lastEventOccurredAt IS NULL OR s.lastEventOccurredAt < :occurredAt)")
@@ -75,50 +108,74 @@ public interface CompanySubscriptionRepository extends JpaRepository<CompanySubs
             @Param("id") Long id,
             @Param("status") SubscriptionStatus status,
             @Param("periodEnd") LocalDateTime periodEnd,
+            @Param("planType") PlanType planType,
+            @Param("extraSeats") Integer extraSeats,
+            @Param("extraStorageBlocks") Integer extraStorageBlocks,
             @Param("occurredAt") LocalDateTime occurredAt);
 
     /**
      * Used by subscription.updated when only a mapped status is present (no periodEnd).
+     * Also carries the plan/seat/storage snapshot — see {@link #updateActivated}.
      * Returns the number of rows updated (0 = stale event, no-op).
      */
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("UPDATE CompanySubscription s SET " +
            "s.status = :status, " +
+           "s.planType = CASE WHEN :planType IS NOT NULL THEN :planType ELSE s.planType END, " +
+           "s.extraUserSeats = CASE WHEN :extraSeats IS NOT NULL THEN :extraSeats ELSE s.extraUserSeats END, " +
+           "s.extraStorageBlocks = CASE WHEN :extraStorageBlocks IS NOT NULL THEN :extraStorageBlocks ELSE s.extraStorageBlocks END, " +
            "s.lastEventOccurredAt = :occurredAt " +
            "WHERE s.id = :id " +
            "AND (s.lastEventOccurredAt IS NULL OR s.lastEventOccurredAt < :occurredAt)")
     int updateStatusOnly(
             @Param("id") Long id,
             @Param("status") SubscriptionStatus status,
+            @Param("planType") PlanType planType,
+            @Param("extraSeats") Integer extraSeats,
+            @Param("extraStorageBlocks") Integer extraStorageBlocks,
             @Param("occurredAt") LocalDateTime occurredAt);
 
     /**
      * Used by subscription.updated when only a periodEnd is present (unknown/unmapped Paddle status).
+     * Also carries the plan/seat/storage snapshot — see {@link #updateActivated}.
      * Returns the number of rows updated (0 = stale event, no-op).
      */
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("UPDATE CompanySubscription s SET " +
            "s.currentPeriodEnd = :periodEnd, " +
+           "s.planType = CASE WHEN :planType IS NOT NULL THEN :planType ELSE s.planType END, " +
+           "s.extraUserSeats = CASE WHEN :extraSeats IS NOT NULL THEN :extraSeats ELSE s.extraUserSeats END, " +
+           "s.extraStorageBlocks = CASE WHEN :extraStorageBlocks IS NOT NULL THEN :extraStorageBlocks ELSE s.extraStorageBlocks END, " +
            "s.lastEventOccurredAt = :occurredAt " +
            "WHERE s.id = :id " +
            "AND (s.lastEventOccurredAt IS NULL OR s.lastEventOccurredAt < :occurredAt)")
     int updatePeriodOnly(
             @Param("id") Long id,
             @Param("periodEnd") LocalDateTime periodEnd,
+            @Param("planType") PlanType planType,
+            @Param("extraSeats") Integer extraSeats,
+            @Param("extraStorageBlocks") Integer extraStorageBlocks,
             @Param("occurredAt") LocalDateTime occurredAt);
 
     /**
      * Used by subscription.updated when neither status nor periodEnd are actionable.
-     * Still advances lastEventOccurredAt to mark this event as processed.
+     * Still advances lastEventOccurredAt to mark this event as processed, and still applies the
+     * plan/seat/storage snapshot if items[] resolved one — see {@link #updateActivated}.
      * Returns the number of rows updated (0 = stale event, no-op).
      */
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("UPDATE CompanySubscription s SET " +
+           "s.planType = CASE WHEN :planType IS NOT NULL THEN :planType ELSE s.planType END, " +
+           "s.extraUserSeats = CASE WHEN :extraSeats IS NOT NULL THEN :extraSeats ELSE s.extraUserSeats END, " +
+           "s.extraStorageBlocks = CASE WHEN :extraStorageBlocks IS NOT NULL THEN :extraStorageBlocks ELSE s.extraStorageBlocks END, " +
            "s.lastEventOccurredAt = :occurredAt " +
            "WHERE s.id = :id " +
            "AND (s.lastEventOccurredAt IS NULL OR s.lastEventOccurredAt < :occurredAt)")
     int updateTimestampOnly(
             @Param("id") Long id,
+            @Param("planType") PlanType planType,
+            @Param("extraSeats") Integer extraSeats,
+            @Param("extraStorageBlocks") Integer extraStorageBlocks,
             @Param("occurredAt") LocalDateTime occurredAt);
 
     @Query("SELECT s FROM CompanySubscription s WHERE s.status = :status AND s.trialEndsAt < :now")

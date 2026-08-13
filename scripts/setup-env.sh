@@ -29,7 +29,12 @@ MAIL_FROM_NAME=$(echo "$MAIL_SECRET" | jq -r '.fromName')
 PADDLE_SECRET=$(aws secretsmanager get-secret-value --region "$REGION" --secret-id "/workflow/$ENV_NAME/paddle" --query SecretString --output text)
 PADDLE_API_KEY=$(echo "$PADDLE_SECRET"        | jq -r '.apiKey')
 PADDLE_WEBHOOK_SECRET=$(echo "$PADDLE_SECRET" | jq -r '.webhookSecret')
-PADDLE_PRICE_ID=$(echo "$PADDLE_SECRET"       | jq -r '.priceId')
+PADDLE_STARTER_PRICE_ID=$(echo "$PADDLE_SECRET"                     | jq -r '.starterPriceId')
+PADDLE_PROFESSIONAL_PRICE_ID=$(echo "$PADDLE_SECRET"                | jq -r '.professionalPriceId')
+PADDLE_STARTER_EXTRA_SEAT_PRICE_ID=$(echo "$PADDLE_SECRET"          | jq -r '.starterExtraSeatPriceId')
+PADDLE_PROFESSIONAL_EXTRA_SEAT_PRICE_ID=$(echo "$PADDLE_SECRET"     | jq -r '.professionalExtraSeatPriceId')
+PADDLE_STARTER_STORAGE_BLOCK_PRICE_ID=$(echo "$PADDLE_SECRET"       | jq -r '.starterStorageBlockPriceId')
+PADDLE_PROFESSIONAL_STORAGE_BLOCK_PRICE_ID=$(echo "$PADDLE_SECRET"  | jq -r '.professionalStorageBlockPriceId')
 
 AFFILIATE_SECRET=$(aws secretsmanager get-secret-value --region "$REGION" --secret-id "/workflow/$ENV_NAME/affiliate-tracking" --query SecretString --output text)
 AFFILIATE_API_KEY=$(echo "$AFFILIATE_SECRET"    | jq -r '.apiKey')
@@ -93,7 +98,12 @@ GOOGLE_CLIENT_ID=$(get_param "/workflow/$ENV_NAME/google-client-id")
   echo "# Paddle"
   echo "PADDLE_API_KEY=$PADDLE_API_KEY"
   echo "PADDLE_WEBHOOK_SECRET=$PADDLE_WEBHOOK_SECRET"
-  echo "PADDLE_PRICE_ID=$PADDLE_PRICE_ID"
+  echo "PADDLE_STARTER_PRICE_ID=$PADDLE_STARTER_PRICE_ID"
+  echo "PADDLE_PROFESSIONAL_PRICE_ID=$PADDLE_PROFESSIONAL_PRICE_ID"
+  echo "PADDLE_STARTER_EXTRA_SEAT_PRICE_ID=$PADDLE_STARTER_EXTRA_SEAT_PRICE_ID"
+  echo "PADDLE_PROFESSIONAL_EXTRA_SEAT_PRICE_ID=$PADDLE_PROFESSIONAL_EXTRA_SEAT_PRICE_ID"
+  echo "PADDLE_STARTER_STORAGE_BLOCK_PRICE_ID=$PADDLE_STARTER_STORAGE_BLOCK_PRICE_ID"
+  echo "PADDLE_PROFESSIONAL_STORAGE_BLOCK_PRICE_ID=$PADDLE_PROFESSIONAL_STORAGE_BLOCK_PRICE_ID"
   echo "PADDLE_API_BASE_URL=$([ "$ENV_NAME" = "prod" ] && echo "https://api.paddle.com" || echo "https://sandbox-api.paddle.com")"
   echo ""
   echo "# Spring"

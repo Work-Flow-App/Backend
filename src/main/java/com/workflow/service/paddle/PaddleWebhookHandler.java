@@ -1,7 +1,9 @@
 package com.workflow.service.paddle;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.workflow.common.constant.PlanType;
 import com.workflow.common.constant.SubscriptionStatus;
+import com.workflow.config.properties.PaddleConfigProperties;
 import com.workflow.dto.paddle.PaddleWebhookPayload;
 import com.workflow.entity.company.CompanySubscription;
 import com.workflow.entity.company.PaddleWebhookEvent;
@@ -25,6 +27,13 @@ public class PaddleWebhookHandler {
 
     private final CompanySubscriptionRepository subscriptionRepository;
     private final PaddleWebhookEventRepository webhookEventRepository;
+    private final PaddleConfigProperties paddleProps;
+
+    /**
+     * Plan/add-on snapshot parsed from a webhook payload's data.items[]. Only built when at least one
+     * item resolves to a BASE_PLAN price — see {@link #parsePlanSnapshot(JsonNode)}.
+     */
+    private record PlanSnapshot(PlanType planType, int extraSeats, int extraStorageBlocks) {}
 
     @Transactional
     public void handle(PaddleWebhookPayload payload) {
@@ -87,12 +96,17 @@ public class PaddleWebhookHandler {
 
     private void handleSubscriptionActivated(JsonNode data, LocalDateTime occurredAt) {
         resolveSubscription(data).ifPresentOrElse(sub -> {
+            PlanSnapshot snapshot = parsePlanSnapshot(data).orElse(null);
             int rows = subscriptionRepository.updateActivated(
-                    sub.getId(), SubscriptionStatus.ACTIVE, extractPeriodEnd(data), occurredAt);
+                    sub.getId(), SubscriptionStatus.ACTIVE, extractPeriodEnd(data),
+                    snapshot != null ? snapshot.planType() : null,
+                    snapshot != null ? snapshot.extraSeats() : null,
+                    snapshot != null ? snapshot.extraStorageBlocks() : null,
+                    occurredAt);
             if (rows == 0) {
                 log.debug("Skipping stale subscription.activated event for sub={}", sub.getPaddleSubscriptionId());
             } else {
-                log.info("subscription.activated: companyId={}", sub.getCompany().getId());
+                log.info("subscription.activated: companyId={}, planSnapshot={}", sub.getCompany().getId(), snapshot);
             }
         }, () -> log.warn("Could not resolve subscription for subscription.activated"));
     }
@@ -102,27 +116,36 @@ public class PaddleWebhookHandler {
             String paddleStatus = data.path("status").asText(null);
             SubscriptionStatus mapped = (paddleStatus != null) ? mapPaddleStatus(paddleStatus) : null;
             LocalDateTime periodEnd = extractPeriodEnd(data);
+            PlanSnapshot snapshot = parsePlanSnapshot(data).orElse(null);
+            PlanType planType = snapshot != null ? snapshot.planType() : null;
+            Integer extraSeats = snapshot != null ? snapshot.extraSeats() : null;
+            Integer extraStorageBlocks = snapshot != null ? snapshot.extraStorageBlocks() : null;
 
             int rows;
             if (mapped != null && periodEnd != null) {
-                rows = subscriptionRepository.updateStatusAndPeriod(sub.getId(), mapped, periodEnd, occurredAt);
+                rows = subscriptionRepository.updateStatusAndPeriod(
+                        sub.getId(), mapped, periodEnd, planType, extraSeats, extraStorageBlocks, occurredAt);
             } else if (mapped != null) {
-                rows = subscriptionRepository.updateStatusOnly(sub.getId(), mapped, occurredAt);
+                rows = subscriptionRepository.updateStatusOnly(
+                        sub.getId(), mapped, planType, extraSeats, extraStorageBlocks, occurredAt);
             } else if (periodEnd != null) {
-                rows = subscriptionRepository.updatePeriodOnly(sub.getId(), periodEnd, occurredAt);
+                rows = subscriptionRepository.updatePeriodOnly(
+                        sub.getId(), periodEnd, planType, extraSeats, extraStorageBlocks, occurredAt);
             } else {
-                // Neither status nor periodEnd is actionable — advance the watermark only.
+                // Neither status nor periodEnd is actionable — advance the watermark only (still applying
+                // the plan/seat/storage snapshot if items[] resolved one).
                 // Happens when Paddle sends an update with an unmapped status and no billing period.
-                log.warn("subscription.updated: no actionable fields — advancing timestamp only for sub={}",
+                log.warn("subscription.updated: no actionable status/period fields — advancing timestamp only for sub={}",
                         sub.getPaddleSubscriptionId());
-                rows = subscriptionRepository.updateTimestampOnly(sub.getId(), occurredAt);
+                rows = subscriptionRepository.updateTimestampOnly(
+                        sub.getId(), planType, extraSeats, extraStorageBlocks, occurredAt);
             }
 
             if (rows == 0) {
                 log.debug("Skipping stale subscription.updated event for sub={}", sub.getPaddleSubscriptionId());
             } else {
-                log.info("subscription.updated: companyId={}, mappedStatus={}, periodEnd={}",
-                        sub.getCompany().getId(), mapped, periodEnd);
+                log.info("subscription.updated: companyId={}, mappedStatus={}, periodEnd={}, planSnapshot={}",
+                        sub.getCompany().getId(), mapped, periodEnd, snapshot);
             }
         }, () -> log.warn("Could not resolve subscription for subscription.updated"));
     }
@@ -175,7 +198,9 @@ public class PaddleWebhookHandler {
             }
             LocalDateTime periodEnd = extractPeriodEnd(data);
             if (periodEnd != null) {
-                subscriptionRepository.updatePeriodOnly(sub.getId(), periodEnd, occurredAt);
+                // subscription.resumed does not carry a full items[] snapshot, so plan/seat/storage
+                // are left untouched here (null args -> CASE WHEN guards no-op on those columns).
+                subscriptionRepository.updatePeriodOnly(sub.getId(), periodEnd, null, null, null, occurredAt);
             }
             log.info("subscription.resumed: companyId={}", sub.getCompany().getId());
         }, () -> log.warn("Could not resolve subscription for subscription.resumed"));
@@ -227,6 +252,47 @@ public class PaddleWebhookHandler {
                 yield null;
             }
         };
+    }
+
+    /**
+     * Parses the webhook payload's data.items[] into a plan/add-on snapshot. Each item is roughly
+     * {"price": {"id": "..."}, "quantity": N}; each price ID is reverse-resolved via
+     * {@link PaddleConfigProperties#resolvePriceId(String)} into a (PlanType, LineItemType) pair.
+     * Unresolvable price IDs (stale/removed Paddle prices) are skipped with a warning, not thrown.
+     * Returns empty if no item resolves to a BASE_PLAN — callers must not write a null/garbage PlanType
+     * in that case, and should leave the plan/seat/storage columns untouched for this event.
+     */
+    private Optional<PlanSnapshot> parsePlanSnapshot(JsonNode data) {
+        JsonNode items = data.path("items");
+        if (!items.isArray() || items.isEmpty()) {
+            return Optional.empty();
+        }
+
+        PlanType planType = null;
+        int extraSeats = 0;
+        int extraStorageBlocks = 0;
+
+        for (JsonNode item : items) {
+            String priceId = item.path("price").path("id").asText(null);
+            int quantity = item.path("quantity").asInt(0);
+            Optional<PaddleConfigProperties.PriceResolution> resolution = paddleProps.resolvePriceId(priceId);
+            if (resolution.isEmpty()) {
+                log.warn("Unresolvable Paddle price ID in webhook items[]: priceId={}", priceId);
+                continue;
+            }
+            PaddleConfigProperties.PriceResolution r = resolution.get();
+            switch (r.lineItemType()) {
+                case BASE_PLAN -> planType = r.planType();
+                case EXTRA_SEAT -> extraSeats = quantity;
+                case EXTRA_STORAGE_BLOCK -> extraStorageBlocks = quantity;
+            }
+        }
+
+        if (planType == null) {
+            log.warn("No resolvable BASE_PLAN item found in webhook items[] — skipping plan/seat/storage update");
+            return Optional.empty();
+        }
+        return Optional.of(new PlanSnapshot(planType, extraSeats, extraStorageBlocks));
     }
 
     private LocalDateTime extractPeriodEnd(JsonNode data) {

@@ -1,8 +1,11 @@
 package com.workflow.service.paddle;
 
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.workflow.common.constant.PlanType;
 import com.workflow.common.constant.SubscriptionStatus;
+import com.workflow.config.properties.PaddleConfigProperties;
 import com.workflow.dto.paddle.PaddleWebhookPayload;
 import com.workflow.entity.company.Company;
 import com.workflow.entity.company.CompanySubscription;
@@ -22,8 +25,10 @@ import java.time.ZoneOffset;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -34,6 +39,9 @@ class PaddleWebhookHandlerTest {
 
     @Mock
     private PaddleWebhookEventRepository webhookEventRepository;
+
+    @Mock
+    private PaddleConfigProperties paddleProps;
 
     @InjectMocks
     private PaddleWebhookHandler handler;
@@ -80,6 +88,23 @@ class PaddleWebhookHandlerTest {
         data.set("current_billing_period", period);
     }
 
+    private ObjectNode item(String priceId, int quantity) {
+        ObjectNode item = om.createObjectNode();
+        ObjectNode price = om.createObjectNode();
+        price.put("id", priceId);
+        item.set("price", price);
+        item.put("quantity", quantity);
+        return item;
+    }
+
+    private void addItems(ObjectNode data, ObjectNode... items) {
+        ArrayNode arr = om.createArrayNode();
+        for (ObjectNode i : items) {
+            arr.add(i);
+        }
+        data.set("items", arr);
+    }
+
     private PaddleWebhookPayload payload(String eventId, String eventType, String occurredAt, ObjectNode data) {
         return new PaddleWebhookPayload(null, eventId, eventType, occurredAt, data);
     }
@@ -111,7 +136,8 @@ class PaddleWebhookHandlerTest {
     void activated_freshEvent_callsUpdateActivatedWithCorrectArgs() {
         givenEventIsNew();
         givenSubscriptionFound();
-        when(subscriptionRepository.updateActivated(eq(42L), eq(SubscriptionStatus.ACTIVE), any(), any()))
+        when(subscriptionRepository.updateActivated(
+                eq(42L), eq(SubscriptionStatus.ACTIVE), any(), any(), any(), any(), any()))
                 .thenReturn(1);
 
         ObjectNode data = baseData("sub_123");
@@ -122,7 +148,8 @@ class PaddleWebhookHandlerTest {
         ArgumentCaptor<LocalDateTime> periodCaptor  = ArgumentCaptor.forClass(LocalDateTime.class);
         ArgumentCaptor<LocalDateTime> occurredCaptor = ArgumentCaptor.forClass(LocalDateTime.class);
         verify(subscriptionRepository).updateActivated(
-                eq(42L), eq(SubscriptionStatus.ACTIVE), periodCaptor.capture(), occurredCaptor.capture());
+                eq(42L), eq(SubscriptionStatus.ACTIVE), periodCaptor.capture(),
+                isNull(), isNull(), isNull(), occurredCaptor.capture());
 
         // 10:00 UTC → LocalDateTime
         assertThat(occurredCaptor.getValue()).isEqualTo(LocalDateTime.of(2024, 1, 1, 10, 0, 0));
@@ -137,7 +164,7 @@ class PaddleWebhookHandlerTest {
     void activated_staleEvent_noException_updateActivatedCalledOnce() {
         givenEventIsNew();
         givenSubscriptionFound();
-        when(subscriptionRepository.updateActivated(any(), any(), any(), any())).thenReturn(0);
+        when(subscriptionRepository.updateActivated(any(), any(), any(), any(), any(), any(), any())).thenReturn(0);
 
         ObjectNode data = baseData("sub_123");
         addBillingPeriod(data, PERIOD_END_ISO);
@@ -145,7 +172,7 @@ class PaddleWebhookHandlerTest {
         handler.handle(payload("evt_2", "subscription.activated", OCCURRED_AT_T5, data));
 
         // Should call updateActivated exactly once, no exception thrown, no additional writes
-        verify(subscriptionRepository, times(1)).updateActivated(any(), any(), any(), any());
+        verify(subscriptionRepository, times(1)).updateActivated(any(), any(), any(), any(), any(), any(), any());
         verify(subscriptionRepository, never()).save(any(CompanySubscription.class));
     }
 
@@ -161,7 +188,69 @@ class PaddleWebhookHandlerTest {
         ObjectNode data = baseData("sub_123");
         handler.handle(payload("evt_3", "subscription.activated", OCCURRED_AT_T10, data));
 
-        verify(subscriptionRepository, never()).updateActivated(any(), any(), any(), any());
+        verify(subscriptionRepository, never()).updateActivated(any(), any(), any(), any(), any(), any(), any());
+    }
+
+    // -------------------------------------------------------------------------
+    // subscription.activated — items[] resolve a full multi-tier plan snapshot
+    // -------------------------------------------------------------------------
+
+    @Test
+    void activated_withItemsSnapshot_resolvesPlanSeatsAndStorage() {
+        givenEventIsNew();
+        givenSubscriptionFound();
+        when(paddleProps.resolvePriceId("price_pro_base")).thenReturn(Optional.of(
+                new PaddleConfigProperties.PriceResolution(PlanType.PROFESSIONAL,
+                        PaddleConfigProperties.LineItemType.BASE_PLAN)));
+        when(paddleProps.resolvePriceId("price_pro_seat")).thenReturn(Optional.of(
+                new PaddleConfigProperties.PriceResolution(PlanType.PROFESSIONAL,
+                        PaddleConfigProperties.LineItemType.EXTRA_SEAT)));
+        when(paddleProps.resolvePriceId("price_pro_storage")).thenReturn(Optional.of(
+                new PaddleConfigProperties.PriceResolution(PlanType.PROFESSIONAL,
+                        PaddleConfigProperties.LineItemType.EXTRA_STORAGE_BLOCK)));
+        when(subscriptionRepository.updateActivated(
+                eq(42L), eq(SubscriptionStatus.ACTIVE), any(), any(), any(), any(), any()))
+                .thenReturn(1);
+
+        ObjectNode data = baseData("sub_123");
+        addBillingPeriod(data, PERIOD_END_ISO);
+        addItems(data,
+                item("price_pro_base", 1),
+                item("price_pro_seat", 2),
+                item("price_pro_storage", 1));
+
+        handler.handle(payload("evt_items_1", "subscription.activated", OCCURRED_AT_T10, data));
+
+        verify(subscriptionRepository).updateActivated(
+                eq(42L), eq(SubscriptionStatus.ACTIVE), any(),
+                eq(PlanType.PROFESSIONAL), eq(2), eq(1), any());
+    }
+
+    // -------------------------------------------------------------------------
+    // subscription.activated — unresolvable price ID is skipped, not thrown
+    // -------------------------------------------------------------------------
+
+    @Test
+    void activated_withUnresolvablePriceId_skipsPlanUpdateWithoutThrowing() {
+        givenEventIsNew();
+        givenSubscriptionFound();
+        when(paddleProps.resolvePriceId("price_unknown")).thenReturn(Optional.empty());
+        when(subscriptionRepository.updateActivated(
+                eq(42L), eq(SubscriptionStatus.ACTIVE), any(), any(), any(), any(), any()))
+                .thenReturn(1);
+
+        ObjectNode data = baseData("sub_123");
+        addBillingPeriod(data, PERIOD_END_ISO);
+        addItems(data, item("price_unknown", 1));
+
+        assertThatCode(() ->
+                handler.handle(payload("evt_items_2", "subscription.activated", OCCURRED_AT_T10, data)))
+                .doesNotThrowAnyException();
+
+        // No resolvable BASE_PLAN item -> plan/seat/storage params must be null (untouched), not garbage
+        verify(subscriptionRepository).updateActivated(
+                eq(42L), eq(SubscriptionStatus.ACTIVE), any(),
+                isNull(), isNull(), isNull(), any());
     }
 
     // -------------------------------------------------------------------------
@@ -172,7 +261,8 @@ class PaddleWebhookHandlerTest {
     void updated_statusAndPeriodPresent_callsUpdateStatusAndPeriod() {
         givenEventIsNew();
         givenSubscriptionFound();
-        when(subscriptionRepository.updateStatusAndPeriod(any(), any(), any(), any())).thenReturn(1);
+        when(subscriptionRepository.updateStatusAndPeriod(any(), any(), any(), any(), any(), any(), any()))
+                .thenReturn(1);
 
         ObjectNode data = baseData("sub_123");
         data.put("status", "active");
@@ -181,10 +271,11 @@ class PaddleWebhookHandlerTest {
         handler.handle(payload("evt_4", "subscription.updated", OCCURRED_AT_T10, data));
 
         verify(subscriptionRepository).updateStatusAndPeriod(
-                eq(42L), eq(SubscriptionStatus.ACTIVE), any(LocalDateTime.class), any(LocalDateTime.class));
-        verify(subscriptionRepository, never()).updateStatusOnly(any(), any(), any());
-        verify(subscriptionRepository, never()).updatePeriodOnly(any(), any(), any());
-        verify(subscriptionRepository, never()).updateTimestampOnly(any(), any());
+                eq(42L), eq(SubscriptionStatus.ACTIVE), any(LocalDateTime.class),
+                isNull(), isNull(), isNull(), any(LocalDateTime.class));
+        verify(subscriptionRepository, never()).updateStatusOnly(any(), any(), any(), any(), any(), any());
+        verify(subscriptionRepository, never()).updatePeriodOnly(any(), any(), any(), any(), any(), any());
+        verify(subscriptionRepository, never()).updateTimestampOnly(any(), any(), any(), any(), any());
     }
 
     // -------------------------------------------------------------------------
@@ -195,7 +286,7 @@ class PaddleWebhookHandlerTest {
     void updated_statusOnlyPresent_callsUpdateStatusOnly() {
         givenEventIsNew();
         givenSubscriptionFound();
-        when(subscriptionRepository.updateStatusOnly(any(), any(), any())).thenReturn(1);
+        when(subscriptionRepository.updateStatusOnly(any(), any(), any(), any(), any(), any())).thenReturn(1);
 
         ObjectNode data = baseData("sub_123");
         data.put("status", "past_due");
@@ -204,10 +295,10 @@ class PaddleWebhookHandlerTest {
         handler.handle(payload("evt_5", "subscription.updated", OCCURRED_AT_T10, data));
 
         verify(subscriptionRepository).updateStatusOnly(
-                eq(42L), eq(SubscriptionStatus.PAST_DUE), any(LocalDateTime.class));
-        verify(subscriptionRepository, never()).updateStatusAndPeriod(any(), any(), any(), any());
-        verify(subscriptionRepository, never()).updatePeriodOnly(any(), any(), any());
-        verify(subscriptionRepository, never()).updateTimestampOnly(any(), any());
+                eq(42L), eq(SubscriptionStatus.PAST_DUE), isNull(), isNull(), isNull(), any(LocalDateTime.class));
+        verify(subscriptionRepository, never()).updateStatusAndPeriod(any(), any(), any(), any(), any(), any(), any());
+        verify(subscriptionRepository, never()).updatePeriodOnly(any(), any(), any(), any(), any(), any());
+        verify(subscriptionRepository, never()).updateTimestampOnly(any(), any(), any(), any(), any());
     }
 
     // -------------------------------------------------------------------------
@@ -218,7 +309,7 @@ class PaddleWebhookHandlerTest {
     void updated_periodOnlyPresent_unknownStatus_callsUpdatePeriodOnly() {
         givenEventIsNew();
         givenSubscriptionFound();
-        when(subscriptionRepository.updatePeriodOnly(any(), any(), any())).thenReturn(1);
+        when(subscriptionRepository.updatePeriodOnly(any(), any(), any(), any(), any(), any())).thenReturn(1);
 
         ObjectNode data = baseData("sub_123");
         data.put("status", "trialing"); // not in our mapPaddleStatus switch
@@ -227,10 +318,10 @@ class PaddleWebhookHandlerTest {
         handler.handle(payload("evt_6", "subscription.updated", OCCURRED_AT_T10, data));
 
         verify(subscriptionRepository).updatePeriodOnly(
-                eq(42L), any(LocalDateTime.class), any(LocalDateTime.class));
-        verify(subscriptionRepository, never()).updateStatusAndPeriod(any(), any(), any(), any());
-        verify(subscriptionRepository, never()).updateStatusOnly(any(), any(), any());
-        verify(subscriptionRepository, never()).updateTimestampOnly(any(), any());
+                eq(42L), any(LocalDateTime.class), isNull(), isNull(), isNull(), any(LocalDateTime.class));
+        verify(subscriptionRepository, never()).updateStatusAndPeriod(any(), any(), any(), any(), any(), any(), any());
+        verify(subscriptionRepository, never()).updateStatusOnly(any(), any(), any(), any(), any(), any());
+        verify(subscriptionRepository, never()).updateTimestampOnly(any(), any(), any(), any(), any());
     }
 
     // -------------------------------------------------------------------------
@@ -241,7 +332,7 @@ class PaddleWebhookHandlerTest {
     void updated_neitherStatusNorPeriod_callsUpdateTimestampOnly() {
         givenEventIsNew();
         givenSubscriptionFound();
-        when(subscriptionRepository.updateTimestampOnly(any(), any())).thenReturn(1);
+        when(subscriptionRepository.updateTimestampOnly(any(), any(), any(), any(), any())).thenReturn(1);
 
         ObjectNode data = baseData("sub_123");
         data.put("status", "trialing"); // unmapped
@@ -249,10 +340,11 @@ class PaddleWebhookHandlerTest {
 
         handler.handle(payload("evt_7", "subscription.updated", OCCURRED_AT_T10, data));
 
-        verify(subscriptionRepository).updateTimestampOnly(eq(42L), any(LocalDateTime.class));
-        verify(subscriptionRepository, never()).updateStatusAndPeriod(any(), any(), any(), any());
-        verify(subscriptionRepository, never()).updateStatusOnly(any(), any(), any());
-        verify(subscriptionRepository, never()).updatePeriodOnly(any(), any(), any());
+        verify(subscriptionRepository).updateTimestampOnly(
+                eq(42L), isNull(), isNull(), isNull(), any(LocalDateTime.class));
+        verify(subscriptionRepository, never()).updateStatusAndPeriod(any(), any(), any(), any(), any(), any(), any());
+        verify(subscriptionRepository, never()).updateStatusOnly(any(), any(), any(), any(), any(), any());
+        verify(subscriptionRepository, never()).updatePeriodOnly(any(), any(), any(), any(), any(), any());
     }
 
     // -------------------------------------------------------------------------
@@ -263,7 +355,8 @@ class PaddleWebhookHandlerTest {
     void updated_staleEvent_noException() {
         givenEventIsNew();
         givenSubscriptionFound();
-        when(subscriptionRepository.updateStatusAndPeriod(any(), any(), any(), any())).thenReturn(0);
+        when(subscriptionRepository.updateStatusAndPeriod(any(), any(), any(), any(), any(), any(), any()))
+                .thenReturn(0);
 
         ObjectNode data = baseData("sub_123");
         data.put("status", "active");
@@ -272,7 +365,7 @@ class PaddleWebhookHandlerTest {
         handler.handle(payload("evt_8", "subscription.updated", OCCURRED_AT_T5, data));
 
         // 0 rows — method was called, no exception
-        verify(subscriptionRepository).updateStatusAndPeriod(any(), any(), any(), any());
+        verify(subscriptionRepository).updateStatusAndPeriod(any(), any(), any(), any(), any(), any(), any());
     }
 
     // -------------------------------------------------------------------------
@@ -322,7 +415,7 @@ class PaddleWebhookHandlerTest {
         handler.handle(payload("evt_11", "subscription.resumed", OCCURRED_AT_T10, data));
 
         verify(subscriptionRepository).updateStatus(eq(42L), eq(SubscriptionStatus.ACTIVE), any(LocalDateTime.class));
-        verify(subscriptionRepository, never()).updatePeriodOnly(any(), any(), any());
+        verify(subscriptionRepository, never()).updatePeriodOnly(any(), any(), any(), any(), any(), any());
     }
 
     @Test
@@ -330,7 +423,7 @@ class PaddleWebhookHandlerTest {
         givenEventIsNew();
         givenSubscriptionFound();
         when(subscriptionRepository.updateStatus(eq(42L), eq(SubscriptionStatus.ACTIVE), any())).thenReturn(1);
-        when(subscriptionRepository.updatePeriodOnly(eq(42L), any(), any())).thenReturn(1);
+        when(subscriptionRepository.updatePeriodOnly(eq(42L), any(), any(), any(), any(), any())).thenReturn(1);
 
         ObjectNode data = baseData("sub_123");
         addBillingPeriod(data, PERIOD_END_ISO);
@@ -338,7 +431,8 @@ class PaddleWebhookHandlerTest {
         handler.handle(payload("evt_12", "subscription.resumed", OCCURRED_AT_T10, data));
 
         verify(subscriptionRepository).updateStatus(eq(42L), eq(SubscriptionStatus.ACTIVE), any(LocalDateTime.class));
-        verify(subscriptionRepository).updatePeriodOnly(eq(42L), any(LocalDateTime.class), any(LocalDateTime.class));
+        verify(subscriptionRepository).updatePeriodOnly(
+                eq(42L), any(LocalDateTime.class), isNull(), isNull(), isNull(), any(LocalDateTime.class));
     }
 
     @Test
@@ -354,7 +448,7 @@ class PaddleWebhookHandlerTest {
         handler.handle(payload("evt_13", "subscription.resumed", OCCURRED_AT_T5, data));
 
         verify(subscriptionRepository).updateStatus(any(), any(), any());
-        verify(subscriptionRepository, never()).updatePeriodOnly(any(), any(), any());
+        verify(subscriptionRepository, never()).updatePeriodOnly(any(), any(), any(), any(), any(), any());
     }
 
     // -------------------------------------------------------------------------
@@ -372,12 +466,12 @@ class PaddleWebhookHandlerTest {
         handler.handle(payload("evt_dup", "subscription.activated", OCCURRED_AT_T10, data));
 
         // Repository must not be touched at all for data mutations
-        verify(subscriptionRepository, never()).updateActivated(any(), any(), any(), any());
+        verify(subscriptionRepository, never()).updateActivated(any(), any(), any(), any(), any(), any(), any());
         verify(subscriptionRepository, never()).updateStatus(any(), any(), any());
-        verify(subscriptionRepository, never()).updateStatusAndPeriod(any(), any(), any(), any());
-        verify(subscriptionRepository, never()).updateStatusOnly(any(), any(), any());
-        verify(subscriptionRepository, never()).updatePeriodOnly(any(), any(), any());
-        verify(subscriptionRepository, never()).updateTimestampOnly(any(), any());
+        verify(subscriptionRepository, never()).updateStatusAndPeriod(any(), any(), any(), any(), any(), any(), any());
+        verify(subscriptionRepository, never()).updateStatusOnly(any(), any(), any(), any(), any(), any());
+        verify(subscriptionRepository, never()).updatePeriodOnly(any(), any(), any(), any(), any(), any());
+        verify(subscriptionRepository, never()).updateTimestampOnly(any(), any(), any(), any(), any());
         verify(subscriptionRepository, never()).save(any());
         // No idempotency record saved either
         verify(webhookEventRepository, never()).save(any());

@@ -45,6 +45,7 @@ import com.workflow.repository.worker.WorkerRepository;
 import com.workflow.service.company.ICompanyService;
 import com.workflow.service.sequence.CompanyCounterService;
 import com.workflow.service.storage.IStorageService;
+import com.workflow.service.subscription.ISeatLimitService;
 import com.workflow.service.subscription.IStorageQuotaService;
 
 import lombok.RequiredArgsConstructor;
@@ -66,6 +67,7 @@ public class WorkerService implements IWorkerService {
     private final Tika tika;
     private final IStorageService s3Service;
     private final IStorageQuotaService storageQuotaService;
+    private final ISeatLimitService seatLimitService;
 
     @Value("${workflow.security.file.blocked-types}")
     private List<String> blockedTypes;
@@ -74,6 +76,8 @@ public class WorkerService implements IWorkerService {
     @Transactional
     public WorkerResponse createWorker(WorkerCreateRequest request, Long companyUserId) {
         Company company = companyService.findCompanyByUserId(companyUserId);
+
+        seatLimitService.assertCapacity(company.getId());
 
         // Check if username already exists
         if (userRepository.findByUsername(request.username()).isPresent()) {

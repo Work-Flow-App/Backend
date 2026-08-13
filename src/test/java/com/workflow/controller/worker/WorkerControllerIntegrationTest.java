@@ -4,13 +4,16 @@ import com.workflow.AbstractControllerIntegrationTest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.workflow.common.constant.CompanyRole;
+import com.workflow.common.constant.PlanType;
 import com.workflow.common.constant.Role;
 import com.workflow.dto.worker.WorkerCreateRequest;
 import com.workflow.dto.worker.WorkerUpdateRequest;
 import com.workflow.entity.company.Company;
+import com.workflow.entity.company.CompanySubscription;
 import com.workflow.entity.auth.User;
 import com.workflow.entity.worker.Worker;
 import com.workflow.repository.company.CompanyRepository;
+import com.workflow.repository.company.CompanySubscriptionRepository;
 import com.workflow.repository.auth.UserRepository;
 import com.workflow.repository.worker.WorkerRepository;
 import com.workflow.service.auth.JwtService;
@@ -21,6 +24,8 @@ import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.UUID;
 
 import static org.hamcrest.Matchers.*;
@@ -42,6 +47,9 @@ class WorkerControllerIntegrationTest extends AbstractControllerIntegrationTest 
     private CompanyRepository companyRepository;
 
     @Autowired
+    private CompanySubscriptionRepository subscriptionRepository;
+
+    @Autowired
     private WorkerRepository workerRepository;
 
     @Autowired
@@ -60,6 +68,7 @@ class WorkerControllerIntegrationTest extends AbstractControllerIntegrationTest 
     void setUp() {
         // Clear database
         workerRepository.deleteAll();
+        subscriptionRepository.deleteAll();
         companyRepository.deleteAll();
         userRepository.deleteAll();
 
@@ -82,6 +91,15 @@ class WorkerControllerIntegrationTest extends AbstractControllerIntegrationTest 
                 .archived(false)
                 .build();
         company = companyRepository.save(company);
+
+        // PROFESSIONAL tier (8 seats) — without this, SeatLimitService now fails closed to the
+        // FREE tier's 1-seat default (see PlanLimitsService's Optional overloads), which the
+        // existingWorker seeded below would already exhaust.
+        subscriptionRepository.save(CompanySubscription.builder()
+                .company(company)
+                .trialEndsAt(LocalDateTime.now(ZoneOffset.UTC).plusDays(14))
+                .planType(PlanType.PROFESSIONAL)
+                .build());
 
         createCompanyMember(company, companyUser, CompanyRole.COMPANY_ADMIN);
 

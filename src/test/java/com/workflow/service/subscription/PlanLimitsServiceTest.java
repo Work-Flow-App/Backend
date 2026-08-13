@@ -8,6 +8,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -108,23 +109,49 @@ class PlanLimitsServiceTest {
                 .isEqualTo(expected);
     }
 
-    // ============= null subscription guard =============
+    // ============= null subscription guard (direct CompanySubscription overload) =============
+    // Cast disambiguates which overload is meant — a bare `null` is ambiguous now that an
+    // Optional<CompanySubscription>-accepting overload also exists (see below).
 
     @Test
     void getEffectiveMaxUsers_NullSubscription_ThrowsInvalidRequestException() {
-        assertThatThrownBy(() -> planLimitsService.getEffectiveMaxUsers(null))
+        assertThatThrownBy(() -> planLimitsService.getEffectiveMaxUsers((CompanySubscription) null))
                 .isInstanceOf(InvalidRequestException.class);
     }
 
     @Test
     void getEffectiveJobsPerMonth_NullSubscription_ThrowsInvalidRequestException() {
-        assertThatThrownBy(() -> planLimitsService.getEffectiveJobsPerMonth(null))
+        assertThatThrownBy(() -> planLimitsService.getEffectiveJobsPerMonth((CompanySubscription) null))
                 .isInstanceOf(InvalidRequestException.class);
     }
 
     @Test
     void getEffectiveStorageLimitBytes_NullSubscription_ThrowsInvalidRequestException() {
-        assertThatThrownBy(() -> planLimitsService.getEffectiveStorageLimitBytes(null))
+        assertThatThrownBy(() -> planLimitsService.getEffectiveStorageLimitBytes((CompanySubscription) null))
                 .isInstanceOf(InvalidRequestException.class);
+    }
+
+    // ============= Optional<CompanySubscription> overloads — fail-CLOSED to FREE tier =============
+
+    @Test
+    void getEffectiveMaxUsers_EmptyOptional_DefaultsToFreeTier() {
+        assertThat(planLimitsService.getEffectiveMaxUsers(Optional.<CompanySubscription>empty())).isEqualTo(1);
+    }
+
+    @Test
+    void getEffectiveJobsPerMonth_EmptyOptional_DefaultsToFreeTier() {
+        assertThat(planLimitsService.getEffectiveJobsPerMonth(Optional.<CompanySubscription>empty())).isEqualTo(10);
+    }
+
+    @Test
+    void getEffectiveStorageLimitBytes_EmptyOptional_DefaultsToFreeTier() {
+        assertThat(planLimitsService.getEffectiveStorageLimitBytes(Optional.<CompanySubscription>empty()))
+                .isEqualTo(250_000_000L);
+    }
+
+    @Test
+    void getEffectiveMaxUsers_PresentOptional_DelegatesToRealSubscription() {
+        CompanySubscription starter = subscription(PlanType.STARTER, 2, 0);
+        assertThat(planLimitsService.getEffectiveMaxUsers(Optional.of(starter))).isEqualTo(5); // 3 base + 2 extra
     }
 }

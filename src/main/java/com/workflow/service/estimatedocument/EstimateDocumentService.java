@@ -140,6 +140,11 @@ public class EstimateDocumentService implements IEstimateDocumentService {
         byte[] pdfBytes = generatePdf(docToSave, documentNumber, selectedItems, estimate);
         docToSave.setFileSizeBytes((long) pdfBytes.length);
 
+        // Capacity must be checked BEFORE the short transaction below commits — otherwise an
+        // over-quota company gets a 409/402 implying nothing happened, while the DB is left with
+        // an orphaned document row and line items already flipped to WAITING_APPROVAL.
+        storageQuotaService.assertCapacity(companyId, pdfBytes.length);
+
         // 3. SAVE TO DB AND UPDATE STATUS (Short Transaction)
         EstimateDocument savedDoc = transactionTemplate.execute(status -> {
             EstimateDocument doc = estimateDocumentRepository.save(docToSave);
@@ -151,7 +156,6 @@ public class EstimateDocumentService implements IEstimateDocumentService {
 
         // 4. UPLOAD TO S3 (Network call - outside DB transaction)
         log.info("[EstimateDoc] Uploading to S3...");
-        storageQuotaService.assertCapacity(companyId, pdfBytes.length);
         storageService.upload(s3Key, new ByteArrayInputStream(pdfBytes), pdfBytes.length, "application/pdf");
         storageQuotaService.recordUpload(companyId, pdfBytes.length);
 

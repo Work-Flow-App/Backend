@@ -56,6 +56,17 @@ public class InvoiceService implements IInvoiceService {
 
     @Override
     public InvoiceResponse generateInvoice(Long estimateId, InvoiceCreateRequest request, Long companyId) {
+        // Must run BEFORE the invoice row is created below, not after this transaction commits.
+        // PDF generation (and therefore the real byte count) is deliberately deferred to the
+        // afterCommit callback to avoid holding DB locks during slow CPU/S3 work, so the exact
+        // size isn't knowable yet here — this pre-check uses incomingBytes=0, i.e. "is the
+        // company already over its cap at all," which is enough to stop the bug this was fixing:
+        // an over-quota company getting a 409/402 implying nothing happened while an Invoice row
+        // (with a consumed, audit-significant invoice-number sequence) is left durably committed.
+        // The precise byte accounting still happens via recordUpload with the real PDF size once
+        // it's known, same as before.
+        storageQuotaService.assertCapacity(companyId, 0L);
+
         Estimate estimate = estimateRepository.findByIdWithDetailsAndCompanyId(estimateId, companyId)
                 .orElseThrow(() -> new EstimateNotFoundException("Estimate not found"));
 
@@ -153,7 +164,6 @@ public class InvoiceService implements IInvoiceService {
                         log.debug("[Invoice] afterCommit: generating PDF key={}", s3Key);
                         byte[] pdfBytes = generatePdf(committedInvoice, invoiceNumber, itemsForPdf, estimateForPdf);
                         log.debug("[Invoice] afterCommit: uploading to S3 key={}", s3Key);
-                        storageQuotaService.assertCapacity(companyId, pdfBytes.length);
                         storageService.upload(s3Key, new ByteArrayInputStream(pdfBytes), pdfBytes.length, "application/pdf");
                         invoiceRepository.updateFileSizeBytes(committedInvoice.getId(), pdfBytes.length);
                         storageQuotaService.recordUpload(companyId, pdfBytes.length);
@@ -167,7 +177,6 @@ public class InvoiceService implements IInvoiceService {
         } else {
             log.warn("[Invoice] No active TX sync — generating PDF and uploading S3 inline key={}", s3Key);
             byte[] pdfBytes = generatePdf(invoice, invoiceNumber, selectedItems, estimate);
-            storageQuotaService.assertCapacity(companyId, pdfBytes.length);
             storageService.upload(s3Key, new ByteArrayInputStream(pdfBytes), pdfBytes.length, "application/pdf");
             invoiceRepository.updateFileSizeBytes(invoice.getId(), pdfBytes.length);
             storageQuotaService.recordUpload(companyId, pdfBytes.length);

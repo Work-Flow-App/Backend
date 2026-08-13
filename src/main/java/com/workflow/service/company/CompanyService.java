@@ -7,20 +7,37 @@ import com.workflow.dto.company.CompanyBankDetailsRequest;
 import com.workflow.dto.company.CompanyDashboardResponse;
 import com.workflow.dto.company.CompanyProfileResponse;
 import com.workflow.dto.company.CompanyProfileUpdateRequest;
+import com.workflow.dto.company.UsageSummaryResponse;
 import com.workflow.entity.company.Company;
 import com.workflow.entity.company.CompanyAddress;
 import com.workflow.entity.company.CompanyBankDetails;
+import com.workflow.entity.company.CompanySubscription;
 import com.workflow.repository.company.CompanyRepository;
+import com.workflow.repository.company.CompanySubscriptionRepository;
+import com.workflow.repository.job.JobRepository;
 import com.workflow.service.storage.IStorageService;
+import com.workflow.service.subscription.IPlanLimitsService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.util.Optional;
+
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class CompanyService implements ICompanyService {
 
+    // 80% of the effective limit — matches the business requirement to warn before the Phase 3 hard block
+    private static final double USAGE_WARNING_THRESHOLD = 0.8;
+
     private final CompanyRepository companyRepository;
+    private final JobRepository jobRepository;
+    private final CompanySubscriptionRepository subscriptionRepository;
+    private final IPlanLimitsService planLimitsService;
     private final IStorageService s3Service;
 
     @Override
@@ -111,7 +128,48 @@ public class CompanyService implements ICompanyService {
                 totalWorkers,
                 totalClients,
                 activeWorkers,
-                archivedWorkers);
+                archivedWorkers,
+                buildUsageSummary(company, activeWorkers));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public UsageSummaryResponse getUsageSummary(Long userId) {
+        Company company = findCompanyByUserId(userId);
+        long activeWorkers = companyRepository.countActiveWorkers(company.getId());
+        return buildUsageSummary(company, activeWorkers);
+    }
+
+    // Never throws and never returns null on a missing CompanySubscription — fails CLOSED to
+    // FREE-tier limits instead (see PlanLimitsService's Optional overloads), same as the other 3
+    // enforcement points (job/seat/storage caps). This should never legitimately happen (every
+    // signup gets a CompanySubscription row), hence the loud ERROR log.
+    private UsageSummaryResponse buildUsageSummary(Company company, long activeWorkers) {
+        Long companyId = company.getId();
+
+        Optional<CompanySubscription> subscription = subscriptionRepository.findByCompanyId(companyId);
+        if (subscription.isEmpty()) {
+            log.error("buildUsageSummary: no CompanySubscription for companyId={} — treating as FREE tier for limit-checking", companyId);
+        }
+
+        LocalDateTime startOfMonth = LocalDateTime.now(ZoneOffset.UTC).toLocalDate().withDayOfMonth(1).atStartOfDay();
+        LocalDateTime startOfNextMonth = startOfMonth.plusMonths(1);
+        long jobsUsed = jobRepository.countByCompanyIdAndCreatedAtBetween(companyId, startOfMonth, startOfNextMonth);
+        int jobsLimit = planLimitsService.getEffectiveJobsPerMonth(subscription);
+
+        long storageUsed = company.getStorageUsedBytes();
+        long storageLimit = planLimitsService.getEffectiveStorageLimitBytes(subscription);
+
+        int seatsLimit = planLimitsService.getEffectiveMaxUsers(subscription);
+
+        return new UsageSummaryResponse(
+                jobsUsed, jobsLimit, isAtOrAboveWarningThreshold(jobsUsed, jobsLimit),
+                storageUsed, storageLimit, isAtOrAboveWarningThreshold(storageUsed, storageLimit),
+                activeWorkers, seatsLimit, isAtOrAboveWarningThreshold(activeWorkers, seatsLimit));
+    }
+
+    private boolean isAtOrAboveWarningThreshold(long used, long limit) {
+        return limit > 0 && used >= limit * USAGE_WARNING_THRESHOLD;
     }
 
     @Override

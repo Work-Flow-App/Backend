@@ -1,5 +1,6 @@
 package com.workflow.service.subscription;
 
+import com.workflow.common.exception.business.StorageLimitExceededException;
 import com.workflow.entity.company.CompanySubscription;
 import com.workflow.repository.company.CompanyRepository;
 import com.workflow.repository.company.CompanySubscriptionRepository;
@@ -23,19 +24,19 @@ public class StorageQuotaService implements IStorageQuotaService {
     @Transactional(readOnly = true)
     public void assertCapacity(Long companyId, long incomingBytes) {
         Optional<CompanySubscription> subscription = subscriptionRepository.findByCompanyId(companyId);
-        // Every signup goes through initTrial(), so this shouldn't happen — but this check is
-        // tracking-only (Phase 3 adds enforcement), so a missing row must not block the upload path.
+        // Every signup goes through initTrial(), so this shouldn't happen. Fail CLOSED to
+        // FREE-tier limits (not open/unlimited) — see PlanLimitsService's Optional overloads.
         if (subscription.isEmpty()) {
-            log.warn("StorageQuotaService.assertCapacity: no CompanySubscription for companyId={} — skipping capacity check", companyId);
-            return;
+            log.error("StorageQuotaService.assertCapacity: no CompanySubscription for companyId={} — treating as FREE tier for limit-checking", companyId);
         }
 
         long currentUsage = companyRepository.findStorageUsedBytes(companyId).orElse(0L);
-        long effectiveLimit = planLimitsService.getEffectiveStorageLimitBytes(subscription.get());
+        long effectiveLimit = planLimitsService.getEffectiveStorageLimitBytes(subscription);
 
         if (currentUsage + incomingBytes > effectiveLimit) {
-            log.warn("Storage limit exceeded (tracking only, not enforced): companyId={}, currentUsageBytes={}, incomingBytes={}, effectiveLimitBytes={}",
-                    companyId, currentUsage, incomingBytes, effectiveLimit);
+            throw new StorageLimitExceededException(
+                    "Storage limit reached (" + effectiveLimit + " bytes max, " + currentUsage
+                            + " used). Upgrade your plan or free up space to upload more.");
         }
     }
 

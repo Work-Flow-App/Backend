@@ -91,7 +91,8 @@ public class SecurityConfig {
             "/api-docs/**",
             "/aggregate/**",
             "/actuator/**",
-            "/checkout-test.html"
+            "/checkout-test.html",
+            "/ws-notifications/**"
     };
 
     @Bean

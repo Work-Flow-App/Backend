@@ -68,6 +68,10 @@ public class Company {
     @Builder.Default
     private boolean archived = false;
 
+    @Column(name = "storage_used_bytes", nullable = false)
+    @Builder.Default
+    private long storageUsedBytes = 0L;
+
     // --- Relationships ---
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)

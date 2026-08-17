@@ -39,6 +39,9 @@ public class EstimateDocument {
     @Column(name = "s3_key", nullable = false, length = 500)
     private String s3Key;
 
+    @Column(name = "file_size_bytes")
+    private Long fileSizeBytes;
+
     @OneToMany(mappedBy = "estimateDocument", cascade = CascadeType.ALL, orphanRemoval = true,
                fetch = FetchType.LAZY)
     @Builder.Default

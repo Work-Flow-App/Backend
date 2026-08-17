@@ -1,17 +1,21 @@
 package com.workflow.config.auth;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.workflow.common.constant.Role;
 import com.workflow.common.constant.SubscriptionStatus;
 import com.workflow.config.properties.PaddleConfigProperties;
 import com.workflow.entity.auth.User;
 import com.workflow.entity.company.CompanySubscription;
+import com.workflow.entity.worker.Worker;
 import com.workflow.repository.company.CompanySubscriptionRepository;
+import com.workflow.repository.worker.WorkerRepository;
 import com.workflow.service.company.ICompanyService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -24,26 +28,31 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * Checks subscription status for authenticated COMPANY users on every request.
- * NOT registered as a @Component — manually registered in SecurityConfig to prevent
- * Spring Boot's FilterRegistrationBean from also adding it to the servlet filter chain
- * (which would cause it to run twice: once in Spring Security, once outside it).
+ * Enforces read-only access for COMPANY and WORKER users whose subscription has lapsed:
+ * safe HTTP methods (GET/HEAD/OPTIONS) always pass through; mutating methods are blocked
+ * with a 402 unless the subscription permits mutation. NOT registered as a @Component —
+ * manually registered in SecurityConfig to prevent Spring Boot's FilterRegistrationBean
+ * from also adding it to the servlet filter chain (which would cause it to run twice:
+ * once in Spring Security, once outside it).
  */
 @Slf4j
 public class SubscriptionCheckFilter extends OncePerRequestFilter {
 
     private final ICompanyService companyService;
     private final CompanySubscriptionRepository subscriptionRepository;
+    private final WorkerRepository workerRepository;
     private final PaddleConfigProperties paddleProps;
     private final ObjectMapper objectMapper;
 
     public SubscriptionCheckFilter(
             ICompanyService companyService,
             CompanySubscriptionRepository subscriptionRepository,
+            WorkerRepository workerRepository,
             PaddleConfigProperties paddleProps,
             ObjectMapper objectMapper) {
         this.companyService = companyService;
         this.subscriptionRepository = subscriptionRepository;
+        this.workerRepository = workerRepository;
         this.paddleProps = paddleProps;
         this.objectMapper = objectMapper;
     }
@@ -62,10 +71,20 @@ public class SubscriptionCheckFilter extends OncePerRequestFilter {
             return;
         }
 
-        // Only enforce for COMPANY role
-        boolean isCompany = auth.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_COMPANY"));
-        if (!isCompany) {
+        // Safe methods are always allowed — lapsed subscriptions get read-only access,
+        // not a full lockout. Checked before any DB lookup to keep read traffic cheap.
+        String method = request.getMethod();
+        if (HttpMethod.GET.matches(method) || HttpMethod.HEAD.matches(method) || HttpMethod.OPTIONS.matches(method)) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        User user = (User) auth.getPrincipal();
+        Long userId = user.getId();
+        Role role = user.getRole();
+
+        // Only enforce for COMPANY and WORKER principals — e.g. ADMIN passes through unconditionally
+        if (role != Role.COMPANY && role != Role.WORKER) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -78,15 +97,27 @@ public class SubscriptionCheckFilter extends OncePerRequestFilter {
             return;
         }
 
-        // Get company subscription
-        User user = (User) auth.getPrincipal();
-        Long userId = user.getId();
-
         Long companyId;
         try {
-            companyId = companyService.findCompanyByUserId(userId).getId();
+            companyId = switch (role) {
+                case COMPANY -> companyService.findCompanyByUserId(userId).getId();
+                case WORKER -> {
+                    Optional<Worker> workerOpt = workerRepository.findByUserId(userId);
+                    if (workerOpt.isEmpty()) {
+                        yield null;
+                    }
+                    yield workerOpt.get().getCompany().getId();
+                }
+                default -> null;
+            };
         } catch (Exception e) {
-            log.error("SubscriptionCheckFilter: failed to resolve companyId for userId={}. Failing open.", userId, e);
+            log.error("SubscriptionCheckFilter: failed to resolve companyId for userId={}, role={}. Failing open.", userId, role, e);
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        if (companyId == null) {
+            log.error("SubscriptionCheckFilter: could not resolve companyId for userId={}, role={}. Failing open.", userId, role);
             filterChain.doFilter(request, response);
             return;
         }
@@ -99,7 +130,7 @@ public class SubscriptionCheckFilter extends OncePerRequestFilter {
         }
 
         CompanySubscription sub = subOpt.get();
-        if (!sub.isAccessAllowed(paddleProps.getPastDueGraceDays())) {
+        if (!sub.isMutationAllowed(paddleProps.getPastDueGraceDays())) {
             writePaymentRequiredResponse(response, uri, sub.getStatus());
             return;
         }

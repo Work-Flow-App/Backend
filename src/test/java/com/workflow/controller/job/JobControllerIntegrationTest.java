@@ -427,6 +427,119 @@ class JobControllerIntegrationTest extends AbstractControllerIntegrationTest {
                                 .andExpect(status().isNotFound());
         }
 
+        // ============= PATCH /api/v1/jobs/{id} Tests =============
+
+        @Test
+        void shouldPatchStatusOnly_AndPreserveFieldValuesAndAssociations() throws Exception {
+                JobUpdateRequest request = JobUpdateRequest.builder()
+                                .status(JobStatus.IN_PROGRESS)
+                                .build();
+
+                mockMvc.perform(patch("/api/v1/jobs/" + job.getId())
+                                .header("Authorization", "Bearer " + companyUserToken)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(request)))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.status").value("IN_PROGRESS"));
+
+                mockMvc.perform(get("/api/v1/jobs/" + job.getId())
+                                .header("Authorization", "Bearer " + companyUserToken))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.status").value("IN_PROGRESS"))
+                                .andExpect(jsonPath("$.clientId").value(client.getId()))
+                                .andExpect(jsonPath("$.customerId").value(customer.getId()))
+                                .andExpect(jsonPath("$.fieldValues." + field1.getId() + ".value").value("John Doe"))
+                                .andExpect(jsonPath("$.fieldValues." + field2.getId() + ".value").value("High"));
+        }
+
+        @Test
+        void shouldPatchSingleFieldValue_AndMergeWithoutTouchingOthers() throws Exception {
+                Map<Long, Object> fieldValues = new HashMap<>();
+                fieldValues.put(field2.getId(), "Medium");
+
+                JobUpdateRequest request = JobUpdateRequest.builder()
+                                .fieldValues(fieldValues)
+                                .build();
+
+                mockMvc.perform(patch("/api/v1/jobs/" + job.getId())
+                                .header("Authorization", "Bearer " + companyUserToken)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(request)))
+                                .andExpect(status().isOk());
+
+                mockMvc.perform(get("/api/v1/jobs/" + job.getId())
+                                .header("Authorization", "Bearer " + companyUserToken))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.fieldValues." + field2.getId() + ".value").value("Medium"))
+                                .andExpect(jsonPath("$.fieldValues." + field1.getId() + ".value").value("John Doe"));
+        }
+
+        @Test
+        void shouldPatchFieldValueWithExplicitNull_AndClearOnlyThatField() throws Exception {
+                Map<Long, Object> fieldValues = new HashMap<>();
+                fieldValues.put(field1.getId(), null);
+
+                JobUpdateRequest request = JobUpdateRequest.builder()
+                                .fieldValues(fieldValues)
+                                .build();
+
+                mockMvc.perform(patch("/api/v1/jobs/" + job.getId())
+                                .header("Authorization", "Bearer " + companyUserToken)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(request)))
+                                .andExpect(status().isOk());
+
+                mockMvc.perform(get("/api/v1/jobs/" + job.getId())
+                                .header("Authorization", "Bearer " + companyUserToken))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.fieldValues." + field1.getId()).doesNotExist())
+                                .andExpect(jsonPath("$.fieldValues." + field2.getId() + ".value").value("High"));
+        }
+
+        @Test
+        void shouldPatchArchivedOmitted_PreservesArchivedState() throws Exception {
+                mockMvc.perform(patch("/api/v1/jobs/" + job.getId() + "/archive")
+                                .header("Authorization", "Bearer " + companyUserToken))
+                                .andExpect(status().isNoContent());
+
+                JobUpdateRequest request = JobUpdateRequest.builder()
+                                .status(JobStatus.COMPLETED)
+                                .build();
+
+                mockMvc.perform(patch("/api/v1/jobs/" + job.getId())
+                                .header("Authorization", "Bearer " + companyUserToken)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(request)))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.archived").value(true));
+        }
+
+        @Test
+        void shouldReturn404WhenPatchingNonExistentJob() throws Exception {
+                JobUpdateRequest request = JobUpdateRequest.builder()
+                                .status(JobStatus.COMPLETED)
+                                .build();
+
+                mockMvc.perform(patch("/api/v1/jobs/99999")
+                                .header("Authorization", "Bearer " + companyUserToken)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(request)))
+                                .andExpect(status().isNotFound());
+        }
+
+        @Test
+        void shouldReturn404WhenPatchingAnotherCompanyJob() throws Exception {
+                JobUpdateRequest request = JobUpdateRequest.builder()
+                                .status(JobStatus.COMPLETED)
+                                .build();
+
+                mockMvc.perform(patch("/api/v1/jobs/" + job.getId())
+                                .header("Authorization", "Bearer " + anotherCompanyUserToken)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(request)))
+                                .andExpect(status().isNotFound());
+        }
+
         // ============= GET /api/v1/jobs/{id} Tests =============
 
         @Test

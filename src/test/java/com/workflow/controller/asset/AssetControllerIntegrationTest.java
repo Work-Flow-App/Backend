@@ -33,6 +33,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.UUID;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
@@ -273,8 +274,11 @@ class AssetControllerIntegrationTest extends AbstractControllerIntegrationTest {
     void shouldAddAttachmentsSuccessfully() throws Exception {
         when(tika.detect(any(InputStream.class))).thenReturn("image/jpeg");
         when(s3Service.resolveFileUrl(any())).thenReturn("http://mock-s3-url.com/image.jpg");
-        
-        MockMultipartFile file = new MockMultipartFile("files", "test.jpg", MediaType.IMAGE_JPEG_VALUE, "mock image content".getBytes());
+
+        byte[] fileContent = "mock image content".getBytes();
+        MockMultipartFile file = new MockMultipartFile("files", "test.jpg", MediaType.IMAGE_JPEG_VALUE, fileContent);
+
+        long storageUsedBeforeUpload = companyRepository.findById(company.getId()).orElseThrow().getStorageUsedBytes();
 
         mockMvc.perform(multipart("/api/v1/assets/" + existingAsset.getId() + "/attachments")
                         .file(file)
@@ -283,6 +287,9 @@ class AssetControllerIntegrationTest extends AbstractControllerIntegrationTest {
                 .andExpect(jsonPath("$.id").value(existingAsset.getId()))
                 .andExpect(jsonPath("$.attachments", hasSize(1)))
                 .andExpect(jsonPath("$.attachments[0].fileName").value("test.jpg"));
+
+        long storageUsedAfterUpload = companyRepository.findById(company.getId()).orElseThrow().getStorageUsedBytes();
+        assertThat(storageUsedAfterUpload - storageUsedBeforeUpload).isEqualTo(fileContent.length);
     }
 
     @Test
@@ -300,6 +307,28 @@ class AssetControllerIntegrationTest extends AbstractControllerIntegrationTest {
                         .header("Authorization", "Bearer " + companyToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.attachments", hasSize(0)));
+    }
+
+    @Test
+    void shouldDecrementStorageUsedBytesWhenRemovingAttachmentWithFileSize() throws Exception {
+        existingAsset.getAttachments().add(AssetAttachment.builder()
+                .fileName("test.jpg")
+                .fileType("image/jpeg")
+                .fileUrl("companies/1/assets/1/sized-key.jpg")
+                .fileSizeBytes(500L)
+                .build());
+        assetRepository.save(existingAsset);
+
+        company.setStorageUsedBytes(2000L);
+        companyRepository.save(company);
+
+        mockMvc.perform(delete("/api/v1/assets/" + existingAsset.getId() + "/attachments")
+                        .param("fileUrl", "companies/1/assets/1/sized-key.jpg")
+                        .header("Authorization", "Bearer " + companyToken))
+                .andExpect(status().isOk());
+
+        long storageUsedAfterDelete = companyRepository.findById(company.getId()).orElseThrow().getStorageUsedBytes();
+        assertThat(storageUsedAfterDelete).isEqualTo(1500L);
     }
 
     // ============= GET /api/v1/assets/{id} =============

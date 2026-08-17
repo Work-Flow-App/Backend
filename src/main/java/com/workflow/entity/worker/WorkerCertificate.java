@@ -54,6 +54,9 @@ public class WorkerCertificate {
     @Column(name = "file_url", nullable = false)
     private String fileUrl;
 
+    @Column(name = "file_size_bytes")
+    private Long fileSizeBytes;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "uploaded_by", nullable = false)
     private User uploadedBy;

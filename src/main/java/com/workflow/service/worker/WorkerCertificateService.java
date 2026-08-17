@@ -30,6 +30,7 @@ import com.workflow.entity.worker.WorkerCertificate;
 import com.workflow.repository.worker.WorkerCertificateRepository;
 import com.workflow.repository.worker.WorkerRepository;
 import com.workflow.service.storage.IStorageService;
+import com.workflow.service.subscription.IStorageQuotaService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -45,6 +46,7 @@ public class WorkerCertificateService implements IWorkerCertificateService {
     private final WorkerCertificateRepository certificateRepository;
     private final Tika tika;
     private final IStorageService s3Service;
+    private final IStorageQuotaService storageQuotaService;
 
     @Value("${workflow.security.file.blocked-types}")
     private List<String> blockedTypes;
@@ -96,9 +98,11 @@ public class WorkerCertificateService implements IWorkerCertificateService {
                 worker.getId(),
                 safeUniqueFilename);
 
+        Long companyId = worker.getCompany().getId();
+        storageQuotaService.assertCapacity(companyId, file.getSize());
         s3Service.upload(key, file.getInputStream(), file.getSize(), detectedType);
 
-        return certificateRepository.save(
+        WorkerCertificate certificate = certificateRepository.save(
                 WorkerCertificate.builder()
                         .worker(worker)
                         .uploadedBy(uploadedBy)
@@ -110,7 +114,10 @@ public class WorkerCertificateService implements IWorkerCertificateService {
                         .fileName(originalFilename)
                         .fileType(detectedType)
                         .fileUrl(key)
+                        .fileSizeBytes(file.getSize())
                         .build());
+        storageQuotaService.recordUpload(companyId, file.getSize());
+        return certificate;
     }
 
     @Override
@@ -159,6 +166,10 @@ public class WorkerCertificateService implements IWorkerCertificateService {
                 .orElseThrow(() -> new WorkerCertificateNotFoundException("Certificate not found with ID: " + certificateId));
 
         s3Service.delete(certificate.getFileUrl());
+        // Legacy rows uploaded before fileSizeBytes existed have nothing to decrement
+        if (certificate.getFileSizeBytes() != null) {
+            storageQuotaService.recordDelete(worker.getCompany().getId(), certificate.getFileSizeBytes());
+        }
         certificateRepository.delete(certificate);
     }
 
@@ -221,6 +232,10 @@ public class WorkerCertificateService implements IWorkerCertificateService {
                 .orElseThrow(() -> new WorkerCertificateNotFoundException("Certificate not found with ID: " + certificateId));
 
         s3Service.delete(certificate.getFileUrl());
+        // Legacy rows uploaded before fileSizeBytes existed have nothing to decrement
+        if (certificate.getFileSizeBytes() != null) {
+            storageQuotaService.recordDelete(companyId, certificate.getFileSizeBytes());
+        }
         certificateRepository.delete(certificate);
     }
 

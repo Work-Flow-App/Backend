@@ -36,4 +36,6 @@ public interface WorkerRepository extends JpaRepository<Worker, Long> {
     boolean existsByUserIdAndArchivedFalse(Long userId);
 
     boolean existsByEmailIgnoreCaseAndArchivedFalse(String email);
+
+    long countByCompanyIdAndArchivedFalse(Long companyId);
 }

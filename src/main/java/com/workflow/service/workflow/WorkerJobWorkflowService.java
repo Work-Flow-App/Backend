@@ -18,6 +18,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.workflow.common.constant.notification.NotificationPriority;
+import com.workflow.common.constant.notification.NotificationType;
 import com.workflow.common.constant.workflow.JobWorkflowStepActivityType;
 import com.workflow.common.constant.workflow.StepDiscussionType;
 import com.workflow.common.constant.workflow.WorkflowStepStatus;
@@ -42,6 +44,7 @@ import com.workflow.dto.workflow.StepVisitLogResponse;
 import com.workflow.dto.workflow.StepVisitLogSummaryResponse;
 import com.workflow.dto.workflow.WorkerAssignedStepResponse;
 import com.workflow.entity.asset.AssetJobAssignment;
+import com.workflow.entity.auth.User;
 import com.workflow.entity.common.Address;
 import com.workflow.entity.customer.Customer;
 import com.workflow.entity.customer.CustomerAddress;
@@ -59,6 +62,7 @@ import com.workflow.repository.job.JobWorkflowStepCommentRepository;
 import com.workflow.repository.job.JobWorkflowStepRepository;
 import com.workflow.repository.job.JobWorkflowStepVisitLogRepository;
 import com.workflow.repository.worker.WorkerRepository;
+import com.workflow.service.notification.INotificationService;
 import com.workflow.service.storage.IStorageService;
 
 import lombok.RequiredArgsConstructor;
@@ -80,6 +84,7 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
         private final Tika tika;
 
         private final IStepActivityService stepActivityService;
+        private final INotificationService notificationService;
         private final IStorageService s3Service;
         private final JobWorkflowMapper jobWorkflowMapper;
 
@@ -564,6 +569,38 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
 
                 stepActivityService.log(step, worker.getUser(), JobWorkflowStepActivityType.VISIT_LOGGED,
                                 "Worker " + worker.getName() + " logged a visit for " + request.getVisitDate());
+
+                // --- SEND NOTIFICATION TO COMPANY ADMIN ---
+
+                User companyAdmin = step.getJobWorkflow().getJob().getCompany().getUser();
+                Long jobRef = step.getJobWorkflow().getJob().getJobRef();
+
+                // Semantic UI Route - Matches your frontend/mobile deep link structure
+                String targetUrl = "/job-workflow-steps/" + step.getId() + "/visits";
+
+                String message = String.format("%s logged a visit for Job #%s on %s.",
+                                worker.getName(),
+                                jobRef,
+                                request.getVisitDate().toString());
+
+                notificationService.createNotification(
+                                companyAdmin,
+                                NotificationType.VISIT_LOG_ADDED,
+                                "New Visit Logged",
+                                message,
+                                targetUrl,
+                                "JobWorkflowStepVisitLog",
+                                visitLog.getId(),
+                                NotificationPriority.LOW,
+
+                                // Rich Metadata for mobile apps or complex state management
+                                Map.of(
+                                                "jobId", step.getJobWorkflow().getJob().getId(),
+                                                "stepId", step.getId(),
+                                                "visitLogId", visitLog.getId(),
+                                                "workerId", worker.getId(),
+                                                "action", "OPEN_VISIT_LOGS"));
+                // ----------------------------------------------
 
                 return mapVisitLog(visitLog);
         }

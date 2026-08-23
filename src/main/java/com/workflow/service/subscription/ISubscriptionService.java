@@ -1,5 +1,6 @@
 package com.workflow.service.subscription;
 
+import com.workflow.common.constant.PlanType;
 import com.workflow.entity.company.CompanySubscription;
 
 public interface ISubscriptionService {
@@ -8,7 +9,7 @@ public interface ISubscriptionService {
 
     CompanySubscription getStatus(Long companyId);
 
-    CheckoutResult createCheckoutSession(Long companyId);
+    CheckoutResult createCheckoutSession(Long companyId, PlanType planType, int extraSeats, int extraStorageBlocks);
 
     String getPortalUrl(Long companyId);
 

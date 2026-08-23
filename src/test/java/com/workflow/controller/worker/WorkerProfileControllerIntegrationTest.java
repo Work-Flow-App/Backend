@@ -39,6 +39,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.UUID;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
@@ -137,14 +138,28 @@ class WorkerProfileControllerIntegrationTest extends AbstractControllerIntegrati
 
     @Test
     void shouldUploadOwnPhotoSuccessfully() throws Exception {
-        MockMultipartFile file = new MockMultipartFile("file", "me.png", "image/png", "content".getBytes());
+        byte[] fileContent = "content".getBytes();
+        MockMultipartFile file = new MockMultipartFile("file", "me.png", "image/png", fileContent);
+
+        Long companyId = worker1.getCompany().getId();
+        long storageUsedBeforeUpload = companyRepository.findById(companyId).orElseThrow().getStorageUsedBytes();
 
         mockMvc.perform(multipart("/api/v1/worker/profile/photo")
                         .file(file)
                         .header("Authorization", "Bearer " + worker1Token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.photoUrl").exists());
+
+        long storageUsedAfterUpload = companyRepository.findById(companyId).orElseThrow().getStorageUsedBytes();
+        assertThat(storageUsedAfterUpload - storageUsedBeforeUpload).isEqualTo(fileContent.length);
     }
+
+    // No companion delete-path test here: replacing a photo decrements the old photo's bytes inside
+    // WorkerService.uploadPhoto()'s afterCommit callback (registered via TransactionSynchronizationManager).
+    // This test class runs under @Transactional, which rolls back at the end of every test instead of
+    // committing — so afterCommit() never fires and the decrement is unobservable in this test setup.
+    // Pre-existing test-infra limitation (same reason WorkerService's old-photo S3 delete is also
+    // unverifiable here), not something to work around.
 
     // ============= PATCH /api/v1/workers/{id}/rate (admin only, not worker-writable) =============
 

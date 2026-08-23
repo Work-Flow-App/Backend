@@ -20,6 +20,7 @@ import com.workflow.repository.financial.EstimateLineItemRepository;
 import com.workflow.repository.financial.EstimateRepository;
 import com.workflow.service.sequence.CompanyCounterService;
 import com.workflow.service.storage.IStorageService;
+import com.workflow.service.subscription.IStorageQuotaService;
 import com.workflow.templates.pdf.estimate.EstimatePdfRenderer;
 import com.workflow.templates.pdf.estimate.EstimateTemplateData;
 import lombok.RequiredArgsConstructor;
@@ -50,6 +51,7 @@ public class EstimateDocumentService implements IEstimateDocumentService {
     private final EstimateRepository estimateRepository;
     private final EstimateLineItemRepository estimateLineItemRepository;
     private final IStorageService storageService;
+    private final IStorageQuotaService storageQuotaService;
     private final EstimatePdfRenderer pdfRenderer;
     private final CompanyCounterService companyCounterService;
     private final TransactionTemplate transactionTemplate;
@@ -136,6 +138,12 @@ public class EstimateDocumentService implements IEstimateDocumentService {
 
         log.info("[EstimateDoc] Generating PDF...");
         byte[] pdfBytes = generatePdf(docToSave, documentNumber, selectedItems, estimate);
+        docToSave.setFileSizeBytes((long) pdfBytes.length);
+
+        // Capacity must be checked BEFORE the short transaction below commits — otherwise an
+        // over-quota company gets a 409/402 implying nothing happened, while the DB is left with
+        // an orphaned document row and line items already flipped to WAITING_APPROVAL.
+        storageQuotaService.assertCapacity(companyId, pdfBytes.length);
 
         // 3. SAVE TO DB AND UPDATE STATUS (Short Transaction)
         EstimateDocument savedDoc = transactionTemplate.execute(status -> {
@@ -149,6 +157,7 @@ public class EstimateDocumentService implements IEstimateDocumentService {
         // 4. UPLOAD TO S3 (Network call - outside DB transaction)
         log.info("[EstimateDoc] Uploading to S3...");
         storageService.upload(s3Key, new ByteArrayInputStream(pdfBytes), pdfBytes.length, "application/pdf");
+        storageQuotaService.recordUpload(companyId, pdfBytes.length);
 
         String presignedUrl = storageService.generatePresignedUrl(s3Key);
         return EstimateDocumentResponse.fromEntity(savedDoc, presignedUrl);
@@ -211,14 +220,29 @@ public class EstimateDocumentService implements IEstimateDocumentService {
 
     private void deleteDoc(EstimateDocument doc) {
         String s3Key = doc.getS3Key();
+        Long docId = doc.getId();
+        Long companyId = doc.getCompany().getId();
+        Long fileSizeBytes = doc.getFileSizeBytes();
         estimateDocumentRepository.delete(doc);
-        
+
         // S3 delete in background — must not block the TX so gap locks are released immediately.
         CompletableFuture.runAsync(() -> {
             try {
                 storageService.delete(s3Key);
             } catch (RuntimeException ignored) {
                 // S3 cleanup best-effort; DB row already removed.
+            }
+
+            // Legacy rows uploaded before fileSizeBytes existed have nothing to decrement.
+            // Kept out of the try/catch above — a failure here must not be swallowed silently,
+            // since it means storageUsedBytes has permanently drifted from reality.
+            if (fileSizeBytes != null) {
+                try {
+                    storageQuotaService.recordDelete(companyId, fileSizeBytes);
+                } catch (RuntimeException e) {
+                    log.error("[EstimateDoc] Failed to record storage delete: docId={}, companyId={}, fileSizeBytes={}",
+                            docId, companyId, fileSizeBytes, e);
+                }
             }
         });
     }

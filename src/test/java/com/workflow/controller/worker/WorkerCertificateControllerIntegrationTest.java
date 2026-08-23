@@ -23,6 +23,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.time.LocalDate;
 import java.util.UUID;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.doNothing;
@@ -115,7 +116,11 @@ class WorkerCertificateControllerIntegrationTest extends AbstractControllerInteg
 
     @Test
     void shouldUploadOwnCertificateSuccessfully() throws Exception {
-        MockMultipartFile file = new MockMultipartFile("file", "license.pdf", "application/pdf", "content".getBytes());
+        byte[] fileContent = "content".getBytes();
+        MockMultipartFile file = new MockMultipartFile("file", "license.pdf", "application/pdf", fileContent);
+
+        Long companyId = worker1.getCompany().getId();
+        long storageUsedBeforeUpload = companyRepository.findById(companyId).orElseThrow().getStorageUsedBytes();
 
         mockMvc.perform(multipart("/api/v1/worker/certificates")
                         .file(file)
@@ -130,6 +135,9 @@ class WorkerCertificateControllerIntegrationTest extends AbstractControllerInteg
                 .andExpect(jsonPath("$.name").value("Driving License"))
                 .andExpect(jsonPath("$.workerId").value(worker1.getId()))
                 .andExpect(jsonPath("$.uploadedByUsername").value("certworker1"));
+
+        long storageUsedAfterUpload = companyRepository.findById(companyId).orElseThrow().getStorageUsedBytes();
+        assertThat(storageUsedAfterUpload - storageUsedBeforeUpload).isEqualTo(fileContent.length);
     }
 
     // ============= GET /api/v1/worker/certificates (self) - JOIN FETCH / OSIV regression =============
@@ -202,5 +210,32 @@ class WorkerCertificateControllerIntegrationTest extends AbstractControllerInteg
         mockMvc.perform(delete("/api/v1/workers/" + worker1.getId() + "/certificates/" + existingCertificate.getId())
                         .header("Authorization", "Bearer " + companyAToken))
                 .andExpect(status().isNoContent());
+    }
+
+    @Test
+    void shouldDecrementStorageUsedBytesWhenDeletingCertificateWithFileSize() throws Exception {
+        WorkerCertificate sizedCertificate = certificateRepository.save(WorkerCertificate.builder()
+                .worker(worker1)
+                .uploadedBy(worker1.getUser())
+                .type(CertificateType.SAFETY)
+                .name("Sized Certificate")
+                .fileName("sized.pdf")
+                .fileType("application/pdf")
+                .fileUrl("companies/1/workers/1/certificates/sized.pdf")
+                .fileSizeBytes(750L)
+                .build());
+
+        Long companyId = worker1.getCompany().getId();
+        companyRepository.findById(companyId).ifPresent(c -> {
+            c.setStorageUsedBytes(2000L);
+            companyRepository.save(c);
+        });
+
+        mockMvc.perform(delete("/api/v1/workers/" + worker1.getId() + "/certificates/" + sizedCertificate.getId())
+                        .header("Authorization", "Bearer " + companyAToken))
+                .andExpect(status().isNoContent());
+
+        long storageUsedAfterDelete = companyRepository.findById(companyId).orElseThrow().getStorageUsedBytes();
+        assertThat(storageUsedAfterDelete).isEqualTo(1250L);
     }
 }

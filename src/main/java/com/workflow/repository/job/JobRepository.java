@@ -11,6 +11,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.lang.Nullable;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 public interface JobRepository extends JpaRepository<Job, Long>, JpaSpecificationExecutor<Job> {
@@ -51,4 +52,13 @@ public interface JobRepository extends JpaRepository<Job, Long>, JpaSpecificatio
                      "WHERE j.company.id = :companyId AND j.archived = true " +
                      "ORDER BY j.createdAt DESC")
        List<Job> findArchivedByCompanyId(@Param("companyId") Long companyId);
+
+       // Deliberately NOT filtered by archived=false — the cap is about job-creation load this
+       // calendar month, not current active count. Filtering archived out would let a company
+       // archive jobs to bypass the cap and keep creating more in the same month.
+       @Query("SELECT COUNT(j) FROM Job j WHERE j.company.id = :companyId AND j.createdAt >= :start AND j.createdAt < :end")
+       long countByCompanyIdAndCreatedAtBetween(
+                     @Param("companyId") Long companyId,
+                     @Param("start") LocalDateTime start,
+                     @Param("end") LocalDateTime end);
 }

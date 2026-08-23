@@ -1,5 +1,6 @@
 package com.workflow.service.subscription;
 
+import com.workflow.common.constant.PlanType;
 import com.workflow.common.constant.SubscriptionStatus;
 import com.workflow.common.exception.business.CompanyNotFoundException;
 import com.workflow.common.exception.business.InvalidRequestException;
@@ -58,7 +59,8 @@ public class SubscriptionService implements ISubscriptionService {
     }
 
     @Override
-    public ISubscriptionService.CheckoutResult createCheckoutSession(Long companyId) {
+    public ISubscriptionService.CheckoutResult createCheckoutSession(
+            Long companyId, PlanType planType, int extraSeats, int extraStorageBlocks) {
         CompanySubscription sub = subscriptionRepository.findByCompanyId(companyId)
                 .orElseThrow(() -> new InvalidRequestException(
                         "No subscription record found for company: " + companyId));
@@ -71,7 +73,8 @@ public class SubscriptionService implements ISubscriptionService {
             log.info("Created Paddle customer id={} for companyId={}", sub.getPaddleCustomerId(), companyId);
         }
 
-        var session = paddleService.generateCheckoutUrl(sub.getPaddleCustomerId(), companyId);
+        var session = paddleService.generateCheckoutUrl(
+                sub.getPaddleCustomerId(), companyId, planType, extraSeats, extraStorageBlocks);
         String txnId = session.data().id();
         String checkoutUrl = session.data().checkout() != null ? session.data().checkout().url() : null;
         log.info("Checkout session created for companyId={}, txnId={}", companyId, txnId);

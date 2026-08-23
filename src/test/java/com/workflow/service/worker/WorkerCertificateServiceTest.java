@@ -15,6 +15,7 @@ import com.workflow.entity.worker.WorkerCertificate;
 import com.workflow.repository.worker.WorkerCertificateRepository;
 import com.workflow.repository.worker.WorkerRepository;
 import com.workflow.service.storage.IStorageService;
+import com.workflow.service.subscription.IStorageQuotaService;
 import org.apache.tika.Tika;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -49,6 +50,9 @@ class WorkerCertificateServiceTest {
 
     @Mock
     private IStorageService s3Service;
+
+    @Mock
+    private IStorageQuotaService storageQuotaService;
 
     @InjectMocks
     private WorkerCertificateService certificateService;
@@ -103,6 +107,9 @@ class WorkerCertificateServiceTest {
         assertThat(response.expiringSoon()).isTrue();
         verify(s3Service).upload(anyString(), any(), anyLong(), eq("application/pdf"));
         verify(certificateRepository).save(any(WorkerCertificate.class));
+        // worker.company.id == 1L (set up in setUp())
+        verify(storageQuotaService).assertCapacity(1L, file.getSize());
+        verify(storageQuotaService).recordUpload(1L, file.getSize());
     }
 
     @Test
@@ -164,12 +171,24 @@ class WorkerCertificateServiceTest {
 
     @Test
     void deleteCertificate_ShouldScopeByWorkerIdAndCompanyId() {
+        // `certificate` (built in setUp) has no fileSizeBytes — simulates a legacy row
         when(certificateRepository.findByIdAndWorkerIdAndCompanyId(100L, 10L, 1L)).thenReturn(Optional.of(certificate));
 
         certificateService.deleteCertificate(100L, 10L, 1L);
 
         verify(s3Service).delete(certificate.getFileUrl());
         verify(certificateRepository).delete(certificate);
+        verify(storageQuotaService, never()).recordDelete(anyLong(), anyLong());
+    }
+
+    @Test
+    void deleteCertificate_WithFileSizeBytes_RecordsDelete() {
+        certificate.setFileSizeBytes(54321L);
+        when(certificateRepository.findByIdAndWorkerIdAndCompanyId(100L, 10L, 1L)).thenReturn(Optional.of(certificate));
+
+        certificateService.deleteCertificate(100L, 10L, 1L);
+
+        verify(storageQuotaService).recordDelete(1L, 54321L);
     }
 
     @Test

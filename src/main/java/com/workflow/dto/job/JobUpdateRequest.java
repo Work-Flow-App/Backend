@@ -15,7 +15,7 @@ public class JobUpdateRequest {
     private Long customerId;
     private Long workflowId;
     private JobStatus status;
-    private boolean archived;
+    private Boolean archived;
     private Map<Long, Object> fieldValues;
     private List<Long> assetIds;
     private AddressRequest address;

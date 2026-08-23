@@ -137,13 +137,45 @@ workflow:
 paddle:
   api-key: ${PADDLE_API_KEY}
   webhook-secret: ${PADDLE_WEBHOOK_SECRET}
-  price-id: ${PADDLE_PRICE_ID}
+  starter-price-id: ${PADDLE_STARTER_PRICE_ID}
+  professional-price-id: ${PADDLE_PROFESSIONAL_PRICE_ID}
+  starter-extra-seat-price-id: ${PADDLE_STARTER_EXTRA_SEAT_PRICE_ID}
+  professional-extra-seat-price-id: ${PADDLE_PROFESSIONAL_EXTRA_SEAT_PRICE_ID}
+  starter-storage-block-price-id: ${PADDLE_STARTER_STORAGE_BLOCK_PRICE_ID}
+  professional-storage-block-price-id: ${PADDLE_PROFESSIONAL_STORAGE_BLOCK_PRICE_ID}
   api-base-url: ${PADDLE_API_BASE_URL:https://sandbox-api.paddle.com}
   trial-days: 14
   past-due-grace-days: 3
   webhook-timestamp-tolerance-seconds: 300
   success-url: ${PADDLE_SUCCESS_URL:http://localhost:5173/subscription/success}
   cancel-url: ${PADDLE_CANCEL_URL:http://localhost:5173/subscription/cancel}
+
+# Storage limits below are decimal (1GB = 1,000,000,000 bytes), matching how the tiers are quoted to customers
+plan-limits:
+  free:
+    max-users: 1
+    extra-user-price: 0
+    jobs-per-month: 10
+    storage-limit-bytes: 250000000      # 250 MB
+    storage-overage-block-bytes: 0
+    storage-overage-price: 0
+    monthly-price: 0
+  starter:
+    max-users: 3
+    extra-user-price: 10
+    jobs-per-month: 150
+    storage-limit-bytes: 10000000000    # 10 GB
+    storage-overage-block-bytes: 3000000000  # 3 GB
+    storage-overage-price: 10
+    monthly-price: 39
+  professional:
+    max-users: 8
+    extra-user-price: 8
+    jobs-per-month: 200
+    storage-limit-bytes: 30000000000    # 30 GB
+    storage-overage-block-bytes: 5000000000  # 5 GB
+    storage-overage-price: 10
+    monthly-price: 79
 
 affiliate:
   tracking:

@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 
@@ -311,5 +312,70 @@ class WorkerInvitationRepositoryTest {
         assertTrue(updated.isPresent());
         assertTrue(updated.get().isUsed());
         assertNotNull(updated.get().getUsedAt());
+    }
+
+    @Test
+    @DisplayName("Should count only non-expired, unused invitations toward the seat cap")
+    void countPendingByCompanyId_CountsOnlyNonExpiredUnused() {
+        // testCompany has 3 seeded invitations: validInvitation (unused, expires in 5 days),
+        // expiredInvitation (unused, expired 1 day ago), usedInvitation (used, expires in 3 days).
+        // Only validInvitation should count — pending means neither used nor expired.
+        long pendingCount = invitationRepository.countPendingByCompanyId(
+                testCompany.getId(), LocalDateTime.now(ZoneOffset.UTC));
+
+        assertEquals(1L, pendingCount);
+    }
+
+    @Test
+    @DisplayName("Should return 0 when a company has no pending invitations")
+    void countPendingByCompanyId_NoInvitations_ReturnsZero() {
+        User anotherCompanyUser = User.builder()
+                .uuid("company-uuid-999")
+                .username("emptycompany")
+                .email("empty@example.com")
+                .password("$2a$10$encodedPassword")
+                .role(Role.COMPANY)
+                .enabled(true)
+                .build();
+        entityManager.persist(anotherCompanyUser);
+
+        Company emptyCompany = Company.builder()
+                .name("Empty Company")
+                .user(anotherCompanyUser)
+                .archived(false)
+                .build();
+        entityManager.persist(emptyCompany);
+        entityManager.flush();
+
+        long pendingCount = invitationRepository.countPendingByCompanyId(
+                emptyCompany.getId(), LocalDateTime.now(ZoneOffset.UTC));
+
+        assertEquals(0L, pendingCount);
+    }
+
+    @Test
+    @DisplayName("Should not count an invitation that expires exactly now")
+    void countPendingByCompanyId_ExpiresExactlyAtNow_DoesNotCount() {
+        // Truncated to microseconds — some DB timestamp columns don't preserve full nanosecond
+        // precision, so persisting and querying with an untruncated `now` can round each side
+        // differently and flip the boundary comparison depending on environment. Truncating both
+        // sides to the same precision before comparing makes the equality actually deterministic.
+        LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC).truncatedTo(ChronoUnit.MICROS);
+        WorkerInvitation boundaryInvitation = WorkerInvitation.builder()
+                .invitationToken("boundary-token")
+                .email("boundary@example.com")
+                .company(testCompany)
+                .expiresAt(now)
+                .used(false)
+                .createdAt(now.minusDays(1))
+                .build();
+        entityManager.persist(boundaryInvitation);
+        entityManager.flush();
+
+        // countPendingByCompanyId uses expiresAt > :now (strictly greater) — an invitation
+        // expiring at exactly `now` has expired, not pending.
+        long pendingCount = invitationRepository.countPendingByCompanyId(testCompany.getId(), now);
+
+        assertEquals(1L, pendingCount); // still just validInvitation — boundaryInvitation excluded
     }
 }

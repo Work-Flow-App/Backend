@@ -44,6 +44,9 @@ public class CompanyDocument {
     @Column(nullable = false, length = 100)
     private String fileType;
 
+    @Column(name = "file_size_bytes")
+    private Long fileSizeBytes;
+
     private LocalDate validityStartDate;
     private LocalDate validityEndDate;
 

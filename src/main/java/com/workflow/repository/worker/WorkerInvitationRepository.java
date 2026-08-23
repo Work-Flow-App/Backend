@@ -48,4 +48,11 @@ public interface WorkerInvitationRepository extends JpaRepository<WorkerInvitati
     @Modifying
     @Query("DELETE FROM WorkerInvitation i WHERE i.used = true OR i.expiresAt < :cutoff")
     int deleteExpiredAndUsedInvitations(@Param("cutoff") LocalDateTime cutoff);
+
+    /**
+     * Pending (not used, not expired) invitations count toward the seat cap — otherwise a company
+     * could stack up invitations past the limit and have them all accept at once.
+     */
+    @Query("SELECT COUNT(i) FROM WorkerInvitation i WHERE i.company.id = :companyId AND i.used = false AND i.expiresAt > :now")
+    long countPendingByCompanyId(@Param("companyId") Long companyId, @Param("now") LocalDateTime now);
 }

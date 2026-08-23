@@ -10,6 +10,7 @@ import com.workflow.dto.company.CompanyPostResponse;
 import com.workflow.dto.company.CompanyPostUpdateRequest;
 import com.workflow.dto.company.CompanyProfileResponse;
 import com.workflow.dto.company.CompanyProfileUpdateRequest;
+import com.workflow.dto.company.UsageSummaryResponse;
 import com.workflow.entity.auth.User;
 import com.workflow.service.company.ICompanyProfileMediaService;
 import com.workflow.service.company.ICompanyService;
@@ -62,6 +63,13 @@ public class CompanyController {
     public ResponseEntity<CompanyDashboardResponse> getDashboard(Authentication authentication) {
         User user = (User) authentication.getPrincipal();
         return ResponseEntity.ok(companyService.getDashboard(user.getId()));
+    }
+
+    @RequireCompanyRole({COMPANY_ADMIN, MANAGER, EDITOR, VIEWER})
+    @GetMapping("/usage")
+    public ResponseEntity<UsageSummaryResponse> getUsage(Authentication authentication) {
+        User user = (User) authentication.getPrincipal();
+        return ResponseEntity.ok(companyService.getUsageSummary(user.getId()));
     }
 
     @RequireCompanyRole({COMPANY_ADMIN, MANAGER})

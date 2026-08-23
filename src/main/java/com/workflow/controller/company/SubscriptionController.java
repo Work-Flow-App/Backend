@@ -4,9 +4,11 @@ import com.workflow.common.constant.SubscriptionStatus;
 import com.workflow.common.security.RequireCompanyRole;
 import com.workflow.common.util.AuthUtils;
 import com.workflow.config.properties.PaddleConfigProperties;
+import com.workflow.dto.company.CreateCheckoutSessionRequest;
 import com.workflow.entity.company.CompanySubscription;
 import com.workflow.service.subscription.ISubscriptionService;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -41,14 +43,16 @@ public class SubscriptionController {
                 sub.getStatus(),
                 sub.getTrialEndsAt(),
                 sub.getCurrentPeriodEnd(),
-                sub.isAccessAllowed(paddleProps.getPastDueGraceDays())
+                sub.isMutationAllowed(paddleProps.getPastDueGraceDays())
         ));
     }
 
     @RequireCompanyRole({COMPANY_ADMIN})
     @PostMapping("/checkout")
-    public ResponseEntity<Map<String, String>> createCheckoutSession(Authentication authentication) {
-        var result = subscriptionService.createCheckoutSession(AuthUtils.getCompanyId());
+    public ResponseEntity<Map<String, String>> createCheckoutSession(
+            Authentication authentication, @Valid @RequestBody CreateCheckoutSessionRequest request) {
+        var result = subscriptionService.createCheckoutSession(
+                AuthUtils.getCompanyId(), request.planType(), request.extraSeats(), request.extraStorageBlocks());
         return ResponseEntity.ok(Map.of("transactionId", result.transactionId()));
     }
 

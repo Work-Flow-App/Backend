@@ -142,7 +142,7 @@ class WorkerProfileControllerIntegrationTest extends AbstractControllerIntegrati
         MockMultipartFile file = new MockMultipartFile("file", "me.png", "image/png", fileContent);
 
         Long companyId = worker1.getCompany().getId();
-        long storageUsedBeforeUpload = companyRepository.findById(companyId).orElseThrow().getStorageUsedBytes();
+        long storageUsedBeforeUpload = companyRepository.findStorageUsedBytes(companyId).orElseThrow();
 
         mockMvc.perform(multipart("/api/v1/worker/profile/photo")
                         .file(file)
@@ -150,7 +150,7 @@ class WorkerProfileControllerIntegrationTest extends AbstractControllerIntegrati
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.photoUrl").exists());
 
-        long storageUsedAfterUpload = companyRepository.findById(companyId).orElseThrow().getStorageUsedBytes();
+        long storageUsedAfterUpload = companyRepository.findStorageUsedBytes(companyId).orElseThrow();
         assertThat(storageUsedAfterUpload - storageUsedBeforeUpload).isEqualTo(fileContent.length);
     }
 

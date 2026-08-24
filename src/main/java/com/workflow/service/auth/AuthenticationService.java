@@ -1,14 +1,19 @@
 package com.workflow.service.auth;
 
+import com.workflow.common.constant.notification.NotificationPriority;
+import com.workflow.common.constant.notification.NotificationType;
 import com.workflow.config.properties.JwtConfigProperties;
 import com.workflow.dto.auth.AuthenticationResponse;
 import com.workflow.dto.auth.LoginRequest;
 import com.workflow.dto.auth.RefreshTokenRequest;
+import com.workflow.dto.notification.NotificationResponse;
 import com.workflow.entity.auth.RefreshToken;
 import com.workflow.entity.auth.User;
 import com.workflow.repository.auth.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -24,15 +29,14 @@ public class AuthenticationService {
     private final JwtService jwtService;
     private final RefreshTokenService refreshTokenService;
     private final JwtConfigProperties jwtConfigProperties;
+    private final SimpMessagingTemplate messagingTemplate;
 
     public AuthenticationResponse authenticate(LoginRequest request, HttpServletRequest httpRequest) {
         // Spring Security will throw if invalid
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         request.userName(),
-                        request.password()
-                )
-        );
+                        request.password()));
 
         User user = userRepository.findByUsername(request.userName())
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + request.userName()));
@@ -68,10 +72,25 @@ public class AuthenticationService {
 
     public void logout(String refreshToken, User user) {
         refreshTokenService.revokeRefreshToken(refreshToken, user);
+        forceDisconnectWebSocket(user.getUsername());
     }
 
     public void logoutFromAllDevices(User user) {
         refreshTokenService.revokeAllUserTokens(user);
+        forceDisconnectWebSocket(user.getUsername());
+    }
+
+    private void forceDisconnectWebSocket(String username) {
+        NotificationResponse logoutSignal = NotificationResponse.builder()
+                .type(NotificationType.FORCE_LOGOUT)
+                .title("Logged Out")
+                .message("Your session has been terminated.")
+                .priority(NotificationPriority.URGENT)
+                .build();
+
+        messagingTemplate.convertAndSendToUser(
+                username,
+                "/queue/notifications",
+                logoutSignal);
     }
 }
-

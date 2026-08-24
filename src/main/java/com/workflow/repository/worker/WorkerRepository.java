@@ -37,5 +37,8 @@ public interface WorkerRepository extends JpaRepository<Worker, Long> {
 
     boolean existsByEmailIgnoreCaseAndArchivedFalse(String email);
 
+    @Query("SELECT w FROM Worker w JOIN FETCH w.user WHERE w.company.id = :companyId AND w.user.id = :userId AND w.archived = true")
+    Optional<Worker> findArchivedByCompanyIdAndUserId(@Param("companyId") Long companyId, @Param("userId") Long userId);
+
     long countByCompanyIdAndArchivedFalse(Long companyId);
 }

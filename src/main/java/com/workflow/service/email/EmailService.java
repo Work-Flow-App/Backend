@@ -142,6 +142,34 @@ public class EmailService {
     }
 
     @Async
+    public void sendWorkerReactivationEmail(String toEmail, String companyName) {
+        try {
+            log.info("Sending worker reactivation email to: {} for company: {}", toEmail, companyName);
+
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setFrom(String.format("%s <%s>", fromName, fromEmail));
+            helper.setTo(toEmail);
+            helper.setSubject("You've been re-added to " + companyName);
+
+            String loginUrl = frontendUrl + "/login";
+            Context context = new Context();
+            context.setVariable("companyName", companyName);
+            context.setVariable("loginUrl", loginUrl);
+
+            String htmlContent = templateEngine.process("email/worker-reactivation", context);
+            helper.setText(htmlContent, true);
+
+            mailSender.send(message);
+            log.info("Worker reactivation email sent successfully to: {}", toEmail);
+
+        } catch (MessagingException e) {
+            log.error("Failed to send worker reactivation email to: {}", toEmail, e);
+        }
+    }
+
+    @Async
     public void sendMemberReactivationEmail(String toEmail, String companyName, CompanyRole companyRole) {
         try {
             log.info("Sending member reactivation email to: {} for company: {}", toEmail, companyName);

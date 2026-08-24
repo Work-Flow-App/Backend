@@ -278,7 +278,7 @@ class AssetControllerIntegrationTest extends AbstractControllerIntegrationTest {
         byte[] fileContent = "mock image content".getBytes();
         MockMultipartFile file = new MockMultipartFile("files", "test.jpg", MediaType.IMAGE_JPEG_VALUE, fileContent);
 
-        long storageUsedBeforeUpload = companyRepository.findById(company.getId()).orElseThrow().getStorageUsedBytes();
+        long storageUsedBeforeUpload = companyRepository.findStorageUsedBytes(company.getId()).orElseThrow();
 
         mockMvc.perform(multipart("/api/v1/assets/" + existingAsset.getId() + "/attachments")
                         .file(file)
@@ -288,7 +288,7 @@ class AssetControllerIntegrationTest extends AbstractControllerIntegrationTest {
                 .andExpect(jsonPath("$.attachments", hasSize(1)))
                 .andExpect(jsonPath("$.attachments[0].fileName").value("test.jpg"));
 
-        long storageUsedAfterUpload = companyRepository.findById(company.getId()).orElseThrow().getStorageUsedBytes();
+        long storageUsedAfterUpload = companyRepository.findStorageUsedBytes(company.getId()).orElseThrow();
         assertThat(storageUsedAfterUpload - storageUsedBeforeUpload).isEqualTo(fileContent.length);
     }
 
@@ -327,7 +327,7 @@ class AssetControllerIntegrationTest extends AbstractControllerIntegrationTest {
                         .header("Authorization", "Bearer " + companyToken))
                 .andExpect(status().isOk());
 
-        long storageUsedAfterDelete = companyRepository.findById(company.getId()).orElseThrow().getStorageUsedBytes();
+        long storageUsedAfterDelete = companyRepository.findStorageUsedBytes(company.getId()).orElseThrow();
         assertThat(storageUsedAfterDelete).isEqualTo(1500L);
     }
 

@@ -120,7 +120,7 @@ class WorkerCertificateControllerIntegrationTest extends AbstractControllerInteg
         MockMultipartFile file = new MockMultipartFile("file", "license.pdf", "application/pdf", fileContent);
 
         Long companyId = worker1.getCompany().getId();
-        long storageUsedBeforeUpload = companyRepository.findById(companyId).orElseThrow().getStorageUsedBytes();
+        long storageUsedBeforeUpload = companyRepository.findStorageUsedBytes(companyId).orElseThrow();
 
         mockMvc.perform(multipart("/api/v1/worker/certificates")
                         .file(file)
@@ -136,7 +136,7 @@ class WorkerCertificateControllerIntegrationTest extends AbstractControllerInteg
                 .andExpect(jsonPath("$.workerId").value(worker1.getId()))
                 .andExpect(jsonPath("$.uploadedByUsername").value("certworker1"));
 
-        long storageUsedAfterUpload = companyRepository.findById(companyId).orElseThrow().getStorageUsedBytes();
+        long storageUsedAfterUpload = companyRepository.findStorageUsedBytes(companyId).orElseThrow();
         assertThat(storageUsedAfterUpload - storageUsedBeforeUpload).isEqualTo(fileContent.length);
     }
 
@@ -235,7 +235,7 @@ class WorkerCertificateControllerIntegrationTest extends AbstractControllerInteg
                         .header("Authorization", "Bearer " + companyAToken))
                 .andExpect(status().isNoContent());
 
-        long storageUsedAfterDelete = companyRepository.findById(companyId).orElseThrow().getStorageUsedBytes();
+        long storageUsedAfterDelete = companyRepository.findStorageUsedBytes(companyId).orElseThrow();
         assertThat(storageUsedAfterDelete).isEqualTo(1250L);
     }
 }

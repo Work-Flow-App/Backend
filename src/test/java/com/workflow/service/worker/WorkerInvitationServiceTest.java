@@ -210,11 +210,13 @@ class WorkerInvitationServiceTest {
     }
 
     @Test
-    @DisplayName("Should throw exception when email already registered")
+    @DisplayName("Should throw exception when email belongs to an unrelated account (no archived worker at this company)")
     void createInvitation_EmailAlreadyRegistered() {
         // Arrange
         when(companyService.findCompanyByUserId(companyUser.getId())).thenReturn(testCompany);
         when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(workerUser));
+        when(workerRepository.findArchivedByCompanyIdAndUserId(testCompany.getId(), workerUser.getId()))
+                .thenReturn(Optional.empty());
 
         // Act & Assert
         UserAlreadyExistsException exception = assertThrows(
@@ -223,6 +225,35 @@ class WorkerInvitationServiceTest {
         );
 
         assertEquals("Email already registered", exception.getMessage());
+        verify(invitationRepository, never()).save(any());
+        verify(emailService, never()).sendWorkerInvitationEmail(anyString(), anyString(), anyString());
+        verify(emailService, never()).sendWorkerReactivationEmail(anyString(), anyString());
+    }
+
+    @Test
+    @DisplayName("Should reactivate an archived worker at this company instead of blocking")
+    void createInvitation_ReactivatesArchivedWorker() {
+        // Arrange
+        testWorker.setArchived(true);
+        when(companyService.findCompanyByUserId(companyUser.getId())).thenReturn(testCompany);
+        when(userRepository.findByEmail(TEST_EMAIL)).thenReturn(Optional.of(workerUser));
+        when(workerRepository.findArchivedByCompanyIdAndUserId(testCompany.getId(), workerUser.getId()))
+                .thenReturn(Optional.of(testWorker));
+        when(workerRepository.save(any(Worker.class))).thenAnswer(i -> i.getArguments()[0]);
+        doNothing().when(emailService).sendWorkerReactivationEmail(anyString(), anyString());
+
+        // Act
+        WorkerInviteResponse response = workerInvitationService.createInvitation(TEST_EMAIL, companyUser.getId());
+
+        // Assert
+        assertNotNull(response);
+        assertEquals(TEST_EMAIL, response.email());
+        assertEquals("Worker reactivated successfully", response.message());
+        assertNull(response.expiresAt());
+        assertFalse(testWorker.isArchived());
+
+        verify(workerRepository).save(testWorker);
+        verify(emailService).sendWorkerReactivationEmail(TEST_EMAIL, testCompany.getName());
         verify(invitationRepository, never()).save(any());
         verify(emailService, never()).sendWorkerInvitationEmail(anyString(), anyString(), anyString());
     }

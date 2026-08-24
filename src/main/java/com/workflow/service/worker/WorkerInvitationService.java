@@ -56,9 +56,29 @@ public class WorkerInvitationService {
         seatLimitService.assertCapacity(company.getId());
 
         // Check if email already registered in User table
-        if (userRepository.findByEmail(email).isPresent()) {
-            log.warn("Attempted to invite already registered email: {}", email);
-            throw new UserAlreadyExistsException("Email already registered");
+        User existingUser = userRepository.findByEmail(email).orElse(null);
+        if (existingUser != null) {
+            // The User row survives worker removal (deleteWorker only archives the Worker),
+            // so re-adding a previously removed worker at this same company should reactivate
+            // their existing account instead of blocking on "already exists". If no archived
+            // Worker for THIS company matches, the email belongs to an unrelated account —
+            // keep blocking that case.
+            Worker archivedWorker = workerRepository
+                    .findArchivedByCompanyIdAndUserId(company.getId(), existingUser.getId())
+                    .orElseThrow(() -> {
+                        log.warn("Attempted to invite already registered email: {}", email);
+                        return new UserAlreadyExistsException("Email already registered");
+                    });
+
+            archivedWorker.setArchived(false);
+            workerRepository.save(archivedWorker);
+
+            emailService.sendWorkerReactivationEmail(email, company.getName());
+
+            log.info("Worker reactivated: workerId={}, userId={}, company={}",
+                    archivedWorker.getId(), existingUser.getId(), company.getName());
+
+            return new WorkerInviteResponse(email, "Worker reactivated successfully", null);
         }
 
         // Check if worker with this email already exists

@@ -42,4 +42,6 @@ public interface IFormService {
 
         List<FormAttachmentResponse> getFormAttachments(Long submissionId, Long actorId, boolean isWorker);
 
+        List<FormSubmissionResponse> getJobForms(Long jobId, Long companyId);
+
 }       

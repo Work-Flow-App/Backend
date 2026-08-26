@@ -13,5 +13,6 @@ public class FormSubmissionResponse {
     private String templateName;
     private Long workerId;
     private String workerName;
+    private Long jobId;
     private List<FormFieldValueResponse> values;
 }

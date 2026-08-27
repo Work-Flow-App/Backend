@@ -33,6 +33,10 @@ public class WorkerCertificate {
     @Column(nullable = false)
     private CertificateType type;
 
+    // Only meaningful when type == OTHER — the admin/worker-supplied name for the actual type.
+    @Column(name = "custom_type_label", length = 100)
+    private String customTypeLabel;
+
     @Column(nullable = false, length = 150)
     private String name;
 

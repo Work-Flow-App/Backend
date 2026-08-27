@@ -24,8 +24,13 @@ public interface EstimateRepository extends JpaRepository<Estimate, Long> {
            "WHERE e.id = :id AND e.company.id = :companyId")
     Optional<Estimate> findByIdAndCompanyId(@Param("id") Long id, @Param("companyId") Long companyId);
 
+    // Bank details eagerly fetched for InvoiceService's PDF rendering, which runs after the
+    // write transaction has already committed (see InvoiceService.generateInvoice) — without
+    // this, an untouched lazy Company.bankDetails proxy throws LazyInitializationException for
+    // any company that actually has bank details configured.
     @Query("SELECT e FROM Estimate e " +
-           "JOIN FETCH e.company " +
+           "JOIN FETCH e.company c " +
+           "LEFT JOIN FETCH c.bankDetails " +
            "JOIN FETCH e.job j " +
            "LEFT JOIN FETCH j.customer " +
            "LEFT JOIN FETCH e.lineItems " +

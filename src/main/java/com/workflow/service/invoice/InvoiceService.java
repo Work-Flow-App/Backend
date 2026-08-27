@@ -28,8 +28,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.io.ByteArrayInputStream;
 import java.math.BigDecimal;
@@ -42,7 +41,6 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @Service
-@Transactional
 @RequiredArgsConstructor
 public class InvoiceService implements IInvoiceService {
 
@@ -53,13 +51,14 @@ public class InvoiceService implements IInvoiceService {
     private final IStorageQuotaService storageQuotaService;
     private final InvoicePdfRenderer pdfRenderer;
     private final CompanyCounterService companyCounterService;
+    private final TransactionTemplate transactionTemplate;
 
     @Override
     public InvoiceResponse generateInvoice(Long estimateId, InvoiceCreateRequest request, Long companyId) {
-        // Must run BEFORE the invoice row is created below, not after this transaction commits.
-        // PDF generation (and therefore the real byte count) is deliberately deferred to the
-        // afterCommit callback to avoid holding DB locks during slow CPU/S3 work, so the exact
-        // size isn't knowable yet here — this pre-check uses incomingBytes=0, i.e. "is the
+        // Must run BEFORE the invoice row is created below, not after the write transaction
+        // commits. PDF generation (and therefore the real byte count) deliberately happens after
+        // that transaction commits, to avoid holding DB locks during slow CPU/S3 work, so the
+        // exact size isn't knowable yet here — this pre-check uses incomingBytes=0, i.e. "is the
         // company already over its cap at all," which is enough to stop the bug this was fixing:
         // an over-quota company getting a 409/402 implying nothing happened while an Invoice row
         // (with a consumed, audit-significant invoice-number sequence) is left durably committed.
@@ -131,56 +130,44 @@ public class InvoiceService implements IInvoiceService {
         String invoiceNumber = String.format("INV-%d-%05d", LocalDate.now().getYear(), invoiceSeq);
         String s3Key = String.format("invoices/%d/%s.pdf", companyId, invoiceNumber);
 
-        Invoice invoiceToSave = Invoice.builder()
-                .estimate(estimate)
-                .company(estimate.getCompany())
-                .invoiceNumber(invoiceNumber)
-                .s3Key(s3Key)
-                .lineItemSnapshots(snapshots)
-                .dueDate(request.getDueDate())
-                .reference(request.getReference())
-                .totalNet(totalNet)
-                .totalVat(totalVat)
-                .grandTotal(grandTotal)
-                .build();
-
-        snapshots.forEach(s -> s.setInvoice(invoiceToSave));
-        Invoice invoice = invoiceRepository.save(invoiceToSave);
-
         List<Long> selectedIds = selectedItems.stream().map(EstimateLineItem::getId).toList();
-        estimateLineItemRepository.markAsInvoiced(selectedIds);
 
-        // PDF generation and upload after TX commits — X locks on invoices and
-        // job_line_item_snapshots released before CPU/S3 work.
-        final Invoice committedInvoice = invoice;
-        final List<EstimateLineItem> itemsForPdf = selectedItems;
-        final Estimate estimateForPdf = estimate;
-        if (TransactionSynchronizationManager.isSynchronizationActive()) {
-            log.debug("[Invoice] Registering PDF+S3 upload for afterCommit key={}", s3Key);
-            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-                @Override
-                public void afterCommit() {
-                    try {
-                        log.debug("[Invoice] afterCommit: generating PDF key={}", s3Key);
-                        byte[] pdfBytes = generatePdf(committedInvoice, invoiceNumber, itemsForPdf, estimateForPdf);
-                        log.debug("[Invoice] afterCommit: uploading to S3 key={}", s3Key);
-                        storageService.upload(s3Key, new ByteArrayInputStream(pdfBytes), pdfBytes.length, "application/pdf");
-                        invoiceRepository.updateFileSizeBytes(committedInvoice.getId(), pdfBytes.length);
-                        storageQuotaService.recordUpload(companyId, pdfBytes.length);
-                        log.info("[Invoice] S3 upload complete key={}", s3Key);
-                    } catch (Exception e) {
-                        log.error("[Invoice] PDF/S3 failed key={}", s3Key, e);
-                        throw e;
-                    }
-                }
-            });
-        } else {
-            log.warn("[Invoice] No active TX sync — generating PDF and uploading S3 inline key={}", s3Key);
-            byte[] pdfBytes = generatePdf(invoice, invoiceNumber, selectedItems, estimate);
-            storageService.upload(s3Key, new ByteArrayInputStream(pdfBytes), pdfBytes.length, "application/pdf");
-            invoiceRepository.updateFileSizeBytes(invoice.getId(), pdfBytes.length);
-            storageQuotaService.recordUpload(companyId, pdfBytes.length);
-        }
+        // Short write transaction — commits and releases X locks on invoices and
+        // job_line_item_snapshots before the slow CPU/S3 work below runs. Deliberately NOT
+        // TransactionSynchronizationManager.afterCommit(): a callback registered there runs after
+        // the transaction has already committed, so any @Modifying repository call inside it
+        // (updateFileSizeBytes, recordUpload) fails with "Executing an update/delete query"
+        // (Hibernate has no active transaction at that point) — every single time, not
+        // intermittently. TransactionTemplate.execute() instead returns only once its own
+        // self-contained transaction has fully committed, so the code after it is genuinely
+        // outside any transaction and free to make its own separately-transactional calls.
+        Invoice invoice = transactionTemplate.execute(status -> {
+            Invoice invoiceToSave = Invoice.builder()
+                    .estimate(estimate)
+                    .company(estimate.getCompany())
+                    .invoiceNumber(invoiceNumber)
+                    .s3Key(s3Key)
+                    .lineItemSnapshots(snapshots)
+                    .dueDate(request.getDueDate())
+                    .reference(request.getReference())
+                    .totalNet(totalNet)
+                    .totalVat(totalVat)
+                    .grandTotal(grandTotal)
+                    .build();
+
+            snapshots.forEach(s -> s.setInvoice(invoiceToSave));
+            Invoice saved = invoiceRepository.save(invoiceToSave);
+            estimateLineItemRepository.markAsInvoiced(selectedIds);
+            return saved;
+        });
+
+        log.debug("[Invoice] Generating PDF key={}", s3Key);
+        byte[] pdfBytes = generatePdf(invoice, invoiceNumber, selectedItems, estimate);
+        log.debug("[Invoice] Uploading to S3 key={}", s3Key);
+        storageService.upload(s3Key, new ByteArrayInputStream(pdfBytes), pdfBytes.length, "application/pdf");
+        invoiceRepository.updateFileSizeBytes(invoice.getId(), pdfBytes.length);
+        storageQuotaService.recordUpload(companyId, pdfBytes.length);
+        log.info("[Invoice] S3 upload complete key={}", s3Key);
 
         String presignedUrl = storageService.generatePresignedUrl(s3Key);
         return InvoiceResponse.fromEntity(invoice, presignedUrl);

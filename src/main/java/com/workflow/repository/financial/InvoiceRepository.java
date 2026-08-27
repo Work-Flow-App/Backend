@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -51,9 +52,14 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
     @Query("DELETE FROM Invoice i WHERE i.estimate.job.id = :jobId")
     void deleteByJobId(@Param("jobId") Long jobId);
 
-    // Invoice rows are saved before the PDF exists (PDF generation happens afterCommit),
-    // so the size can't be set on the entity being saved like every other upload site — it's
-    // written back once the byte count is actually known, right after the S3 upload succeeds.
+    // Invoice rows are saved before the PDF exists, so the size can't be set on the entity being
+    // saved like every other upload site — it's written back once the byte count is actually
+    // known, right after the S3 upload succeeds, well after the save transaction has committed.
+    // Explicit @Transactional is required here (unlike SimpleJpaRepository's built-in save/delete,
+    // custom @Modifying query methods get no transaction of their own from Spring Data JPA — they
+    // only work by joining an already-active one), since this is called with no ambient
+    // transaction from InvoiceService.generateInvoice.
+    @Transactional
     @Modifying(clearAutomatically = true)
     @Query("UPDATE Invoice i SET i.fileSizeBytes = :fileSizeBytes WHERE i.id = :id")
     void updateFileSizeBytes(@Param("id") Long id, @Param("fileSizeBytes") long fileSizeBytes);

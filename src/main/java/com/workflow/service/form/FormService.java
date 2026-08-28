@@ -186,10 +186,11 @@ public class FormService implements IFormService {
         }
 
         Job job = null;
-        if (request.getJobId() != null) {
-            job = jobRepository.findById(request.getJobId())
-                    .filter(j -> j.getCompany().getId().equals(companyId))
-                    .orElseThrow(() -> new JobNotFoundException("Job not found"));
+        if (request.getJobRef() != null) {
+            // Find job by jobRef instead of jobId
+            job = jobRepository.findByJobRefAndCompanyId(request.getJobRef(), companyId)
+                    .orElseThrow(
+                            () -> new JobNotFoundException("Job not found with reference: " + request.getJobRef()));
         }
 
         FormSubmission submission = FormSubmission.builder()
@@ -474,7 +475,7 @@ public class FormService implements IFormService {
                 .templateName(s.getTemplate().getName())
                 .workerId(s.getWorker() != null ? s.getWorker().getId() : null)
                 .workerName(s.getWorker() != null ? s.getWorker().getName() : null)
-                .jobId(s.getJob() != null ? s.getJob().getId() : null)
+                .jobRef(s.getJob() != null ? s.getJob().getJobRef() : null)
                 .values(s.getTemplate().getFields().stream().map(field -> {
                     // Check if the user has already saved a value for this field
                     FormFieldValue val = s.getFieldValues().stream()

@@ -13,6 +13,7 @@ import org.springframework.lang.Nullable;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 public interface JobRepository extends JpaRepository<Job, Long>, JpaSpecificationExecutor<Job> {
 
@@ -61,4 +62,6 @@ public interface JobRepository extends JpaRepository<Job, Long>, JpaSpecificatio
                      @Param("companyId") Long companyId,
                      @Param("start") LocalDateTime start,
                      @Param("end") LocalDateTime end);
+
+       Optional<Job> findByJobRefAndCompanyId(Long jobRef, Long companyId);
 }

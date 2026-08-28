@@ -27,6 +27,7 @@ import com.workflow.repository.customer.CustomerRepository;
 import com.workflow.repository.financial.EstimateDocumentRepository;
 import com.workflow.repository.financial.EstimateRepository;
 import com.workflow.repository.financial.InvoiceRepository;
+import com.workflow.repository.form.FormSubmissionRepository;
 import com.workflow.repository.job.JobFieldValueRepository;
 import com.workflow.repository.job.JobRepository;
 import com.workflow.repository.job.JobTemplateFieldRepository;
@@ -52,6 +53,9 @@ import java.util.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -120,6 +124,9 @@ class JobServiceTest {
         @Mock
         private IPlanLimitsService planLimitsService;
 
+        @Mock
+        private FormSubmissionRepository formSubmissionRepository;
+
         @InjectMocks
         private JobService jobService;
 
@@ -148,16 +155,24 @@ class JobServiceTest {
                                 .fieldValues(fieldValues)
                                 .build();
 
-                // Permissive default for assertJobCapacity, which now runs first in every createJob()
-                // call (fail-closed to FREE-tier defaults per #5 means an unstubbed plan-limits mock
-                // would otherwise return 0 and trip the cap on every test). lenient() since tests that
+                // Permissive default for assertJobCapacity, which now runs first in every
+                // createJob()
+                // call (fail-closed to FREE-tier defaults per #5 means an unstubbed plan-limits
+                // mock
+                // would otherwise return 0 and trip the cap on every test). lenient() since
+                // tests that
                 // exercise the cap itself override these with more specific stubs.
-                CompanySubscription defaultSubscription = CompanySubscription.builder().planType(PlanType.PROFESSIONAL).build();
-                lenient().when(subscriptionRepository.findByCompanyIdForUpdate(anyLong())).thenReturn(Optional.of(defaultSubscription));
-                lenient().when(jobRepository.countByCompanyIdAndCreatedAtBetween(anyLong(), any(), any())).thenReturn(0L);
-                // Explicit type witness needed — bare any() is ambiguous now that getEffectiveJobsPerMonth
+                CompanySubscription defaultSubscription = CompanySubscription.builder().planType(PlanType.PROFESSIONAL)
+                                .build();
+                lenient().when(subscriptionRepository.findByCompanyIdForUpdate(anyLong()))
+                                .thenReturn(Optional.of(defaultSubscription));
+                lenient().when(jobRepository.countByCompanyIdAndCreatedAtBetween(anyLong(), any(), any()))
+                                .thenReturn(0L);
+                // Explicit type witness needed — bare any() is ambiguous now that
+                // getEffectiveJobsPerMonth
                 // is overloaded on CompanySubscription vs Optional<CompanySubscription>.
-                lenient().when(planLimitsService.getEffectiveJobsPerMonth(ArgumentMatchers.<Optional<CompanySubscription>>any()))
+                lenient().when(planLimitsService
+                                .getEffectiveJobsPerMonth(ArgumentMatchers.<Optional<CompanySubscription>>any()))
                                 .thenReturn(200);
         }
 
@@ -278,7 +293,8 @@ class JobServiceTest {
                 assertThatThrownBy(() -> jobService.createJob(createRequest, 1L))
                                 .isInstanceOf(JobLimitExceededException.class);
 
-                // Fails fast — none of the downstream lookups should run once the cap check throws
+                // Fails fast — none of the downstream lookups should run once the cap check
+                // throws
                 verify(companyRepository, never()).getReferenceById(any());
                 verify(jobRepository, never()).saveAndFlush(any());
         }
@@ -309,8 +325,10 @@ class JobServiceTest {
                 verify(jobRepository).saveAndFlush(any(Job.class));
         }
 
-        // Decision: fail CLOSED to FREE-tier limits (not open/unlimited) when no CompanySubscription
-        // exists — this should never legitimately happen, so it's still logged loudly, but the cap
+        // Decision: fail CLOSED to FREE-tier limits (not open/unlimited) when no
+        // CompanySubscription
+        // exists — this should never legitimately happen, so it's still logged loudly,
+        // but the cap
         // check now actually runs against FREE-tier defaults instead of being skipped.
         @Test
         void createJob_ShouldEvaluateAgainstFreeTierDefaults_WhenNoSubscriptionFound() {
@@ -363,6 +381,8 @@ class JobServiceTest {
                                 .build();
 
                 when(jobRepository.findById(jobId)).thenReturn(Optional.of(archivedJob));
+
+                when(formSubmissionRepository.findByJobIdAndCompanyId(jobId, 1L)).thenReturn(Collections.emptyList());
 
                 jobService.deleteJob(jobId, 1L);
 

@@ -8,5 +8,5 @@ public class FormSubmissionCreateRequest {
     private Long templateId;
     private String title;
     private Long workerId;
-    private Long jobId; 
+    private Long jobRef; 
 }

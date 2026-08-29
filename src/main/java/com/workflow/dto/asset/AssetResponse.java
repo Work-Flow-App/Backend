@@ -29,6 +29,9 @@ public class AssetResponse {
     private boolean available;
     private boolean archived;
 
+    private Long groupId;
+    private String groupName;
+
     private AssetLocationType locationType;
     private AddressResponse address;
     private AddressResponse warehouseAddress;

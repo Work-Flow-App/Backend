@@ -60,10 +60,12 @@ public class AssetController {
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(required = false) Boolean archived,
             @RequestParam(required = false) Boolean available,
+            @RequestParam(required = false) Long groupId,
             @RequestParam(required = false) String sort,
             @RequestParam(defaultValue = "asc") String dir,
             Authentication auth) {
-        return ResponseEntity.ok(service.listAssets(getCompanyId(), page, size, archived, available, sort, dir));
+        return ResponseEntity
+                .ok(service.listAssets(getCompanyId(), page, size, archived, available, groupId, sort, dir));
     }
 
     @RequireCompanyRole({ COMPANY_ADMIN, MANAGER })
@@ -114,8 +116,9 @@ public class AssetController {
             Authentication auth) {
 
         // Pass the raw S3 key (fileUrl) that the frontend received in the AssetResponse
-        // If the user clicks the "X" on a specific image in the UI, the frontend hits 
-        // DELETE /api/v1/assets/5/attachments?fileUrl=companies/1/assets/5/abcd-1234.jpg.
+        // If the user clicks the "X" on a specific image in the UI, the frontend hits
+        // DELETE
+        // /api/v1/assets/5/attachments?fileUrl=companies/1/assets/5/abcd-1234.jpg.
         return ResponseEntity.ok(service.removeAttachment(id, fileUrl, getCompanyId()));
     }
 }

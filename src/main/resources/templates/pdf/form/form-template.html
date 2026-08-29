@@ -126,6 +126,11 @@
                 <div class="meta-label">Template</div>
                 <div th:text="${data.templateName}">Template Name</div>
 
+                <div th:if="${data.jobRef != null}">
+                    <div class="meta-label">Job Reference</div>
+                    <div th:text="'#' + ${data.jobRef}">#1234</div>
+                </div>
+
                 <div class="meta-label">Status</div>
                 <div th:text="${data.status}">STATUS</div>
 

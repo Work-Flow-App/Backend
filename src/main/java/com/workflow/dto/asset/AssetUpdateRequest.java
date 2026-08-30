@@ -42,4 +42,6 @@ public class AssetUpdateRequest {
     private BigDecimal salvageValue;
 
     private AddressRequest warehouseAddress;
+
+    private Long groupId;
 }

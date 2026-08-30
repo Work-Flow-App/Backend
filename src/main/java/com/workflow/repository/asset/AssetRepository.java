@@ -11,9 +11,13 @@ import java.util.List;
 
 public interface AssetRepository extends JpaRepository<Asset, Long> {
     boolean existsByCompanyIdAndName(Long companyId, String name);
+
     boolean existsByCompanyIdAndAssetTag(Long companyId, String assetTag);
+
     Page<Asset> findByCompanyIdAndArchivedFalse(Long companyId, Pageable pageable);
+
     Page<Asset> findByCompanyId(Long companyId, Pageable pageable);
+
     Page<Asset> findByCompanyIdAndArchivedFalseAndAvailable(Long companyId, boolean available, Pageable pageable);
 
     @Query("SELECT COUNT(a) FROM Asset a WHERE a.company.id = :companyId AND a.archived = false")
@@ -24,4 +28,13 @@ public interface AssetRepository extends JpaRepository<Asset, Long> {
 
     @Query("SELECT a FROM Asset a WHERE a.company.id = :companyId AND a.archived = false")
     List<Asset> findActiveByCompanyId(@Param("companyId") Long companyId);
+
+    Page<Asset> findByCompanyIdAndAssetGroupId(Long companyId, Long groupId, Pageable pageable);
+
+    Page<Asset> findByCompanyIdAndAssetGroupIdAndArchivedFalse(Long companyId, Long groupId, Pageable pageable);
+
+    Page<Asset> findByCompanyIdAndAssetGroupIdAndArchivedFalseAndAvailable(Long companyId, Long groupId,
+            boolean available, Pageable pageable);
+
+    boolean existsByCompanyIdAndAssetGroupId(Long companyId, Long groupId);
 }

@@ -6,9 +6,11 @@ import com.workflow.common.exception.business.*;
 import com.workflow.dto.form.*;
 import com.workflow.entity.company.Company;
 import com.workflow.entity.form.*;
+import com.workflow.entity.job.Job;
 import com.workflow.entity.worker.Worker;
 import com.workflow.repository.company.CompanyRepository;
 import com.workflow.repository.form.*;
+import com.workflow.repository.job.JobRepository;
 import com.workflow.repository.worker.WorkerRepository;
 import com.workflow.service.storage.IStorageService;
 import com.workflow.templates.pdf.form.FormPdfRenderer;
@@ -39,6 +41,7 @@ public class FormService implements IFormService {
     private final FormSubmissionRepository submissionRepo;
     private final CompanyRepository companyRepo;
     private final WorkerRepository workerRepo;
+    private final JobRepository jobRepository;
     private final IStorageService s3Service;
     private final FormPdfRenderer formPdfRenderer;
     private final Tika tika;
@@ -182,16 +185,34 @@ public class FormService implements IFormService {
                     .orElseThrow(() -> new WorkerNotFoundException("Worker not found"));
         }
 
+        Job job = null;
+        if (request.getJobRef() != null) {
+            // Find job by jobRef instead of jobId
+            job = jobRepository.findByJobRefAndCompanyId(request.getJobRef(), companyId)
+                    .orElseThrow(
+                            () -> new JobNotFoundException("Job not found with reference: " + request.getJobRef()));
+        }
+
         FormSubmission submission = FormSubmission.builder()
                 .company(company)
                 .template(template)
                 .worker(worker)
+                .job(job)
                 .title(request.getTitle())
                 .status(FormSubmissionStatus.DRAFT)
                 .build();
 
         submission = submissionRepo.save(submission);
         return mapToResponse(submission);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<FormSubmissionResponse> getJobForms(Long jobId, Long companyId) {
+        return submissionRepo.findByJobIdAndCompanyId(jobId, companyId)
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -454,8 +475,7 @@ public class FormService implements IFormService {
                 .templateName(s.getTemplate().getName())
                 .workerId(s.getWorker() != null ? s.getWorker().getId() : null)
                 .workerName(s.getWorker() != null ? s.getWorker().getName() : null)
-
-                // 🚨 THE FIX: Loop over the TEMPLATE fields, not the saved values! 🚨
+                .jobRef(s.getJob() != null ? s.getJob().getJobRef() : null)
                 .values(s.getTemplate().getFields().stream().map(field -> {
                     // Check if the user has already saved a value for this field
                     FormFieldValue val = s.getFieldValues().stream()

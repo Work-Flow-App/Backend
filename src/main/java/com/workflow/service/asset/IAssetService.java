@@ -15,7 +15,7 @@ public interface IAssetService {
     AssetResponse getAsset(Long assetId, Long companyId);
 
     Page<AssetResponse> listAssets(Long companyId, int page, int size, Boolean archived, Boolean available,
-            String sortBy, String direction);
+            Long groupId, String sortBy, String direction);
 
     void archiveAsset(Long assetId, Long companyId);
 

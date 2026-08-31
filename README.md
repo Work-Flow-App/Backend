@@ -100,47 +100,61 @@ Migration files are in `src/main/resources/db/migration/`. To add a migration:
 
 ### Branch Naming Convention
 
-Always create branches from `develop` using the following naming patterns:
+Always cut branches from `develop`. Format: `<type>/<short-description>`
 
-| Prefix | Usage | Example |
-|--------|-------|---------|
-| `feat/` | New features or functionality | `feat/user-authentication` |
-| `fix/` | Bug fixes | `fix/login-validation-error` |
-| `update/` | Enhancements to existing features | `update/improve-job-search` |
-| `chore/` | Maintenance tasks, refactoring, dependencies | `chore/upgrade-spring-boot` |
+| Type | When to use | Example |
+|---|---|---|
+| `feat/` | New feature or endpoint | `feat/paddle-payments` |
+| `fix/` | Bug fix | `fix/auth-token-expiry` |
+| `hotfix/` | Urgent production fix (cut from `main`) | `hotfix/invoice-crash` |
+| `chore/` | Maintenance, deps, config | `chore/upgrade-spring-boot` |
+| `refactor/` | Code restructure, no behaviour change | `refactor/job-service-n-plus-one` |
+| `test/` | Adding or fixing tests | `test/worker-invitation-coverage` |
+| `docs/` | Documentation only | `docs/api-readme-update` |
+| `ci/` | CI/CD pipeline changes | `ci/add-coverage-gate` |
+| `release/` | Release preparation | `release/v1.2.0` |
 
-**Examples:**
 ```bash
-git checkout develop
-git pull origin develop
-git checkout -b feat/workflow-management
+git checkout develop && git pull origin develop
+git checkout -b feat/your-feature-name
 ```
 
 ### Commit Message Convention
 
-All commit messages must follow this format:
+All commits must follow [Conventional Commits](https://www.conventionalcommits.org/):
 
 ```
-<type>: <description>
+<type>(<scope>): <subject>
 ```
 
-| Type | When to Use |
-|------|-------------|
-| `feat:` | Adding new functionality, new endpoints, new features |
-| `fix:` | Fixing bugs, resolving issues, correcting behavior |
-| `update:` | Improving existing features, enhancing performance, updating logic |
-| `chore:` | Code cleanup, dependency updates, configuration changes, refactoring without behavior change |
+- **type** — required, lowercase
+- **scope** — optional, e.g. `auth`, `worker`, `job`, `workflow`, `invoice`, `company`, `db`, `ci`
+- **subject** — imperative, lowercase, no trailing period, max 72 chars
+
+| Type | When to use |
+|---|---|
+| `feat` | New feature or endpoint |
+| `fix` | Bug fix |
+| `refactor` | Code change with no behaviour change |
+| `test` | Adding or updating tests |
+| `chore` | Maintenance, deps, config, migrations |
+| `ci` | CI/CD pipeline changes |
+| `docs` | Documentation only |
+| `perf` | Performance improvement |
+| `revert` | Reverts a previous commit |
 
 **Examples:**
 ```bash
-# New feature
-git commit -m "feat: add workflow assignment to job creation"
+feat(auth): add Google Sign-In via frontend token verification
+fix(workflow): add missing workflow ID in response
+refactor(service): eliminate N+1 queries in job service
+test(worker): add integration tests for invitation flow
+chore(db): add Flyway migration V11 for subscription table
+```
 
-# Bug fix
-git commit -m "fix: resolve null pointer in worker validation"
-
-# Enhancement
-git commit -m "update: improve job search performance with pagination"
+**Rules:**
+- Imperative mood: `add` not `added`, `fix` not `fixed`
+- Merge and revert commits are exempt from validation
 
 # Maintenance
 git commit -m "chore: upgrade Spring Boot to 3.5.5"

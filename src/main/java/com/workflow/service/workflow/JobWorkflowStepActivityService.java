@@ -1,7 +1,9 @@
 package com.workflow.service.workflow;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import org.apache.tika.Tika;
@@ -11,6 +13,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.workflow.common.constant.notification.NotificationPriority;
+import com.workflow.common.constant.notification.NotificationType;
 import com.workflow.common.constant.workflow.JobWorkflowStepActivityType;
 import com.workflow.common.constant.workflow.StepDiscussionType;
 import com.workflow.common.exception.business.AttachmentNotFoundException;
@@ -32,11 +36,13 @@ import com.workflow.entity.job.JobWorkflowStep;
 import com.workflow.entity.job.JobWorkflowStepActivity;
 import com.workflow.entity.job.JobWorkflowStepAttachment;
 import com.workflow.entity.job.JobWorkflowStepComment;
+import com.workflow.entity.worker.Worker;
 import com.workflow.repository.company.CompanyRepository;
 import com.workflow.repository.job.JobWorkflowStepActivityRepository;
 import com.workflow.repository.job.JobWorkflowStepAttachmentRepository;
 import com.workflow.repository.job.JobWorkflowStepCommentRepository;
 import com.workflow.repository.job.JobWorkflowStepRepository;
+import com.workflow.service.notification.INotificationService;
 import com.workflow.service.storage.IStorageService;
 import com.workflow.service.subscription.IStorageQuotaService;
 
@@ -59,6 +65,7 @@ public class JobWorkflowStepActivityService
         private final Tika tika;
         private final IStorageService s3Service;
         private final IStorageQuotaService storageQuotaService;
+        private final INotificationService notificationService;
 
         // Spring injects the list from application.yml here!
         @Value("${workflow.security.file.blocked-types}")
@@ -89,6 +96,40 @@ public class JobWorkflowStepActivityService
                 return step;
         }
 
+        private void notifyAssignedWorkers(
+                        JobWorkflowStep step,
+                        NotificationType type,
+                        String title,
+                        String message,
+                        String targetUrl,
+                        String entityType,
+                        Long entityId,
+                        NotificationPriority priority,
+                        Map<String, Object> extraMetadata) {
+
+                // Send notification to all assigned workers
+                for (Worker worker : step.getAssignedWorkers()) {
+                        Map<String, Object> metadata = new HashMap<>(Map.of(
+                                        "jobId", step.getJobWorkflow().getJob().getId(),
+                                        "stepId", step.getId(),
+                                        "workerId", worker.getId()));
+                        if (extraMetadata != null) {
+                                metadata.putAll(extraMetadata);
+                        }
+
+                        notificationService.createNotification(
+                                        worker.getUser(),
+                                        type,
+                                        title,
+                                        message,
+                                        targetUrl,
+                                        entityType,
+                                        entityId,
+                                        priority,
+                                        metadata);
+                }
+        }
+
         /*
          * ===========================
          * COMMENTS
@@ -115,6 +156,16 @@ public class JobWorkflowStepActivityService
                 stepActivityService.log(step, company.getUser(), JobWorkflowStepActivityType.COMMENT,
                                 request.getContent());
 
+                notifyAssignedWorkers(step,
+                                NotificationType.STEP_COMMENT_ADDED,
+                                "New Company Comment",
+                                String.format("A new comment was added to step '%s' (Job #%s).", step.getName(),
+                                                step.getJobWorkflow().getJob().getJobRef()),
+                                "/job-workflow-steps/" + step.getId() + "/discussion",
+                                "JobWorkflowStepComment", comment.getId(),
+                                NotificationPriority.LOW,
+                                Map.of("commentId", comment.getId(), "discussionType", comment.getType().name(),
+                                                "action", "OPEN_DISCUSSION"));
                 return map(comment);
         }
 
@@ -146,6 +197,18 @@ public class JobWorkflowStepActivityService
                                 company.getUser(),
                                 JobWorkflowStepActivityType.COMMENT,
                                 "Edited a comment");
+
+                notifyAssignedWorkers(comment.getStep(),
+                                NotificationType.STEP_COMMENT_UPDATED,
+                                "Company Comment Updated",
+                                String.format("A comment on step '%s' (Job #%s) was updated.",
+                                                comment.getStep().getName(),
+                                                comment.getStep().getJobWorkflow().getJob().getJobRef()),
+                                "/job-workflow-steps/" + comment.getStep().getId() + "/discussion",
+                                "JobWorkflowStepComment", comment.getId(),
+                                NotificationPriority.LOW,
+                                Map.of("commentId", comment.getId(), "discussionType", comment.getType().name(),
+                                                "action", "OPEN_DISCUSSION"));
 
                 return map(comment);
         }
@@ -259,6 +322,17 @@ public class JobWorkflowStepActivityService
                                 JobWorkflowStepActivityType.ATTACHMENT_ADDED,
                                 "Uploaded " + originalFilename);
 
+                notifyAssignedWorkers(step,
+                                NotificationType.STEP_ATTACHMENT_ADDED,
+                                "New Company Attachment",
+                                String.format("A new attachment '%s' was uploaded to step '%s' (Job #%s).",
+                                                originalFilename, step.getName(),
+                                                step.getJobWorkflow().getJob().getJobRef()),
+                                "/job-workflow-steps/" + step.getId() + "/discussion",
+                                "JobWorkflowStepAttachment", attachment.getId(),
+                                NotificationPriority.LOW,
+                                Map.of("attachmentId", attachment.getId(), "discussionType",
+                                                attachment.getType().name(), "action", "OPEN_DISCUSSION"));
                 return map(attachment);
         }
 
@@ -294,6 +368,18 @@ public class JobWorkflowStepActivityService
                                 company.getUser(),
                                 JobWorkflowStepActivityType.ATTACHMENT_UPDATED,
                                 "Updated attachment: " + attachment.getFileName());
+
+                notifyAssignedWorkers(attachment.getStep(),
+                                NotificationType.STEP_ATTACHMENT_UPDATED,
+                                "Company Attachment Updated",
+                                String.format("An attachment ('%s') on step '%s' (Job #%s) was updated.",
+                                                attachment.getFileName(), attachment.getStep().getName(),
+                                                attachment.getStep().getJobWorkflow().getJob().getJobRef()),
+                                "/job-workflow-steps/" + attachment.getStep().getId() + "/discussion",
+                                "JobWorkflowStepAttachment", attachment.getId(),
+                                NotificationPriority.LOW,
+                                Map.of("attachmentId", attachment.getId(), "discussionType",
+                                                attachment.getType().name(), "action", "OPEN_DISCUSSION"));
 
                 return map(attachment);
         }

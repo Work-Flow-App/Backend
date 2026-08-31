@@ -1,5 +1,10 @@
 package com.workflow.common.constant.notification;
 
 public enum NotificationType {
-    FORCE_LOGOUT, VISIT_LOG_ADDED
+    FORCE_LOGOUT,
+    VISIT_LOG_ADDED,
+    STEP_STATUS_CHANGED,
+    STEP_COMPLETED,
+    STEP_COMMENT_ADDED,
+    STEP_ATTACHMENT_ADDED
 }

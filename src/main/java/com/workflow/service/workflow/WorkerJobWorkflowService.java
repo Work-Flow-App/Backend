@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -117,6 +118,46 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
                                         String.format("Cannot change status. Current status is %s, but required status is %s",
                                                         step.getStatus(), requiredCurrentStatus));
                 }
+        }
+
+        /**
+         * Reusable helper to send notifications to the company admin.
+         */
+        private void notifyCompanyAdmin(
+                        JobWorkflowStep step,
+                        Worker worker,
+                        NotificationType type,
+                        String title,
+                        String message,
+                        String targetUrl,
+                        String entityType,
+                        Long entityId,
+                        NotificationPriority priority,
+                        Map<String, Object> extraMetadata) {
+
+                User companyAdmin = step.getJobWorkflow().getJob().getCompany().getUser();
+
+                // Base metadata
+                Map<String, Object> metadata = new HashMap<>(Map.of(
+                                "jobId", step.getJobWorkflow().getJob().getId(),
+                                "stepId", step.getId(),
+                                "workerId", worker.getId()));
+
+                // Append specific action metadata if available
+                if (extraMetadata != null) {
+                        metadata.putAll(extraMetadata);
+                }
+
+                notificationService.createNotification(
+                                companyAdmin,
+                                type,
+                                title,
+                                message,
+                                targetUrl,
+                                entityType,
+                                entityId,
+                                priority,
+                                metadata);
         }
 
         // ==========================================
@@ -328,6 +369,17 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
                 stepActivityService.log(step, worker.getUser(), JobWorkflowStepActivityType.STATUS_CHANGED,
                                 "Worker " + worker.getName() + " started the step.");
 
+                notifyCompanyAdmin(
+                                step, worker,
+                                NotificationType.STEP_STATUS_CHANGED,
+                                "Step Started",
+                                String.format("%s started step '%s' for Job #%s.", worker.getName(), step.getName(),
+                                                step.getJobWorkflow().getJob().getJobRef()),
+                                "/job-workflow-steps/" + step.getId(),
+                                "JobWorkflowStep", step.getId(),
+                                NotificationPriority.LOW,
+                                Map.of("newStatus", "STARTED", "action", "VIEW_STEP"));
+
                 return mapStep(step);
         }
 
@@ -355,45 +407,43 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
                 stepActivityService.log(step, worker.getUser(), JobWorkflowStepActivityType.STATUS_CHANGED,
                                 "Worker " + worker.getName() + " marked the step as ONGOING.");
 
+                notifyCompanyAdmin(
+                                step, worker,
+                                NotificationType.STEP_STATUS_CHANGED,
+                                "Step Marked Ongoing",
+                                String.format("%s marked step '%s' as ongoing for Job #%s.", worker.getName(),
+                                                step.getName(), step.getJobWorkflow().getJob().getJobRef()),
+                                "/job-workflow-steps/" + step.getId(),
+                                "JobWorkflowStep", step.getId(),
+                                NotificationPriority.LOW,
+                                Map.of("newStatus", "ONGOING", "action", "VIEW_STEP"));
+
                 return mapStep(step);
         }
 
         @Override
         public JobWorkflowStepResponse completeOngoingStep(Long stepId, Long workerUserId) {
-                Worker worker = getWorker(workerUserId);
-                JobWorkflowStep step = getAssignedStep(stepId, worker.getId());
-
-                checkStepStatusTransition(step, WorkflowStepStatus.ONGOING);
-
-                step.setStatus(WorkflowStepStatus.COMPLETED);
-                step.setCompletedAt(LocalDateTime.now(ZoneOffset.UTC));
-
-                // SLA FIX: Edge case catch
-                if (step.getStartedAt() == null) {
-                        step.setStartedAt(LocalDateTime.now(ZoneOffset.UTC));
-                }
-
-                stepRepository.save(step);
-
-                stepActivityService.log(step, worker.getUser(), JobWorkflowStepActivityType.STATUS_CHANGED,
-                                "Worker " + worker.getName() + " marked the ongoing step as COMPLETED.");
-
-                checkAndUpdateParentWorkflowStatus(step.getJobWorkflow());
-
-                return mapStep(step);
+                return handleStepCompletion(stepId, workerUserId, WorkflowStepStatus.ONGOING);
         }
 
         @Override
         public JobWorkflowStepResponse completeStep(Long stepId, Long workerUserId) {
+                return handleStepCompletion(stepId, workerUserId, WorkflowStepStatus.STARTED);
+        }
+
+        /**
+         * Shared logic for completing a step to keep code DRY.
+         */
+        private JobWorkflowStepResponse handleStepCompletion(Long stepId, Long workerUserId,
+                        WorkflowStepStatus requiredStatus) {
                 Worker worker = getWorker(workerUserId);
                 JobWorkflowStep step = getAssignedStep(stepId, worker.getId());
 
-                checkStepStatusTransition(step, WorkflowStepStatus.STARTED);
+                checkStepStatusTransition(step, requiredStatus);
 
                 step.setStatus(WorkflowStepStatus.COMPLETED);
                 step.setCompletedAt(LocalDateTime.now(ZoneOffset.UTC));
 
-                // SLA FIX: Edge case catch
                 if (step.getStartedAt() == null) {
                         step.setStartedAt(LocalDateTime.now(ZoneOffset.UTC));
                 }
@@ -402,6 +452,17 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
 
                 stepActivityService.log(step, worker.getUser(), JobWorkflowStepActivityType.STATUS_CHANGED,
                                 "Worker " + worker.getName() + " completed the step.");
+
+                notifyCompanyAdmin(
+                                step, worker,
+                                NotificationType.STEP_COMPLETED,
+                                "Step Completed",
+                                String.format("%s completed step '%s' for Job #%s.", worker.getName(), step.getName(),
+                                                step.getJobWorkflow().getJob().getJobRef()),
+                                "/job-workflow-steps/" + step.getId(),
+                                "JobWorkflowStep", step.getId(),
+                                NotificationPriority.MEDIUM, // Highlighting completion
+                                Map.of("newStatus", "COMPLETED", "action", "VIEW_STEP"));
 
                 checkAndUpdateParentWorkflowStatus(step.getJobWorkflow());
 
@@ -453,6 +514,18 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
 
                 stepActivityService.log(step, worker.getUser(), JobWorkflowStepActivityType.COMMENT,
                                 request.getContent());
+
+                notifyCompanyAdmin(
+                                step, worker,
+                                NotificationType.STEP_COMMENT_ADDED,
+                                "New Step Comment",
+                                String.format("%s commented on step '%s' (Job #%s).", worker.getName(), step.getName(),
+                                                step.getJobWorkflow().getJob().getJobRef()),
+                                "/job-workflow-steps/" + step.getId() + "/discussion",
+                                "JobWorkflowStepComment", comment.getId(),
+                                NotificationPriority.LOW,
+                                Map.of("commentId", comment.getId(), "discussionType", comment.getType().name(),
+                                                "action", "OPEN_DISCUSSION"));
 
                 return StepCommentResponse.builder()
                                 .id(comment.getId())
@@ -536,6 +609,19 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
                 stepActivityService.log(step, worker.getUser(), JobWorkflowStepActivityType.ATTACHMENT_ADDED,
                                 "Worker uploaded " + originalFilename);
 
+                notifyCompanyAdmin(
+                                step, worker,
+                                NotificationType.STEP_ATTACHMENT_ADDED,
+                                "New Step Attachment",
+                                String.format("%s uploaded '%s' to step '%s' (Job #%s).", worker.getName(),
+                                                originalFilename, step.getName(),
+                                                step.getJobWorkflow().getJob().getJobRef()),
+                                "/job-workflow-steps/" + step.getId() + "/discussion",
+                                "JobWorkflowStepAttachment", attachment.getId(),
+                                NotificationPriority.LOW,
+                                Map.of("attachmentId", attachment.getId(), "discussionType",
+                                                attachment.getType().name(), "action", "OPEN_DISCUSSION"));
+
                 return StepAttachmentResponse.builder()
                                 .id(attachment.getId())
                                 .fileName(attachment.getFileName())
@@ -576,37 +662,17 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
                 stepActivityService.log(step, worker.getUser(), JobWorkflowStepActivityType.VISIT_LOGGED,
                                 "Worker " + worker.getName() + " logged a visit for " + request.getVisitDate());
 
-                // --- SEND NOTIFICATION TO COMPANY ADMIN ---
-
-                User companyAdmin = step.getJobWorkflow().getJob().getCompany().getUser();
-                Long jobRef = step.getJobWorkflow().getJob().getJobRef();
-
-                // Semantic UI Route - Matches your frontend/mobile deep link structure
-                String targetUrl = "/job-workflow-steps/" + step.getId() + "/visits";
-
-                String message = String.format("%s logged a visit for Job #%s on %s.",
-                                worker.getName(),
-                                jobRef,
-                                request.getVisitDate().toString());
-
-                notificationService.createNotification(
-                                companyAdmin,
+                notifyCompanyAdmin(
+                                step, worker,
                                 NotificationType.VISIT_LOG_ADDED,
                                 "New Visit Logged",
-                                message,
-                                targetUrl,
-                                "JobWorkflowStepVisitLog",
-                                visitLog.getId(),
+                                String.format("%s logged a visit for Job #%s on %s.", worker.getName(),
+                                                step.getJobWorkflow().getJob().getJobRef(),
+                                                request.getVisitDate().toString()),
+                                "/job-workflow-steps/" + step.getId() + "/visits",
+                                "JobWorkflowStepVisitLog", visitLog.getId(),
                                 NotificationPriority.LOW,
-
-                                // Rich Metadata for mobile apps or complex state management
-                                Map.of(
-                                                "jobId", step.getJobWorkflow().getJob().getId(),
-                                                "stepId", step.getId(),
-                                                "visitLogId", visitLog.getId(),
-                                                "workerId", worker.getId(),
-                                                "action", "OPEN_VISIT_LOGS"));
-                // ----------------------------------------------
+                                Map.of("visitLogId", visitLog.getId(), "action", "OPEN_VISIT_LOGS"));
 
                 return mapVisitLog(visitLog);
         }

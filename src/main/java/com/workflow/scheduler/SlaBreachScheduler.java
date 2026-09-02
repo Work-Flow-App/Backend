@@ -1,8 +1,13 @@
 package com.workflow.scheduler;
 
+import com.workflow.common.constant.notification.NotificationPriority;
+import com.workflow.common.constant.notification.NotificationType;
 import com.workflow.common.constant.workflow.JobWorkflowStepActivityType;
+import com.workflow.entity.auth.User;
 import com.workflow.entity.job.JobWorkflowStep;
+import com.workflow.entity.worker.Worker;
 import com.workflow.repository.job.JobWorkflowStepRepository;
+import com.workflow.service.notification.INotificationService;
 import com.workflow.service.workflow.IStepActivityService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,6 +20,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Component
@@ -23,6 +29,7 @@ public class SlaBreachScheduler {
 
     private final JobWorkflowStepRepository stepRepository;
     private final IStepActivityService stepActivityService;
+    private final INotificationService notificationService;
 
     // Runs every 30 minutes.
     @Scheduled(fixedDelay = 1800000)
@@ -55,6 +62,27 @@ public class SlaBreachScheduler {
                         breachMessage);
 
                 log.warn("SLA Breach logged for Step ID: {}", step.getId());
+
+                User companyUser = step.getJobWorkflow().getJob().getCompany().getUser();
+                String title = "Step SLA Breached!";
+                String notifMessage = String.format("Step '%s' (Job ref #%s) exceeded the %d min limit.",
+                        step.getName(), step.getJobWorkflow().getJob().getJobRef(), step.getMaximumDurationMinutes());
+                String targetUrl = "/job-workflow-steps/" + step.getId();
+                Map<String, Object> metadata = Map.of(
+                        "stepId", step.getId(),
+                        "jobId", step.getJobWorkflow().getJob().getId());
+
+                // Notify Company Admin
+                notificationService.createNotification(
+                        companyUser, NotificationType.STEP_SLA_BREACHED, title, notifMessage,
+                        targetUrl, "JobWorkflowStep", step.getId(), NotificationPriority.URGENT, metadata);
+
+                // Notify Assigned Workers
+                for (Worker worker : step.getAssignedWorkers()) {
+                    notificationService.createNotification(
+                            worker.getUser(), NotificationType.STEP_SLA_BREACHED, title, notifMessage,
+                            targetUrl, "JobWorkflowStep", step.getId(), NotificationPriority.URGENT, metadata);
+                }
             }
         }
 

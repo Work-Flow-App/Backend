@@ -5,6 +5,7 @@ import com.workflow.common.constant.worker.CertificateType;
 import com.workflow.common.exception.business.EmptyFileException;
 import com.workflow.common.exception.business.FileSizeLimitExceededException;
 import com.workflow.common.exception.business.ForbiddenActionException;
+import com.workflow.common.exception.business.InvalidRequestException;
 import com.workflow.common.exception.business.WorkerCertificateNotFoundException;
 import com.workflow.dto.worker.WorkerCertificateResponse;
 import com.workflow.dto.worker.WorkerCertificateUpdateRequest;
@@ -20,6 +21,7 @@ import org.apache.tika.Tika;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -101,7 +103,7 @@ class WorkerCertificateServiceTest {
         when(certificateRepository.save(any(WorkerCertificate.class))).thenReturn(certificate);
 
         WorkerCertificateResponse response = certificateService.uploadOwnCertificate(
-                2L, file, CertificateType.SAFETY, "First Aid", "Red Cross", LocalDate.now(), LocalDate.now().plusDays(10));
+                2L, file, CertificateType.SAFETY, null, "First Aid", "Red Cross", LocalDate.now(), LocalDate.now().plusDays(10));
 
         assertThat(response).isNotNull();
         assertThat(response.expiringSoon()).isTrue();
@@ -118,7 +120,7 @@ class WorkerCertificateServiceTest {
         when(workerRepository.findByUserId(2L)).thenReturn(Optional.of(worker));
 
         assertThatThrownBy(() -> certificateService.uploadOwnCertificate(
-                2L, emptyFile, CertificateType.SAFETY, "First Aid", null, null, null))
+                2L, emptyFile, CertificateType.SAFETY, null, "First Aid", null, null, null))
                 .isInstanceOf(EmptyFileException.class);
 
         verify(certificateRepository, never()).save(any());
@@ -132,7 +134,7 @@ class WorkerCertificateServiceTest {
         when(workerRepository.findByUserId(2L)).thenReturn(Optional.of(worker));
 
         assertThatThrownBy(() -> certificateService.uploadOwnCertificate(
-                2L, bigFile, CertificateType.SAFETY, "First Aid", null, null, null))
+                2L, bigFile, CertificateType.SAFETY, null, "First Aid", null, null, null))
                 .isInstanceOf(FileSizeLimitExceededException.class);
 
         verify(certificateRepository, never()).save(any());
@@ -145,11 +147,99 @@ class WorkerCertificateServiceTest {
         when(tika.detect(any(java.io.InputStream.class))).thenReturn("application/x-msdownload");
 
         assertThatThrownBy(() -> certificateService.uploadOwnCertificate(
-                2L, file, CertificateType.SAFETY, "First Aid", null, null, null))
+                2L, file, CertificateType.SAFETY, null, "First Aid", null, null, null))
                 .isInstanceOf(ForbiddenActionException.class);
 
         verify(certificateRepository, never()).save(any());
         verify(s3Service, never()).upload(anyString(), any(), anyLong(), anyString());
+    }
+
+    // ============= custom type label Tests =============
+
+    @Test
+    void uploadOwnCertificate_ShouldThrow_WhenTypeIsOtherAndLabelBlank() throws Exception {
+        MockMultipartFile file = new MockMultipartFile("file", "cert.pdf", "application/pdf", "content".getBytes());
+        when(workerRepository.findByUserId(2L)).thenReturn(Optional.of(worker));
+
+        assertThatThrownBy(() -> certificateService.uploadOwnCertificate(
+                2L, file, CertificateType.OTHER, "  ", "Some Cert", null, null, null))
+                .isInstanceOf(InvalidRequestException.class);
+
+        verify(certificateRepository, never()).save(any());
+        // Must fail before any S3 upload or quota consumption happens
+        verify(s3Service, never()).upload(anyString(), any(), anyLong(), anyString());
+        verify(storageQuotaService, never()).assertCapacity(anyLong(), anyLong());
+    }
+
+    @Test
+    void uploadOwnCertificate_ShouldStoreTrimmedCustomTypeLabel_WhenTypeIsOther() throws Exception {
+        MockMultipartFile file = new MockMultipartFile("file", "cert.pdf", "application/pdf", "content".getBytes());
+        when(workerRepository.findByUserId(2L)).thenReturn(Optional.of(worker));
+        when(tika.detect(any(java.io.InputStream.class))).thenReturn("application/pdf");
+        when(certificateRepository.save(any(WorkerCertificate.class))).thenAnswer(i -> i.getArguments()[0]);
+
+        certificateService.uploadOwnCertificate(
+                2L, file, CertificateType.OTHER, "  Forklift Ticket  ", "Some Cert", null, null, null);
+
+        ArgumentCaptor<WorkerCertificate> captor = ArgumentCaptor.forClass(WorkerCertificate.class);
+        verify(certificateRepository).save(captor.capture());
+        assertThat(captor.getValue().getCustomTypeLabel()).isEqualTo("Forklift Ticket");
+    }
+
+    @Test
+    void uploadOwnCertificate_ShouldDiscardCustomTypeLabel_WhenTypeIsNotOther() throws Exception {
+        MockMultipartFile file = new MockMultipartFile("file", "cert.pdf", "application/pdf", "content".getBytes());
+        when(workerRepository.findByUserId(2L)).thenReturn(Optional.of(worker));
+        when(tika.detect(any(java.io.InputStream.class))).thenReturn("application/pdf");
+        when(certificateRepository.save(any(WorkerCertificate.class))).thenAnswer(i -> i.getArguments()[0]);
+
+        // A stray label sent alongside a non-OTHER type must not be persisted
+        certificateService.uploadOwnCertificate(
+                2L, file, CertificateType.SAFETY, "Should Be Ignored", "First Aid", null, null, null);
+
+        ArgumentCaptor<WorkerCertificate> captor = ArgumentCaptor.forClass(WorkerCertificate.class);
+        verify(certificateRepository).save(captor.capture());
+        assertThat(captor.getValue().getCustomTypeLabel()).isNull();
+    }
+
+    // ============= getOwnCertificate / getCertificateForWorker Tests =============
+
+    @Test
+    void getOwnCertificate_ShouldReturnCertificate_WhenOwnedByWorker() {
+        when(workerRepository.findByUserId(2L)).thenReturn(Optional.of(worker));
+        when(certificateRepository.findByIdAndWorkerId(100L, 10L)).thenReturn(Optional.of(certificate));
+
+        WorkerCertificateResponse response = certificateService.getOwnCertificate(2L, 100L);
+
+        assertThat(response.id()).isEqualTo(100L);
+        assertThat(response.name()).isEqualTo("First Aid");
+    }
+
+    @Test
+    void getOwnCertificate_ShouldThrow_WhenNotOwnedByWorker() {
+        when(workerRepository.findByUserId(2L)).thenReturn(Optional.of(worker));
+        when(certificateRepository.findByIdAndWorkerId(100L, 10L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> certificateService.getOwnCertificate(2L, 100L))
+                .isInstanceOf(WorkerCertificateNotFoundException.class);
+    }
+
+    @Test
+    void getCertificateForWorker_ShouldReturnCertificate_WhenScopedCorrectly() {
+        when(certificateRepository.findByIdAndWorkerIdAndCompanyId(100L, 10L, 1L)).thenReturn(Optional.of(certificate));
+
+        WorkerCertificateResponse response = certificateService.getCertificateForWorker(100L, 10L, 1L);
+
+        assertThat(response.id()).isEqualTo(100L);
+        assertThat(response.workerId()).isEqualTo(10L);
+    }
+
+    @Test
+    void getCertificateForWorker_ShouldThrow_WhenCertificateBelongsToDifferentWorkerOrCompany() {
+        when(certificateRepository.findByIdAndWorkerIdAndCompanyId(100L, 99L, 1L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> certificateService.getCertificateForWorker(100L, 99L, 1L))
+                .isInstanceOf(WorkerCertificateNotFoundException.class);
     }
 
     // ============= updateOwnCertificate Tests =============

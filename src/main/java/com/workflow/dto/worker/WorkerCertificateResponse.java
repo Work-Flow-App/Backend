@@ -11,6 +11,7 @@ public record WorkerCertificateResponse(
         Long workerId,
         String workerName,
         CertificateType type,
+        String customTypeLabel,
         String name,
         String issuingAuthority,
         LocalDate issueDate,

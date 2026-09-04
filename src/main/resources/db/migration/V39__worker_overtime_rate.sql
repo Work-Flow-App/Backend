@@ -1,0 +1,2 @@
+ALTER TABLE workers
+    ADD COLUMN overtime_rate DECIMAL(10, 2) DEFAULT NULL;

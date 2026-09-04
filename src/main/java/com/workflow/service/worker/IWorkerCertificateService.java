@@ -21,6 +21,7 @@ public interface IWorkerCertificateService {
             Long workerUserId,
             MultipartFile file,
             CertificateType type,
+            String customTypeLabel,
             String name,
             String issuingAuthority,
             LocalDate issueDate,
@@ -28,12 +29,16 @@ public interface IWorkerCertificateService {
 
     List<WorkerCertificateResponse> getOwnCertificates(Long workerUserId);
 
+    WorkerCertificateResponse getOwnCertificate(Long workerUserId, Long certificateId);
+
     WorkerCertificateResponse updateOwnCertificate(Long workerUserId, Long certificateId, WorkerCertificateUpdateRequest request);
 
     void deleteOwnCertificate(Long workerUserId, Long certificateId);
 
     // Admin/company-facing
     List<WorkerCertificateResponse> getCertificatesForWorker(Long workerId, Long companyId);
+
+    WorkerCertificateResponse getCertificateForWorker(Long certificateId, Long workerId, Long companyId);
 
     Page<WorkerCertificateResponse> listCompanyCertificates(Long companyId, Pageable pageable);
 
@@ -45,6 +50,7 @@ public interface IWorkerCertificateService {
             User admin,
             MultipartFile file,
             CertificateType type,
+            String customTypeLabel,
             String name,
             String issuingAuthority,
             LocalDate issueDate,

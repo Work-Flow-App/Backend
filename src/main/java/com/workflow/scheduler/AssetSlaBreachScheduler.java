@@ -17,6 +17,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -72,16 +73,19 @@ public class AssetSlaBreachScheduler {
                 // Notify Company Admin
                 notificationService.createNotification(
                         companyUser, NotificationType.ASSET_SLA_BREACHED, title, notifMessage,
-                        "/assets/" + assignment.getAsset().getId(),
+                        "/company/assets/" + assignment.getAsset().getId() + "/history",
                         "AssetJobAssignment", assignment.getId(), NotificationPriority.URGENT, metadata);
 
                 // Notify Assigned Worker (if any)
                 if (assignment.getAssignedWorker() != null) {
+                    Map<String, Object> workerMetadata = new HashMap<>(metadata);
+                    workerMetadata.put("workerId", assignment.getAssignedWorker().getId());
+
                     notificationService.createNotification(
                             assignment.getAssignedWorker().getUser(), NotificationType.ASSET_SLA_BREACHED, title,
                             notifMessage,
-                            "/assets/" + assignment.getAsset().getId(),
-                            "AssetJobAssignment", assignment.getId(), NotificationPriority.URGENT, metadata);
+                            "/worker/assets", 
+                            "AssetJobAssignment", assignment.getId(), NotificationPriority.URGENT, workerMetadata);
                 }
             }
         }

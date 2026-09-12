@@ -89,17 +89,25 @@ public class JobWorkflowStepActivityService
                 if (extractedUsernames.isEmpty())
                         return;
 
-                // Fetch users from DB
                 Set<User> mentionedUsers = userRepository.findByUsernameIn(extractedUsernames);
-
-                // Remove the author themselves if they accidentally tagged themselves
                 mentionedUsers.removeIf(u -> u.getId().equals(author.getId()));
 
                 if (mentionedUsers.isEmpty())
                         return;
 
-                // 1. Notify the Mentionees (The people tagged)
+                // Requirement 5/6: Populate structural IDs for mention fallbacks
+                Map<String, Object> baseMetadata = Map.of(
+                                "commentId", commentId,
+                                "discussionType", type.name(),
+                                "jobId", step.getJobWorkflow().getJob().getId(),
+                                "jobWorkflowId", step.getJobWorkflow().getId(),
+                                "stepId", step.getId());
+
+                // 1. Notify the Mentionees (Workers receiving a tag from Company Admin)
                 for (User mentioNee : mentionedUsers) {
+                        Map<String, Object> mentioneeMetadata = new HashMap<>(baseMetadata);
+                        mentioneeMetadata.put("action", "VIEW_MENTION");
+
                         notificationService.createNotification(
                                         mentioNee,
                                         NotificationType.USER_MENTIONED,
@@ -107,17 +115,19 @@ public class JobWorkflowStepActivityService
                                         String.format("@%s mentioned you in a comment on step '%s' (Job #%s).",
                                                         author.getUsername(), step.getName(),
                                                         step.getJobWorkflow().getJob().getJobRef()),
-                                        "/job-workflow-steps/" + step.getId() + "/discussion",
+                                        "/worker/steps/" + step.getId(), // Update target URL
                                         "JobWorkflowStepComment", commentId,
-                                        NotificationPriority.HIGH, // Mentions usually warrant high priority
-                                        Map.of("commentId", commentId, "discussionType", type.name(), "action",
-                                                        "VIEW_MENTION"));
+                                        NotificationPriority.HIGH,
+                                        mentioneeMetadata);
                 }
 
-                // 2. Notify the Mentioner (The person who wrote the tag, as requested)
+                // 2. Notify the Mentioner (The Company Admin who wrote the tag)
                 String mentionedNames = mentionedUsers.stream()
                                 .map(User::getUsername)
                                 .collect(Collectors.joining(", @", "@", ""));
+
+                Map<String, Object> mentionerMetadata = new HashMap<>(baseMetadata);
+                mentionerMetadata.put("action", "VIEW_COMMENT");
 
                 notificationService.createNotification(
                                 author,
@@ -125,10 +135,10 @@ public class JobWorkflowStepActivityService
                                 "Mention Delivered",
                                 String.format("You successfully tagged %s in step '%s'.", mentionedNames,
                                                 step.getName()),
-                                "/job-workflow-steps/" + step.getId() + "/discussion",
+                                "/company/jobs/" + step.getJobWorkflow().getJob().getId() + "/details",
                                 "JobWorkflowStepComment", commentId,
                                 NotificationPriority.LOW,
-                                Map.of("commentId", commentId, "action", "VIEW_COMMENT"));
+                                mentionerMetadata);
         }
 
         private Company getCompany(Long companyId) {
@@ -165,6 +175,7 @@ public class JobWorkflowStepActivityService
                 for (Worker worker : step.getAssignedWorkers()) {
                         Map<String, Object> metadata = new HashMap<>(Map.of(
                                         "jobId", step.getJobWorkflow().getJob().getId(),
+                                        "jobWorkflowId", step.getJobWorkflow().getId(),
                                         "stepId", step.getId(),
                                         "workerId", worker.getId()));
                         if (extraMetadata != null) {
@@ -215,7 +226,7 @@ public class JobWorkflowStepActivityService
                                 "New Company Comment",
                                 String.format("A new comment was added to step '%s' (Job #%s).", step.getName(),
                                                 step.getJobWorkflow().getJob().getJobRef()),
-                                "/job-workflow-steps/" + step.getId() + "/discussion",
+                                "/worker/steps/" + step.getId(),
                                 "JobWorkflowStepComment", comment.getId(),
                                 NotificationPriority.LOW,
                                 Map.of("commentId", comment.getId(), "discussionType", comment.getType().name(),
@@ -260,7 +271,7 @@ public class JobWorkflowStepActivityService
                                 String.format("A comment on step '%s' (Job #%s) was updated.",
                                                 comment.getStep().getName(),
                                                 comment.getStep().getJobWorkflow().getJob().getJobRef()),
-                                "/job-workflow-steps/" + comment.getStep().getId() + "/discussion",
+                                "/worker/steps/" + comment.getStep().getId(), // Update target URL
                                 "JobWorkflowStepComment", comment.getId(),
                                 NotificationPriority.LOW,
                                 Map.of("commentId", comment.getId(), "discussionType", comment.getType().name(),
@@ -386,7 +397,7 @@ public class JobWorkflowStepActivityService
                                 String.format("A new attachment '%s' was uploaded to step '%s' (Job #%s).",
                                                 originalFilename, step.getName(),
                                                 step.getJobWorkflow().getJob().getJobRef()),
-                                "/job-workflow-steps/" + step.getId() + "/discussion",
+                                "/worker/steps/" + step.getId(), // Update target URL
                                 "JobWorkflowStepAttachment", attachment.getId(),
                                 NotificationPriority.LOW,
                                 Map.of("attachmentId", attachment.getId(), "discussionType",
@@ -433,7 +444,7 @@ public class JobWorkflowStepActivityService
                                 String.format("An attachment ('%s') on step '%s' (Job #%s) was updated.",
                                                 attachment.getFileName(), attachment.getStep().getName(),
                                                 attachment.getStep().getJobWorkflow().getJob().getJobRef()),
-                                "/job-workflow-steps/" + attachment.getStep().getId() + "/discussion",
+                                "/worker/steps/" + attachment.getStep().getId(), // Update target URL
                                 "JobWorkflowStepAttachment", attachment.getId(),
                                 NotificationPriority.LOW,
                                 Map.of("attachmentId", attachment.getId(), "discussionType",

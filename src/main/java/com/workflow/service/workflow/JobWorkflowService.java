@@ -88,6 +88,7 @@ public class JobWorkflowService implements IJobWorkflowService {
 
                 Map<String, Object> metadata = new HashMap<>(Map.of(
                                 "jobId", step.getJobWorkflow().getJob().getId(),
+                                "jobWorkflowId", step.getJobWorkflow().getId(),
                                 "stepId", step.getId(),
                                 "workerId", worker.getId()));
                 if (extraMetadata != null) {
@@ -455,7 +456,7 @@ public class JobWorkflowService implements IJobWorkflowService {
                                         "Step Status Updated",
                                         String.format("The status of step '%s' (Job #%s) was changed to %s.",
                                                         step.getName(), jw.getJob().getJobRef(), newStatus),
-                                        "/job-workflow-steps/" + step.getId(),
+                                        "/worker/steps/" + step.getId(),
                                         "JobWorkflowStep", step.getId(),
                                         NotificationPriority.MEDIUM,
                                         Map.of("newStatus", newStatus.name()));
@@ -493,9 +494,10 @@ public class JobWorkflowService implements IJobWorkflowService {
                                                         "New Step Assignment",
                                                         String.format("You have been assigned to step '%s' for Job #%s.",
                                                                         step.getName(), jw.getJob().getJobRef()),
-                                                        "/job-workflow-steps/" + step.getId(),
+                                                        "/worker/job-workflows/" + jw.getId(),
                                                         "JobWorkflowStep", step.getId(),
-                                                        NotificationPriority.HIGH, null);
+                                                        NotificationPriority.HIGH,
+                                                        Map.of("assignmentLevel", "STEP"));
                                 }
                         }
 
@@ -644,7 +646,7 @@ public class JobWorkflowService implements IJobWorkflowService {
                                                                 String.format("The status of step '%s' (Job #%s) was changed to %s.",
                                                                                 step.getName(), jw.getJob().getJobRef(),
                                                                                 newStatus),
-                                                                "/job-workflow-steps/" + step.getId(),
+                                                                "/worker/steps/" + step.getId(),
                                                                 "JobWorkflowStep", step.getId(),
                                                                 NotificationPriority.MEDIUM,
                                                                 Map.of("newStatus", newStatus.name()));
@@ -683,9 +685,12 @@ public class JobWorkflowService implements IJobWorkflowService {
                                                                                 String.format("You have been assigned to step '%s' for Job #%s.",
                                                                                                 step.getName(),
                                                                                                 jw.getJob().getJobRef()),
-                                                                                "/job-workflow-steps/" + step.getId(),
+                                                                                "/worker/job-workflows/" + jw.getId(), // Update
+                                                                                                                       // target
+                                                                                                                       // url
                                                                                 "JobWorkflowStep", step.getId(),
-                                                                                NotificationPriority.HIGH, null);
+                                                                                NotificationPriority.HIGH,
+                                                                                Map.of("assignmentLevel", "STEP"));
                                                         }
                                                 }
 
@@ -761,9 +766,10 @@ public class JobWorkflowService implements IJobWorkflowService {
                                                                 String.format("You have been assigned to new step '%s' for Job #%s.",
                                                                                 newStep.getName(),
                                                                                 jw.getJob().getJobRef()),
-                                                                "/job-workflow-steps/" + newStep.getId(),
+                                                                "/worker/job-workflows/" + jw.getId(),
                                                                 "JobWorkflowStep", newStep.getId(),
-                                                                NotificationPriority.HIGH, null);
+                                                                NotificationPriority.HIGH,
+                                                                Map.of("assignmentLevel", "STEP"));
                                         }
                                 }
                         }
@@ -866,9 +872,10 @@ public class JobWorkflowService implements IJobWorkflowService {
                                                 "New Step Assignment",
                                                 String.format("You have been assigned to step '%s' for Job #%s.",
                                                                 step.getName(), jobWorkflow.getJob().getJobRef()),
-                                                "/job-workflow-steps/" + step.getId(),
+                                                "/worker/job-workflows/" + jobWorkflow.getId(),
                                                 "JobWorkflowStep", step.getId(),
-                                                NotificationPriority.HIGH, null);
+                                                NotificationPriority.HIGH,
+                                                Map.of("assignmentLevel", "STEP"));
                         }
                 }
 
@@ -933,9 +940,11 @@ public class JobWorkflowService implements IJobWorkflowService {
                                                         String.format("You have been assigned to step '%s' for Job #%s.",
                                                                         step.getName(),
                                                                         jobWorkflow.getJob().getJobRef()),
-                                                        "/job-workflow-steps/" + step.getId(),
+                                                        "/worker/job-workflows/" + jobWorkflow.getId(), // Update target
+                                                                                                        // url
                                                         "JobWorkflowStep", step.getId(),
-                                                        NotificationPriority.HIGH, null);
+                                                        NotificationPriority.HIGH,
+                                                        Map.of("assignmentLevel", "STEP"));
                                 }
                         }
                 }
@@ -1033,9 +1042,10 @@ public class JobWorkflowService implements IJobWorkflowService {
                                 "New Step Assignment",
                                 String.format("You have been assigned to new step '%s' for Job #%s.", step.getName(),
                                                 jw.getJob().getJobRef()),
-                                "/job-workflow-steps/" + step.getId(),
+                                "/worker/job-workflows/" + jw.getId(),
                                 "JobWorkflowStep", step.getId(),
-                                NotificationPriority.HIGH, null);
+                                NotificationPriority.HIGH,
+                                Map.of("assignmentLevel", "STEP"));
 
                 // Normalize order & update workflow status
                 normalizeOrderIndexes(jw.getId());

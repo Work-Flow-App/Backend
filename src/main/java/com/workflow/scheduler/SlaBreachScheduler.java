@@ -19,6 +19,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -67,21 +68,29 @@ public class SlaBreachScheduler {
                 String title = "Step SLA Breached!";
                 String notifMessage = String.format("Step '%s' (Job ref #%s) exceeded the %d min limit.",
                         step.getName(), step.getJobWorkflow().getJob().getJobRef(), step.getMaximumDurationMinutes());
-                String targetUrl = "/job-workflow-steps/" + step.getId();
-                Map<String, Object> metadata = Map.of(
+
+                String companyTargetUrl = "/company/jobs/" + step.getJobWorkflow().getJob().getId() + "/details";
+                String workerTargetUrl = "/worker/steps/" + step.getId();
+
+                Map<String, Object> baseMetadata = Map.of(
                         "stepId", step.getId(),
+                        "jobWorkflowId", step.getJobWorkflow().getId(),
                         "jobId", step.getJobWorkflow().getJob().getId());
 
                 // Notify Company Admin
                 notificationService.createNotification(
                         companyUser, NotificationType.STEP_SLA_BREACHED, title, notifMessage,
-                        targetUrl, "JobWorkflowStep", step.getId(), NotificationPriority.URGENT, metadata);
+                        companyTargetUrl, "JobWorkflowStep", step.getId(), NotificationPriority.URGENT, baseMetadata);
 
                 // Notify Assigned Workers
                 for (Worker worker : step.getAssignedWorkers()) {
+                    Map<String, Object> workerMetadata = new HashMap<>(baseMetadata);
+                    workerMetadata.put("workerId", worker.getId());
+
                     notificationService.createNotification(
                             worker.getUser(), NotificationType.STEP_SLA_BREACHED, title, notifMessage,
-                            targetUrl, "JobWorkflowStep", step.getId(), NotificationPriority.URGENT, metadata);
+                            workerTargetUrl, "JobWorkflowStep", step.getId(), NotificationPriority.URGENT,
+                            workerMetadata);
                 }
             }
         }

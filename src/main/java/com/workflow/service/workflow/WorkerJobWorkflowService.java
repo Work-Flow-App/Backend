@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -57,6 +58,7 @@ import com.workflow.entity.job.JobWorkflowStepComment;
 import com.workflow.entity.job.JobWorkflowStepVisitLog;
 import com.workflow.entity.worker.Worker;
 import com.workflow.repository.asset.AssetJobAssignmentRepository;
+import com.workflow.repository.auth.UserRepository;
 import com.workflow.repository.job.JobWorkflowRepository;
 import com.workflow.repository.job.JobWorkflowStepAttachmentRepository;
 import com.workflow.repository.job.JobWorkflowStepCommentRepository;
@@ -66,6 +68,7 @@ import com.workflow.repository.worker.WorkerRepository;
 import com.workflow.service.notification.INotificationService;
 import com.workflow.service.storage.IStorageService;
 import com.workflow.service.subscription.IStorageQuotaService;
+import com.workflow.util.MentionUtils;
 
 import lombok.RequiredArgsConstructor;
 
@@ -90,6 +93,7 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
         private final IStorageService s3Service;
         private final IStorageQuotaService storageQuotaService;
         private final JobWorkflowMapper jobWorkflowMapper;
+        private final UserRepository userRepository;
 
         // Spring injects the list from application.yml here!
         @Value("${workflow.security.file.blocked-types}")
@@ -98,6 +102,50 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
         // ==========================================
         // INTERNAL HELPERS
         // ==========================================
+
+        private void processMentions(String content, JobWorkflowStep step, User author, Long commentId,
+                        StepDiscussionType type) {
+                Set<String> extractedUsernames = MentionUtils.extractUsernames(content);
+                if (extractedUsernames.isEmpty())
+                        return;
+
+                Set<User> mentionedUsers = userRepository.findByUsernameIn(extractedUsernames);
+                mentionedUsers.removeIf(u -> u.getId().equals(author.getId()));
+                if (mentionedUsers.isEmpty())
+                        return;
+
+                // 1. Notify the Mentionees
+                for (User mentioNee : mentionedUsers) {
+                        notificationService.createNotification(
+                                        mentioNee,
+                                        NotificationType.USER_MENTIONED,
+                                        "You were mentioned",
+                                        String.format("@%s mentioned you in a comment on step '%s' (Job #%s).",
+                                                        author.getUsername(), step.getName(),
+                                                        step.getJobWorkflow().getJob().getJobRef()),
+                                        "/job-workflow-steps/" + step.getId() + "/discussion",
+                                        "JobWorkflowStepComment", commentId,
+                                        NotificationPriority.HIGH,
+                                        Map.of("commentId", commentId, "discussionType", type.name(), "action",
+                                                        "VIEW_MENTION"));
+                }
+
+                // 2. Notify the Mentioner
+                String mentionedNames = mentionedUsers.stream()
+                                .map(User::getUsername)
+                                .collect(Collectors.joining(", @", "@", ""));
+
+                notificationService.createNotification(
+                                author,
+                                NotificationType.MENTION_SENT,
+                                "Mention Delivered",
+                                String.format("You successfully tagged %s in step '%s'.", mentionedNames,
+                                                step.getName()),
+                                "/job-workflow-steps/" + step.getId() + "/discussion",
+                                "JobWorkflowStepComment", commentId,
+                                NotificationPriority.LOW,
+                                Map.of("commentId", commentId, "action", "VIEW_COMMENT"));
+        }
 
         private Worker getWorker(Long userId) {
                 return workerRepository.findByUserId(userId)
@@ -526,6 +574,8 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
                                 NotificationPriority.LOW,
                                 Map.of("commentId", comment.getId(), "discussionType", comment.getType().name(),
                                                 "action", "OPEN_DISCUSSION"));
+
+                processMentions(request.getContent(), step, worker.getUser(), comment.getId(), request.getType());
 
                 return StepCommentResponse.builder()
                                 .id(comment.getId())

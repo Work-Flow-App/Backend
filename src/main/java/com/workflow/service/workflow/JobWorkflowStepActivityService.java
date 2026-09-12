@@ -4,7 +4,9 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.apache.tika.Tika;
 import org.springframework.beans.factory.annotation.Value;
@@ -31,12 +33,14 @@ import com.workflow.dto.workflow.StepAttachmentUpdateRequest;
 import com.workflow.dto.workflow.StepCommentCreateRequest;
 import com.workflow.dto.workflow.StepCommentResponse;
 import com.workflow.dto.workflow.StepTimelineItemResponse;
+import com.workflow.entity.auth.User;
 import com.workflow.entity.company.Company;
 import com.workflow.entity.job.JobWorkflowStep;
 import com.workflow.entity.job.JobWorkflowStepActivity;
 import com.workflow.entity.job.JobWorkflowStepAttachment;
 import com.workflow.entity.job.JobWorkflowStepComment;
 import com.workflow.entity.worker.Worker;
+import com.workflow.repository.auth.UserRepository;
 import com.workflow.repository.company.CompanyRepository;
 import com.workflow.repository.job.JobWorkflowStepActivityRepository;
 import com.workflow.repository.job.JobWorkflowStepAttachmentRepository;
@@ -45,6 +49,7 @@ import com.workflow.repository.job.JobWorkflowStepRepository;
 import com.workflow.service.notification.INotificationService;
 import com.workflow.service.storage.IStorageService;
 import com.workflow.service.subscription.IStorageQuotaService;
+import com.workflow.util.MentionUtils;
 
 import lombok.RequiredArgsConstructor;
 
@@ -66,6 +71,7 @@ public class JobWorkflowStepActivityService
         private final IStorageService s3Service;
         private final IStorageQuotaService storageQuotaService;
         private final INotificationService notificationService;
+        private final UserRepository userRepository;
 
         // Spring injects the list from application.yml here!
         @Value("${workflow.security.file.blocked-types}")
@@ -76,6 +82,54 @@ public class JobWorkflowStepActivityService
          * INTERNAL HELPERS
          * ===========================
          */
+
+        private void processMentions(String content, JobWorkflowStep step, User author, Long commentId,
+                        StepDiscussionType type) {
+                Set<String> extractedUsernames = MentionUtils.extractUsernames(content);
+                if (extractedUsernames.isEmpty())
+                        return;
+
+                // Fetch users from DB
+                Set<User> mentionedUsers = userRepository.findByUsernameIn(extractedUsernames);
+
+                // Remove the author themselves if they accidentally tagged themselves
+                mentionedUsers.removeIf(u -> u.getId().equals(author.getId()));
+
+                if (mentionedUsers.isEmpty())
+                        return;
+
+                // 1. Notify the Mentionees (The people tagged)
+                for (User mentioNee : mentionedUsers) {
+                        notificationService.createNotification(
+                                        mentioNee,
+                                        NotificationType.USER_MENTIONED,
+                                        "You were mentioned",
+                                        String.format("@%s mentioned you in a comment on step '%s' (Job #%s).",
+                                                        author.getUsername(), step.getName(),
+                                                        step.getJobWorkflow().getJob().getJobRef()),
+                                        "/job-workflow-steps/" + step.getId() + "/discussion",
+                                        "JobWorkflowStepComment", commentId,
+                                        NotificationPriority.HIGH, // Mentions usually warrant high priority
+                                        Map.of("commentId", commentId, "discussionType", type.name(), "action",
+                                                        "VIEW_MENTION"));
+                }
+
+                // 2. Notify the Mentioner (The person who wrote the tag, as requested)
+                String mentionedNames = mentionedUsers.stream()
+                                .map(User::getUsername)
+                                .collect(Collectors.joining(", @", "@", ""));
+
+                notificationService.createNotification(
+                                author,
+                                NotificationType.MENTION_SENT,
+                                "Mention Delivered",
+                                String.format("You successfully tagged %s in step '%s'.", mentionedNames,
+                                                step.getName()),
+                                "/job-workflow-steps/" + step.getId() + "/discussion",
+                                "JobWorkflowStepComment", commentId,
+                                NotificationPriority.LOW,
+                                Map.of("commentId", commentId, "action", "VIEW_COMMENT"));
+        }
 
         private Company getCompany(Long companyId) {
                 return companyRepository.findById(companyId)
@@ -166,6 +220,8 @@ public class JobWorkflowStepActivityService
                                 NotificationPriority.LOW,
                                 Map.of("commentId", comment.getId(), "discussionType", comment.getType().name(),
                                                 "action", "OPEN_DISCUSSION"));
+
+                processMentions(request.getContent(), step, company.getUser(), comment.getId(), request.getType());
                 return map(comment);
         }
 
@@ -210,6 +266,8 @@ public class JobWorkflowStepActivityService
                                 Map.of("commentId", comment.getId(), "discussionType", comment.getType().name(),
                                                 "action", "OPEN_DISCUSSION"));
 
+                processMentions(comment.getContent(), comment.getStep(), company.getUser(), comment.getId(),
+                                comment.getType());
                 return map(comment);
         }
 

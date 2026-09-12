@@ -6,8 +6,10 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -56,6 +58,7 @@ import com.workflow.entity.job.JobWorkflowStepComment;
 import com.workflow.entity.job.JobWorkflowStepVisitLog;
 import com.workflow.entity.worker.Worker;
 import com.workflow.repository.asset.AssetJobAssignmentRepository;
+import com.workflow.repository.auth.UserRepository;
 import com.workflow.repository.job.JobWorkflowRepository;
 import com.workflow.repository.job.JobWorkflowStepAttachmentRepository;
 import com.workflow.repository.job.JobWorkflowStepCommentRepository;
@@ -65,6 +68,7 @@ import com.workflow.repository.worker.WorkerRepository;
 import com.workflow.service.notification.INotificationService;
 import com.workflow.service.storage.IStorageService;
 import com.workflow.service.subscription.IStorageQuotaService;
+import com.workflow.util.MentionUtils;
 
 import lombok.RequiredArgsConstructor;
 
@@ -89,6 +93,7 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
         private final IStorageService s3Service;
         private final IStorageQuotaService storageQuotaService;
         private final JobWorkflowMapper jobWorkflowMapper;
+        private final UserRepository userRepository;
 
         // Spring injects the list from application.yml here!
         @Value("${workflow.security.file.blocked-types}")
@@ -97,6 +102,63 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
         // ==========================================
         // INTERNAL HELPERS
         // ==========================================
+
+        private void processMentions(String content, JobWorkflowStep step, User author, Long commentId,
+                        StepDiscussionType type) {
+                Set<String> extractedUsernames = MentionUtils.extractUsernames(content);
+                if (extractedUsernames.isEmpty())
+                        return;
+
+                Set<User> mentionedUsers = userRepository.findByUsernameIn(extractedUsernames);
+                mentionedUsers.removeIf(u -> u.getId().equals(author.getId()));
+                if (mentionedUsers.isEmpty())
+                        return;
+
+                // Base structure inclusion for requirements
+                Map<String, Object> baseMetadata = Map.of(
+                                "commentId", commentId,
+                                "discussionType", type.name(),
+                                "jobId", step.getJobWorkflow().getJob().getId(),
+                                "jobWorkflowId", step.getJobWorkflow().getId(),
+                                "stepId", step.getId());
+
+                // 1. Notify the Mentionees (Company Admins tagged by a worker)
+                for (User mentioNee : mentionedUsers) {
+                        Map<String, Object> mentioneeMetadata = new HashMap<>(baseMetadata);
+                        mentioneeMetadata.put("action", "VIEW_MENTION");
+
+                        notificationService.createNotification(
+                                        mentioNee,
+                                        NotificationType.USER_MENTIONED,
+                                        "You were mentioned",
+                                        String.format("@%s mentioned you in a comment on step '%s' (Job #%s).",
+                                                        author.getUsername(), step.getName(),
+                                                        step.getJobWorkflow().getJob().getJobRef()),
+                                        "/company/jobs/" + step.getJobWorkflow().getJob().getId() + "/details",
+                                        "JobWorkflowStepComment", commentId,
+                                        NotificationPriority.HIGH,
+                                        mentioneeMetadata);
+                }
+
+                // 2. Notify the Mentioner (The Worker who wrote the tag)
+                String mentionedNames = mentionedUsers.stream()
+                                .map(User::getUsername)
+                                .collect(Collectors.joining(", @", "@", ""));
+
+                Map<String, Object> mentionerMetadata = new HashMap<>(baseMetadata);
+                mentionerMetadata.put("action", "VIEW_COMMENT");
+
+                notificationService.createNotification(
+                                author,
+                                NotificationType.MENTION_SENT,
+                                "Mention Delivered",
+                                String.format("You successfully tagged %s in step '%s'.", mentionedNames,
+                                                step.getName()),
+                                "/worker/steps/" + step.getId(), // Update target URL
+                                "JobWorkflowStepComment", commentId,
+                                NotificationPriority.LOW,
+                                mentionerMetadata);
+        }
 
         private Worker getWorker(Long userId) {
                 return workerRepository.findByUserId(userId)
@@ -117,6 +179,47 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
                                         String.format("Cannot change status. Current status is %s, but required status is %s",
                                                         step.getStatus(), requiredCurrentStatus));
                 }
+        }
+
+        /**
+         * Reusable helper to send notifications to the company admin.
+         */
+        private void notifyCompanyAdmin(
+                        JobWorkflowStep step,
+                        Worker worker,
+                        NotificationType type,
+                        String title,
+                        String message,
+                        String targetUrl,
+                        String entityType,
+                        Long entityId,
+                        NotificationPriority priority,
+                        Map<String, Object> extraMetadata) {
+
+                User companyAdmin = step.getJobWorkflow().getJob().getCompany().getUser();
+
+                // Base metadata expanded to ensure IDs are available
+                Map<String, Object> metadata = new HashMap<>(Map.of(
+                                "jobId", step.getJobWorkflow().getJob().getId(),
+                                "jobWorkflowId", step.getJobWorkflow().getId(),
+                                "stepId", step.getId(),
+                                "workerId", worker.getId()));
+
+                // Append specific action metadata if available
+                if (extraMetadata != null) {
+                        metadata.putAll(extraMetadata);
+                }
+
+                notificationService.createNotification(
+                                companyAdmin,
+                                type,
+                                title,
+                                message,
+                                targetUrl,
+                                entityType,
+                                entityId,
+                                priority,
+                                metadata);
         }
 
         // ==========================================
@@ -328,6 +431,17 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
                 stepActivityService.log(step, worker.getUser(), JobWorkflowStepActivityType.STATUS_CHANGED,
                                 "Worker " + worker.getName() + " started the step.");
 
+                notifyCompanyAdmin(
+                                step, worker,
+                                NotificationType.STEP_STATUS_CHANGED,
+                                "Step Started",
+                                String.format("%s started step '%s' for Job #%s.", worker.getName(), step.getName(),
+                                                step.getJobWorkflow().getJob().getJobRef()),
+                                "/company/jobs/" + step.getJobWorkflow().getJob().getId() + "/details",
+                                "JobWorkflowStep", step.getId(),
+                                NotificationPriority.LOW,
+                                Map.of("newStatus", "STARTED", "action", "VIEW_STEP"));
+
                 return mapStep(step);
         }
 
@@ -355,45 +469,43 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
                 stepActivityService.log(step, worker.getUser(), JobWorkflowStepActivityType.STATUS_CHANGED,
                                 "Worker " + worker.getName() + " marked the step as ONGOING.");
 
+                notifyCompanyAdmin(
+                                step, worker,
+                                NotificationType.STEP_STATUS_CHANGED,
+                                "Step Marked Ongoing",
+                                String.format("%s marked step '%s' as ongoing for Job #%s.", worker.getName(),
+                                                step.getName(), step.getJobWorkflow().getJob().getJobRef()),
+                                "/company/jobs/" + step.getJobWorkflow().getJob().getId() + "/details",
+                                "JobWorkflowStep", step.getId(),
+                                NotificationPriority.LOW,
+                                Map.of("newStatus", "ONGOING", "action", "VIEW_STEP"));
+
                 return mapStep(step);
         }
 
         @Override
         public JobWorkflowStepResponse completeOngoingStep(Long stepId, Long workerUserId) {
-                Worker worker = getWorker(workerUserId);
-                JobWorkflowStep step = getAssignedStep(stepId, worker.getId());
-
-                checkStepStatusTransition(step, WorkflowStepStatus.ONGOING);
-
-                step.setStatus(WorkflowStepStatus.COMPLETED);
-                step.setCompletedAt(LocalDateTime.now(ZoneOffset.UTC));
-
-                // SLA FIX: Edge case catch
-                if (step.getStartedAt() == null) {
-                        step.setStartedAt(LocalDateTime.now(ZoneOffset.UTC));
-                }
-
-                stepRepository.save(step);
-
-                stepActivityService.log(step, worker.getUser(), JobWorkflowStepActivityType.STATUS_CHANGED,
-                                "Worker " + worker.getName() + " marked the ongoing step as COMPLETED.");
-
-                checkAndUpdateParentWorkflowStatus(step.getJobWorkflow());
-
-                return mapStep(step);
+                return handleStepCompletion(stepId, workerUserId, WorkflowStepStatus.ONGOING);
         }
 
         @Override
         public JobWorkflowStepResponse completeStep(Long stepId, Long workerUserId) {
+                return handleStepCompletion(stepId, workerUserId, WorkflowStepStatus.STARTED);
+        }
+
+        /**
+         * Shared logic for completing a step to keep code DRY.
+         */
+        private JobWorkflowStepResponse handleStepCompletion(Long stepId, Long workerUserId,
+                        WorkflowStepStatus requiredStatus) {
                 Worker worker = getWorker(workerUserId);
                 JobWorkflowStep step = getAssignedStep(stepId, worker.getId());
 
-                checkStepStatusTransition(step, WorkflowStepStatus.STARTED);
+                checkStepStatusTransition(step, requiredStatus);
 
                 step.setStatus(WorkflowStepStatus.COMPLETED);
                 step.setCompletedAt(LocalDateTime.now(ZoneOffset.UTC));
 
-                // SLA FIX: Edge case catch
                 if (step.getStartedAt() == null) {
                         step.setStartedAt(LocalDateTime.now(ZoneOffset.UTC));
                 }
@@ -402,6 +514,17 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
 
                 stepActivityService.log(step, worker.getUser(), JobWorkflowStepActivityType.STATUS_CHANGED,
                                 "Worker " + worker.getName() + " completed the step.");
+
+                notifyCompanyAdmin(
+                                step, worker,
+                                NotificationType.STEP_COMPLETED,
+                                "Step Completed",
+                                String.format("%s completed step '%s' for Job #%s.", worker.getName(), step.getName(),
+                                                step.getJobWorkflow().getJob().getJobRef()),
+                                "/company/jobs/" + step.getJobWorkflow().getJob().getId() + "/details",
+                                "JobWorkflowStep", step.getId(),
+                                NotificationPriority.MEDIUM,
+                                Map.of("newStatus", "COMPLETED", "action", "VIEW_STEP"));
 
                 checkAndUpdateParentWorkflowStatus(step.getJobWorkflow());
 
@@ -453,6 +576,20 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
 
                 stepActivityService.log(step, worker.getUser(), JobWorkflowStepActivityType.COMMENT,
                                 request.getContent());
+
+                notifyCompanyAdmin(
+                                step, worker,
+                                NotificationType.STEP_COMMENT_ADDED,
+                                "New Step Comment",
+                                String.format("%s commented on step '%s' (Job #%s).", worker.getName(), step.getName(),
+                                                step.getJobWorkflow().getJob().getJobRef()),
+                                "/company/jobs/" + step.getJobWorkflow().getJob().getId() + "/details",
+                                "JobWorkflowStepComment", comment.getId(),
+                                NotificationPriority.LOW,
+                                Map.of("commentId", comment.getId(), "discussionType", comment.getType().name(),
+                                                "action", "OPEN_DISCUSSION"));
+
+                processMentions(request.getContent(), step, worker.getUser(), comment.getId(), request.getType());
 
                 return StepCommentResponse.builder()
                                 .id(comment.getId())
@@ -536,6 +673,20 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
                 stepActivityService.log(step, worker.getUser(), JobWorkflowStepActivityType.ATTACHMENT_ADDED,
                                 "Worker uploaded " + originalFilename);
 
+                notifyCompanyAdmin(
+                                step, worker,
+                                NotificationType.STEP_ATTACHMENT_ADDED,
+                                "New Step Attachment",
+                                String.format("%s uploaded '%s' to step '%s' (Job #%s).", worker.getName(),
+                                                originalFilename, step.getName(),
+                                                step.getJobWorkflow().getJob().getJobRef()),
+                                "/company/jobs/" + step.getJobWorkflow().getJob().getId() + "/details", // Update target
+                                                                                                        // URL
+                                "JobWorkflowStepAttachment", attachment.getId(),
+                                NotificationPriority.LOW,
+                                Map.of("attachmentId", attachment.getId(), "discussionType",
+                                                attachment.getType().name(), "action", "OPEN_DISCUSSION"));
+
                 return StepAttachmentResponse.builder()
                                 .id(attachment.getId())
                                 .fileName(attachment.getFileName())
@@ -576,37 +727,17 @@ public class WorkerJobWorkflowService implements IWorkerJobWorkflowService {
                 stepActivityService.log(step, worker.getUser(), JobWorkflowStepActivityType.VISIT_LOGGED,
                                 "Worker " + worker.getName() + " logged a visit for " + request.getVisitDate());
 
-                // --- SEND NOTIFICATION TO COMPANY ADMIN ---
-
-                User companyAdmin = step.getJobWorkflow().getJob().getCompany().getUser();
-                Long jobRef = step.getJobWorkflow().getJob().getJobRef();
-
-                // Semantic UI Route - Matches your frontend/mobile deep link structure
-                String targetUrl = "/job-workflow-steps/" + step.getId() + "/visits";
-
-                String message = String.format("%s logged a visit for Job #%s on %s.",
-                                worker.getName(),
-                                jobRef,
-                                request.getVisitDate().toString());
-
-                notificationService.createNotification(
-                                companyAdmin,
+                notifyCompanyAdmin(
+                                step, worker,
                                 NotificationType.VISIT_LOG_ADDED,
                                 "New Visit Logged",
-                                message,
-                                targetUrl,
-                                "JobWorkflowStepVisitLog",
-                                visitLog.getId(),
+                                String.format("%s logged a visit for Job #%s on %s.", worker.getName(),
+                                                step.getJobWorkflow().getJob().getJobRef(),
+                                                request.getVisitDate().toString()),
+                                "/company/jobs/" + step.getJobWorkflow().getJob().getId() + "/details",
+                                "JobWorkflowStepVisitLog", visitLog.getId(),
                                 NotificationPriority.LOW,
-
-                                // Rich Metadata for mobile apps or complex state management
-                                Map.of(
-                                                "jobId", step.getJobWorkflow().getJob().getId(),
-                                                "stepId", step.getId(),
-                                                "visitLogId", visitLog.getId(),
-                                                "workerId", worker.getId(),
-                                                "action", "OPEN_VISIT_LOGS"));
-                // ----------------------------------------------
+                                Map.of("visitLogId", visitLog.getId(), "action", "OPEN_VISIT_LOGS"));
 
                 return mapVisitLog(visitLog);
         }

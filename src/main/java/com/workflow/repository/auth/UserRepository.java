@@ -4,6 +4,7 @@ import com.workflow.entity.auth.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;
+import java.util.Set;
 
 
 public interface UserRepository extends JpaRepository<User, Long> {
@@ -22,5 +23,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     Optional<User> findByGoogleId(String googleId);
 
+    Set<User> findByUsernameIn(Set<String> usernames);
 
 }

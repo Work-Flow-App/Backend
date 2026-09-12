@@ -3,6 +3,7 @@ package com.workflow.service.workflow;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -11,6 +12,8 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.workflow.common.constant.notification.NotificationPriority;
+import com.workflow.common.constant.notification.NotificationType;
 import com.workflow.common.constant.workflow.JobWorkflowStepActivityType;
 import com.workflow.common.constant.workflow.WorkflowStepStatus;
 import com.workflow.common.exception.business.JobNotFoundException;
@@ -43,6 +46,8 @@ import com.workflow.repository.job.JobWorkflowStepVisitLogRepository;
 import com.workflow.repository.worker.WorkerRepository;
 import com.workflow.repository.workflow.WorkflowRepository;
 import com.workflow.repository.workflow.WorkflowStepRepository;
+import com.workflow.service.notification.INotificationService;
+
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -61,12 +66,63 @@ public class JobWorkflowService implements IJobWorkflowService {
         private final WorkflowRepository workflowRepository;
         private final IStepActivityService stepActivityService;
         private final JobWorkflowMapper jobWorkflowMapper;
+        private final INotificationService notificationService;
 
         /*
          * =======================
          * INTERNAL HELPERS
          * =======================
          */
+
+        private void notifyWorker(
+                        Worker worker,
+                        JobWorkflowStep step,
+                        NotificationType type,
+                        String title,
+                        String message,
+                        String targetUrl,
+                        String entityType,
+                        Long entityId,
+                        NotificationPriority priority,
+                        Map<String, Object> extraMetadata) {
+
+                Map<String, Object> metadata = new HashMap<>(Map.of(
+                                "jobId", step.getJobWorkflow().getJob().getId(),
+                                "jobWorkflowId", step.getJobWorkflow().getId(),
+                                "stepId", step.getId(),
+                                "workerId", worker.getId()));
+                if (extraMetadata != null) {
+                        metadata.putAll(extraMetadata);
+                }
+
+                notificationService.createNotification(
+                                worker.getUser(),
+                                type,
+                                title,
+                                message,
+                                targetUrl,
+                                entityType,
+                                entityId,
+                                priority,
+                                metadata);
+        }
+
+        private void notifyAssignedWorkers(
+                        JobWorkflowStep step,
+                        NotificationType type,
+                        String title,
+                        String message,
+                        String targetUrl,
+                        String entityType,
+                        Long entityId,
+                        NotificationPriority priority,
+                        Map<String, Object> extraMetadata) {
+                for (Worker worker : step.getAssignedWorkers()) {
+                        notifyWorker(worker, step, type, title, message, targetUrl, entityType, entityId, priority,
+                                        extraMetadata);
+                }
+        }
+
         private void updateJobWorkflowStatus(JobWorkflow jobWorkflow) {
                 List<JobWorkflowStep> steps = jobWorkflowStepRepository
                                 .findByJobWorkflowIdOrderByOrderIndexAsc(jobWorkflow.getId());
@@ -394,6 +450,16 @@ public class JobWorkflowService implements IJobWorkflowService {
 
                         logStep(step, actor, JobWorkflowStepActivityType.STATUS_CHANGED,
                                         "Status changed from " + oldStatus + " to " + newStatus);
+
+                        notifyAssignedWorkers(step,
+                                        NotificationType.STEP_STATUS_CHANGED,
+                                        "Step Status Updated",
+                                        String.format("The status of step '%s' (Job #%s) was changed to %s.",
+                                                        step.getName(), jw.getJob().getJobRef(), newStatus),
+                                        "/worker/steps/" + step.getId(),
+                                        "JobWorkflowStep", step.getId(),
+                                        NotificationPriority.MEDIUM,
+                                        Map.of("newStatus", newStatus.name()));
                 }
 
                 if (request.getAssignedWorkerIds() != null) {
@@ -423,6 +489,15 @@ public class JobWorkflowService implements IJobWorkflowService {
                                                         actor,
                                                         JobWorkflowStepActivityType.WORKER_ASSIGNED,
                                                         "Assigned worker ID " + w.getId());
+                                        notifyWorker(w, step,
+                                                        NotificationType.WORKER_ASSIGNED,
+                                                        "New Step Assignment",
+                                                        String.format("You have been assigned to step '%s' for Job #%s.",
+                                                                        step.getName(), jw.getJob().getJobRef()),
+                                                        "/worker/job-workflows/" + jw.getId(),
+                                                        "JobWorkflowStep", step.getId(),
+                                                        NotificationPriority.HIGH,
+                                                        Map.of("assignmentLevel", "STEP"));
                                 }
                         }
 
@@ -565,6 +640,16 @@ public class JobWorkflowService implements IJobWorkflowService {
                                                                 JobWorkflowStepActivityType.STATUS_CHANGED,
                                                                 "Status changed from " + oldStatus + " to "
                                                                                 + newStatus);
+                                                notifyAssignedWorkers(step,
+                                                                NotificationType.STEP_STATUS_CHANGED,
+                                                                "Step Status Updated",
+                                                                String.format("The status of step '%s' (Job #%s) was changed to %s.",
+                                                                                step.getName(), jw.getJob().getJobRef(),
+                                                                                newStatus),
+                                                                "/worker/steps/" + step.getId(),
+                                                                "JobWorkflowStep", step.getId(),
+                                                                NotificationPriority.MEDIUM,
+                                                                Map.of("newStatus", newStatus.name()));
                                         }
 
                                         // 🔹 Workers
@@ -594,6 +679,18 @@ public class JobWorkflowService implements IJobWorkflowService {
                                                                 stepActivityService.log(step, actor,
                                                                                 JobWorkflowStepActivityType.WORKER_ASSIGNED,
                                                                                 "Assigned worker ID " + w.getId());
+                                                                notifyWorker(w, step,
+                                                                                NotificationType.WORKER_ASSIGNED,
+                                                                                "New Step Assignment",
+                                                                                String.format("You have been assigned to step '%s' for Job #%s.",
+                                                                                                step.getName(),
+                                                                                                jw.getJob().getJobRef()),
+                                                                                "/worker/job-workflows/" + jw.getId(), // Update
+                                                                                                                       // target
+                                                                                                                       // url
+                                                                                "JobWorkflowStep", step.getId(),
+                                                                                NotificationPriority.HIGH,
+                                                                                Map.of("assignmentLevel", "STEP"));
                                                         }
                                                 }
 
@@ -661,6 +758,19 @@ public class JobWorkflowService implements IJobWorkflowService {
                                         stepActivityService.log(newStep, actor,
                                                         JobWorkflowStepActivityType.STEP_CREATED,
                                                         "Created workflow step");
+
+                                        if (!newStep.getAssignedWorkers().isEmpty()) {
+                                                notifyAssignedWorkers(newStep,
+                                                                NotificationType.WORKER_ASSIGNED,
+                                                                "New Step Assignment",
+                                                                String.format("You have been assigned to new step '%s' for Job #%s.",
+                                                                                newStep.getName(),
+                                                                                jw.getJob().getJobRef()),
+                                                                "/worker/job-workflows/" + jw.getId(),
+                                                                "JobWorkflowStep", newStep.getId(),
+                                                                NotificationPriority.HIGH,
+                                                                Map.of("assignmentLevel", "STEP"));
+                                        }
                                 }
                         }
                 }
@@ -751,15 +861,23 @@ public class JobWorkflowService implements IJobWorkflowService {
                                 jobWorkflow.getId());
 
                 for (JobWorkflowStep step : steps) {
-                        step.getAssignedWorkers().add(worker);
+                        boolean added = step.getAssignedWorkers().add(worker);
+                        if (added) {
+                                stepActivityService.log(step, jobWorkflow.getJob().getCompany().getUser(),
+                                                JobWorkflowStepActivityType.WORKER_ASSIGNED,
+                                                "Assigned worker ID " + worker.getId());
+                                // Notify worker for each step they were successfully added to
+                                notifyWorker(worker, step,
+                                                NotificationType.WORKER_ASSIGNED,
+                                                "New Step Assignment",
+                                                String.format("You have been assigned to step '%s' for Job #%s.",
+                                                                step.getName(), jobWorkflow.getJob().getJobRef()),
+                                                "/worker/job-workflows/" + jobWorkflow.getId(),
+                                                "JobWorkflowStep", step.getId(),
+                                                NotificationPriority.HIGH,
+                                                Map.of("assignmentLevel", "STEP"));
+                        }
                 }
-
-                // Batch-save all log entries in one saveAll call
-                stepActivityService.logAll(
-                                steps,
-                                jobWorkflow.getJob().getCompany().getUser(),
-                                JobWorkflowStepActivityType.WORKER_ASSIGNED,
-                                "Assigned worker ID " + worker.getId());
 
                 updateJobWorkflowStatus(jobWorkflow);
                 return buildResponse(jobWorkflow);
@@ -804,20 +922,31 @@ public class JobWorkflowService implements IJobWorkflowService {
                 List<JobWorkflowStep> steps = jobWorkflowStepRepository.findByJobWorkflowIdOrderByOrderIndexAsc(
                                 jobWorkflow.getId());
 
-                // Assign all workers to all steps
-                for (JobWorkflowStep step : steps) {
-                        step.getAssignedWorkers().addAll(workers);
-                }
-
                 User actor = jobWorkflow.getJob().getCompany().getUser();
 
-                // Batch-save log entries for each worker
-                for (Worker worker : workers) {
-                        stepActivityService.logAll(
-                                        steps,
-                                        actor,
-                                        JobWorkflowStepActivityType.WORKER_ASSIGNED,
-                                        "Assigned worker ID " + worker.getId());
+                // Assign all workers to all steps
+                for (JobWorkflowStep step : steps) {
+                        for (Worker worker : workers) {
+                                boolean added = step.getAssignedWorkers().add(worker);
+                                if (added) {
+
+                                        stepActivityService.log(step, actor,
+                                                        JobWorkflowStepActivityType.WORKER_ASSIGNED,
+                                                        "Assigned worker ID " + worker.getId());
+
+                                        notifyWorker(worker, step,
+                                                        NotificationType.WORKER_ASSIGNED,
+                                                        "New Step Assignment",
+                                                        String.format("You have been assigned to step '%s' for Job #%s.",
+                                                                        step.getName(),
+                                                                        jobWorkflow.getJob().getJobRef()),
+                                                        "/worker/job-workflows/" + jobWorkflow.getId(), // Update target
+                                                                                                        // url
+                                                        "JobWorkflowStep", step.getId(),
+                                                        NotificationPriority.HIGH,
+                                                        Map.of("assignmentLevel", "STEP"));
+                                }
+                        }
                 }
 
                 updateJobWorkflowStatus(jobWorkflow);
@@ -908,6 +1037,15 @@ public class JobWorkflowService implements IJobWorkflowService {
                                 actor,
                                 JobWorkflowStepActivityType.STEP_CREATED,
                                 "Created workflow step");
+                notifyAssignedWorkers(step,
+                                NotificationType.WORKER_ASSIGNED,
+                                "New Step Assignment",
+                                String.format("You have been assigned to new step '%s' for Job #%s.", step.getName(),
+                                                jw.getJob().getJobRef()),
+                                "/worker/job-workflows/" + jw.getId(),
+                                "JobWorkflowStep", step.getId(),
+                                NotificationPriority.HIGH,
+                                Map.of("assignmentLevel", "STEP"));
 
                 // Normalize order & update workflow status
                 normalizeOrderIndexes(jw.getId());

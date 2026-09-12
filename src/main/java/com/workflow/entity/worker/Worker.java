@@ -55,6 +55,11 @@ public class Worker {
     @Column(name = "hourly_rate", precision = 10, scale = 2)
     private BigDecimal hourlyRate;
 
+    // Independent of hourlyRate — not every worker is entitled to overtime, and where
+    // they are, the rate isn't always a simple multiplier of the regular rate.
+    @Column(name = "overtime_rate", precision = 10, scale = 2)
+    private BigDecimal overtimeRate;
+
     @Column(name = "login_locked", columnDefinition = "BOOLEAN DEFAULT FALSE")
     @Builder.Default
     private boolean loginLocked = false;

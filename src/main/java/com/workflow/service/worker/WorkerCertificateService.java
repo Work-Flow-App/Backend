@@ -19,6 +19,7 @@ import com.workflow.common.constant.worker.CertificateType;
 import com.workflow.common.exception.business.EmptyFileException;
 import com.workflow.common.exception.business.FileSizeLimitExceededException;
 import com.workflow.common.exception.business.ForbiddenActionException;
+import com.workflow.common.exception.business.InvalidRequestException;
 import com.workflow.common.exception.business.WorkerCertificateNotFoundException;
 import com.workflow.common.exception.business.WorkerNotFoundException;
 import com.workflow.dto.worker.ExpiringCertificateResponse;
@@ -61,11 +62,25 @@ public class WorkerCertificateService implements IWorkerCertificateService {
                 .orElseThrow(() -> new WorkerNotFoundException("Worker not found with ID: " + workerId));
     }
 
+    // Normalizes the custom-type label against the selected type: required (non-blank) when
+    // type is OTHER so the certificate always has a meaningful name to show; discarded for every
+    // other type so a stray value from a form the caller forgot to clear can't sneak into storage.
+    private String normalizeCustomTypeLabel(CertificateType type, String customTypeLabel) {
+        if (type == CertificateType.OTHER) {
+            if (!StringUtils.hasText(customTypeLabel)) {
+                throw new InvalidRequestException("Custom type label is required when type is OTHER");
+            }
+            return customTypeLabel.trim();
+        }
+        return null;
+    }
+
     private WorkerCertificate uploadCertificate(
             Worker worker,
             User uploadedBy,
             MultipartFile file,
             CertificateType type,
+            String customTypeLabel,
             String name,
             String issuingAuthority,
             LocalDate issueDate,
@@ -78,6 +93,10 @@ public class WorkerCertificateService implements IWorkerCertificateService {
         if (file.getSize() > MAX_FILE_SIZE) {
             throw new FileSizeLimitExceededException("Certificate file must not exceed 15 MB");
         }
+
+        // Validated up front, alongside the other guard clauses — must fail before any S3
+        // upload or quota consumption, not while building the entity right before save().
+        String resolvedCustomTypeLabel = normalizeCustomTypeLabel(type, customTypeLabel);
 
         String detectedType = tika.detect(file.getInputStream());
 
@@ -107,6 +126,7 @@ public class WorkerCertificateService implements IWorkerCertificateService {
                         .worker(worker)
                         .uploadedBy(uploadedBy)
                         .type(type)
+                        .customTypeLabel(resolvedCustomTypeLabel)
                         .name(name)
                         .issuingAuthority(issuingAuthority)
                         .issueDate(issueDate)
@@ -125,6 +145,7 @@ public class WorkerCertificateService implements IWorkerCertificateService {
             Long workerUserId,
             MultipartFile file,
             CertificateType type,
+            String customTypeLabel,
             String name,
             String issuingAuthority,
             LocalDate issueDate,
@@ -132,7 +153,7 @@ public class WorkerCertificateService implements IWorkerCertificateService {
 
         Worker worker = getWorker(workerUserId);
         WorkerCertificate certificate = uploadCertificate(
-                worker, worker.getUser(), file, type, name, issuingAuthority, issueDate, expiryDate);
+                worker, worker.getUser(), file, type, customTypeLabel, name, issuingAuthority, issueDate, expiryDate);
         return map(certificate);
     }
 
@@ -144,6 +165,15 @@ public class WorkerCertificateService implements IWorkerCertificateService {
                 .stream()
                 .map(this::map)
                 .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public WorkerCertificateResponse getOwnCertificate(Long workerUserId, Long certificateId) {
+        Worker worker = getWorker(workerUserId);
+        WorkerCertificate certificate = certificateRepository.findByIdAndWorkerId(certificateId, worker.getId())
+                .orElseThrow(() -> new WorkerCertificateNotFoundException("Certificate not found with ID: " + certificateId));
+        return map(certificate);
     }
 
     @Override
@@ -185,6 +215,14 @@ public class WorkerCertificateService implements IWorkerCertificateService {
 
     @Override
     @Transactional(readOnly = true)
+    public WorkerCertificateResponse getCertificateForWorker(Long certificateId, Long workerId, Long companyId) {
+        WorkerCertificate certificate = certificateRepository.findByIdAndWorkerIdAndCompanyId(certificateId, workerId, companyId)
+                .orElseThrow(() -> new WorkerCertificateNotFoundException("Certificate not found with ID: " + certificateId));
+        return map(certificate);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public Page<WorkerCertificateResponse> listCompanyCertificates(Long companyId, Pageable pageable) {
         return certificateRepository.findByCompanyId(companyId, pageable).map(this::map);
     }
@@ -215,6 +253,7 @@ public class WorkerCertificateService implements IWorkerCertificateService {
             User admin,
             MultipartFile file,
             CertificateType type,
+            String customTypeLabel,
             String name,
             String issuingAuthority,
             LocalDate issueDate,
@@ -222,7 +261,7 @@ public class WorkerCertificateService implements IWorkerCertificateService {
 
         Worker worker = getWorkerInCompany(workerId, companyId);
         WorkerCertificate certificate = uploadCertificate(
-                worker, admin, file, type, name, issuingAuthority, issueDate, expiryDate);
+                worker, admin, file, type, customTypeLabel, name, issuingAuthority, issueDate, expiryDate);
         return map(certificate);
     }
 
@@ -265,6 +304,7 @@ public class WorkerCertificateService implements IWorkerCertificateService {
                 c.getWorker().getId(),
                 c.getWorker().getName(),
                 c.getType(),
+                c.getCustomTypeLabel(),
                 c.getName(),
                 c.getIssuingAuthority(),
                 c.getIssueDate(),

@@ -47,6 +47,7 @@ public class WorkerCertificateSelfController {
     public ResponseEntity<WorkerCertificateResponse> uploadOwnCertificate(
             @RequestParam("file") MultipartFile file,
             @RequestParam("type") CertificateType type,
+            @RequestParam(value = "customTypeLabel", required = false) String customTypeLabel,
             @RequestParam("name") String name,
             @RequestParam(value = "issuingAuthority", required = false) String issuingAuthority,
             @RequestParam(value = "issueDate", required = false) LocalDate issueDate,
@@ -54,13 +55,19 @@ public class WorkerCertificateSelfController {
             Authentication auth) throws IOException {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(certificateService.uploadOwnCertificate(
-                        getUserId(auth), file, type, name, issuingAuthority, issueDate, expiryDate));
+                        getUserId(auth), file, type, customTypeLabel, name, issuingAuthority, issueDate, expiryDate));
     }
 
     @Operation(summary = "List the current worker's certificates")
     @GetMapping
     public ResponseEntity<List<WorkerCertificateResponse>> getOwnCertificates(Authentication auth) {
         return ResponseEntity.ok(certificateService.getOwnCertificates(getUserId(auth)));
+    }
+
+    @Operation(summary = "Get a single own certificate")
+    @GetMapping("/{id}")
+    public ResponseEntity<WorkerCertificateResponse> getOwnCertificate(@PathVariable Long id, Authentication auth) {
+        return ResponseEntity.ok(certificateService.getOwnCertificate(getUserId(auth), id));
     }
 
     @Operation(summary = "Update metadata of an own certificate")

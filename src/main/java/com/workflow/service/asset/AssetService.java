@@ -5,9 +5,11 @@ import com.workflow.dto.job.AddressRequest;
 import com.workflow.dto.job.AddressResponse;
 import com.workflow.entity.asset.Asset;
 import com.workflow.entity.asset.AssetAttachment;
+import com.workflow.entity.asset.AssetGroup;
 import com.workflow.entity.asset.AssetJobAssignment;
 import com.workflow.entity.common.Address;
 import com.workflow.entity.company.Company;
+import com.workflow.repository.asset.AssetGroupRepository;
 import com.workflow.repository.asset.AssetJobAssignmentRepository;
 import com.workflow.repository.asset.AssetRepository;
 import com.workflow.repository.common.AddressRepository;
@@ -46,6 +48,7 @@ public class AssetService implements IAssetService {
     private final CompanyRepository companyRepository;
     private final CompanyCounterService companyCounterService;
     private final AddressRepository addressRepository;
+    private final AssetGroupRepository groupRepository;
     private final IStorageService s3Service;
     private final Tika tika;
     private final IStorageQuotaService storageQuotaService;
@@ -73,12 +76,20 @@ public class AssetService implements IAssetService {
             warehouseAddress = addressRepository.save(warehouseAddress);
         }
 
+        AssetGroup group = null;
+        if (request.getGroupId() != null) {
+            group = groupRepository.findById(request.getGroupId())
+                    .filter(g -> g.getCompany().getId().equals(companyId))
+                    .orElseThrow(() -> new InvalidRequestException("Asset group not found"));
+        }
+
         Asset asset = Asset.builder()
                 .company(company)
                 .name(request.getName())
                 .description(request.getDescription())
                 .serialNumber(request.getSerialNumber())
                 .assetTag(request.getAssetTag())
+                .assetGroup(group)
                 .purchasePrice(request.getPurchasePrice().setScale(2, RoundingMode.HALF_UP))
                 .purchaseDate(request.getPurchaseDate())
                 .depreciationRate(request.getDepreciationRate().setScale(2, RoundingMode.HALF_UP))
@@ -118,6 +129,15 @@ public class AssetService implements IAssetService {
                 throw new DuplicateNameException("Asset tag must be unique within the company");
             }
             asset.setAssetTag(request.getAssetTag());
+        }
+
+        if (request.getGroupId() != null) {
+            AssetGroup group = groupRepository.findById(request.getGroupId())
+                    .filter(g -> g.getCompany().getId().equals(companyId))
+                    .orElseThrow(() -> new InvalidRequestException("Asset group not found"));
+            asset.setAssetGroup(group);
+        } else if (request.getGroupId() == null && asset.getAssetGroup() != null) {
+            asset.setAssetGroup(null);
         }
 
         if (request.getDescription() != null) {
@@ -175,21 +195,39 @@ public class AssetService implements IAssetService {
 
     @Override
     public Page<AssetResponse> listAssets(Long companyId, int page, int size, Boolean archived, Boolean available,
-            String sortBy, String direction) {
+            Long groupId, String sortBy, String direction) {
         Sort.Direction dir = "desc".equalsIgnoreCase(direction) ? Sort.Direction.DESC : Sort.Direction.ASC;
         String sort = (sortBy == null || sortBy.isBlank()) ? "name" : sortBy;
         Pageable pageable = PageRequest.of(Math.max(0, page), Math.max(1, size), Sort.by(dir, sort));
 
         Page<Asset> assetsPage;
-        if (archived == null && available == null) {
-            assetsPage = assetRepository.findByCompanyIdAndArchivedFalse(companyId, pageable);
-        } else if (archived != null) {
-            if (archived)
-                assetsPage = assetRepository.findByCompanyId(companyId, pageable);
-            else
-                assetsPage = assetRepository.findByCompanyIdAndArchivedFalse(companyId, pageable);
+
+        if (groupId != null) {
+            if (archived == null && available == null) {
+                assetsPage = assetRepository.findByCompanyIdAndAssetGroupIdAndArchivedFalse(companyId, groupId,
+                        pageable);
+            } else if (archived != null) {
+                if (archived)
+                    assetsPage = assetRepository.findByCompanyIdAndAssetGroupId(companyId, groupId, pageable);
+                else
+                    assetsPage = assetRepository.findByCompanyIdAndAssetGroupIdAndArchivedFalse(companyId, groupId,
+                            pageable);
+            } else {
+                assetsPage = assetRepository.findByCompanyIdAndAssetGroupIdAndArchivedFalseAndAvailable(companyId,
+                        groupId, available, pageable);
+            }
         } else {
-            assetsPage = assetRepository.findByCompanyIdAndArchivedFalseAndAvailable(companyId, available, pageable);
+            if (archived == null && available == null) {
+                assetsPage = assetRepository.findByCompanyIdAndArchivedFalse(companyId, pageable);
+            } else if (archived != null) {
+                if (archived)
+                    assetsPage = assetRepository.findByCompanyId(companyId, pageable);
+                else
+                    assetsPage = assetRepository.findByCompanyIdAndArchivedFalse(companyId, pageable);
+            } else {
+                assetsPage = assetRepository.findByCompanyIdAndArchivedFalseAndAvailable(companyId, available,
+                        pageable);
+            }
         }
 
         return assetsPage.map(this::mapToResponse);
@@ -436,6 +474,8 @@ public class AssetService implements IAssetService {
                 .description(asset.getDescription())
                 .serialNumber(asset.getSerialNumber())
                 .assetTag(asset.getAssetTag())
+                .groupId(asset.getAssetGroup() != null ? asset.getAssetGroup().getId() : null)
+                .groupName(asset.getAssetGroup() != null ? asset.getAssetGroup().getName() : null)
                 .purchasePrice(asset.getPurchasePrice())
                 .purchaseDate(asset.getPurchaseDate())
                 .depreciationRate(asset.getDepreciationRate())

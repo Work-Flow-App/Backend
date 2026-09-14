@@ -165,7 +165,7 @@ class WorkerProfileControllerIntegrationTest extends AbstractControllerIntegrati
 
     @Test
     void shouldUpdateHourlyRateAsAdmin() throws Exception {
-        WorkerRateUpdateRequest request = new WorkerRateUpdateRequest(new BigDecimal("18.75"));
+        WorkerRateUpdateRequest request = new WorkerRateUpdateRequest(new BigDecimal("18.75"), null);
 
         mockMvc.perform(patch("/api/v1/workers/" + worker1.getId() + "/rate")
                         .header("Authorization", "Bearer " + companyAdminToken)
@@ -177,7 +177,7 @@ class WorkerProfileControllerIntegrationTest extends AbstractControllerIntegrati
 
     @Test
     void shouldReturn403WhenWorkerTriesToSetOwnRate() throws Exception {
-        WorkerRateUpdateRequest request = new WorkerRateUpdateRequest(new BigDecimal("999.00"));
+        WorkerRateUpdateRequest request = new WorkerRateUpdateRequest(new BigDecimal("999.00"), null);
 
         mockMvc.perform(patch("/api/v1/workers/" + worker1.getId() + "/rate")
                         .header("Authorization", "Bearer " + worker1Token)

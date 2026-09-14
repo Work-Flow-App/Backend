@@ -13,7 +13,8 @@ public class FormTemplateData {
     private String templateName;
     private String status;
     private String submittedAt; 
-    private String workerName; 
+    private String workerName;
+    private Long jobRef; 
 
     // Company metadata
     private String companyName;

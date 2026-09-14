@@ -3,9 +3,11 @@ package com.workflow.controller.job;
 import com.workflow.common.constant.job.JobStatus;
 import com.workflow.common.security.RequireCompanyRole;
 import com.workflow.common.util.AuthUtils;
+import com.workflow.dto.form.FormSubmissionResponse;
 import com.workflow.dto.job.*;
 import com.workflow.dto.job.validators.PatchValidation;
 import com.workflow.dto.job.validators.PutValidation;
+import com.workflow.service.form.IFormService;
 import com.workflow.service.job.IJobService;
 import jakarta.validation.Valid;
 import jakarta.validation.groups.Default;
@@ -34,6 +36,7 @@ import static com.workflow.common.constant.CompanyRole.*;
 public class JobController {
 
     private final IJobService jobService;
+    private final IFormService formService;
 
     @RequireCompanyRole({ COMPANY_ADMIN, MANAGER, EDITOR })
     @PostMapping
@@ -117,6 +120,14 @@ public class JobController {
             @PathVariable Long templateId,
             Authentication auth) {
         return ResponseEntity.ok(jobService.getJobsByTemplate(templateId, getCompanyId()));
+    }
+
+    @RequireCompanyRole({ COMPANY_ADMIN, MANAGER, EDITOR, VIEWER })
+    @GetMapping("/{id}/forms")
+    public ResponseEntity<List<FormSubmissionResponse>> getJobForms(
+            @PathVariable Long id,
+            Authentication auth) {
+        return ResponseEntity.ok(formService.getJobForms(id, getCompanyId()));
     }
 
     @RequireCompanyRole({ COMPANY_ADMIN, MANAGER })

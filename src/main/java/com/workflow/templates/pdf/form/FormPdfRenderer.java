@@ -91,6 +91,7 @@ public class FormPdfRenderer {
                 .status(submission.getStatus().name())
                 .submittedAt(submittedAtStr)
                 .workerName(submission.getWorker() != null ? submission.getWorker().getName() : "Unassigned")
+                .jobRef(submission.getJob() != null ? submission.getJob().getJobRef() : null)
                 .companyName(company.getName())
                 .companyAddressLines(addressLines)
                 .companyEmail(company.getContactEmail() != null ? company.getContactEmail() : company.getEmail())

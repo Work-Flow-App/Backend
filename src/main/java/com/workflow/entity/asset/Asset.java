@@ -93,4 +93,8 @@ public class Asset {
 
     @UpdateTimestamp
     private LocalDateTime updatedAt;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "group_id")
+    private AssetGroup assetGroup;
 }

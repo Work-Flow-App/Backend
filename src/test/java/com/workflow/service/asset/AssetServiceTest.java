@@ -8,6 +8,7 @@ import com.workflow.entity.asset.Asset;
 import com.workflow.entity.asset.AssetAttachment;
 import com.workflow.entity.asset.AssetJobAssignment;
 import com.workflow.entity.company.Company;
+import com.workflow.repository.asset.AssetGroupRepository;
 import com.workflow.repository.asset.AssetJobAssignmentRepository;
 import com.workflow.repository.asset.AssetRepository;
 import com.workflow.repository.company.CompanyRepository;
@@ -58,7 +59,10 @@ class AssetServiceTest {
     @Mock
     private CompanyCounterService companyCounterService;
 
-    // MISSING DEPENDENCIES ADDED HERE
+    // Added mock for the newly introduced AssetGroupRepository
+    @Mock
+    private AssetGroupRepository groupRepository;
+
     @Mock
     private IStorageService s3Service;
 
@@ -161,8 +165,7 @@ class AssetServiceTest {
         Set<ConstraintViolation<AssetCreateRequest>> violations = validator.validate(request);
 
         assertThat(violations).isNotEmpty();
-        assertThat(violations).anyMatch(v ->
-                v.getPropertyPath().toString().equals("name") &&
+        assertThat(violations).anyMatch(v -> v.getPropertyPath().toString().equals("name") &&
                 v.getMessage().contains("between 2 and 150 characters"));
     }
 
@@ -203,8 +206,7 @@ class AssetServiceTest {
         Set<ConstraintViolation<AssetCreateRequest>> violations = validator.validate(request);
 
         assertThat(violations).isNotEmpty();
-        assertThat(violations).anyMatch(v ->
-                v.getPropertyPath().toString().equals("purchasePrice") &&
+        assertThat(violations).anyMatch(v -> v.getPropertyPath().toString().equals("purchasePrice") &&
                 v.getMessage().contains("greater than 0"));
     }
 
@@ -220,8 +222,7 @@ class AssetServiceTest {
         Set<ConstraintViolation<AssetCreateRequest>> violations = validator.validate(request);
 
         assertThat(violations).isNotEmpty();
-        assertThat(violations).anyMatch(v ->
-                v.getPropertyPath().toString().equals("purchaseDate"));
+        assertThat(violations).anyMatch(v -> v.getPropertyPath().toString().equals("purchaseDate"));
     }
 
     @Test
@@ -236,8 +237,7 @@ class AssetServiceTest {
         Set<ConstraintViolation<AssetCreateRequest>> violations = validator.validate(request);
 
         assertThat(violations).isNotEmpty();
-        assertThat(violations).anyMatch(v ->
-                v.getPropertyPath().toString().equals("depreciationRate") &&
+        assertThat(violations).anyMatch(v -> v.getPropertyPath().toString().equals("depreciationRate") &&
                 v.getMessage().contains("must not exceed 100"));
     }
 
@@ -333,7 +333,7 @@ class AssetServiceTest {
     @Test
     void addAttachments_Success() throws Exception {
         MockMultipartFile file = new MockMultipartFile("files", "image.jpg", "image/jpeg", "test data".getBytes());
-        
+
         when(assetRepository.findById(1L)).thenReturn(Optional.of(asset));
         when(tika.detect(any(InputStream.class))).thenReturn("image/jpeg");
         when(s3Service.resolveFileUrl(anyString())).thenReturn("http://s3.com/image.jpg");
@@ -353,7 +353,8 @@ class AssetServiceTest {
 
     @Test
     void removeAttachment_Success() {
-        // No fileSizeBytes set — simulates a legacy row uploaded before that column existed
+        // No fileSizeBytes set — simulates a legacy row uploaded before that column
+        // existed
         asset.getAttachments().add(AssetAttachment.builder()
                 .fileUrl("companies/1/assets/1/some-uuid.jpg")
                 .fileName("test.jpg")
@@ -431,7 +432,8 @@ class AssetServiceTest {
 
         when(assetRepository.findByCompanyIdAndArchivedFalse(eq(1L), any(Pageable.class))).thenReturn(page);
 
-        Page<AssetResponse> response = assetService.listAssets(1L, 0, 20, null, null, "name", "asc");
+        // Passed 'null' for groupId (6th argument)
+        Page<AssetResponse> response = assetService.listAssets(1L, 0, 20, null, null, null, "name", "asc");
 
         assertThat(response).isNotNull();
         assertThat(response.getContent()).hasSize(1);
@@ -447,7 +449,8 @@ class AssetServiceTest {
         when(assetRepository.findByCompanyIdAndArchivedFalseAndAvailable(eq(1L), eq(true), any(Pageable.class)))
                 .thenReturn(page);
 
-        Page<AssetResponse> response = assetService.listAssets(1L, 0, 20, null, true, "name", "asc");
+        // Passed 'null' for groupId (6th argument)
+        Page<AssetResponse> response = assetService.listAssets(1L, 0, 20, null, true, null, "name", "asc");
 
         assertThat(response).isNotNull();
         assertThat(response.getContent()).hasSize(1);
@@ -461,7 +464,8 @@ class AssetServiceTest {
 
         when(assetRepository.findByCompanyId(eq(1L), any(Pageable.class))).thenReturn(page);
 
-        Page<AssetResponse> response = assetService.listAssets(1L, 0, 20, true, null, "name", "asc");
+        // Passed 'null' for groupId (6th argument)
+        Page<AssetResponse> response = assetService.listAssets(1L, 0, 20, true, null, null, "name", "asc");
 
         assertThat(response).isNotNull();
         verify(assetRepository).findByCompanyId(eq(1L), any(Pageable.class));
@@ -474,7 +478,8 @@ class AssetServiceTest {
 
         when(assetRepository.findByCompanyIdAndArchivedFalse(eq(1L), any(Pageable.class))).thenReturn(page);
 
-        Page<AssetResponse> response = assetService.listAssets(1L, 0, 20, null, null, "purchaseDate", "desc");
+        // Passed 'null' for groupId (6th argument)
+        Page<AssetResponse> response = assetService.listAssets(1L, 0, 20, null, null, null, "purchaseDate", "desc");
 
         assertThat(response).isNotNull();
         verify(assetRepository).findByCompanyIdAndArchivedFalse(eq(1L), any(Pageable.class));

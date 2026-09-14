@@ -18,6 +18,7 @@ public record WorkerResponse(
         String username,
         String photoUrl,
         BigDecimal hourlyRate,
+        BigDecimal overtimeRate,
         boolean loginLocked,
         boolean archived,
         @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'", timezone = "UTC")
@@ -37,6 +38,7 @@ public record WorkerResponse(
                 worker.getUser().getUsername(),
                 resolvedPhotoUrl,
                 worker.getHourlyRate(),
+                worker.getOvertimeRate(),
                 worker.isLoginLocked(),
                 worker.isArchived(),
                 worker.getCreatedAt(),

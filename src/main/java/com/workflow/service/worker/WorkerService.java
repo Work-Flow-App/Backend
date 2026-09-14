@@ -8,6 +8,7 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.temporal.TemporalAdjusters;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -322,6 +323,7 @@ public class WorkerService implements IWorkerService {
                 .orElseThrow(() -> new WorkerNotFoundException("Worker not found with ID: " + workerId));
 
         worker.setHourlyRate(request.hourlyRate());
+        worker.setOvertimeRate(request.overtimeRate());
         Worker updatedWorker = workerRepository.save(worker);
         log.info("Updated hourly rate for worker ID: {}", workerId);
 
@@ -410,6 +412,10 @@ public class WorkerService implements IWorkerService {
         }
     }
 
+    // Hours beyond this, per calendar day (not per week), count as overtime — matches how
+    // visit logs are already recorded (one row per day, via visitDate).
+    private static final BigDecimal DAILY_OVERTIME_THRESHOLD_HOURS = BigDecimal.valueOf(8);
+
     private WorkerWeeklyHoursResponse calculateWeeklyHours(Worker worker, LocalDate anyDateInWeek) {
         LocalDate reference = anyDateInWeek != null ? anyDateInWeek : LocalDate.now();
         LocalDate weekStart = reference.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
@@ -418,21 +424,53 @@ public class WorkerService implements IWorkerService {
         List<JobWorkflowStepVisitLog> logs = visitLogRepository.findByLoggedByIdAndVisitDateBetween(
                 worker.getUser().getId(), weekStart, weekEnd);
 
-        Duration totalDuration = Duration.ZERO;
-        boolean hasOpenVisit = false;
+        boolean hasOpenVisit = logs.stream().anyMatch(l -> l.getTimeOut() == null);
 
-        for (JobWorkflowStepVisitLog visitLog : logs) {
-            if (visitLog.getTimeOut() == null) {
-                hasOpenVisit = true;
-                continue;
+        Map<LocalDate, Duration> durationByDay = logs.stream()
+                .filter(l -> l.getTimeOut() != null)
+                .collect(Collectors.groupingBy(
+                        JobWorkflowStepVisitLog::getVisitDate,
+                        Collectors.reducing(Duration.ZERO,
+                                l -> Duration.between(l.getTimeIn(), l.getTimeOut()),
+                                Duration::plus)));
+
+        BigDecimal regularHours = BigDecimal.ZERO;
+        BigDecimal overtimeHours = BigDecimal.ZERO;
+
+        for (Duration dayDuration : durationByDay.values()) {
+            BigDecimal dayHours = toHours(dayDuration);
+            if (dayHours.compareTo(DAILY_OVERTIME_THRESHOLD_HOURS) > 0) {
+                regularHours = regularHours.add(DAILY_OVERTIME_THRESHOLD_HOURS);
+                overtimeHours = overtimeHours.add(dayHours.subtract(DAILY_OVERTIME_THRESHOLD_HOURS));
+            } else {
+                regularHours = regularHours.add(dayHours);
             }
-            totalDuration = totalDuration.plus(Duration.between(visitLog.getTimeIn(), visitLog.getTimeOut()));
         }
 
-        BigDecimal totalHours = BigDecimal.valueOf(totalDuration.toMinutes())
-                .divide(BigDecimal.valueOf(60), 2, RoundingMode.HALF_UP);
+        BigDecimal totalHours = regularHours.add(overtimeHours);
+        BigDecimal regularPay = worker.getHourlyRate() != null ? regularHours.multiply(worker.getHourlyRate()) : null;
+        BigDecimal overtimePay = worker.getOvertimeRate() != null ? overtimeHours.multiply(worker.getOvertimeRate()) : null;
 
-        return new WorkerWeeklyHoursResponse(worker.getId(), weekStart, weekEnd, totalHours, hasOpenVisit);
+        // totalPay is only unknown if hours were actually worked in a category whose rate is
+        // missing — a missing overtimeRate with zero overtime hours this week shouldn't make
+        // the whole week's pay figure disappear.
+        boolean regularPayUnknown = regularPay == null && regularHours.compareTo(BigDecimal.ZERO) > 0;
+        boolean overtimePayUnknown = overtimePay == null && overtimeHours.compareTo(BigDecimal.ZERO) > 0;
+        BigDecimal totalPay = (regularPayUnknown || overtimePayUnknown)
+                ? null
+                : (regularPay != null ? regularPay : BigDecimal.ZERO)
+                        .add(overtimePay != null ? overtimePay : BigDecimal.ZERO);
+
+        return new WorkerWeeklyHoursResponse(
+                worker.getId(), weekStart, weekEnd,
+                totalHours, regularHours, overtimeHours,
+                regularPay, overtimePay, totalPay,
+                hasOpenVisit);
+    }
+
+    private BigDecimal toHours(Duration duration) {
+        return BigDecimal.valueOf(duration.toMinutes())
+                .divide(BigDecimal.valueOf(60), 2, RoundingMode.HALF_UP);
     }
 
     private WorkerResponse map(Worker worker) {

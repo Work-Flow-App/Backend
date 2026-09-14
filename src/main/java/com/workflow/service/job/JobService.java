@@ -46,6 +46,7 @@ import com.workflow.entity.customer.Client;
 import com.workflow.entity.company.Company;
 import com.workflow.entity.customer.Customer;
 import com.workflow.entity.financial.Estimate;
+import com.workflow.entity.form.FormSubmission;
 import com.workflow.entity.company.CompanySubscription;
 import com.workflow.entity.job.Job;
 import com.workflow.entity.job.JobFieldValue;
@@ -64,6 +65,7 @@ import com.workflow.repository.customer.CustomerRepository;
 import com.workflow.repository.financial.EstimateDocumentRepository;
 import com.workflow.repository.financial.EstimateRepository;
 import com.workflow.repository.financial.InvoiceRepository;
+import com.workflow.repository.form.FormSubmissionRepository;
 import com.workflow.repository.job.JobFieldValueRepository;
 import com.workflow.repository.job.JobRepository;
 import com.workflow.repository.job.JobSpecification;
@@ -108,6 +110,7 @@ public class JobService implements IJobService {
         private final IAssetAssignmentService assetAssignmentService;
         private final CompanySubscriptionRepository subscriptionRepository;
         private final IPlanLimitsService planLimitsService;
+        private final FormSubmissionRepository formSubmissionRepository;
 
         private record EstimateSummary(Long estimateId, BigDecimal totalNet) {
         }
@@ -355,31 +358,43 @@ public class JobService implements IJobService {
                 return mapToResponse(refreshedJob);
         }
 
-        // Self-resetting by calendar month via the createdAt range filter — no counter column
-        // or monthly reset job needed. See countByCompanyIdAndCreatedAtBetween for why archived
+        // Self-resetting by calendar month via the createdAt range filter — no counter
+        // column
+        // or monthly reset job needed. See countByCompanyIdAndCreatedAtBetween for why
+        // archived
         // jobs still count (otherwise archiving becomes a way to bypass the cap).
         //
-        // findByCompanyIdForUpdate locks the subscription row for the rest of this transaction
-        // (JobService's class-level @Transactional is already read-write), serializing concurrent
-        // count-check-insert sequences for the same company. Lower-priority fix than the seat cap
-        // (this one self-corrects next month), added anyway since the locking pattern was already
+        // findByCompanyIdForUpdate locks the subscription row for the rest of this
+        // transaction
+        // (JobService's class-level @Transactional is already read-write), serializing
+        // concurrent
+        // count-check-insert sequences for the same company. Lower-priority fix than
+        // the seat cap
+        // (this one self-corrects next month), added anyway since the locking pattern
+        // was already
         // built for SeatLimitService and reusing it here was cheap.
         private void assertJobCapacity(Long companyId) {
                 Optional<CompanySubscription> subscription = subscriptionRepository.findByCompanyIdForUpdate(companyId);
-                // Every signup goes through initTrial(), so this shouldn't happen. Fail CLOSED to
-                // FREE-tier limits (not open/unlimited) — see PlanLimitsService's Optional overloads.
+                // Every signup goes through initTrial(), so this shouldn't happen. Fail CLOSED
+                // to
+                // FREE-tier limits (not open/unlimited) — see PlanLimitsService's Optional
+                // overloads.
                 if (subscription.isEmpty()) {
-                        log.error("assertJobCapacity: no CompanySubscription for companyId={} — treating as FREE tier for limit-checking", companyId);
+                        log.error("assertJobCapacity: no CompanySubscription for companyId={} — treating as FREE tier for limit-checking",
+                                        companyId);
                 }
 
-                LocalDateTime startOfMonth = LocalDateTime.now(ZoneOffset.UTC).toLocalDate().withDayOfMonth(1).atStartOfDay();
+                LocalDateTime startOfMonth = LocalDateTime.now(ZoneOffset.UTC).toLocalDate().withDayOfMonth(1)
+                                .atStartOfDay();
                 LocalDateTime startOfNextMonth = startOfMonth.plusMonths(1);
-                long jobsThisMonth = jobRepository.countByCompanyIdAndCreatedAtBetween(companyId, startOfMonth, startOfNextMonth);
+                long jobsThisMonth = jobRepository.countByCompanyIdAndCreatedAtBetween(companyId, startOfMonth,
+                                startOfNextMonth);
                 int effectiveLimit = planLimitsService.getEffectiveJobsPerMonth(subscription);
 
                 if (jobsThisMonth >= effectiveLimit) {
                         throw new JobLimitExceededException(
-                                        "Monthly job limit reached (" + effectiveLimit + " max). Upgrade your plan to create more jobs this month.");
+                                        "Monthly job limit reached (" + effectiveLimit
+                                                        + " max). Upgrade your plan to create more jobs this month.");
                 }
         }
 
@@ -448,7 +463,8 @@ public class JobService implements IJobService {
                         JobTemplateField field = templateFieldRepository.findById(fieldId)
                                         .filter(f -> f.getTemplate().getId().equals(templateId))
                                         .orElseThrow(() -> new InvalidRequestException(
-                                                        "Field id " + fieldId + " does not belong to this job's template"));
+                                                        "Field id " + fieldId
+                                                                        + " does not belong to this job's template"));
 
                         Optional<JobFieldValue> existing = fieldValueRepository.findByJobIdAndFieldId(job.getId(),
                                         fieldId);
@@ -574,6 +590,12 @@ public class JobService implements IJobService {
 
                 if (!job.isArchived()) {
                         throw new InvalidRequestException("Job must be archived before it can be deleted");
+                }
+
+                List<FormSubmission> linkedForms = formSubmissionRepository.findByJobIdAndCompanyId(jobId, companyId);
+                if (!linkedForms.isEmpty()) {
+                        throw new InvalidRequestException(
+                                        "Cannot delete this job because it has forms attached. It must remain archived for historical records.");
                 }
 
                 // Mark assigned assets as available before bulk-deleting the assignment rows.

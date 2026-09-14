@@ -1,7 +1,12 @@
 package com.workflow.scheduler;
 
+import com.workflow.common.constant.notification.NotificationPriority;
+import com.workflow.common.constant.notification.NotificationType;
 import com.workflow.entity.asset.AssetJobAssignment;
+import com.workflow.entity.auth.User;
 import com.workflow.repository.asset.AssetJobAssignmentRepository;
+import com.workflow.service.notification.INotificationService;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -12,7 +17,9 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Component
@@ -20,6 +27,7 @@ import java.util.List;
 public class AssetSlaBreachScheduler {
 
     private final AssetJobAssignmentRepository assignmentRepository;
+    private final INotificationService notificationService;
 
     // Runs every 6 hours (21600000 ms) since we are dealing with 'Days'
     @Scheduled(fixedDelay = 21600000)
@@ -52,6 +60,33 @@ public class AssetSlaBreachScheduler {
 
                 breachedAssignments.add(assignment);
                 log.warn("SLA Breach logged for Asset Assignment ID: {}", assignment.getId());
+
+                User companyUser = assignment.getAsset().getCompany().getUser();
+                String title = "Asset SLA Breached!";
+                String notifMessage = String.format(
+                        "Asset '%s' has been assigned for %d days, exceeding the %d days limit.",
+                        assignment.getAsset().getName(), daysElapsed, assignment.getExpectedDurationDays());
+                Map<String, Object> metadata = Map.of(
+                        "assignmentId", assignment.getId(),
+                        "assetId", assignment.getAsset().getId());
+
+                // Notify Company Admin
+                notificationService.createNotification(
+                        companyUser, NotificationType.ASSET_SLA_BREACHED, title, notifMessage,
+                        "/company/assets/" + assignment.getAsset().getId() + "/history",
+                        "AssetJobAssignment", assignment.getId(), NotificationPriority.URGENT, metadata);
+
+                // Notify Assigned Worker (if any)
+                if (assignment.getAssignedWorker() != null) {
+                    Map<String, Object> workerMetadata = new HashMap<>(metadata);
+                    workerMetadata.put("workerId", assignment.getAssignedWorker().getId());
+
+                    notificationService.createNotification(
+                            assignment.getAssignedWorker().getUser(), NotificationType.ASSET_SLA_BREACHED, title,
+                            notifMessage,
+                            "/worker/assets", 
+                            "AssetJobAssignment", assignment.getId(), NotificationPriority.URGENT, workerMetadata);
+                }
             }
         }
 

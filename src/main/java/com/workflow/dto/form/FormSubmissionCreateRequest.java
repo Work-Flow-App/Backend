@@ -7,5 +7,6 @@ import lombok.*;
 public class FormSubmissionCreateRequest {
     private Long templateId;
     private String title;
-    private Long workerId; // Optional, can be assigned later
+    private Long workerId;
+    private Long jobRef; 
 }

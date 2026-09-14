@@ -2,6 +2,7 @@ package com.workflow.entity.form;
 
 import com.workflow.common.constant.form.FormSubmissionStatus;
 import com.workflow.entity.company.Company;
+import com.workflow.entity.job.Job;
 import com.workflow.entity.worker.Worker;
 import jakarta.persistence.*;
 import lombok.*;
@@ -48,6 +49,10 @@ public class FormSubmission {
     private List<FormFieldValue> fieldValues = new ArrayList<>();
 
     private LocalDateTime submittedAt;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "job_id")
+    private Job job;
 
     @CreationTimestamp
     private LocalDateTime createdAt;

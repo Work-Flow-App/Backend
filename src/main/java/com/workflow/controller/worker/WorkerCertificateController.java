@@ -61,6 +61,7 @@ public class WorkerCertificateController {
             @PathVariable Long workerId,
             @RequestParam("file") MultipartFile file,
             @RequestParam("type") CertificateType type,
+            @RequestParam(value = "customTypeLabel", required = false) String customTypeLabel,
             @RequestParam("name") String name,
             @RequestParam(value = "issuingAuthority", required = false) String issuingAuthority,
             @RequestParam(value = "issueDate", required = false) LocalDate issueDate,
@@ -69,7 +70,15 @@ public class WorkerCertificateController {
         User admin = (User) auth.getPrincipal();
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(certificateService.uploadCertificateForWorker(
-                        workerId, getCompanyId(), admin, file, type, name, issuingAuthority, issueDate, expiryDate));
+                        workerId, getCompanyId(), admin, file, type, customTypeLabel, name, issuingAuthority, issueDate, expiryDate));
+    }
+
+    @Operation(summary = "Get a single certificate for a worker")
+    @RequireCompanyRole({COMPANY_ADMIN, MANAGER, EDITOR, VIEWER})
+    @GetMapping("/{workerId}/certificates/{id}")
+    public ResponseEntity<WorkerCertificateResponse> getCertificateForWorker(
+            @PathVariable Long workerId, @PathVariable Long id, Authentication auth) {
+        return ResponseEntity.ok(certificateService.getCertificateForWorker(id, workerId, getCompanyId()));
     }
 
     @Operation(summary = "List all certificates company-wide, paginated")

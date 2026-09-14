@@ -46,4 +46,6 @@ public class AssetCreateRequest {
 
     @Valid
     private AddressRequest warehouseAddress;
+
+    private Long groupId;
 }

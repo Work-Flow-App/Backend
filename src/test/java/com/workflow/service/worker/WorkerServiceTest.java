@@ -616,7 +616,7 @@ class WorkerServiceTest {
         when(workerRepository.save(any(Worker.class))).thenReturn(worker);
 
         com.workflow.dto.worker.WorkerRateUpdateRequest request =
-                new com.workflow.dto.worker.WorkerRateUpdateRequest(new java.math.BigDecimal("22.50"));
+                new com.workflow.dto.worker.WorkerRateUpdateRequest(new java.math.BigDecimal("22.50"), null);
 
         WorkerResponse response = workerService.updateHourlyRate(1L, request, 1L);
 
@@ -652,8 +652,260 @@ class WorkerServiceTest {
         var response = workerService.getWeeklyHoursForWorker(1L, 1L, wednesday);
 
         assertThat(response.totalHours()).isEqualByComparingTo("8.00");
+        assertThat(response.regularHours()).isEqualByComparingTo("8.00");
+        assertThat(response.overtimeHours()).isEqualByComparingTo("0.00");
         assertThat(response.hasOpenVisit()).isTrue();
         assertThat(response.weekStart()).isEqualTo(weekStart);
         assertThat(response.weekEnd()).isEqualTo(weekEnd);
+    }
+
+    // ============= overtime calculation Tests =============
+
+    @Test
+    void getWeeklyHoursForWorker_ShouldSplitRegularAndOvertimeAtDailyThreshold() {
+        java.time.LocalDate wednesday = java.time.LocalDate.of(2026, 8, 5);
+        java.time.LocalDate weekStart = java.time.LocalDate.of(2026, 8, 3);
+        java.time.LocalDate weekEnd = java.time.LocalDate.of(2026, 8, 9);
+
+        // 10 hours in a single day: 8 regular + 2 overtime
+        com.workflow.entity.job.JobWorkflowStepVisitLog longDay = com.workflow.entity.job.JobWorkflowStepVisitLog.builder()
+                .visitDate(wednesday)
+                .timeIn(java.time.LocalTime.of(8, 0))
+                .timeOut(java.time.LocalTime.of(18, 0))
+                .build();
+
+        when(companyService.findCompanyByUserId(1L)).thenReturn(company);
+        when(workerRepository.findByIdAndCompanyIdAndNotArchived(1L, 1L)).thenReturn(Optional.of(worker));
+        when(visitLogRepository.findByLoggedByIdAndVisitDateBetween(2L, weekStart, weekEnd))
+                .thenReturn(java.util.List.of(longDay));
+
+        var response = workerService.getWeeklyHoursForWorker(1L, 1L, wednesday);
+
+        assertThat(response.totalHours()).isEqualByComparingTo("10.00");
+        assertThat(response.regularHours()).isEqualByComparingTo("8.00");
+        assertThat(response.overtimeHours()).isEqualByComparingTo("2.00");
+    }
+
+    @Test
+    void getWeeklyHoursForWorker_ShouldNotTreatWeeklyTotalAsOvertimeThreshold() {
+        // Regression test: threshold is per-day, not per-week. Two separate 6-hour days
+        // (12 hours total across the week, well under a 40h weekly cap, but also under 8h
+        // each individually) must produce zero overtime — a weekly-threshold implementation
+        // would still correctly report zero here too, so this alone isn't sufficient; the
+        // real proof is the next test where per-day hours exceed 8 but the weekly total
+        // would be under a typical weekly threshold.
+        java.time.LocalDate monday = java.time.LocalDate.of(2026, 8, 3);
+        java.time.LocalDate tuesday = java.time.LocalDate.of(2026, 8, 4);
+        java.time.LocalDate weekStart = java.time.LocalDate.of(2026, 8, 3);
+        java.time.LocalDate weekEnd = java.time.LocalDate.of(2026, 8, 9);
+
+        com.workflow.entity.job.JobWorkflowStepVisitLog day1 = com.workflow.entity.job.JobWorkflowStepVisitLog.builder()
+                .visitDate(monday).timeIn(java.time.LocalTime.of(9, 0)).timeOut(java.time.LocalTime.of(15, 0)).build();
+        com.workflow.entity.job.JobWorkflowStepVisitLog day2 = com.workflow.entity.job.JobWorkflowStepVisitLog.builder()
+                .visitDate(tuesday).timeIn(java.time.LocalTime.of(9, 0)).timeOut(java.time.LocalTime.of(15, 0)).build();
+
+        when(companyService.findCompanyByUserId(1L)).thenReturn(company);
+        when(workerRepository.findByIdAndCompanyIdAndNotArchived(1L, 1L)).thenReturn(Optional.of(worker));
+        when(visitLogRepository.findByLoggedByIdAndVisitDateBetween(2L, weekStart, weekEnd))
+                .thenReturn(java.util.List.of(day1, day2));
+
+        var response = workerService.getWeeklyHoursForWorker(1L, 1L, monday);
+
+        assertThat(response.totalHours()).isEqualByComparingTo("12.00");
+        assertThat(response.regularHours()).isEqualByComparingTo("12.00");
+        assertThat(response.overtimeHours()).isEqualByComparingTo("0.00");
+    }
+
+    @Test
+    void getWeeklyHoursForWorker_ShouldComputeOvertimePerDay_EvenWhenWeeklyTotalWouldBeUnderAWeeklyThreshold() {
+        // The decisive daily-vs-weekly proof: two 9-hour days = 18h total for the week (well
+        // under any typical weekly overtime threshold like 40h), but each day individually
+        // exceeds the 8h daily threshold, so BOTH days must contribute 1h of overtime each.
+        java.time.LocalDate monday = java.time.LocalDate.of(2026, 8, 3);
+        java.time.LocalDate tuesday = java.time.LocalDate.of(2026, 8, 4);
+        java.time.LocalDate weekStart = java.time.LocalDate.of(2026, 8, 3);
+        java.time.LocalDate weekEnd = java.time.LocalDate.of(2026, 8, 9);
+
+        com.workflow.entity.job.JobWorkflowStepVisitLog day1 = com.workflow.entity.job.JobWorkflowStepVisitLog.builder()
+                .visitDate(monday).timeIn(java.time.LocalTime.of(8, 0)).timeOut(java.time.LocalTime.of(17, 0)).build();
+        com.workflow.entity.job.JobWorkflowStepVisitLog day2 = com.workflow.entity.job.JobWorkflowStepVisitLog.builder()
+                .visitDate(tuesday).timeIn(java.time.LocalTime.of(8, 0)).timeOut(java.time.LocalTime.of(17, 0)).build();
+
+        when(companyService.findCompanyByUserId(1L)).thenReturn(company);
+        when(workerRepository.findByIdAndCompanyIdAndNotArchived(1L, 1L)).thenReturn(Optional.of(worker));
+        when(visitLogRepository.findByLoggedByIdAndVisitDateBetween(2L, weekStart, weekEnd))
+                .thenReturn(java.util.List.of(day1, day2));
+
+        var response = workerService.getWeeklyHoursForWorker(1L, 1L, monday);
+
+        assertThat(response.totalHours()).isEqualByComparingTo("18.00");
+        assertThat(response.regularHours()).isEqualByComparingTo("16.00");
+        assertThat(response.overtimeHours()).isEqualByComparingTo("2.00");
+    }
+
+    @Test
+    void getWeeklyHoursForWorker_ShouldComputePay_WhenBothRatesSet() {
+        java.time.LocalDate wednesday = java.time.LocalDate.of(2026, 8, 5);
+        java.time.LocalDate weekStart = java.time.LocalDate.of(2026, 8, 3);
+        java.time.LocalDate weekEnd = java.time.LocalDate.of(2026, 8, 9);
+
+        worker.setHourlyRate(new java.math.BigDecimal("20.00"));
+        worker.setOvertimeRate(new java.math.BigDecimal("30.00"));
+
+        com.workflow.entity.job.JobWorkflowStepVisitLog longDay = com.workflow.entity.job.JobWorkflowStepVisitLog.builder()
+                .visitDate(wednesday)
+                .timeIn(java.time.LocalTime.of(8, 0))
+                .timeOut(java.time.LocalTime.of(18, 0))
+                .build();
+
+        when(companyService.findCompanyByUserId(1L)).thenReturn(company);
+        when(workerRepository.findByIdAndCompanyIdAndNotArchived(1L, 1L)).thenReturn(Optional.of(worker));
+        when(visitLogRepository.findByLoggedByIdAndVisitDateBetween(2L, weekStart, weekEnd))
+                .thenReturn(java.util.List.of(longDay));
+
+        var response = workerService.getWeeklyHoursForWorker(1L, 1L, wednesday);
+
+        // 8h regular @ 20/hr = 160, 2h overtime @ 30/hr = 60, total = 220
+        assertThat(response.regularPay()).isEqualByComparingTo("160.00");
+        assertThat(response.overtimePay()).isEqualByComparingTo("60.00");
+        assertThat(response.totalPay()).isEqualByComparingTo("220.00");
+    }
+
+    @Test
+    void getWeeklyHoursForWorker_ShouldReturnNullTotalPay_WhenOvertimeWorkedButOvertimeRateMissing() {
+        java.time.LocalDate wednesday = java.time.LocalDate.of(2026, 8, 5);
+        java.time.LocalDate weekStart = java.time.LocalDate.of(2026, 8, 3);
+        java.time.LocalDate weekEnd = java.time.LocalDate.of(2026, 8, 9);
+
+        worker.setHourlyRate(new java.math.BigDecimal("20.00"));
+        worker.setOvertimeRate(null);
+
+        com.workflow.entity.job.JobWorkflowStepVisitLog longDay = com.workflow.entity.job.JobWorkflowStepVisitLog.builder()
+                .visitDate(wednesday)
+                .timeIn(java.time.LocalTime.of(8, 0))
+                .timeOut(java.time.LocalTime.of(18, 0))
+                .build();
+
+        when(companyService.findCompanyByUserId(1L)).thenReturn(company);
+        when(workerRepository.findByIdAndCompanyIdAndNotArchived(1L, 1L)).thenReturn(Optional.of(worker));
+        when(visitLogRepository.findByLoggedByIdAndVisitDateBetween(2L, weekStart, weekEnd))
+                .thenReturn(java.util.List.of(longDay));
+
+        var response = workerService.getWeeklyHoursForWorker(1L, 1L, wednesday);
+
+        // Overtime was actually worked (2h) but there's no rate to price it with — totalPay
+        // must not silently pretend those hours were free by only summing the known part.
+        assertThat(response.regularPay()).isEqualByComparingTo("160.00");
+        assertThat(response.overtimePay()).isNull();
+        assertThat(response.totalPay()).isNull();
+    }
+
+    @Test
+    void getWeeklyHoursForWorker_ShouldReturnTotalPay_WhenOvertimeRateMissingButNoOvertimeWorked() {
+        java.time.LocalDate wednesday = java.time.LocalDate.of(2026, 8, 5);
+        java.time.LocalDate weekStart = java.time.LocalDate.of(2026, 8, 3);
+        java.time.LocalDate weekEnd = java.time.LocalDate.of(2026, 8, 9);
+
+        worker.setHourlyRate(new java.math.BigDecimal("20.00"));
+        worker.setOvertimeRate(null);
+
+        com.workflow.entity.job.JobWorkflowStepVisitLog normalDay = com.workflow.entity.job.JobWorkflowStepVisitLog.builder()
+                .visitDate(wednesday)
+                .timeIn(java.time.LocalTime.of(9, 0))
+                .timeOut(java.time.LocalTime.of(17, 0))
+                .build();
+
+        when(companyService.findCompanyByUserId(1L)).thenReturn(company);
+        when(workerRepository.findByIdAndCompanyIdAndNotArchived(1L, 1L)).thenReturn(Optional.of(worker));
+        when(visitLogRepository.findByLoggedByIdAndVisitDateBetween(2L, weekStart, weekEnd))
+                .thenReturn(java.util.List.of(normalDay));
+
+        var response = workerService.getWeeklyHoursForWorker(1L, 1L, wednesday);
+
+        // A missing overtimeRate shouldn't nuke totalPay when zero overtime hours were worked
+        assertThat(response.overtimeHours()).isEqualByComparingTo("0.00");
+        assertThat(response.totalPay()).isEqualByComparingTo("160.00");
+    }
+
+    @Test
+    void getWeeklyHoursForWorker_ShouldReturnNullTotalPay_WhenRegularHoursWorkedButHourlyRateMissing() {
+        // Symmetric case to the missing-overtimeRate test: hourlyRate absent but regular
+        // hours were actually worked, so totalPay must be null even though overtimeRate
+        // (and therefore overtimePay, since no overtime was worked) is fully known.
+        java.time.LocalDate wednesday = java.time.LocalDate.of(2026, 8, 5);
+        java.time.LocalDate weekStart = java.time.LocalDate.of(2026, 8, 3);
+        java.time.LocalDate weekEnd = java.time.LocalDate.of(2026, 8, 9);
+
+        worker.setHourlyRate(null);
+        worker.setOvertimeRate(new java.math.BigDecimal("30.00"));
+
+        com.workflow.entity.job.JobWorkflowStepVisitLog normalDay = com.workflow.entity.job.JobWorkflowStepVisitLog.builder()
+                .visitDate(wednesday)
+                .timeIn(java.time.LocalTime.of(9, 0))
+                .timeOut(java.time.LocalTime.of(17, 0))
+                .build();
+
+        when(companyService.findCompanyByUserId(1L)).thenReturn(company);
+        when(workerRepository.findByIdAndCompanyIdAndNotArchived(1L, 1L)).thenReturn(Optional.of(worker));
+        when(visitLogRepository.findByLoggedByIdAndVisitDateBetween(2L, weekStart, weekEnd))
+                .thenReturn(java.util.List.of(normalDay));
+
+        var response = workerService.getWeeklyHoursForWorker(1L, 1L, wednesday);
+
+        assertThat(response.regularHours()).isEqualByComparingTo("8.00");
+        assertThat(response.regularPay()).isNull(); // hourlyRate missing and regular hours were worked
+        assertThat(response.overtimePay()).isEqualByComparingTo("0.00"); // overtimeRate known, zero overtime hours worked
+        assertThat(response.totalPay()).isNull(); // still unknown overall, since regularPay is
+    }
+
+    @Test
+    void getWeeklyHoursForWorker_ShouldSumMultipleVisitsOnSameDay_BeforeApplyingDailyThreshold() {
+        // Regression test: a split shift (e.g. morning + afternoon call-out) logged as two
+        // separate rows on the same visitDate must be summed together first — the daily
+        // 8h threshold has to apply to the day's combined total, not to each row independently
+        // (which would wrongly show 0 overtime for two 5h visits that total 10h that day).
+        java.time.LocalDate wednesday = java.time.LocalDate.of(2026, 8, 5);
+        java.time.LocalDate weekStart = java.time.LocalDate.of(2026, 8, 3);
+        java.time.LocalDate weekEnd = java.time.LocalDate.of(2026, 8, 9);
+
+        com.workflow.entity.job.JobWorkflowStepVisitLog morning = com.workflow.entity.job.JobWorkflowStepVisitLog.builder()
+                .visitDate(wednesday).timeIn(java.time.LocalTime.of(7, 0)).timeOut(java.time.LocalTime.of(12, 0)).build();
+        com.workflow.entity.job.JobWorkflowStepVisitLog afternoon = com.workflow.entity.job.JobWorkflowStepVisitLog.builder()
+                .visitDate(wednesday).timeIn(java.time.LocalTime.of(13, 0)).timeOut(java.time.LocalTime.of(18, 0)).build();
+
+        when(companyService.findCompanyByUserId(1L)).thenReturn(company);
+        when(workerRepository.findByIdAndCompanyIdAndNotArchived(1L, 1L)).thenReturn(Optional.of(worker));
+        when(visitLogRepository.findByLoggedByIdAndVisitDateBetween(2L, weekStart, weekEnd))
+                .thenReturn(java.util.List.of(morning, afternoon));
+
+        var response = workerService.getWeeklyHoursForWorker(1L, 1L, wednesday);
+
+        assertThat(response.totalHours()).isEqualByComparingTo("10.00");
+        assertThat(response.regularHours()).isEqualByComparingTo("8.00");
+        assertThat(response.overtimeHours()).isEqualByComparingTo("2.00");
+    }
+
+    @Test
+    void getWeeklyHoursForWorker_ShouldReturnZeroHoursAndNoPay_WhenNoVisitsLogged() {
+        java.time.LocalDate wednesday = java.time.LocalDate.of(2026, 8, 5);
+        java.time.LocalDate weekStart = java.time.LocalDate.of(2026, 8, 3);
+        java.time.LocalDate weekEnd = java.time.LocalDate.of(2026, 8, 9);
+
+        worker.setHourlyRate(new java.math.BigDecimal("20.00"));
+        worker.setOvertimeRate(new java.math.BigDecimal("30.00"));
+
+        when(companyService.findCompanyByUserId(1L)).thenReturn(company);
+        when(workerRepository.findByIdAndCompanyIdAndNotArchived(1L, 1L)).thenReturn(Optional.of(worker));
+        when(visitLogRepository.findByLoggedByIdAndVisitDateBetween(2L, weekStart, weekEnd))
+                .thenReturn(java.util.List.of());
+
+        var response = workerService.getWeeklyHoursForWorker(1L, 1L, wednesday);
+
+        assertThat(response.totalHours()).isEqualByComparingTo("0.00");
+        assertThat(response.regularHours()).isEqualByComparingTo("0.00");
+        assertThat(response.overtimeHours()).isEqualByComparingTo("0.00");
+        // Both rates known, zero hours worked either category — pay is a known zero, not unknown
+        assertThat(response.totalPay()).isEqualByComparingTo("0.00");
+        assertThat(response.hasOpenVisit()).isFalse();
     }
 }

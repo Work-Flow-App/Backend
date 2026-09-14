@@ -10,35 +10,35 @@ import java.util.List;
 
 public interface ICompanyProfileMediaService {
 
-    // --- LOGO ---
-    String uploadLogo(Long companyId, MultipartFile file) throws IOException;
+        // --- LOGO ---
+        String uploadLogo(Long companyId, MultipartFile file) throws IOException;
 
-    void deleteLogo(Long companyId);
+        void deleteLogo(Long companyId);
 
-    // --- DOCUMENTS ---
-    CompanyDocumentResponse uploadDocument(Long companyId, MultipartFile file, String title,
-            String description, CompanyDocumentType type,
-            LocalDate startDate, LocalDate endDate, boolean isPublic) throws IOException;
+        // --- DOCUMENTS ---
+        CompanyDocumentResponse uploadDocument(Long companyId, MultipartFile file, String title,
+                        String description, CompanyDocumentType type,
+                        LocalDate startDate, LocalDate endDate, boolean isPublic) throws IOException;
 
-    CompanyDocumentResponse updateDocument(Long companyId, Long documentId, MultipartFile newFile,
-            String title, String description, CompanyDocumentType type,
-            LocalDate startDate, LocalDate endDate, Boolean isPublic) throws IOException;
+        CompanyDocumentResponse updateDocument(Long companyId, Long documentId, MultipartFile newFile,
+                        String title, String description, CompanyDocumentType type,
+                        LocalDate startDate, LocalDate endDate, Boolean isPublic) throws IOException;
 
-    void deleteDocument(Long companyId, Long documentId);
+        void deleteDocument(Long companyId, Long documentId);
 
-    List<CompanyDocumentResponse> getDocuments(Long companyId, boolean publicOnly);
+        List<CompanyDocumentResponse> getDocuments(Long companyId, boolean publicOnly);
 
-    // --- POSTS ---
-    CompanyPostResponse createPost(Long companyId, CompanyPostCreateRequest request,
-            List<MultipartFile> files) throws IOException;
+        // --- POSTS ---
+        CompanyPostResponse createPost(Long companyId, CompanyPostCreateRequest request,
+                        List<MultipartFile> files) throws IOException;
 
-    CompanyPostResponse updatePost(Long companyId, Long postId, CompanyPostUpdateRequest request,
-            List<MultipartFile> newFiles) throws IOException;
+        CompanyPostResponse updatePost(Long companyId, Long postId, CompanyPostUpdateRequest request,
+                        List<MultipartFile> newFiles) throws IOException;
 
-    void deletePost(Long companyId, Long postId);
+        void deletePost(Long companyId, Long postId);
 
-    List<CompanyPostResponse> getPosts(Long companyId, boolean publicOnly);
+        List<CompanyPostResponse> getPosts(Long companyId, Long groupId, boolean publicOnly);
 
-    // --- PUBLIC PROFILE ---
-    PublicCompanyProfileResponse getPublicProfile(Long companyId);
+        // --- PUBLIC PROFILE ---
+        PublicCompanyProfileResponse getPublicProfile(Long companyId);
 }

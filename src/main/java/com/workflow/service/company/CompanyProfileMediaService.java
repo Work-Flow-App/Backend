@@ -3,6 +3,7 @@ package com.workflow.service.company;
 import com.workflow.common.constant.company.CompanyDocumentType;
 import com.workflow.common.exception.business.CompanyDocumentNotFoundException;
 import com.workflow.common.exception.business.CompanyNotFoundException;
+import com.workflow.common.exception.business.CompanyPostGroupNotFoundException;
 import com.workflow.common.exception.business.CompanyPostNotFoundException;
 import com.workflow.common.exception.business.EmptyFileException;
 import com.workflow.common.exception.business.ForbiddenActionException;
@@ -31,6 +32,7 @@ public class CompanyProfileMediaService implements ICompanyProfileMediaService {
     private final CompanyRepository companyRepository;
     private final CompanyDocumentRepository documentRepository;
     private final CompanyPostRepository postRepository;
+    private final CompanyPostGroupRepository groupRepository;
     private final IStorageService s3Service;
     private final IStorageQuotaService storageQuotaService;
     private final Tika tika;
@@ -53,9 +55,12 @@ public class CompanyProfileMediaService implements ICompanyProfileMediaService {
         String extension = extractExtension(file.getOriginalFilename());
         String key = String.format("companies/%d/logo/%s", companyId, UUID.randomUUID() + extension);
 
-        // Note: logo has no persisted size column (out of Phase 1 schema scope), so the old
-        // logo's bytes can't be decremented here — this is a known one-way drift for logo only,
-        // replacing a logo repeatedly will overcount usage. Flagged for a follow-up migration.
+        // Note: logo has no persisted size column (out of Phase 1 schema scope), so the
+        // old
+        // logo's bytes can't be decremented here — this is a known one-way drift for
+        // logo only,
+        // replacing a logo repeatedly will overcount usage. Flagged for a follow-up
+        // migration.
         if (company.getLogoUrl() != null) {
             s3Service.delete(company.getLogoUrl()); // Delete old
         }
@@ -199,11 +204,18 @@ public class CompanyProfileMediaService implements ICompanyProfileMediaService {
             throws IOException {
         Company company = getCompany(companyId);
 
+        CompanyPostGroup group = null;
+        if (request.groupId() != null) {
+            group = groupRepository.findByIdAndCompanyId(request.groupId(), companyId)
+                    .orElseThrow(() -> new CompanyPostGroupNotFoundException("Group not found"));
+        }
+
         CompanyPost post = CompanyPost.builder()
                 .company(company)
                 .author(company.getUser())
                 .content(request.content())
                 .isPublic(request.isPublic())
+                .group(group)
                 .build();
 
         post = postRepository.save(post);
@@ -232,6 +244,15 @@ public class CompanyProfileMediaService implements ICompanyProfileMediaService {
                 post.setContent(request.content());
             if (request.isPublic() != null)
                 post.setPublic(request.isPublic());
+
+            // Handle Group detach/attach
+            if (Boolean.TRUE.equals(request.removeGroup())) {
+                post.setGroup(null);
+            } else if (request.groupId() != null) {
+                CompanyPostGroup group = groupRepository.findByIdAndCompanyId(request.groupId(), companyId)
+                        .orElseThrow(() -> new CompanyPostGroupNotFoundException("Group not found"));
+                post.setGroup(group);
+            }
 
             // Delete specified attachments
             if (request.attachmentIdsToDelete() != null && !request.attachmentIdsToDelete().isEmpty()) {
@@ -283,10 +304,19 @@ public class CompanyProfileMediaService implements ICompanyProfileMediaService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<CompanyPostResponse> getPosts(Long companyId, boolean publicOnly) {
-        List<CompanyPost> posts = publicOnly
-                ? postRepository.findByCompanyIdAndIsPublicTrueOrderByCreatedAtDesc(companyId)
-                : postRepository.findByCompanyIdOrderByCreatedAtDesc(companyId);
+    public List<CompanyPostResponse> getPosts(Long companyId, Long groupId, boolean publicOnly) {
+        List<CompanyPost> posts;
+
+        if (groupId != null) {
+            posts = publicOnly
+                    ? postRepository.findByCompanyIdAndGroupIdAndIsPublicTrueOrderByCreatedAtDesc(companyId, groupId)
+                    : postRepository.findByCompanyIdAndGroupIdOrderByCreatedAtDesc(companyId, groupId);
+        } else {
+            posts = publicOnly
+                    ? postRepository.findByCompanyIdAndIsPublicTrueOrderByCreatedAtDesc(companyId)
+                    : postRepository.findByCompanyIdOrderByCreatedAtDesc(companyId);
+        }
+
         return posts.stream().map(this::map).toList();
     }
 
@@ -360,6 +390,8 @@ public class CompanyProfileMediaService implements ICompanyProfileMediaService {
     private CompanyPostResponse map(CompanyPost p) {
         return new CompanyPostResponse(
                 p.getId(), p.getContent(), p.isPublic(), p.getAuthor().getUsername(),
+                p.getGroup() != null ? p.getGroup().getId() : null,
+                p.getGroup() != null ? p.getGroup().getName() : null,
                 p.getAttachments().stream().map(a -> new CompanyPostAttachmentResponse(
                         a.getId(), s3Service.resolveFileUrl(a.getFileUrl()), a.getFileName(), a.getFileType()))
                         .toList(),

@@ -7,5 +7,6 @@ public record CompanyPostCreateRequest(
         @NotBlank(message = "Post content cannot be empty")
         String content,
         @NotNull
-        Boolean isPublic
+        Boolean isPublic,
+        Long groupId
 ) {}

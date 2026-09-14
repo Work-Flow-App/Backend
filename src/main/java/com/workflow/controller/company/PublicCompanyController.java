@@ -31,7 +31,9 @@ public class PublicCompanyController {
     }
 
     @GetMapping("/{companyId}/posts")
-    public ResponseEntity<List<CompanyPostResponse>> getPublicPosts(@PathVariable Long companyId) {
-        return ResponseEntity.ok(mediaService.getPosts(companyId, true)); // true = public only
+    public ResponseEntity<List<CompanyPostResponse>> getPublicPosts(
+            @PathVariable Long companyId,
+            @RequestParam(required = false) Long groupId) {
+        return ResponseEntity.ok(mediaService.getPosts(companyId, groupId, true)); // pass to service
     }
 }

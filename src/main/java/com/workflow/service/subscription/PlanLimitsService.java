@@ -56,11 +56,26 @@ public class PlanLimitsService implements IPlanLimitsService {
         return getEffectiveStorageLimitBytes(subscription.orElse(FREE_TIER_DEFAULT));
     }
 
+    @Override
+    public int getEffectiveMaxUsers(PlanType planType, int extraSeats) {
+        return tierFor(planType).getMaxUsers() + extraSeats;
+    }
+
+    @Override
+    public long getEffectiveStorageLimitBytes(PlanType planType, int extraStorageBlocks) {
+        PlanLimitsProperties.Tier tier = tierFor(planType);
+        return tier.getStorageLimitBytes() + (extraStorageBlocks * tier.getStorageOverageBlockBytes());
+    }
+
     private PlanLimitsProperties.Tier tierFor(CompanySubscription subscription) {
         if (subscription == null) {
             throw new InvalidRequestException("CompanySubscription must not be null");
         }
-        return switch (subscription.getPlanType()) {
+        return tierFor(subscription.getPlanType());
+    }
+
+    private PlanLimitsProperties.Tier tierFor(PlanType planType) {
+        return switch (planType) {
             case FREE -> planLimits.getFree();
             case STARTER -> planLimits.getStarter();
             case PROFESSIONAL -> planLimits.getProfessional();

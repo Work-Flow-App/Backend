@@ -5,6 +5,8 @@ import com.workflow.common.security.RequireCompanyRole;
 import com.workflow.common.util.AuthUtils;
 import com.workflow.config.properties.PaddleConfigProperties;
 import com.workflow.dto.company.CreateCheckoutSessionRequest;
+import com.workflow.dto.company.SubscriptionAddonsResponse;
+import com.workflow.dto.company.UpdateSubscriptionAddonsRequest;
 import com.workflow.entity.company.CompanySubscription;
 import com.workflow.service.subscription.ISubscriptionService;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -67,5 +69,15 @@ public class SubscriptionController {
     public ResponseEntity<Void> cancelSubscription(Authentication authentication) {
         subscriptionService.cancelSubscription(AuthUtils.getCompanyId());
         return ResponseEntity.noContent().build();
+    }
+
+    @RequireCompanyRole({COMPANY_ADMIN})
+    @PatchMapping("/addons")
+    public ResponseEntity<SubscriptionAddonsResponse> updateAddons(
+            Authentication authentication, @Valid @RequestBody UpdateSubscriptionAddonsRequest request) {
+        var result = subscriptionService.updateAddons(
+                AuthUtils.getCompanyId(), request.extraSeats(), request.extraStorageBlocks());
+        return ResponseEntity.ok(new SubscriptionAddonsResponse(
+                result.planType(), result.status(), result.extraUserSeats(), result.extraStorageBlocks()));
     }
 }

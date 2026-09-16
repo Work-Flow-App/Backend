@@ -178,6 +178,25 @@ public interface CompanySubscriptionRepository extends JpaRepository<CompanySubs
             @Param("extraStorageBlocks") Integer extraStorageBlocks,
             @Param("occurredAt") LocalDateTime occurredAt);
 
+    /**
+     * Used by SubscriptionService.updateAddons: optimistic, synchronous local write of the new
+     * extraUserSeats/extraStorageBlocks immediately after Paddle's subscription-update API call
+     * returns success. Deliberately does NOT touch lastEventOccurredAt (or status/planType) —
+     * unlike the webhook-driven update* methods above, this is not gated by the event-ordering
+     * watermark, since it isn't processing a Paddle event at all. The subsequent subscription.updated
+     * webhook for this same change still lands through the normal watermark-gated path afterward and
+     * reconciles/confirms these values (normally a no-op since it writes the same absolute values).
+     */
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("UPDATE CompanySubscription s SET " +
+           "s.extraUserSeats = :extraSeats, " +
+           "s.extraStorageBlocks = :extraStorageBlocks " +
+           "WHERE s.id = :id")
+    int updateAddonsOptimistic(
+            @Param("id") Long id,
+            @Param("extraSeats") int extraSeats,
+            @Param("extraStorageBlocks") int extraStorageBlocks);
+
     @Query("SELECT s FROM CompanySubscription s WHERE s.status = :status AND s.trialEndsAt < :now")
     List<CompanySubscription> findExpiredByStatus(
             @Param("status") SubscriptionStatus status,

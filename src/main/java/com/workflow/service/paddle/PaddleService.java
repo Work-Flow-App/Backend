@@ -32,6 +32,11 @@ public class PaddleService implements IPaddleService {
     private static final Pattern EXISTING_CUSTOMER_ID_PATTERN =
             Pattern.compile("customer of id (ctm_[a-z0-9]+)");
 
+    // Bills the prorated difference immediately on an addon-update call rather than waiting for the
+    // next billing cycle or deferring the charge — matches the "purchase now" UX this endpoint is for.
+    // Not currently exposed as a config option; hardcode until a caller actually needs to vary it.
+    private static final String PRORATION_BILLING_MODE = "prorated_immediately";
+
     @Override
     public PaddleCustomerResponse createCustomer(String email, String name) {
         log.debug("Creating Paddle customer for email={}", email);
@@ -62,16 +67,7 @@ public class PaddleService implements IPaddleService {
         log.debug("Generating checkout URL for paddleCustomerId={}, companyId={}, planType={}, extraSeats={}, extraStorageBlocks={}",
                 paddleCustomerId, companyId, planType, extraSeats, extraStorageBlocks);
 
-        List<GenerateCheckoutLinkRequest.CheckoutItem> items = new ArrayList<>();
-        items.add(new GenerateCheckoutLinkRequest.CheckoutItem(paddleProps.basePriceIdFor(planType), 1));
-        if (extraSeats > 0) {
-            items.add(new GenerateCheckoutLinkRequest.CheckoutItem(
-                    paddleProps.extraSeatPriceIdFor(planType), extraSeats));
-        }
-        if (extraStorageBlocks > 0) {
-            items.add(new GenerateCheckoutLinkRequest.CheckoutItem(
-                    paddleProps.storageBlockPriceIdFor(planType), extraStorageBlocks));
-        }
+        List<GenerateCheckoutLinkRequest.CheckoutItem> items = buildLineItems(planType, extraSeats, extraStorageBlocks);
 
         GenerateCheckoutLinkRequest request = new GenerateCheckoutLinkRequest(
                 items,
@@ -87,6 +83,47 @@ public class PaddleService implements IPaddleService {
                 .body(CheckoutSessionResponse.class);
         log.debug("Paddle transaction response: {}", session);
         return session;
+    }
+
+    /**
+     * Builds the full desired line-item set for a plan tier + addon quantities. Shared by
+     * generateCheckoutUrl (new transaction) and updateSubscriptionAddons (PATCH on an existing
+     * subscription) — both need the identical base-plan-always-present, addon-only-if-positive shape,
+     * and for the update call in particular this MUST be the complete list since Paddle's subscription
+     * update replaces the entire items[] rather than merging deltas into it.
+     */
+    private List<GenerateCheckoutLinkRequest.CheckoutItem> buildLineItems(
+            PlanType planType, int extraSeats, int extraStorageBlocks) {
+        List<GenerateCheckoutLinkRequest.CheckoutItem> items = new ArrayList<>();
+        items.add(new GenerateCheckoutLinkRequest.CheckoutItem(paddleProps.basePriceIdFor(planType), 1));
+        if (extraSeats > 0) {
+            items.add(new GenerateCheckoutLinkRequest.CheckoutItem(
+                    paddleProps.extraSeatPriceIdFor(planType), extraSeats));
+        }
+        if (extraStorageBlocks > 0) {
+            items.add(new GenerateCheckoutLinkRequest.CheckoutItem(
+                    paddleProps.storageBlockPriceIdFor(planType), extraStorageBlocks));
+        }
+        return items;
+    }
+
+    @Override
+    public PaddleSubscriptionResponse updateSubscriptionAddons(
+            String paddleSubscriptionId, PlanType planType, int extraSeats, int extraStorageBlocks) {
+        log.info("Updating Paddle subscription addons id={}, planType={}, extraSeats={}, extraStorageBlocks={}",
+                paddleSubscriptionId, planType, extraSeats, extraStorageBlocks);
+
+        List<GenerateCheckoutLinkRequest.CheckoutItem> items = buildLineItems(planType, extraSeats, extraStorageBlocks);
+        PaddleSubscriptionUpdateRequest request =
+                new PaddleSubscriptionUpdateRequest(items, PRORATION_BILLING_MODE);
+
+        PaddleSubscriptionResponse response = restClient.patch()
+                .uri("/subscriptions/{id}", paddleSubscriptionId)
+                .body(request)
+                .retrieve()
+                .body(PaddleSubscriptionResponse.class);
+        log.debug("Paddle subscription update response: {}", response);
+        return response;
     }
 
     @Override

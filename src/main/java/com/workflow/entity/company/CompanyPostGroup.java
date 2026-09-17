@@ -1,11 +1,9 @@
 package com.workflow.entity.company;
 
-import com.workflow.entity.auth.User;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
-
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -16,8 +14,10 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 @Entity
-@Table(name = "company_posts")
-public class CompanyPost {
+@Table(name = "company_post_groups", uniqueConstraints = {
+        @UniqueConstraint(columnNames = { "company_id", "name" })
+})
+public class CompanyPostGroup {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -26,28 +26,19 @@ public class CompanyPost {
     @JoinColumn(name = "company_id", nullable = false)
     private Company company;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "author_id", nullable = false)
-    private User author;
+    @Column(nullable = false, length = 100)
+    private String name;
 
-    @Column(columnDefinition = "TEXT", nullable = false)
-    private String content;
+    @Column(length = 255)
+    private String description;
 
-    @Column(nullable = false)
+    @OneToMany(mappedBy = "group", fetch = FetchType.LAZY)
     @Builder.Default
-    private boolean isPublic = false;
-
-    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
-    @Builder.Default
-    private List<CompanyPostAttachment> attachments = new ArrayList<>();
+    private List<CompanyPost> posts = new ArrayList<>();
 
     @CreationTimestamp
     private LocalDateTime createdAt;
 
     @UpdateTimestamp
     private LocalDateTime updatedAt;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "group_id")
-    private CompanyPostGroup group;
 }

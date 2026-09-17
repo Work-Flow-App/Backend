@@ -10,6 +10,8 @@ public record CompanyPostResponse(
         String content,
         boolean isPublic,
         String authorName,
+        Long groupId,
+        String groupName,
         List<CompanyPostAttachmentResponse> attachments,
         @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'", timezone = "UTC")
         LocalDateTime createdAt
